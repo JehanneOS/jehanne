@@ -49,12 +49,12 @@ For example on Debian GNU/Linux you should be able to get going with
 
 After the repository clone, you can give a look with
 
-	git submodule init			# we have a lot of submodules
-	git submodule update --init --recursive
-	./hacking/devshell.sh			# start a shell with appropriate environment
-	./hacking/continuous-build.sh		# to build everything
-	./hacking/runOver9P.sh			# to start the system in QEMU
-	./hacking/drawterm.sh			# to connect Jehanne with drawterm
+	git submodule init                               # we have a lot of submodules
+	git submodule update --init --recursive --remote
+	./hacking/devshell.sh                            # start a shell with appropriate environment
+	./hacking/continuous-build.sh                    # to build everything
+	./hacking/runOver9P.sh                           # to start the system in QEMU
+	./hacking/drawterm.sh                            # to connect Jehanne with drawterm
 
 ## Hacking
 

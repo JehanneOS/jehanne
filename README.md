@@ -1,4 +1,5 @@
 [![Build Status](https://api.travis-ci.org/JehanneOS/jehanne.svg?branch=master)](https://travis-ci.org/JehanneOS/jehanne)
+[![Coverity Badge](https://scan.coverity.com/projects/7364/badge.svg)](https://scan.coverity.com/projects/jehanne)
 
 # Jehanne
 

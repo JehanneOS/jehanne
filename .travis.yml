@@ -1,0 +1,31 @@
+language: c
+install:
+ - git submodule init
+ - git submodule update --init --recursive --remote
+script:
+ - if [ "${COVERITY_SCAN_BRANCH}" != 1 ]; then ./hacking/continuous-build.sh; fi
+compiler: 
+ - gcc-4.8
+
+env:
+  global:
+   - ARCH=amd64
+   - JEHANNE=$TRAVIS_BUILD_DIR
+   - PATH=$PATH:$JEHANNE/hacking/bin
+
+addons:
+  apt:
+    sources:
+    - ubuntu-toolchain-r-test
+    packages:
+    - rc
+    - gcc-4.8
+  coverity_scan:
+    project:
+      name: "JehanneOS/jehanne"
+      description: "Build submitted via Travis CI"
+    notification_email: jehanneos@googlegroups.com
+    build_command_prepend: "git submodule init && git submodule update --init --recursive"
+    build_command: "./hacking/coverity-scan.sh"
+    branch_pattern: coverity_scan
+

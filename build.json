@@ -1,0 +1,8 @@
+{
+	"all": {
+		"Projects": [
+			"/sys/src/klibs.json",
+			"/sys/src/libs.json"
+		]
+	}
+}

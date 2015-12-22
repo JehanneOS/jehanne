@@ -1,0 +1,7 @@
+{
+	"klibs": {
+		"Projects": [
+			"/sys/src/libc/klibc.json"
+		]
+	}
+}

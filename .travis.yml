@@ -2,8 +2,9 @@ language: c
 install:
 - git submodule init
 - git submodule update --init --recursive --remote
+- ./hacking/buildtools.sh
 script:
-- if [ "${COVERITY_SCAN_BRANCH}" != 1 ]; then ./hacking/continuous-build.sh; fi
+- ./hacking/continuous-build.sh
 compiler:
 - gcc-4.8
 env:
@@ -24,6 +25,5 @@ addons:
       name: JehanneOS/jehanne
       description: Build submitted via Travis CI
     notification_email: jehanneos@googlegroups.com
-    build_command_prepend: git submodule init && git submodule update --init --recursive --remote
-    build_command: "./hacking/coverity-scan.sh"
+    build_command: "build"
     branch_pattern: coverity_scan

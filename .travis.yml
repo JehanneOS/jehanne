@@ -1,18 +1,17 @@
 language: c
 install:
- - git submodule init
- - git submodule update --init --recursive --remote
+- git submodule init
+- git submodule update --init --recursive --remote
 script:
- - if [ "${COVERITY_SCAN_BRANCH}" != 1 ]; then ./hacking/continuous-build.sh; fi
-compiler: 
- - gcc-4.8
-
+- if [ "${COVERITY_SCAN_BRANCH}" != 1 ]; then ./hacking/continuous-build.sh; fi
+compiler:
+- gcc-4.8
 env:
   global:
-   - ARCH=amd64
-   - JEHANNE=$TRAVIS_BUILD_DIR
-   - PATH=$PATH:$JEHANNE/hacking/bin
-
+  - ARCH=amd64
+  - JEHANNE=$TRAVIS_BUILD_DIR
+  - PATH=$PATH:$JEHANNE/hacking/bin
+  - secure: eu81pAD2iXg3b/rm9VYf+8bnlg09IpXdw/WMNeiXqxULCoNZI/1N7oEmLSBvqI068x+mzr6eT0P1C8zVm3wxhTSWs2JKzF0klIe4Tj0S2CjSGDx1GenO2zDdH9mSCvnx8a6xvNzms8O3xOGbV4jzolmckJYi2mLqZwtIxmShMijj8Ou046IMXhchEGFd5bx6rwN01OhFcTUVIHS73CMzZJQxXpT5zjuVDXKSnuX3BnTGHCTNNyoVmnomuvwNZmUch0q/SI8tlYzhsQrz77aZXMBkVqpFM5aTE/fOwgmwEf0Gc8kwa3YtQboxPxlXafn4ygVczMUI9mIXS2ql7ek1Mptxsx3IJUiou9iG31IhN7Pi7DyTIwGTcG6FvDw73oOL3zUY+DTfipNVDaN1GTM8ZPWJ0A/s7V9M+7sUqRyJ4sTpjPtPEmCBtDSDfFIXpq54LcjHAGyTjqveCcm/Wn2kTpxrABrQxPGVLbrGgT7dsZx6eD/vIfgbhKLj6NZUyWoDhErv0NFX7ZIG6brsvHAcY7YLu/NlW398VzwTgu38Fy180TRT/zrhxfTvsnhnrN0Jn/kr60CSXi8Fh1yaMl1vY6tcf662mGoX+pwvobGEJzDJYfMWkLjjq02jbV+nd7VkB3B9vgJtV1xfroGH2gN94iFZxg6FLwBpONWHbmh/JjY=
 addons:
   apt:
     sources:
@@ -22,10 +21,9 @@ addons:
     - gcc-4.8
   coverity_scan:
     project:
-      name: "JehanneOS/jehanne"
-      description: "Build submitted via Travis CI"
+      name: JehanneOS/jehanne
+      description: Build submitted via Travis CI
     notification_email: jehanneos@googlegroups.com
-    build_command_prepend: "git submodule init && git submodule update --init --recursive"
+    build_command_prepend: git submodule init && git submodule update --init --recursive --remote
     build_command: "./hacking/coverity-scan.sh"
     branch_pattern: coverity_scan
-

@@ -1,0 +1,4 @@
+[submodule "hacking"]
+	path = hacking
+	url = https://github.com/JehanneOS/devtools.git
+	branch = master

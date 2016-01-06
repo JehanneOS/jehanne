@@ -1,0 +1,8 @@
+{
+	"KernelLibc": {
+		"Pre": [
+			"mksys -o sys.h '-mode=sys.h' $JEHANNE/sys/src/sysconf.json",
+			"mksys -o . '-mode=syscallfiles' $JEHANNE/sys/src/sysconf.json"
+		]
+	}
+}

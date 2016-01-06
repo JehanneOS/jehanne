@@ -7,7 +7,7 @@ It is a fork of [Harvey][harvey] (which in turn is a fork of
 diverges from the design and conventions of its ancestors whenever
 they are at odds with its goals.
 
-For this reason project is named after the famous Franch heretic [Joan of Arc][arc].  
+For this reason project is named after the famous French heretic [Joan of Arc][arc].  
 
 [simplicity]: http://plato.stanford.edu/entries/simplicity/ "What is simplicity?"
 [harvey]: http://harvey-os.org "Harvey OS"

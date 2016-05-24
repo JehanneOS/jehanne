@@ -216,11 +216,11 @@ extern	Rune*	runefmtstrflush(Fmt*);
 #pragma	varargck	type	"c"	int
 #pragma	varargck	type	"C"	int
 #pragma	varargck	type	"b"	int
-#pragma	varargck	type	"d"	uint
-#pragma	varargck	type	"x"	uint
-#pragma	varargck	type	"c"	uint
-#pragma	varargck	type	"C"	uint
-#pragma	varargck	type	"b"	uint
+#pragma	varargck	type	"d"	uint32_t
+#pragma	varargck	type	"x"	uint32_t
+#pragma	varargck	type	"c"	uint32_t
+#pragma	varargck	type	"C"	uint32_t
+#pragma	varargck	type	"b"	uint32_t
 #pragma	varargck	type	"f"	double
 #pragma	varargck	type	"e"	double
 #pragma	varargck	type	"g"	double
@@ -231,7 +231,7 @@ extern	Rune*	runefmtstrflush(Fmt*);
 #pragma	varargck	type	"r"	void
 #pragma	varargck	type	"%"	void
 #pragma	varargck	type	"n"	int*
-#pragma	varargck	type	"p"	uintptr
+#pragma	varargck	type	"p"	uintptr_t
 #pragma	varargck	type	"p"	void*
 #pragma	varargck	flag	','
 #pragma	varargck	flag	' '
@@ -380,7 +380,7 @@ extern	int	enc16(char*, int, const uint8_t*, int);
 extern	int	encodefmt(Fmt*);
 extern	void	exits(const char*);
 extern	double	frexp(double, int*);
-extern	uintptr	getcallerpc(void);
+extern	uintptr_t	getcallerpc(void);
 extern	char*	getenv(const char*);
 extern	int	getfields(char*, char**, int, int, const char*);
 extern	int	gettokens(char *, char **, int, const char *);
@@ -418,9 +418,8 @@ extern	int	toupper(int);
  */
 int32_t	ainc(int32_t*);
 int32_t	adec(int32_t*);
-int	cas32(uint32_t*, uint32_t, uint32_t);
-int	casp(void**, void*, void*);
-int	casl(uint32_t*, uint32_t, uint32_t);
+#define cas(ptr, oldval, newval) __sync_bool_compare_and_swap(ptr, oldval, newval)
+#define casv(ptr, oldval, newval) __sync_val_compare_and_swap(ptr, oldval, newval)
 
 /*
  *  synchronization
@@ -441,9 +440,8 @@ extern	int	canlock(Lock*);
 typedef struct QLp QLp;
 struct QLp
 {
-	int	inuse;
+	uint8_t	state;
 	QLp	*next;
-	char	state;
 };
 
 typedef
@@ -540,7 +538,7 @@ extern	void		freenetconninfo(NetConnInfo*);
  */
 #define	STATMAX	65535U	/* max length of machine-independent stat structure */
 #define	DIRMAX	(sizeof(Dir)+STATMAX)	/* max length of Dir structure */
-#define	ERRMAX	128	/* max length of error string */
+#define	ERRMAX	256	/* max length of error string */
 
 #define	MORDER	0x0003	/* mask for bits defining order of mounting */
 #define	MREPL	0x0000	/* mount replaces object */
@@ -553,7 +551,8 @@ extern	void		freenetconninfo(NetConnInfo*);
 #define	OREAD	0	/* open for read */
 #define	OWRITE	1	/* write */
 #define	ORDWR	2	/* read and write */
-#define	OEXEC	3	/* execute, == read but check execute permission */
+#define	OSTAT	4	/* open for stat/wstat */
+#define	OEXEC	7	/* execute, == read but check execute permission */
 #define	OTRUNC	16	/* or'ed in (except for exec), truncate file first */
 #define	OCEXEC	32	/* or'ed in, close on exec */
 #define	ORCLOSE	64	/* or'ed in, remove on close */
@@ -623,7 +622,7 @@ typedef
 struct Dir {
 	/* system-modified data */
 	uint16_t	type;	/* server type */
-	uint	dev;	/* server subtype */
+	uint32_t	dev;	/* server subtype */
 	/* file data */
 	Qid	qid;	/* unique id from server */
 	uint32_t	mode;	/* permissions */
@@ -665,7 +664,7 @@ extern	int	chdir(const char*);
 extern	int	close(int);
 extern	int	create(const char*, int, uint32_t);
 extern	int	dup(int, int);
-extern	int	errstr(char*, uint);
+extern	int	errstr(char*, uint32_t);
 extern	int	exec(const char*, char* const[]);
 extern	int	execl(const char*, ...);
 extern	int	forgivewkp(int64_t);
@@ -718,9 +717,10 @@ extern	int	dirfwstat(int, Dir*);
 extern	int32_t	dirread(int, Dir**);
 extern	void	nulldir(Dir*);
 extern	int32_t	dirreadall(int, Dir**);
-extern	int	getpid(void);
-extern	int	getppid(void);
-extern	void	rerrstr(char*, uint);
+extern	int32_t	getpid(void);
+extern	int32_t	getppid(void);
+extern	int32_t	getmainpid(void);
+extern	void	rerrstr(char*, uint32_t);
 extern	char*	sysname(void);
 extern	void	werrstr(const char*, ...);
 #pragma	varargck	argpos	werrstr	1

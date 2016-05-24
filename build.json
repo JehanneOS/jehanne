@@ -1,8 +1,8 @@
 {
 	"all": {
 		"Projects": [
-			"/sys/src/klibs.json",
-			"/sys/src/libs.json"
+			"/sys/src/lib/klibs.json",
+			"/sys/src/lib/libs.json"
 		]
 	}
 }

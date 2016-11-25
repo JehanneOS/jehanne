@@ -1,0 +1,7 @@
+{
+	"clean": {
+		"Pre": [
+			"git clean -xdf ./"
+		]
+	}
+}

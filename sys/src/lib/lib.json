@@ -1,0 +1,21 @@
+{
+	"Libs": {
+		"Include": [
+			"/arch/$ARCH/include/cflags.json"
+		],
+		"Cflags": [
+			"-fstack-check",
+			"-fstack-protector-all",
+			"-c"
+		],
+		"Oflags": [
+			"-static"
+		],
+		"Post": [
+			"rm *.o"
+		],
+		"Pre": [
+			"rm -f *.o *.tag.*"
+		]
+	}
+}

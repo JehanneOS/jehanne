@@ -1,0 +1,31 @@
+{
+	"KernelCmd": {
+		"Cflags": [
+			"-mcmodel=small",
+			"-O0",
+			"-fplan9-extensions",
+			"-fno-builtin",
+			"-Wall",
+			"-Wno-main",
+			"-Wno-missing-braces",
+			"-Wno-parentheses",
+			"-Wno-unknown-pragmas",
+			"-g"
+		],
+		"Libs": [
+			"/arch/$ARCH/lib/libString.a",
+			"/arch/$ARCH/lib/lib9p.a",
+			"/arch/$ARCH/lib/libndb.a",
+			"/arch/$ARCH/lib/libauth.a",
+			"/arch/$ARCH/lib/libbio.a",
+			"/arch/$ARCH/lib/libip.a",
+			"/arch/$ARCH/lib/libc.a"
+		],
+		"Oflags": [
+			"-static"
+		],
+		"Pre": [
+			"rm -f *.o *.tag.*"
+		]
+	}
+}

@@ -1,0 +1,24 @@
+{
+	"Console": {
+		"Cflags": [
+			"-Werror"
+		],
+		"Include": [
+			"/arch/$ARCH/include/cflags.json"
+		],
+		"Install": "/arch/$ARCH/cmd/hmi",
+		"Oflags": [
+			"-static",
+			"-l9p2000",
+			"-lc"
+		],
+		"Program": "comconsole",
+		"SourceFiles": [
+			"buffer.c",
+			"comconsole.c",
+			"passthrough.c",
+			"serve9p.c",
+			"utils.c"
+		]
+	}
+}

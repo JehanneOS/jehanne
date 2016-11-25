@@ -1,0 +1,15 @@
+{
+	"klibs": {
+		"Projects": [
+			"/sys/src/lib/c/klibc.json",
+			"/sys/src/lib/9p2000/klib9p2000.json",
+			"/sys/src/lib/ip/klibip.json",
+			"/sys/src/lib/draw/klibdraw.json",
+			"/sys/src/lib/memdraw/klibmemdraw.json",
+			"/sys/src/lib/memlayer/klibmemlayer.json",
+			"/sys/src/lib/mp/klibmp.json",
+			"/sys/src/lib/sec/klibsec.json",
+			"/sys/src/lib/aml/klibaml.json"
+		]
+	}
+}

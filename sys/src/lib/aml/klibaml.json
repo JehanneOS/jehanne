@@ -1,0 +1,20 @@
+{
+	"KernelLibaml": {
+		"Cflags": [
+			"-fasm",
+			"-Werror"
+		],
+		"Include": [
+			"../klib.json"
+		],
+		"Install": "/arch/$ARCH/lib/",
+		"Library": "klibaml.a",
+		"SourceFiles": [
+			"aml.c",
+			"amlalloc.c",
+			"amldelay.c",
+			"amlmapio.c",
+			"amlunmapio.c"
+		]
+	}
+}

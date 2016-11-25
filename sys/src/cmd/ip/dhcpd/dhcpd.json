@@ -1,0 +1,15 @@
+{
+	"dhcpd": {
+		"Include": [
+			"/sys/src/cmd/cmd.json"
+		],
+		"Install": "/arch/$ARCH/cmd/ip",
+		"Program": "dhcpd",
+		"SourceFiles": [
+			"dhcpd.c",
+			"db.c",
+			"ndb.c",
+			"ping.c"
+		]
+	}
+}

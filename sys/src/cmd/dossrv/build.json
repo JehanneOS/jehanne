@@ -1,0 +1,19 @@
+{
+	"dossrv": {
+		"Include": [
+			"../cmd.json"
+		],
+		"Install": "/arch/$ARCH/cmd/",
+		"Program": "dossrv",
+		"SourceFiles": [
+			"xfssrv.c",
+			"xfile.c",
+			"dosfs.c",
+			"dossubs.c",
+			"iotrack.c",
+			"lock.c",
+			"chat.c",
+			"devio.c"
+		]
+	}
+}

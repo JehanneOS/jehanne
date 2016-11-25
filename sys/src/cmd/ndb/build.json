@@ -1,0 +1,25 @@
+{
+	"ndb": {
+		"Include": [
+			"/sys/src/cmd/cmd.json"
+		],
+		"Install": "/arch/$ARCH/cmd/ndb/",
+		"Projects": [
+			"dns.json",
+			"dnstcp.json",
+			"dnsdebug.json",
+			"dnsgetip.json"
+		],
+		"SourceFilesCmd": [
+			"cs.c",
+			"csquery.c",
+			"dnsquery.c",
+			"ipquery.c",
+			"inform.c",
+			"mkdb.c",
+			"mkhash.c",
+			"mkhosts.c",
+			"query.c"
+		]
+	}
+}

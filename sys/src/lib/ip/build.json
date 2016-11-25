@@ -1,0 +1,25 @@
+{
+	"Libip": {
+		"Cflags": [
+			"-Werror"
+		],
+		"Include": [
+			"../lib.json"
+		],
+		"Install": "/arch/$ARCH/lib/",
+		"Library": "libip.a",
+		"SourceFiles": [
+			"eipfmt.c",
+			"equivip.c",
+			"parseip.c",
+			"parseether.c",
+			"myetheraddr.c",
+			"myipaddr.c",
+			"classmask.c",
+			"bo.c",
+			"readipifc.c",
+			"ipaux.c",
+			"ptclbsum.c"
+		]
+	}
+}

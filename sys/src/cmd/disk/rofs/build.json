@@ -1,0 +1,12 @@
+{
+	"rofs": {
+		"Include": [
+			"/sys/src/cmd/cmd.json"
+		],
+		"Install": "/arch/$ARCH/cmd/disk/",
+	 	"SourceFilesCmd": [
+			"rofs.c",
+			"mkrofs.c"
+		]
+	}
+}

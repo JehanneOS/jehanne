@@ -1,0 +1,49 @@
+# root
+mount -aC #s/boot /root $rootspec
+bind -a $rootdir /
+bind -c $rootdir/mnt /mnt
+
+# kernel devices
+bind #c /dev
+bind #d /fd
+bind -c #e /env
+bind #p /proc
+bind -c #s /srv
+bind -q #σ /shr
+bind -a #¤ /dev
+bind -a #S /dev
+bind -b #k /dev
+bind -a #κ /dev
+bind -a #u /dev
+bind -b #P /dev
+
+# screen console
+mount -b /srv/screenconsole /dev
+
+# mount points
+mount -a /srv/slashn /n
+mount -a /boot /cmd
+
+# authentication
+mount -a /srv/factotum /mnt
+
+# standard bin
+bind /arch/$cputype/cmd /cmd
+bind -a /arch/rc/cmd /cmd
+
+# internal networks
+# mount -a /srv/ip /net
+bind -a #l /net
+bind -a #I /net
+mount -a /srv/cs /net
+mount -a /srv/dns /net
+mount -a /srv/net /net
+mount -b /srv/ssh /net
+
+
+bind -c /usr/$user/tmp /tmp
+cd /usr/$user
+
+. /lib/namespace.local
+. /lib/namespace.$sysname
+. /cfg/$sysname/namespace

@@ -1,0 +1,19 @@
+{
+	"win": {
+		"Include": [
+			"/sys/src/cmd/cmd.json"
+		],
+		"CFlags": [
+			"-Werror"
+		],
+		"Install": "/arch/$ARCH/aux/acme/",
+		"Program": "win",
+		"SourceFiles": [
+			"fs.c",
+			"main.c",
+			"pipe.c",
+			"util.c",
+			"win.c"
+		]
+	}
+}

@@ -7,7 +7,7 @@
  * in the LICENSE file.
  */
 
-#pragma	src	"/sys/src/libc/port"
+#pragma	src	"/sys/src/lib/c/port"
 #pragma	lib	"libc.a"
 
 #define	_U	01

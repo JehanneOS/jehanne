@@ -1,0 +1,14 @@
+{
+	"exportfs": {
+		"Include": [
+			"../cmd.json"
+		],
+		"Install": "/arch/$ARCH/cmd/",
+		"Program": "exportfs",
+		"SourceFiles": [
+			"exportfs.c",
+			"exportsrv.c",
+			"pattern.c"
+		]
+	}
+}

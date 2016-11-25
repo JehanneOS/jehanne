@@ -1,0 +1,14 @@
+{
+	"disk": {
+		"Include": [
+			"../cmd.json"
+		],
+		"Install": "/arch/$ARCH/cmd/sys/",
+		"Projects": [
+			"call/"
+		],
+		"SourceFilesCmd": [
+			"ctrace.c"
+		]
+	}
+}

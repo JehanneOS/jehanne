@@ -1,0 +1,21 @@
+{
+	"syscall": {
+		"Cflags": [
+			"-Wall"
+		],
+		"Include": [
+			"../../cmd.json"
+		],
+		"Post": [
+			"rm tab.h"
+		],
+		"Pre": [
+			"usyscalls tab $JEHANNE/sys/src/sysconf.json > tab.h"
+		],
+		"Install": "/arch/$ARCH/cmd/sys/",
+		"Program": "call",
+		"SourceFiles": [
+			"syscall.c"
+		]
+	}
+}

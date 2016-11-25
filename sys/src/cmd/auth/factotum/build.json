@@ -1,0 +1,27 @@
+{
+	"factotum": {
+		"Include": [
+			"../../cmd.json"
+		],
+		"Install": "/arch/$ARCH/cmd/auth/",
+		"Program": "factotum",
+		"SourceFiles": [
+			"apop.c",
+			"chap.c",
+			"confirm.c",
+			"ecdsa.c",
+			"fs.c",
+			"httpdigest.c",
+			"log.c",
+			"p9any.c",
+			"p9cr.c",
+			"p9sk1.c",
+			"pass.c",
+			"rpc.c",
+			"rsa.c",
+			"util.c",
+			"wep.c",
+			"wpapsk.c"
+		]
+	}
+}

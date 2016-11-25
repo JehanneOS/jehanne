@@ -1,0 +1,14 @@
+{
+	"disk": {
+		"Include": [
+			"../cmd.json"
+		],
+		"Install": "/arch/$ARCH/cmd/usb/",
+		"Program": "disk",
+	 	"SourceFiles": [
+			"disk.c",
+			"scsierrs.c",
+			"scsireq.c"
+		]
+	}
+}

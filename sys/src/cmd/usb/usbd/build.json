@@ -1,0 +1,14 @@
+{
+	"usbd": {
+		"Include": [
+			"../cmd.json"
+		],
+		"Install": "/arch/$ARCH/cmd/usb/",
+		"Program": "usbd",
+	 	"SourceFiles": [
+			"hname.c",
+			"hub.c",
+			"usbd.c"
+		]
+	}
+}

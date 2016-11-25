@@ -1,0 +1,11 @@
+{
+	"Loadcom": {
+		"Include": [
+			"../../cmd.json"
+		],
+		"Install": "/arch/$ARCH/cmd/hmi",
+		"SourceFilesCmd": [
+			"loadcom.c"
+		]
+	}
+}

@@ -1,0 +1,6 @@
+#!/cmd/rc -m /cmd/rcmain
+disk/fdisk -p "$bootdisk/data" > "$bootdisk/ctl"
+disk/prep -p "$bootdisk/plan9" > "$bootdisk/ctl"
+hjfs -n hjfs -f "$bootdisk/fs"
+mount -c /srv/hjfs /
+

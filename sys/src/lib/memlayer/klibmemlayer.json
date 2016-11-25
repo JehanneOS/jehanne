@@ -1,0 +1,26 @@
+{
+	"KernelLibmemlayer": {
+		"Cflags": [
+			"-Werror"
+		],
+		"Include": [
+			"../klib.json"
+		],
+		"Install": "/arch/$ARCH/lib/",
+		"Library": "klibmemlayer.a",
+		"SourceFiles": [
+			"draw.c",
+			"lalloc.c",
+			"layerop.c",
+			"ldelete.c",
+			"lhide.c",
+			"line.c",
+			"load.c",
+			"lorigin.c",
+			"lsetrefresh.c",
+			"ltofront.c",
+			"ltorear.c",
+			"unload.c"
+		]
+	}
+}

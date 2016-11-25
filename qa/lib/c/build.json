@@ -1,0 +1,40 @@
+{
+	"RegressionTests": {
+		"Include": [
+			"/sys/src/cmd/cmd.json"
+		],
+		"Cflags": [
+			"-O2",
+			"-std=gnu11"
+		],
+		"Install": "/arch/$ARCH/qa/lib/c",
+		"SourceFilesCmd": [
+			"asmscall.c",
+			"cleanname.c",
+			"conswrite.c",
+			"hcube.c",
+			"lockt.c",
+			"longjmp.c",
+			"privates.c",
+			"privates2.c",
+			"qlockt0.c",
+			"qlockt1.c",
+			"qlockt2.c",
+			"rlockt0.c",
+			"rlockt1.c",
+			"rlockt2.c",
+			"rsleept0.c",
+			"rsleept1.c",
+			"rsleept2.c",
+			"rwakeup0.c",
+			"sleep.c",
+			"sqrt.c",
+			"sysfatal.c",
+			"va_copy.c",
+			"vseprint.c",
+			"wlockt0.c",
+			"wlockt1.c",
+			"wlockt2.c"
+		]
+	}
+}

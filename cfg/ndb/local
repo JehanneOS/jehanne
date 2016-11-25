@@ -1,0 +1,7 @@
+#
+#  files comprising the database, use as many as you like, see ndb(6)
+#
+database=
+	file=/net/ndb
+	file=/lib/ndb/local
+	file=/lib/ndb/common

@@ -1,0 +1,23 @@
+{
+	"KernelLibip": {
+		"Cflags": [
+			"-Werror"
+		],
+		"Include": [
+			"../klib.json"
+		],
+		"Install": "/arch/$ARCH/lib/",
+		"Library": "klibip.a",
+		"SourceFiles": [
+			"eipfmt.c",
+			"equivip.c",
+			"parseip.c",
+			"parseether.c",
+			"myipaddr.c",
+			"classmask.c",
+			"bo.c",
+			"ipaux.c",
+			"ptclbsum.c"
+		]
+	}
+}

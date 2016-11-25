@@ -1,0 +1,21 @@
+{
+	"grep": {
+		"Include": [
+			"../cmd.json"
+		],
+		"Install": "/arch/$ARCH/cmd/",
+		"Post": [
+			"rm y.tab*"
+		],
+		"Pre": [
+			"yacc -d grep.y"
+		],
+		"Program": "grep",
+		"SourceFiles": [
+			"comp.c",
+			"main.c",
+			"sub.c",
+			"y.tab.c"
+		]
+	}
+}

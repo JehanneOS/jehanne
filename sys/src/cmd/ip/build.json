@@ -1,0 +1,26 @@
+{
+	"ipcmds": {
+		"Include": [
+			"/sys/src/cmd/cmd.json"
+		],
+		"Install": "/arch/$ARCH/cmd/ip",
+		"Projects": [
+			"dhcpd/dhcpd.json",
+			"dhcpd/dhcpleases.json",
+			"ipconfig/"
+		],
+		"SourceFilesCmd": [
+			"ping.c",
+			"dhcpclient.c",
+			"gping.c",
+			"hogports.c",
+			"linklocal.c",
+			"listen.c",
+			"listen1.c",
+			"rip.c",
+			"timesync.c",
+			"traceroute.c",
+			"trampoline.c"
+		]
+	}
+}

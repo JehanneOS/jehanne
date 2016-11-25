@@ -1,0 +1,31 @@
+{
+	"libs.json": {
+		"Projects": [
+			"/sys/src/lib/c/",
+			"/sys/src/lib/9p2000",
+			"/sys/src/lib/ip/",
+			"/sys/src/lib/draw/",
+			"/sys/src/lib/9p/",
+			"/sys/src/lib/String/",
+			"/sys/src/lib/aml/",
+			"/sys/src/lib/auth/",
+			"/sys/src/lib/authsrv/",
+			"/sys/src/lib/avl/",
+			"/sys/src/lib/bio/",
+			"/sys/src/lib/complete/",
+			"/sys/src/lib/control/",
+			"/sys/src/lib/disk/",
+			"/sys/src/lib/flate/",
+			"/sys/src/lib/frame/",
+			"/sys/src/lib/memdraw/",
+			"/sys/src/lib/memlayer/",
+			"/sys/src/lib/mp/",
+			"/sys/src/lib/ndb/",
+			"/sys/src/lib/plumb/",
+			"/sys/src/lib/regexp/",
+			"/sys/src/lib/sec/",
+			"/sys/src/lib/stdio/",
+			"/sys/src/lib/thread/"
+		]
+	}
+}

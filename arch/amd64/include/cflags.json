@@ -1,12 +1,6 @@
 {
 	"buildflags": {
 		"Cflags": [
-			"-std=c11",
-			"-c",
-			"-I/$JEHANNE/arch/$ARCH/include",
-			"-I/$JEHANNE/sys/include",
-			"-I.",
-			"-ffreestanding",
 			"-fno-builtin",
 			"-fno-omit-frame-pointer",
 			"-fplan9-extensions",
@@ -16,10 +10,10 @@
 			"-gdwarf-2",
 			"-ggdb",
 			"-mcmodel=small",
-			"-mno-red-zone",
 			"-O0",
 			"-static",
 			"-Wall",
+			"-Wno-main",
 			"-Wno-missing-braces",
 			"-Wno-parentheses",
 			"-Wno-unknown-pragmas"

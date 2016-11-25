@@ -1,0 +1,5 @@
+#!/cmd/rc -e
+
+id=`{mkwnew $*}
+cat >/mnt/acme/$id/body
+echo clean >/mnt/acme/$id/ctl

@@ -1,0 +1,29 @@
+{
+	"libcontrol": {
+		"Cflags": [
+			"-Werror"
+		],
+		"Include": [
+			"../lib.json"
+		],
+		"Install": "/arch/$ARCH/lib/",
+		"Library": "libcontrol.a",
+		"SourceFiles": [
+			"box.c",
+			"button.c",
+			"cache.c",
+			"control.c",
+			"entry.c",
+			"group.c",
+			"keyboard.c",
+			"label.c",
+			"menu.c",
+			"radiobutton.c",
+			"slider.c",
+			"tabs.c",
+			"text.c",
+			"textbutton.c",
+			"textbutton3.c"
+		]
+	}
+}

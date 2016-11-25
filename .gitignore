@@ -1,8 +1,9 @@
-arch/amd64/bin
+arch/amd64/cmd
+arch/amd64/aux
 arch/amd64/kern
 arch/amd64/lib
-
-sys/log
+arch/amd64/qa
+arch/amd64/include/syscalls.h
 
 sys/src/9/port/error.h
 sys/src/9/root/nvram

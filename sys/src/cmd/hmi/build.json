@@ -1,0 +1,19 @@
+{
+	"Aux": {
+		"Include": [
+			"../cmd.json"
+		],
+		"Install": "/arch/$ARCH/cmd/hmi",
+		"Projects": [
+			"console/screenconsole.json",
+			"console/comconsole.json",
+			"console/pipeconsole.json",
+			"realemu/realemu.json",
+			"realemu/loadcom.json",
+			"vga/"
+		],
+		"SourceFilesCmd": [
+			"mouse.c"
+		]
+	}
+}

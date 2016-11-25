@@ -1,0 +1,10 @@
+{
+	"RegressionTests": {
+		"Projects": [
+			"kern/",
+			"lib/c/",
+			"lib/thread/",
+			"gnu/gcc/"
+		]
+	}
+}

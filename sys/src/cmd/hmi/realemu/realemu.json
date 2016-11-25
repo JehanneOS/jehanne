@@ -1,0 +1,21 @@
+{
+	"realemu": {
+		"Cflags": [
+			"-I", "/sys/src/kern/386/"
+		],
+		"Include": [
+			"/sys/src/cmd/cmd.json"
+		],
+		"Install": "/arch/$ARCH/cmd/hmi/",
+		"Program": "realemu",
+		"SourceFiles": [
+			"arg.c",
+			"debug.c",
+			"decode.c",
+			"fmt.c",
+			"main.c",
+			"pit.c",
+			"xec.c"
+		]
+	}
+}

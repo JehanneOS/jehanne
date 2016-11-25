@@ -10,7 +10,9 @@
  */
 
 #pragma	lib	"libc.a"
-#pragma	src	"/sys/src/libc"
+#pragma	src	"/sys/src/lib/c"
+
+#define JEHANNE_LIBC	/* only for native code */
 
 #define	nelem(x)	(sizeof(x)/sizeof((x)[0]))
 #define	offsetof(s, m)	(uintptr_t)(&(((s*)0)->m))
@@ -216,11 +218,11 @@ extern	Rune*	runefmtstrflush(Fmt*);
 #pragma	varargck	type	"c"	int
 #pragma	varargck	type	"C"	int
 #pragma	varargck	type	"b"	int
-#pragma	varargck	type	"d"	uint
-#pragma	varargck	type	"x"	uint
-#pragma	varargck	type	"c"	uint
-#pragma	varargck	type	"C"	uint
-#pragma	varargck	type	"b"	uint
+#pragma	varargck	type	"d"	uint32_t
+#pragma	varargck	type	"x"	uint32_t
+#pragma	varargck	type	"c"	uint32_t
+#pragma	varargck	type	"C"	uint32_t
+#pragma	varargck	type	"b"	uint32_t
 #pragma	varargck	type	"f"	double
 #pragma	varargck	type	"e"	double
 #pragma	varargck	type	"g"	double
@@ -231,7 +233,7 @@ extern	Rune*	runefmtstrflush(Fmt*);
 #pragma	varargck	type	"r"	void
 #pragma	varargck	type	"%"	void
 #pragma	varargck	type	"n"	int*
-#pragma	varargck	type	"p"	uintptr
+#pragma	varargck	type	"p"	uintptr_t
 #pragma	varargck	type	"p"	void*
 #pragma	varargck	flag	','
 #pragma	varargck	flag	' '
@@ -345,7 +347,7 @@ extern	char*	ctime(int32_t);
 extern	double	cputime(void);
 extern	int32_t	times(int32_t*);
 extern	int32_t	tm2sec(Tm*);
-extern	int64_t	nsec(void);
+//extern	int64_t	nsec(void);
 
 extern	void	cycles(uint64_t*);	/* 64-bit value of the cycle counter if there is one, 0 if there isn't */
 
@@ -378,9 +380,9 @@ extern	int	enc32(char*, int, const uint8_t*, int);
 extern	int	dec16(uint8_t*, int, const char*, int);
 extern	int	enc16(char*, int, const uint8_t*, int);
 extern	int	encodefmt(Fmt*);
-extern	void	exits(const char*);
+extern	void	exits(const char*) __attribute__ ((noreturn));
 extern	double	frexp(double, int*);
-extern	uintptr	getcallerpc(void);
+extern	uintptr_t	getcallerpc(void);
 extern	char*	getenv(const char*);
 extern	int	getfields(char*, char**, int, int, const char*);
 extern	int	gettokens(char *, char **, int, const char *);
@@ -397,8 +399,10 @@ extern	void	perror(const char*);
 extern	int	postnote(int, int, const char *);
 extern	double	pow10(int);
 extern	int	putenv(const char*, const char*);
-extern	void	qsort(void*, int32_t, int32_t,
-				int (*)(const void*, const void*));
+extern	void	qsort(void*, long, int,
+			int (*)(const void*, const void*));
+extern	void*	bsearch(const void* key, const void* base, size_t nmemb, size_t size,
+			int (*compar)(const void*, const void*));
 extern	int	setjmp(jmp_buf);
 extern	double	strtod(const char*, const char**);
 extern	int32_t	strtol(const char*, char**, int);
@@ -418,9 +422,8 @@ extern	int	toupper(int);
  */
 int32_t	ainc(int32_t*);
 int32_t	adec(int32_t*);
-int	cas32(uint32_t*, uint32_t, uint32_t);
-int	casp(void**, void*, void*);
-int	casl(uint32_t*, uint32_t, uint32_t);
+#define cas(ptr, oldval, newval) __sync_bool_compare_and_swap(ptr, oldval, newval)
+#define casv(ptr, oldval, newval) __sync_val_compare_and_swap(ptr, oldval, newval)
 
 /*
  *  synchronization
@@ -441,9 +444,8 @@ extern	int	canlock(Lock*);
 typedef struct QLp QLp;
 struct QLp
 {
-	int	inuse;
+	uint8_t	state;
 	QLp	*next;
-	char	state;
 };
 
 typedef
@@ -493,7 +495,6 @@ extern	int	rsleept(Rendez*, uint32_t);	/* unlocks r->l, sleeps (up to ms), locks
 extern	int	rwakeup(Rendez*);
 extern	int	rwakeupall(Rendez*);
 extern	void**	privalloc(void);
-extern	void	privfree(void**);
 
 /*
  *  network dialing
@@ -540,7 +541,7 @@ extern	void		freenetconninfo(NetConnInfo*);
  */
 #define	STATMAX	65535U	/* max length of machine-independent stat structure */
 #define	DIRMAX	(sizeof(Dir)+STATMAX)	/* max length of Dir structure */
-#define	ERRMAX	128	/* max length of error string */
+#define	ERRMAX	256	/* max length of error string */
 
 #define	MORDER	0x0003	/* mask for bits defining order of mounting */
 #define	MREPL	0x0000	/* mount replaces object */
@@ -553,7 +554,8 @@ extern	void		freenetconninfo(NetConnInfo*);
 #define	OREAD	0	/* open for read */
 #define	OWRITE	1	/* write */
 #define	ORDWR	2	/* read and write */
-#define	OEXEC	3	/* execute, == read but check execute permission */
+#define	OSTAT	4	/* open for stat/wstat */
+#define	OEXEC	7	/* execute, == read but check execute permission */
 #define	OTRUNC	16	/* or'ed in (except for exec), truncate file first */
 #define	OCEXEC	32	/* or'ed in, close on exec */
 #define	ORCLOSE	64	/* or'ed in, remove on close */
@@ -623,7 +625,7 @@ typedef
 struct Dir {
 	/* system-modified data */
 	uint16_t	type;	/* server type */
-	uint	dev;	/* server subtype */
+	uint32_t	dev;	/* server subtype */
 	/* file data */
 	Qid	qid;	/* unique id from server */
 	uint32_t	mode;	/* permissions */
@@ -640,76 +642,63 @@ struct Dir {
 typedef
 struct Waitmsg
 {
-	int	pid;		/* of loved one */
+	pid_t		pid;		/* of loved one */
 	uint32_t	time[3];	/* of loved one & descendants */
-	char	*msg;
+	char		*msg;
 } Waitmsg;
 
-typedef
-struct IOchunk
-{
-	void	*addr;
-	uint32_t	len;
-} IOchunk;
-
-extern	void	_exits(const char*);
+//extern	void	_exits(const char*) __attribute__ ((noreturn));
 
 extern	int	access(const char*, int);
-extern	int64_t	alarm(uint64_t);
-extern	int	await(char*, int);
-extern	int64_t	awake(int64_t);
+//extern	int64_t	alarm(uint64_t);
+//extern	int	await(char*, int);
+//extern	int64_t	awake(int64_t);
 extern	int	awakened(int64_t);
-extern	int	bind(const char*, const char*, int);
+//extern	int	bind(const char*, const char*, int);
 extern	int	brk(void*);
-extern	int	chdir(const char*);
-extern	int	close(int);
-extern	int	create(const char*, int, uint32_t);
-extern	int	dup(int, int);
-extern	int	errstr(char*, uint);
-extern	int	exec(const char*, char* const[]);
+//extern	int	chdir(const char*);
+//extern	int	close(int);
+//extern	int	create(const char*, int, uint32_t);
+//extern	int	dup(int, int);
+//extern	int	errstr(char*, uint32_t);
+//extern	int	exec(const char*, char* const[]);
 extern	int	execl(const char*, ...);
 extern	int	forgivewkp(int64_t);
-extern	int	fork(void);
-extern	int	rfork(int);
-extern	int	fauth(int, const char*);
-extern	int	fstat(int, uint8_t*, int);
-extern	int	fwstat(int, uint8_t*, int);
-extern	int	fversion(int, int, char*, int);
-extern	int	mount(int, int, const char*, int, const char*, int);
-extern	int	unmount(const char*, const char*);
-extern	int	noted(int);
-extern	int	notify(void(*)(void*, char*));
-extern	int	open(const char*, int);
-extern	int	fd2path(int, char*, int);
+extern	pid_t	fork(void);
+//extern	pid_t	rfork(int);
+//extern	int	fauth(int, const char*);
+//extern	int	fstat(int, uint8_t*, int);
+//extern	int	fwstat(int, uint8_t*, int);
+//extern	int	fversion(int, int, char*, int);
+//extern	int	mount(int, int, const char*, int, const char*, int);
+//extern	int	unmount(const char*, const char*);
+//extern	int	noted(int);
+//extern	int	notify(void(*)(void*, char*));
+//extern	int	open(const char*, int);
+//extern	int	fd2path(int, char*, int);
 // extern	int	fdflush(int);
-extern	int	pipe(int*);
-extern	int32_t	pread(int, void*, int32_t, int64_t);
-extern	int32_t	preadv(int, IOchunk*, int, int64_t);
-extern	int32_t	pwrite(int, const void*, int32_t, int64_t);
-extern	int32_t	pwritev(int, IOchunk*, int, int64_t);
-extern	int32_t	read(int, void*, int32_t);
+//extern	int	pipe(int*);
+//extern	int32_t	pread(int, void*, int32_t, int64_t);
+//extern	int32_t	pwrite(int, const void*, int32_t, int64_t);
+//extern	int32_t	read(int, void*, int32_t);
 extern	int32_t	readn(int, void*, int32_t);
-extern	int32_t	readv(int, IOchunk*, int);
-extern	int	remove(const char*);
+//extern	int	remove(const char*);
 extern	void*	sbrk(uint32_t);
 extern	int32_t	oseek(int, int32_t, int);
-extern	int64_t	seek(int, int64_t, int);
-extern	void*	segattach(int, const char*, void*, uint32_t);
-extern	void*	segbrk(void*, void*);
+//extern	int64_t	seek(int, int64_t, int);
+extern	void*	segattach(int, const char*, void*, unsigned long);
 extern	int	segdetach(void*);
-extern	int	segflush(void*, uint32_t);
-extern	int	segfree(void*, uint32_t);
-extern	int	semacquire(int32_t*, int);
-extern	int32_t	semrelease(int32_t*, int32_t);
+extern	int	segfree(void*, unsigned long);
+//extern	int	semacquire(int32_t*, int);
+//extern	int32_t	semrelease(int32_t*, int32_t);
 extern	void	sleep(int32_t);
 extern	int	stat(const char*, uint8_t*, int);
-extern	int	tsemacquire(int32_t*, uint64_t);
+//extern	int	tsemacquire(int32_t*, uint64_t);
 extern	Waitmsg*	wait(void);
 extern	int	waitpid(void);
-extern	int32_t	write(int, const void*, int32_t);
-extern	int32_t	writev(int, IOchunk*, int);
+//extern	int32_t	write(int, const void*, int32_t);
 extern	int	wstat(const char*, uint8_t*, int);
-extern	void*	rendezvous(void*, void*);
+//extern	void*	rendezvous(void*, void*);
 
 extern	Dir*	dirstat(const char*);
 extern	Dir*	dirfstat(int);
@@ -718,12 +707,22 @@ extern	int	dirfwstat(int, Dir*);
 extern	int32_t	dirread(int, Dir**);
 extern	void	nulldir(Dir*);
 extern	int32_t	dirreadall(int, Dir**);
-extern	int	getpid(void);
-extern	int	getppid(void);
-extern	void	rerrstr(char*, uint);
+extern	int32_t	getpid(void);
+extern	int32_t	getppid(void);
+extern	int32_t	getmainpid(void);
+extern	void	rerrstr(char*, uint32_t);
 extern	char*	sysname(void);
 extern	void	werrstr(const char*, ...);
 #pragma	varargck	argpos	werrstr	1
+
+
+extern unsigned int	convM2D(uint8_t*, uint, Dir*, char*);
+extern unsigned int	convD2M(Dir*, uint8_t*, uint);
+extern unsigned int	sizeD2M(Dir*);
+extern int		dirfmt(Fmt*);
+extern int		dirmodefmt(Fmt*);
+#pragma	varargck	type	"D"	Dir*
+
 
 /* compiler directives on plan 9 */
 #define SET(x)  ((x)=0)

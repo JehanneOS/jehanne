@@ -1,0 +1,20 @@
+{
+	"Libaml": {
+		"Cflags": [
+			"-fasm",
+			"-Werror"
+		],
+		"Include": [
+			"../lib.json"
+		],
+		"Install": "/arch/$ARCH/lib/",
+		"Library": "libaml.a",
+		"SourceFiles": [
+			"aml.c",
+			"amlalloc.c",
+			"amldelay.c",
+			"amlmapio.c",
+			"amlunmapio.c"
+		]
+	}
+}

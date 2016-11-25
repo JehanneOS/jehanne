@@ -1,0 +1,40 @@
+{
+	"RegressionTests": {
+		"Include": [
+			"/sys/src/cmd/cmd.json"
+		],
+		"Install": "/arch/$ARCH/qa/kern",
+		"Post": [
+			"cp *.rc $JEHANNE/arch/$ARCH/qa/kern/"
+		],
+		"SourceFilesCmd": [
+			"alarm.c",
+			"args.c",
+			"awake.c",
+			"execl.c",
+			"float.c",
+			"fork.c",
+			"frexp.c",
+			"getmainpid.c",
+			"getpid.c",
+			"getppid.c",
+			"iphash.c",
+			"malloc1GiB.c",
+			"memoryisolation.c",
+			"memoryshare.c",
+			"mixedfloat.c",
+			"noexecmem.c",
+			"notify.c",
+			"nsec.c",
+			"pipering.c",
+			"postnote.c",
+			"psx.c",
+			"segattach.c",
+			"sched0.c",
+			"syscall.c",
+			"sysstatread.c",
+			"tsemacquire.c",
+			"waserror.c"
+		]
+	}
+}

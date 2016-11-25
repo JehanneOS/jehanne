@@ -1,0 +1,18 @@
+{
+	"secstored": {
+		"Include": [
+			"../../cmd.json"
+		],
+		"Install": "/arch/$ARCH/cmd/auth/",
+		"Program": "secstored",
+		"SourceFiles": [
+			"dirls.c",
+			"pak.c",
+			"password.c",
+			"SConn.c",
+			"secstored.c",
+			"../secureidcheck.c",
+			"util.c"
+		]
+	}
+}

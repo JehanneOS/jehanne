@@ -1,0 +1,20 @@
+{
+	"fdisk": {
+		"Include": [
+			"../../cmd.json"
+		],
+		"Install": "/arch/$ARCH/cmd/disk",
+		"Post": [
+			"rm y.tab.[ch]"
+		],
+		"Pre": [
+			"yacc -d calc.y"
+		],
+		"Program": "fdisk",
+		"SourceFiles": [
+			"fdisk.c",
+			"edit.c",
+			"y.tab.c"
+		]
+	}
+}

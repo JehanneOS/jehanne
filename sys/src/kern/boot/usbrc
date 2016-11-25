@@ -1,0 +1,69 @@
+#!/cmd/rc
+if(! bind -a '#u' /dev)
+	exit
+
+mkdir -p -m 700 '#σc/usb'
+mkdir -p -m 700 '#σc/usbnet'
+
+if(! usb/usbd)
+	exit
+
+@{
+	rfork ne
+	fn attach {
+		id=$1
+		if(~ $#* 5 && ! test -e /env/nousbhname)
+			id=$1:$5
+		switch($2$3){
+		case 0b957720 0b95772a 0db0a877 13b10018 15577720 20013c05 07d13c05 05ac1402
+			usb/ether -t a88772 $etherargs $id
+		case 0b951780 14eaab11 17370039 0411006e 050d5055
+			usb/ether -t a88178 $etherargs $id
+		case 2001abc1
+			usb/ether -t aue $etherargs $id
+		case 0bda8150
+			usb/ether -t url $etherargs $id
+		case 18d14ee3 0bb40003
+			usb/ether -t rndis $etherargs $id
+		case *
+			switch($4){
+			case *03
+				usb/kb $id
+			case *02
+				# CDC ethernet
+				usb/ether $etherargs $id
+			case *08
+				if(usb/disk $id) @{
+					rfork ne
+					cd '#σ/usb'
+					devs=sdU^($1 $5)
+					for(dev in $devs $devs.*) if(test -d $dev) {
+						diskparts $dev
+						for(part in $dev/dos* $dev/9fat* $dev/data) if(test -r $part && ~ `{fstype $part} dos) {
+							mkdir -m 0700 '#σc/'^$dev || exit
+							{dossrv -s -f $part &} <[0=1] |
+								echo 0 >'#σc/'^$dev/dos
+							exit
+						}
+					}
+				}
+			case *
+				# Raspberry Pi ethernet will always appear as /net/etherU0
+				if(~ $2 0424)
+					usb/ether -t smsc $etherargs $1:0
+			}
+		}
+	}
+	fn detach {
+		devs='#σc/sdU'^($1 $5)
+		rm -rf '#σc/usb/'^$1.* '#σc/usbnet/'^$1.* $devs $devs.* 
+	}
+	rc < '#σ/usb/usbevent' &
+}
+
+# usbd removes this file once all devices have been enumerated
+while(test -e /env/usbbusy)
+	sleep 1
+
+bind -a '#σ/usb' /dev
+bind -a '#σ/usbnet' /net

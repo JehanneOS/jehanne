@@ -1,0 +1,15 @@
+#!/cmd/rc
+
+rfork
+
+@{rfork n; mkdir '#σc'/testshr; ramfs -S testshr; echo 3 > '#σc'/testshr/ramfs <>[3]/srv/testshr; echo PASS > '#σ'/testshr/file }
+
+bind '#σ' /shr
+
+RESULT=`{cat /shr/testshr/file}
+
+rm -fr '#σc'/testshr
+rm /srv/testshr
+
+if (~ $RESULT PASS) { echo PASS; exit PASS }
+if not { echo FAIL; exit FAIL }

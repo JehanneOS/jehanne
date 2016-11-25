@@ -1,0 +1,14 @@
+{
+	"UsbCmd": {
+		"Include": [
+			"/sys/src/cmd/cmd.json"
+		],
+		"Cflags": [
+			"-I../lib/"
+		],
+		"Oflags": [
+			"-L../lib/",
+			"-lusb"
+		]
+	}
+}

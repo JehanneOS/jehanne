@@ -1,0 +1,39 @@
+{
+	"acme": {
+		"Include": [
+			"/sys/src/cmd/cmd.json"
+		],
+		"CFlags": [
+			"-Werror"
+		],
+		"Install": "/arch/$ARCH/cmd/",
+		"Program": "acme",
+		"SourceFiles": [
+			"acme.c",
+			"addr.c",
+			"buff.c",
+			"cols.c",
+			"disk.c",
+			"ecmd.c",
+			"edit.c",
+			"elog.c",
+			"exec.c",
+			"file.c",
+			"fsys.c",
+			"look.c",
+			"regx.c",
+			"rows.c",
+			"scrl.c",
+			"text.c",
+			"time.c",
+			"util.c",
+			"wind.c",
+			"xfid.c"
+		]
+	},
+	"aux": {
+		"Projects": [
+			"aux/"
+		]
+	}
+}

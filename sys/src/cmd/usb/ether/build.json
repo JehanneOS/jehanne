@@ -1,0 +1,18 @@
+{
+	"ether": {
+		"Include": [
+			"../cmd.json"
+		],
+		"Install": "/arch/$ARCH/cmd/usb/",
+		"Program": "ether",
+	 	"SourceFiles": [
+			"asix.c",
+			"aue.c",
+			"cdc.c",
+			"ether.c",
+			"rndis.c",
+			"smsc.c",
+			"url.c"
+		]
+	}
+}

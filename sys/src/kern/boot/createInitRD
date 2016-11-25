@@ -1,0 +1,7 @@
+#!/cmd/rc
+
+cd /sys/src/kern/boot
+mkdir -p bootfs
+disk/mkfs -s / -d bootfs bootfs.proto
+disk/mkrofs -o /arch/$objtype/kern/initrd bootfs
+rm -rf bootfs

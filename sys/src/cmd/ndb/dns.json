@@ -1,0 +1,22 @@
+{
+	"dns": {
+		"Include": [
+			"../cmd.json"
+		],
+		"Install": "/arch/$ARCH/cmd/ndb/",
+		"Program": "dns",
+		"SourceFiles": [
+			"convDNS2M.c",
+			"convM2DNS.c",
+			"dblookup.c",
+			"dn.c",
+			"dnarea.c",
+			"dnnotify.c",
+			"dnresolve.c",
+			"dns.c",
+			"dnserver.c",
+			"dnudpserver.c",
+			"idn.c"
+		]
+	}
+}

@@ -1,0 +1,19 @@
+{
+	"9p2000": {
+		"Cflags": [
+			"-fasm",
+			"-Werror"
+		],
+		"Include": [
+			"../lib.json"
+		],
+		"Install": "/arch/$ARCH/lib/",
+		"Library": "lib9p2000.a",
+		"SourceFiles": [
+			"convM2S.c",
+			"convS2M.c",
+			"fcallfmt.c",
+			"read9pmsg.c"
+		]
+	}
+}

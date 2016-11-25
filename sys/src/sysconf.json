@@ -23,66 +23,76 @@
 		{
 			"Args": [
 				"char*",
-				"int32_t"
+				"int"
 			],
 			"Id": 0,
 			"Name": "await",
 			"Ret": [
-				"int32_t"
+				"int"
 			]
 		},
 		{
 			"Args": [
-				"int64_t"
+				"long"
 			],
 			"Id": 1,
 			"Name": "awake",
 			"Ret": [
-				"int64_t"
+				"long"
 			]
 		},
 		{
 			"Args": [
-				"char*",
-				"char*",
-				"int32_t"
+				"const char*",
+				"const char*",
+				"int"
 			],
 			"Id": 2,
 			"Name": "bind",
 			"Ret": [
-				"int32_t"
+				"int"
 			]
 		},
 		{
 			"Args": [
-				"char*"
+				"const void*"
 			],
 			"Id": 3,
-			"Name": "chdir",
+			"Name": "brk_",
 			"Ret": [
-				"int32_t"
+				"uintptr_t"
 			]
 		},
 		{
 			"Args": [
-				"int32_t"
+				"const char*"
 			],
 			"Id": 4,
-			"Name": "close",
+			"Name": "chdir",
 			"Ret": [
-				"int32_t"
+				"int"
 			]
 		},
 		{
 			"Args": [
-				"char*",
-				"int32_t",
-				"int32_t"
+				"int"
 			],
 			"Id": 5,
+			"Name": "close",
+			"Ret": [
+				"int"
+			]
+		},
+		{
+			"Args": [
+				"const char*",
+				"uint32_t",
+				"uint32_t"
+			],
+			"Id": 6,
 			"Name": "create",
 			"Ret": [
-				"int32_t"
+				"int"
 			]
 		},
 		{
@@ -90,7 +100,7 @@
 				"int32_t",
 				"int32_t"
 			],
-			"Id": 6,
+			"Id": 7,
 			"Name": "dup",
 			"Ret": [
 				"int32_t"
@@ -99,50 +109,53 @@
 		{
 			"Args": [
 				"char*",
-				"uint32_t"
-			],
-			"Id": 7,
-			"Name": "errstr",
-			"Ret": [
-				"int32_t"
-			]
-		},
-		{
-			"Args": [
-				"char*",
-				"char**"
+				"int"
 			],
 			"Id": 8,
-			"Name": "exec",
+			"Name": "errstr",
 			"Ret": [
-				"void*"
+				"int"
 			]
 		},
 		{
 			"Args": [
-				"char*"
+				"const char*",
+				"const char**"
 			],
 			"Id": 9,
-			"Libname": "_exits",
-			"Name": "exits",
+			"Name": "exec",
 			"Ret": [
-				"int32_t"
+				"uintptr_t"
 			]
 		},
 		{
+			"Args": [
+				"const char*"
+			],
 			"Id": 10,
+			"Name": "_exits",
+			"Ret": [
+				"int"
+			]
+		},
+		{
+			"Args": [
+				"int",
+				"const char*"
+			],
+			"Id": 11,
 			"Name": "fauth",
 			"Ret": [
-				"int32_t"
+				"int"
 			]
 		},
 		{
 			"Args": [
 				"int32_t",
-				"char*",
+				"const char*",
 				"uint32_t"
 			],
-			"Id": 11,
+			"Id": 12,
 			"Name": "fd2path",
 			"Ret": [
 				"int32_t"
@@ -150,30 +163,36 @@
 		},
 		{
 			"Args": [
-				"int32_t",
+				"int",
 				"uint8_t*",
-				"uint32_t"
+				"int"
 			],
-			"Id": 12,
+			"Id": 13,
 			"Name": "fstat",
 			"Ret": [
-				"int32_t"
+				"int"
 			]
 		},
 		{
-			"Id": 13,
+			"Args": [
+				"int",
+				"int",
+				"const char*",
+				"int"
+			],
+			"Id": 14,
 			"Name": "fversion",
 			"Ret": [
-				"int32_t"
+				"int"
 			]
 		},
 		{
 			"Args": [
 				"int32_t",
-				"uint8_t*",
+				"const uint8_t*",
 				"uint32_t"
 			],
-			"Id": 14,
+			"Id": 15,
 			"Name": "fwstat",
 			"Ret": [
 				"int32_t"
@@ -181,106 +200,109 @@
 		},
 		{
 			"Args": [
-				"int32_t",
-				"char*",
-				"int32_t",
-				"char*"
-			],
-			"Id": 15,
-			"Name": "mount",
-			"Ret": [
-				"int32_t"
-			]
-		},
-		{
-			"Args": [
-				"int32_t"
+				"int",
+				"int",
+				"const char*",
+				"uint32_t",
+				"const char*",
+				"int"
 			],
 			"Id": 16,
-			"Name": "noted",
+			"Name": "mount",
 			"Ret": [
-				"int32_t"
+				"int"
 			]
 		},
 		{
 			"Args": [
-				"void*"
+				"int"
 			],
 			"Id": 17,
+			"Name": "noted",
+			"Ret": [
+				"int"
+			]
+		},
+		{
+			"Args": [
+				"const void*"
+			],
+			"Id": 18,
 			"Name": "notify",
 			"Ret": [
-				"int32_t"
+				"int"
 			]
 		},
 		{
-			"Id": 18,
+			"Id": 19,
 			"Name": "nsec",
 			"Ret": [
-				"int64_t"
+				"long"
 			]
 		},
 		{
 			"Args": [
-				"char*",
-				"int32_t"
-			],
-			"Id": 19,
-			"Name": "open",
-			"Ret": [
-				"int32_t"
-			]
-		},
-		{
-			"Args": [
-				"int32_t*"
+				"const char*",
+				"uint32_t"
 			],
 			"Id": 20,
-			"Name": "pipe",
+			"Name": "open",
 			"Ret": [
-				"int32_t"
+				"int"
 			]
 		},
 		{
 			"Args": [
-				"int32_t",
-				"void*",
-				"int32_t",
-				"int64_t"
+				"int*"
 			],
 			"Id": 21,
-			"Name": "pread",
+			"Name": "pipe",
 			"Ret": [
-				"int32_t"
+				"int"
 			]
 		},
 		{
 			"Args": [
-				"int32_t",
+				"int",
 				"void*",
-				"int32_t",
-				"int64_t"
+				"int",
+				"long"
 			],
 			"Id": 22,
-			"Name": "pwrite",
+			"Name": "pread",
 			"Ret": [
-				"int32_t"
+				"long"
 			]
 		},
 		{
 			"Args": [
-				"char*"
+				"int",
+				"const void*",
+				"int",
+				"long"
 			],
 			"Id": 23,
-			"Name": "remove",
+			"Name": "pwrite",
 			"Ret": [
-				"int32_t"
+				"long"
 			]
 		},
 		{
 			"Args": [
-				"void*"
+				"const char*"
 			],
 			"Id": 24,
+			"Name": "remove",
+			"Ret": [
+				"int"
+			]
+		},
+		{
+			"Args": [
+				"const void*",
+				"void*"
+			],
+			"Id": 25,
 			"Name": "rendezvous",
 			"Ret": [
 				"void*"
@@ -288,147 +310,78 @@
 		},
 		{
 			"Args": [
-				"int32_t"
-			],
-			"Id": 25,
-			"Name": "rfork",
-			"Ret": [
-				"int32_t"
-			]
-		},
-		{
-			"Args": [
-				"int32_t",
-				"int64_t",
-				"int32_t"
+				"uint32_t"
 			],
 			"Id": 26,
+			"Name": "rfork",
+			"Ret": [
+				"int"
+			]
+		},
+		{
+			"Args": [
+				"int",
+				"long",
+				"int"
+			],
+			"Id": 27,
 			"Name": "seek",
 			"Ret": [
-				"int64_t"
-			]
-		},
-		{
-			"Id": 27,
-			"Name": "segattach",
-			"Ret": [
-				"void*"
-			]
-		},
-		{
-			"Id": 28,
-			"Name": "segbrk",
-			"Ret": [
-				"void*"
-			]
-		},
-		{
-			"Id": 29,
-			"Name": "segdetach",
-			"Ret": [
-				"int32_t"
-			]
-		},
-		{
-			"Id": 30,
-			"Name": "segflush",
-			"Ret": [
-				"int32_t"
-			]
-		},
-		{
-			"Id": 31,
-			"Name": "segfree",
-			"Ret": [
-				"int32_t"
+				"long"
 			]
 		},
 		{
 			"Args": [
-				"int32_t*",
-				"int32_t"
+				"int*",
+				"int"
 			],
-			"Id": 32,
+			"Id": 28,
 			"Name": "semacquire",
 			"Ret": [
-				"int32_t"
+				"int"
 			]
 		},
 		{
 			"Args": [
-				"int32_t*",
-				"int32_t"
+				"int*",
+				"int"
 			],
-			"Id": 33,
+			"Id": 29,
 			"Name": "semrelease",
 			"Ret": [
-				"int32_t"
+				"int"
 			]
 		},
 		{
 			"Args": [
-				"int32_t*",
+				"int*",
 				"uint64_t"
 			],
-			"Id": 34,
+			"Id": 30,
 			"Name": "tsemacquire",
 			"Ret": [
-				"int32_t"
+				"int"
 			]
 		},
 		{
 			"Args": [
-				"char*",
-				"char*"
+				"const char*",
+				"const char*"
 			],
-			"Id": 35,
+			"Id": 31,
 			"Name": "unmount",
 			"Ret": [
-				"int32_t"
+				"int"
 			]
 		},
 		{
 			"Args": [
-				"void*"
+				"unsigned long"
 			],
-			"Id": 36,
-			"Name": "brk_",
-			"Ret": [
-				"void*"
-			]
-		},
-		{
-			"Args": [
-				"char*",
-				"uint8_t*",
-				"uint32_t"
-			],
-			"Id": 37,
-			"Name": "stat",
-			"Ret": [
-				"int32_t"
-			]
-		},
-		{
-			"Args": [
-				"char*",
-				"uint8_t*",
-				"uint32_t"
-			],
-			"Id": 38,
-			"Name": "wstat",
-			"Ret": [
-				"int32_t"
-			]
-		},
-		{
-			"Args": [
-				"uint64_t"
-			],
-			"Id": 39,
+			"Id": 32,
 			"Name": "alarm",
 			"Ret": [
-				"int64_t"
+				"long"
 			]
 		}
 	],
@@ -697,6 +650,16 @@
 			"Id": 52,
 			"Name": "Eunmount",
 			"String": "not mounted"
+		},
+		{
+			"Id": 53,
+			"Name": "Ememinuse",
+			"String": "cannot free memory used by other processes"
+		},
+		{
+			"Id": 54,
+			"Name": "Etoolong",
+			"String": "name too long"
 		}
 	]
 }

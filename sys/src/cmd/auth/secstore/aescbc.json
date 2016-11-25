@@ -1,0 +1,13 @@
+{
+	"aescbc": {
+		"Include": [
+			"../../cmd.json"
+		],
+		"Install": "/arch/$ARCH/cmd/auth",
+		"Program": "aescbc",
+		"SourceFiles": [
+			"aescbc.c",
+			"util.c"
+		]
+	}
+}

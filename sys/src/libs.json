@@ -1,7 +1,0 @@
-{
-	"libs.json": {
-		"Projects": [
-			"/sys/src/libc/"
-		]
-	}
-}

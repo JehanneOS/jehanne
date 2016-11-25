@@ -7,8 +7,8 @@
  * in the LICENSE file.
  */
 
-#pragma	src	"/sys/src/libc/9sys"
-#pragma	lib	"libc.a"
+#pragma	src	"/sys/src/lib/9p2000"
+#pragma	lib	"lib9p2000.a"
 
 #define	VERSION9P	"9P2000"
 
@@ -129,21 +129,13 @@ enum
 	Tmax,
 };
 
-uint	convM2S(uint8_t*, uint, Fcall*);
-uint	convS2M(Fcall*, uint8_t*, uint);
-uint	sizeS2M(Fcall*);
+extern unsigned int	convM2S(uint8_t*, uint, Fcall*);
+extern unsigned int	convS2M(Fcall*, uint8_t*, uint);
+extern unsigned int	sizeS2M(Fcall*);
+extern int		statcheck(uint8_t *abuf, uint nbuf);
 
-int	statcheck(uint8_t *abuf, uint nbuf);
-uint	convM2D(uint8_t*, uint, Dir*, char*);
-uint	convD2M(Dir*, uint8_t*, uint);
-uint	sizeD2M(Dir*);
-
-int	fcallfmt(Fmt*);
-int	dirfmt(Fmt*);
-int	dirmodefmt(Fmt*);
-
-int	read9pmsg(int, void*, uint);
+extern int		fcallfmt(Fmt*);
+extern int		read9pmsg(int, void*, uint);
 
 #pragma	varargck	type	"F"	Fcall*
 #pragma	varargck	type	"M"	ulong
-#pragma	varargck	type	"D"	Dir*

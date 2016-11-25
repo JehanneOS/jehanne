@@ -1,0 +1,38 @@
+{
+	"rc": {
+		"Include": [
+			"../kernel.json"
+		],
+		"Post": [
+			"rm y.tab* x.tab*"
+		],
+		"Pre": [
+			"yacc -d syn.y",
+			"cp y.tab.h x.tab.h"
+		],
+		"Cflags": [
+			"-Wl,--verbose"
+		],
+		"Install": "/arch/$ARCH/cmd/",
+		"Program": "rc",
+		"SourceFiles": [
+			"code.c",
+			"exec.c",
+			"getflags.c",
+			"glob.c",
+			"havefork.c",
+			"here.c",
+			"io.c",
+			"lex.c",
+			"pcmd.c",
+			"pfnc.c",
+			"plan9.c",
+			"simple.c",
+			"subr.c",
+			"trap.c",
+			"tree.c",
+			"var.c",
+			"y.tab.c"
+		]
+	}
+}

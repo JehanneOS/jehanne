@@ -1,0 +1,20 @@
+{
+	"dnstcp": {
+		"Include": [
+			"/sys/src/cmd/cmd.json"
+		],
+		"Install": "/arch/$ARCH/cmd/ndb/",
+		"Program": "dnstcp",
+		"SourceFiles": [
+			"convDNS2M.c",
+			"convM2DNS.c",
+			"dblookup.c",
+			"dn.c",
+			"dnarea.c",
+			"dnresolve.c",
+			"dnserver.c",
+			"dnstcp.c",
+			"idn.c"
+		]
+	}
+}

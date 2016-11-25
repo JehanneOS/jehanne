@@ -1,0 +1,20 @@
+{
+	"prep": {
+		"Include": [
+			"../../cmd.json"
+		],
+		"Install": "/arch/$ARCH/cmd/disk",
+		"Post": [
+			"rm -f y.tab.[ch]"
+		],
+		"Pre": [
+			"yacc -d calc.y"
+		],
+		"Program": "prep",
+		"SourceFiles": [
+			"prep.c",
+			"edit.c",
+			"y.tab.c"
+		]
+	}
+}

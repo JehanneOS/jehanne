@@ -1,0 +1,60 @@
+#!/cmd/rc
+
+# verify that rc scripts get the correct arguments
+
+/qa/kern/args.rc.0 a b c
+a0=`{echo $status|awk '{print $3}'}
+a0=$"a0 #"
+
+/qa/kern/args.rc.1 a b c
+a1=`{echo $status|awk '{print $3}'}
+a1=$"a1 #"
+
+/qa/kern/args.rc.2 a b c
+a2=`{echo $status|awk '{print $3}'}
+a2=$"a2 #"
+
+/qa/kern/args.rc.0
+b0=`{echo $status|awk '{print $3}'}
+b0=$"b0 #"
+
+/qa/kern/args.rc.1
+b1=`{echo $status|awk '{print $3}'}
+b1=$"b1 #"
+
+/qa/kern/args.rc.2
+b2=`{echo $status|awk '{print $3}'}
+b2=$"b2 #"
+
+if (test -z $a0 || ! ~ $a0 /qa/kern/args.rc.0) {
+	echo FAIL: '$0' in '/qa/kern/args.rc.0 a b c' was $a0
+	exit FAIL
+}
+
+if (test -z $a1 || ! ~ $a1 a) {
+        echo FAIL: '$1' in '/qa/kern/args.rc.1 a b c' was $a1
+        exit FAIL
+}
+
+if (test -z $a2 || ! ~ $a2 b) {
+        echo FAIL: '$2' in '/qa/kern/args.rc.2 a b c' was $a2
+        exit FAIL
+}
+
+if (test -z $b0 || ! ~ $b0 /qa/kern/args.rc.0) {
+        echo FAIL: '$0' in '/qa/kern/args.rc.0' was $b0
+        exit FAIL
+}
+
+if (test -n $b1) {
+        echo FAIL: '$1' in '/qa/kern/args.rc.1' was $b1
+        exit FAIL
+}
+
+if (test -n $b2) {
+        echo FAIL: '$2' in '/qa/kern/args.rc.2' was $b2
+        exit FAIL
+}
+
+echo PASS
+exit PASS

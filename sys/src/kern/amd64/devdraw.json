@@ -1,0 +1,25 @@
+{
+	"DrawingModules": {
+		"Kernel": {
+			"Config": {
+				"Dev": [
+					"mouse",
+					"vga"
+				],
+				"VGA": [
+					"vgavesa"
+				]
+			}
+		},
+		"SourceFiles": [
+			"../port/devdraw.c",
+			"../port/devmouse.c",
+			"../386/vgavesa.c",
+			"screen.c",
+			"devvga.c",
+			"mouse.c",
+			"vga.c",
+			"vgax.c"
+		]
+	}
+}

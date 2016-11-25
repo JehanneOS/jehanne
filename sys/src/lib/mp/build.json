@@ -1,0 +1,51 @@
+{
+	"libmp": {
+		"Include": [
+			"../lib.json"
+		],
+		"Install": "/arch/$ARCH/lib/",
+		"Library": "libmp.a",
+		"SourceFiles": [
+			"port/betomp.c",
+			"port/cnfield.c",
+			"port/crt.c",
+			"port/gmfield.c",
+			"port/letomp.c",
+			"port/mpadd.c",
+			"port/mpaux.c",
+			"port/mpcmp.c",
+			"port/mpdigdiv.c",
+			"port/mpdiv.c",
+			"port/mpexp.c",
+			"port/mpextendedgcd.c",
+			"port/mpfactorial.c",
+			"port/mpfield.c",
+			"port/mpfmt.c",
+			"port/mpinvert.c",
+			"port/mpleft.c",
+			"port/mplogic.c",
+			"port/mpmod.c",
+			"port/mpmodop.c",
+			"port/mpmul.c",
+			"port/mpnrand.c",
+			"port/mprand.c",
+			"port/mpright.c",
+			"port/mpsel.c",
+			"port/mpsub.c",
+			"port/mptobe.c",
+			"port/mptober.c",
+			"port/mptoi.c",
+			"port/mptole.c",
+			"port/mptolel.c",
+			"port/mptoui.c",
+			"port/mptouv.c",
+			"port/mptov.c",
+			"port/mpvecadd.c",
+			"port/mpveccmp.c",
+			"port/mpvecdigmuladd.c",
+			"port/mpvecsub.c",
+			"port/mpvectscmp.c",
+			"port/strtomp.c"
+		]
+	}
+}

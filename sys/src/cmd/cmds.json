@@ -1,0 +1,116 @@
+{
+	"Cmd": {
+		"Include": [
+			"cmd.json"
+		],
+		"Install": "/arch/$ARCH/cmd/",
+		"SourceFilesCmd": [
+			"ascii.c",
+			"basename.c",
+			"bind.c",
+			"cal.c",
+			"cat.c",
+			"chgrp.c",
+			"chmod.c",
+			"cleanname.c",
+			"cp.c",
+			"cpu.c",
+			"date.c",
+			"dd.c",
+			"du.c",
+			"echo.c",
+			"ed.c",
+			"fcp.c",
+			"field.c",
+			"flip.c",
+			"hget.c",
+			"import.c",
+			"init.c",
+			"join.c",
+			"lock.c",
+			"look.c",
+			"ls.c",
+			"mc.c",
+			"mkdir.c",
+			"mntgen.c",
+			"mount.c",
+			"mtime.c",
+			"mv.c",
+			"netstat.c",
+			"ns.c",
+			"p.c",
+			"pipefile.c",
+			"ps.c",
+			"pwd.c",
+			"ramfs.c",
+			"rm.c",
+			"sed.c",
+			"seq.c",
+			"sleep.c",
+			"sort.c",
+			"split.c",
+			"srv.c",
+			"srvfs.c",
+			"stats.c",
+			"tail.c",
+			"tar.c",
+			"tee.c",
+			"test.c",
+			"time.c",
+			"touch.c",
+			"tr.c",
+			"unicode.c",
+			"uniq.c",
+			"unmount.c",
+			"wc.c",
+			"xargs.c",
+			"xd.c",
+			"ms.c"
+		]
+	},
+	"FromYacc": {
+		"Include": [
+			"cmd.json"
+		],
+		"Pre": [
+			"yacc -d mpc.y && mv y.tab.c mpc.c && mv y.tab.h mpc.h"
+		],
+		"Post": [
+			"rm mpc.c mpc.h"
+		],
+		"Cflags": [
+			"-DYYSIZE_T=size_t"
+		],
+		"Install": "/arch/$ARCH/cmd/",
+		"SourceFilesCmd": [
+			"mpc.c"
+		]
+	},
+	"Dirs": {
+		"Include": [
+			"cmd.json"
+		],
+		"Install": "/arch/$ARCH/cmd/",
+		"Projects": [
+			"acme/",
+			"auth/factotum/",
+			"hmi/",
+			"awk/",
+			"disk/build.json",
+			"dossrv/",
+			"exportfs/",
+			"ip/",
+			"grep/",
+			"hjfs/",
+			"hoc/",
+			"ip/",
+			"ndb/",
+			"rc/",
+			"rio/",
+			"sam/",
+			"samterm/",
+			"sys/",
+			"usb/"
+		]
+	}
+}

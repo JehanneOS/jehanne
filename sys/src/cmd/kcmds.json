@@ -1,0 +1,20 @@
+{
+	"Kcmds": {
+		"Include": [
+			"kernel.json"
+		],
+		"Install": "/arch/$ARCH/cmd/",
+		"Projects": [
+			"/sys/src/cmd/rc/",
+			"/sys/src/cmd/ip/ipconfig/kipconfig.json"
+		],
+		"SourceFilesCmd": [
+			"bind.c",
+			"mount.c",
+			"date.c",
+			"srv.c",
+			"echo.c",
+			"ls.c"
+		]
+	}
+}

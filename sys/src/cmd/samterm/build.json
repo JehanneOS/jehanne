@@ -1,0 +1,20 @@
+{
+	"samterm": {
+		"Include": [
+			"../cmd.json"
+		],
+		"Install": "/arch/$ARCH/cmd/aux",
+		"Program": "samterm",
+	 	"SourceFiles": [
+			"flayer.c",
+			"icons.c",
+			"io.c",
+			"main.c",
+			"menu.c",
+			"mesg.c",
+			"plan9.c",
+			"rasp.c",
+			"scroll.c"
+		]
+	}
+}

@@ -1,0 +1,46 @@
+{
+	"Cmd": {
+		"Include": [
+			"/arch/$ARCH/include/cflags.json"
+		],
+		"Cflags": [
+			"-fstack-check",
+			"-fstack-protector-all"
+		],
+		"Oflags": [
+			"-static",
+			"-lavl",
+			"-lcomplete",
+			"-lcontrol",
+			"-ldisk",
+			"-lflate",
+			"-lframe",
+			"-lmemdraw",
+			"-lmemlayer",
+			"-lmemdraw",
+			"-ldraw",
+			"-lplumb",
+			"-lregexp",
+			"-lstdio",
+			"-lString",
+			"-l9p",
+			"-lauth",
+			"-lauthsrv",
+			"-lndb",
+			"-lip",
+			"-lsec",
+			"-lauth",
+			"-lmp",
+			"-lthread",
+			"-lbio",
+			"-l9p2000",
+			"-lc"
+		],
+		"Post": [
+			"rm -f *.o"
+		],
+		"Pre": [
+			"rm -f *.tag.*"
+		]
+	}
+}

@@ -1,0 +1,32 @@
+{
+	"awk": {
+		"Include": [
+			"/sys/src/cmd/cmd.json"
+		],
+		"Pre": [
+			"yacc -d awkgram.y && mv y.tab.c awkgram.c",
+			"go run maketab.go > proctab.c"
+		],
+		"Post": [
+			"git clean -xdf ./"
+		],
+		"Cflags": [
+			"-DYYMALLOC=malloc",
+			"-Werror"
+		],
+		"Install": "/arch/$ARCH/cmd/",
+		"Program": "awk",
+		"SourceFiles": [
+			"re.c",
+			"lex.c",
+			"main.c",
+			"parse.c",
+			"proctab.c",
+			"popen.c",
+			"tran.c",
+			"lib.c",
+			"run.c",
+			"awkgram.c"
+		]
+	}
+}

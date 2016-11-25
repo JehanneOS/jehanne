@@ -1,0 +1,21 @@
+{
+	"hjfs": {
+		"Include": [
+			"../cmd.json"
+		],
+		"Install": "/arch/$ARCH/cmd/",
+		"Program": "hjfs",
+		"SourceFiles": [
+			"9p.c",
+			"auth.c",
+			"buf.c",
+			"cons.c",
+			"conv.c",
+			"dev.c",
+			"dump.c",
+			"fs1.c",
+			"fs2.c",
+			"main.c"
+		]
+	}
+}

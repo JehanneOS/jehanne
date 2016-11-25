@@ -1,0 +1,18 @@
+{
+	"libdisk": {
+		"Cflags": [
+			"-Werror"
+		],
+		"Include": [
+			"../lib.json"
+		],
+		"Install": "/arch/$ARCH/lib/",
+		"Library": "libdisk.a",
+		"SourceFiles": [
+			"disk.c",
+			"proto.c",
+			"scsi.c",
+			"scsierrs.c"
+		]
+	}
+}

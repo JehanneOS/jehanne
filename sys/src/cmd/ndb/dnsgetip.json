@@ -1,0 +1,20 @@
+{
+	"dnsdebug": {
+		"Include": [
+			"/sys/src/cmd/cmd.json"
+		],
+		"Install": "/arch/$ARCH/cmd/ndb/",
+		"Program": "dnsgetip",
+		"SourceFiles": [
+			"convDNS2M.c",
+			"convM2DNS.c",
+			"dblookup.c",
+			"dn.c",
+			"dnarea.c",
+			"dnresolve.c",
+			"dnserver.c",
+			"dnsgetip.c",
+			"idn.c"
+		]
+	}
+}

@@ -1,0 +1,45 @@
+boot 500 sys sys /sys/src/kern/boot/bootAmd64CPU.elf.out
+startdisk 500 sys sys ../amd64/startdisk
+nvram 400 sys sys /hacking/nvram
+cmd
+	awk 500 sys sys /arch/amd64/cmd/awk
+	grep 500 sys sys /arch/amd64/cmd/grep
+	sed 500 sys sys /arch/amd64/cmd/sed
+	mkdir 500 sys sys /arch/amd64/cmd/mkdir
+	test 500 sys sys /arch/amd64/cmd/test
+	bind 500 sys sys /arch/amd64/cmd/bind
+	dossrv 500 sys sys /arch/amd64/cmd/dossrv
+	cat 500 sys sys /arch/amd64/cmd/cat
+	date 500 sys sys /arch/amd64/cmd/date
+	echo 500 sys sys /arch/amd64/cmd/echo
+	hjfs 500 sys sys /arch/amd64/cmd/hjfs
+	mount 500 sys sys /arch/amd64/cmd/mount
+	rc 500 sys sys /arch/amd64/cmd/rc
+	ls 500 sys sys /arch/amd64/cmd/ls
+	srv 500 sys sys /arch/amd64/cmd/srv
+	usbrc 500 sys sys /sys/src/kern/boot/usbrc
+	diskparts 500 sys sys /arch/rc/cmd/diskparts
+	fstype 500 sys sys /arch/rc/cmd/fstype
+	xd  500 sys sys /arch/amd64/cmd/xd
+	dd  500 sys sys /arch/amd64/cmd/dd
+	sleep  500 sys sys /arch/amd64/cmd/sleep
+	auth
+		factotum 500 sys sys /arch/amd64/cmd/auth/factotum
+	disk
+		fdisk 500 sys sys /arch/amd64/cmd/disk/fdisk
+		prep 500 sys sys /arch/amd64/cmd/disk/prep
+	ip
+		ipconfig 500 sys sys /arch/amd64/cmd/ip/ipconfig
+	hmi
+		screenconsole 500 sys sys /arch/amd64/cmd/hmi/screenconsole
+	usb
+		usbd 500 sys sys /arch/amd64/cmd/usb/usbd
+		disk 500 sys sys /arch/amd64/cmd/usb/disk
+		ether 500 sys sys /arch/amd64/cmd/usb/disk
+		kb 500 sys sys /arch/amd64/cmd/usb/disk
+#	mc 500 sys sys /arch/amd64/cmd/mc
+#	lc 500 sys sys /arch/rc/cmd/lc
+arch
+	rc
+		lib
+			rcmain 500 sys sys /arch/rc/lib/rcmain

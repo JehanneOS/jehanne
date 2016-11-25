@@ -1,0 +1,16 @@
+{
+	"rsa2x509": {
+		"Include": [
+			"../cmd.json"
+		],
+		"Install": "/arch/$ARCH/bin/auth/",
+		"Oflags": [
+			"lib/libauthcmd.a"
+		],
+		"Program": "rsa2x509",
+		"SourceFiles": [
+			"rsa2x509.c",
+			"rsa2any.c"
+		]
+	}
+}

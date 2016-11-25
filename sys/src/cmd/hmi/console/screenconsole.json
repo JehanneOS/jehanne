@@ -1,0 +1,25 @@
+{
+	"ScreenConsole": {
+		"Cflags": [
+			"-Werror"
+		],
+		"Include": [
+			"/arch/$ARCH/include/cflags.json"
+		],
+		"Install": "/arch/$ARCH/cmd/hmi",
+		"Oflags": [
+			"-static",
+			"-l9p2000",
+			"-lc"
+		],
+		"Program": "screenconsole",
+		"SourceFiles": [
+			"buffer.c",
+			"cga.c",
+			"screenconsole.c",
+			"keyboard.c",
+			"serve9p.c",
+			"utils.c"
+		]
+	}
+}

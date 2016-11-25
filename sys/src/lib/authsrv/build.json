@@ -1,0 +1,33 @@
+{
+	"libauthsrv": {
+		"Cflags": [
+			"-Werror"
+		],
+		"Include": [
+			"../lib.json"
+		],
+		"Install": "/arch/$ARCH/lib/",
+		"Library": "libauthsrv.a",
+		"SourceFiles": [
+			"_asgetpakkey.c",
+			"_asgetticket.c",
+			"_asgetresp.c",
+			"_asrequest.c",
+			"_asrdresp.c",
+			"authpak.c",
+			"authdial.c",
+			"convA2M.c",
+			"convM2A.c",
+			"convM2PR.c",
+			"convM2T.c",
+			"convM2TR.c",
+			"convPR2M.c",
+			"convT2M.c",
+			"convTR2M.c",
+			"form1.c",
+			"nvcsum.c",
+			"passtokey.c",
+			"readnvram.c"
+		]
+	}
+}

@@ -1,0 +1,33 @@
+{
+	"Libusb": {
+		"Cflags": [
+			"-fasm",
+			"-Werror"
+		],
+		"Include": [
+			"/sys/src/lib/lib.json"
+		],
+		"Library": "libusb.a",
+		"Install": "./lib/",
+		"SourceFiles": [
+			"lib/dev.c",
+			"lib/dump.c",
+			"lib/parse.c"
+		]
+	},
+	"USB": {
+		"Projects": [
+			"audio/",
+			"disk/",
+			"ether/",
+			"joy/",
+			"kb/",
+			"ptp/",
+			"serial/",
+			"usbd/"
+		],
+		"Post": [
+			"git clean -xdf ."
+		]
+	}
+}

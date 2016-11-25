@@ -1,0 +1,14 @@
+{
+	"dhcpleases": {
+		"Include": [
+			"/sys/src/cmd/cmd.json"
+		],
+		"Install": "/arch/$ARCH/cmd/ip",
+		"Program": "dhcpleases",
+		"SourceFiles": [
+			"dhcpleases.c",
+			"db.c",
+			"ping.c"
+		]
+	}
+}

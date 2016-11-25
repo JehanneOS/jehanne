@@ -1,0 +1,18 @@
+{
+	"disk": {
+		"Include": [
+			"../cmd.json"
+		],
+		"Install": "/arch/$ARCH/cmd/disk/",
+		"Projects": [
+			"prep/prep.json",
+			"prep/fdisk.json",
+			"rofs/"
+		],
+		"SourceFilesCmd": [
+			"format.c",
+			"mkext.c",
+			"mkfs.c"
+		]
+	}
+}

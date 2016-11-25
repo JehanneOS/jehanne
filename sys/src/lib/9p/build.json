@@ -1,0 +1,31 @@
+{
+	"lib9p": {
+		"Cflags": [
+			"-Werror",
+			"-DPORTABLE_SYSCALLS"
+		],
+		"Include": [
+			"../lib.json"
+		],
+		"Install": "/arch/$ARCH/lib/",
+		"Library": "lib9p.a",
+		"SourceFiles": [
+			"auth.c",
+			"dirread.c",
+			"fid.c",
+			"file.c",
+			"intmap.c",
+			"listen.c",
+			"mem.c",
+			"queue.c",
+			"req.c",
+			"parse.c",
+			"post.c",
+			"rfork.c",
+			"srv.c",
+			"thread.c",
+			"uid.c",
+			"util.c"
+		]
+	}
+}

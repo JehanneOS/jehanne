@@ -1,0 +1,45 @@
+#!/cmd/rc
+
+if(! test -e '#σ/usb/usbevent')
+	exit
+if(! bind -a '#u' /dev)
+	exit
+@{
+	rfork ne
+	fn attach {
+		id=$1
+		if(~ $#* 5 && ! test -e /env/nousbhname)
+			id=$1:$5
+		switch($4){
+		case *01
+			usb/audio $id
+		case *02
+			# serial and ethernet
+			usb/serial $id
+			# handled /sys/src/kern/boot/nusbrc
+			# usb/ether $id
+		case *03
+			# handled /sys/src/kern/boot/nusbrc
+			# usb/kb $id
+		case *08
+			# handled /sys/src/kern/boot/nusbrc
+			# usb/disk $id
+		case 010106
+			usb/ptp $id
+		case *
+			# HUAWEI E220 modem
+			if(~ $2$3 12d11003)
+				usb/serial $id
+			# FTDI
+			if(~ $2 0403)
+				usb/serial $id
+		}
+	}
+	fn detach {
+		# handled /sys/src/kern/boot/nusbrc
+	}
+	rc < '#σ/usb/usbevent' &
+}
+
+bind -qa '#σ/usb' /dev
+bind -qa '#σ/usbnet' /net

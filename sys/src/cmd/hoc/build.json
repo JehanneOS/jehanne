@@ -1,0 +1,22 @@
+{
+	"hoc": {
+		"Include": [
+			"../cmd.json"
+		],
+		"Install": "/arch/$ARCH/cmd/",
+		"Post": [
+			"rm -f $JEHANNE/sys/src/cmd/hoc/y.tab.[ch]"
+		],
+		"Pre": [
+			"yacc -d hoc.y"
+		],
+		"Program": "hoc",
+		"SourceFiles": [
+			"code.c",
+			"init.c",
+			"math.c",
+			"symbol.c",
+			"y.tab.c"
+		]
+	}
+}

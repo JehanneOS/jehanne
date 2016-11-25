@@ -1,0 +1,23 @@
+{
+	"libframe": {
+		"Cflags": [
+			"-Werror"
+		],
+		"Include": [
+			"../lib.json"
+		],
+		"Install": "/arch/$ARCH/lib/",
+		"Library": "libframe.a",
+		"SourceFiles": [
+			"frbox.c",
+			"frdraw.c",
+			"frdelete.c",
+			"frinit.c",
+			"frinsert.c",
+			"frptofchar.c",
+			"frselect.c",
+			"frstr.c",
+			"frutil.c"
+		]
+	}
+}

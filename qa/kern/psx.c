@@ -1,0 +1,44 @@
+/*
+ * This file is part of the UCB release of Plan 9. It is subject to the license
+ * terms in the LICENSE file found in the top-level directory of this
+ * distribution and at http://akaros.cs.berkeley.edu/files/Plan9License. No
+ * part of the UCB release of Plan 9, including this file, may be copied,
+ * modified, propagated, or distributed except according to the terms contained
+ * in the LICENSE file.
+ */
+
+#include <u.h>
+#include <libc.h>
+
+void
+main(int argc, char *argv[])
+{
+	int iter = 1000, i;
+	Waitmsg *w;
+
+	if (argc > 1)
+		iter = strtoul(argv[1], 0, 0);
+	for(i = 0; i < iter; i++) {
+		int pid;
+		pid = fork();
+		if (pid < 0) {
+			print("FAIL: fork()\n");
+			exits("FAIL");
+		}
+		if (pid == 0) {
+			char *args[] = {"ps", nil};
+			exec("/arch/amd64/cmd/ps", args);
+			fprint(2,"Exec fails: %r\n");
+			print("FAIL\n");
+			exits("FAIL");
+		}
+		w = wait();
+		if (w->msg[0] != 0) {
+			print("FAIL: %s\n", w->msg);
+			exits("FAIL");
+		}
+	}
+	// if we get here, we have survived. That's a miracle.
+	print("PASS\n");
+	exits("PASS");
+}

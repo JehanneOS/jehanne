@@ -1,0 +1,16 @@
+{
+	"authsrv": {
+		"Include": [
+			"../cmd.json"
+		],
+		"Install": "/arch/$ARCH/cmd/auth/",
+		"Oflags": [
+			"lib/libauthcmd.a"
+		],
+		"Program": "authsrv",
+		"SourceFiles": [
+			"authsrv.c",
+			"secureidcheck.c"
+		]
+	}
+}

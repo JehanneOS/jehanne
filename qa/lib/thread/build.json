@@ -1,0 +1,11 @@
+{
+	"RegressionTests": {
+		"Include": [
+			"/sys/src/cmd/cmd.json"
+		],
+		"Install": "/arch/$ARCH/qa/lib/thread",
+		"SourceFilesCmd": [
+			"thread.c"
+		]
+	}
+}

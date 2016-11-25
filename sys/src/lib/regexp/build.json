@@ -1,0 +1,21 @@
+{
+	"libregexp": {
+		"Cflags": [
+			"-Werror"
+		],
+		"Include": [
+			"../lib.json"
+		],
+		"Install": "/arch/$ARCH/lib/",
+		"Library": "libregexp.a",
+		"SourceFiles": [
+			"regcomp.c",
+			"regerror.c",
+			"regexec.c",
+			"regsub.c",
+			"regaux.c",
+			"rregexec.c",
+			"rregsub.c"
+		]
+	}
+}

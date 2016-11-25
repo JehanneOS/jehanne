@@ -1,0 +1,79 @@
+#!/cmd/rc
+rfork e
+m=`{dd -if $1 -bs 2048 -skip 16 >[2]/dev/null | xd -c | sed 1q | \
+	sed 's/.........(....................).*/\1/; s/ //g'}
+if(~ $"m 01CD00101){
+	echo 9660
+	exit
+}
+fn fat {
+	m=`{dd -if $1 -bs 1 -count 3 -skip $2 >[2]/dev/null}
+	~ $"m FAT
+}
+if(fat $1 54 || fat $1 82){
+	echo dos
+	exit
+}
+m=`{dd -if $1 -bs 4 -count 1 >[2]/dev/null | xd | sed 's,0000000  ,,;q'}
+if(~ $"m 529ab12b){
+	echo paqfs
+	exit
+}
+if(~ $"m 011ce50d){
+	echo hjfs
+	exit
+}
+m=`{dd -if $1 -bs 16 -count 1 -skip 16 >[2]/dev/null}
+if(~ $"m 'kfs wren device'){
+	echo kfs
+	exit
+}
+dd -if $1 -count 1 >[2]/dev/null | \
+awk '
+/^(blocksize|daddrbits|daddrbits|indirblks|dirblks|namelen)/{p[$1]=$2}
+END{
+	ca["fs", "blocksize"] = 4*1024
+	ca["fs", "namelen"] = 28
+	ca["fs", "dirblks"] = 6
+	ca["fs", "indirblks"] = 2
+	ca["fs", "daddrbits"] = 32
+
+	ca["fs64", "blocksize"] = 8*1024
+	ca["fs64", "namelen"] = 56
+	ca["fs64", "dirblks"] = 6
+	ca["fs64", "indirblks"] = 4
+	ca["fs64", "daddrbits"] = 64
+
+	ca["cwfs", "blocksize"] = 16*1024
+	ca["cwfs", "namelen"] = 28
+	ca["cwfs", "dirblks"] = 6
+	ca["cwfs", "indirblks"] = 2
+	ca["cwfs", "daddrbits"] = 32
+
+	ca["cwfs64", "blocksize"] = 16*1024
+	ca["cwfs64", "namelen"] = 56
+	ca["cwfs64", "dirblks"] = 6
+	ca["cwfs64", "indirblks"] = 4
+	ca["cwfs64", "daddrbits"] = 64
+
+	ca["cwfs64x", "blocksize"] = 16*1024
+	ca["cwfs64x", "namelen"] = 144
+	ca["cwfs64x", "dirblks"] = 6
+	ca["cwfs64x", "indirblks"] = 4
+	ca["cwfs64x", "daddrbits"] = 64
+
+	for(e in ca){
+		split(e, k, SUBSEP)
+		if(ca[k[1],k[2]] == p[k[2]])
+			fs[k[1]]++
+	}
+	for(i in fs)
+		if(fs[i] > fs[j])
+			j=i
+	if(fs[j]){
+		print j
+		exit
+	}
+	exit 1
+}
+'

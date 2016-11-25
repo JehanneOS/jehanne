@@ -1,0 +1,16 @@
+{
+	"rsafill": {
+		"Include": [
+			"../cmd.json"
+		],
+		"Install": "/arch/$ARCH/bin/auth/",
+		"Oflags": [
+			"lib/libauthcmd.a"
+		],
+		"Program": "rsafill",
+		"SourceFiles": [
+			"rsafill.c",
+			"rsa2any.c"
+		]
+	}
+}

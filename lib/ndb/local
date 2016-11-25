@@ -1,0 +1,4 @@
+#
+#  because the public demands the name localsource
+#
+ip=127.0.0.1 sys=localhost dom=localhost

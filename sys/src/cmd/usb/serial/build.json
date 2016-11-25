@@ -1,0 +1,16 @@
+{
+	"serial": {
+		"Include": [
+			"../cmd.json"
+		],
+		"Install": "/arch/$ARCH/cmd/usb/",
+		"Program": "serial",
+	 	"SourceFiles": [
+			"ftdi.c",
+			"prolific.c",
+			"serial.c",
+			"silabs.c",
+			"ucons.c"
+		]
+	}
+}

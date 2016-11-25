@@ -1,0 +1,11 @@
+{
+	"ptp": {
+		"Include": [
+			"../cmd.json"
+		],
+		"Install": "/arch/$ARCH/cmd/usb/",
+	 	"SourceFilesCmd": [
+			"ptp.c"
+		]
+	}
+}

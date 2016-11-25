@@ -1,0 +1,16 @@
+{
+	"rsa2ssh": {
+		"Include": [
+			"../cmd.json"
+		],
+		"Install": "/arch/$ARCH/bin/auth/",
+		"Oflags": [
+			"lib/libauthcmd.a"
+		],
+		"Program": "rsa2ssh",
+		"SourceFiles": [
+			"rsa2ssh.c",
+			"rsa2any.c"
+		]
+	}
+}

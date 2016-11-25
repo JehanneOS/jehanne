@@ -1,0 +1,11 @@
+{
+	"kb": {
+		"Include": [
+			"../cmd.json"
+		],
+		"Install": "/arch/$ARCH/cmd/usb/",
+	 	"SourceFilesCmd": [
+			"kb.c"
+		]
+	}
+}

@@ -1,0 +1,29 @@
+{
+	"libauthcmd": {
+		"Cflags": [
+			"-I../"
+		],
+		"Include": [
+			"../../../lib/lib.json"
+		],
+		"Library": "libauthcmd.a",
+		"Install": "./",
+		"SourceFiles": [
+			"keyfmt.c",
+			"netcheck.c",
+			"okpasswd.c",
+			"readwrite.c",
+			"readarg.c",
+			"readln.c",
+			"getauthkey.c",
+			"log.c",
+			"error.c",
+			"fs.c",
+			"rdbio.c",
+			"querybio.c",
+			"wrbio.c",
+			"private.c",
+			"getexpiration.c"
+		]
+	}
+}

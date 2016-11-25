@@ -1,8 +1,12 @@
 {
 	"all": {
 		"Projects": [
-			"/sys/src/klibs.json",
-			"/sys/src/libs.json"
+			"/sys/src/lib/klibs.json",
+			"/sys/src/lib/libs.json",
+			"/sys/src/cmd/cmds.json",
+			"/sys/src/kern/amd64/workhorse.json",
+			"/sys/src/kern/amd64/",
+			"qa/"
 		]
 	}
 }

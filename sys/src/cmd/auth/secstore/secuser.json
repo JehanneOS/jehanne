@@ -1,0 +1,16 @@
+{
+	"secuser": {
+		"Include": [
+			"../../cmd.json"
+		],
+		"Install": "/arch/$ARCH/cmd/auth/",
+		"Program": "secuser",
+		"SourceFiles": [
+			"pak.c",
+			"password.c",
+			"SConn.c",
+			"secuser.c",
+			"util.c"
+		]
+	}
+}

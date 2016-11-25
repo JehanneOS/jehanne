@@ -1,0 +1,15 @@
+{
+	"libavl": {
+		"Cflags": [
+			"-Werror"
+		],
+		"Include": [
+			"../lib.json"
+		],
+		"Install": "/arch/$ARCH/lib/",
+		"Library": "libavl.a",
+		"SourceFiles": [
+			"avl.c"
+		]
+	}
+}

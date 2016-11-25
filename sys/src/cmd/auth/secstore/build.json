@@ -1,0 +1,21 @@
+{
+	"secstore": {
+		"Include": [
+			"../../cmd.json"
+		],
+		"Install": "/arch/$ARCH/cmd/auth/",
+		"Program": "secstore",
+		"Projects": [
+			"aescbc.json",
+			"secstored.json",
+			"secuser.json"
+		],
+		"SourceFiles": [
+			"pak.c",
+			"password.c",
+			"secstore.c",
+			"SConn.c",
+			"util.c"
+		]
+	}
+}

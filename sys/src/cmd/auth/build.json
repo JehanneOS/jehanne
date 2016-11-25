@@ -1,0 +1,50 @@
+{
+	"Auth": {
+		"Include": [
+			"../cmd.json"
+		],
+		"Install": "/arch/$ARCH/cmd/auth/",
+		"Oflags": [
+			"lib/libauthcmd.a"
+		],
+		"Projects": [
+			"lib/libauthcmd.json",
+			"factotum/",
+			"secstore/",
+			"authsrv.json",
+			"dsa2pub.json",
+			"dsa2ssh.json",
+			"guard.srv.json",
+			"rsa2csr.json",
+			"rsa2pub.json",
+			"rsa2ssh.json",
+			"rsa2x509.json",
+			"rsafill.json"
+		],
+		"SourceFilesCmd": [
+			"as.c",
+			"asn12dsa.c",
+			"asn12rsa.c",
+			"changeuser.c",
+			"convkeys.c",
+			"cron.c",
+			"debug.c",
+			"dsagen.c",
+			"httpauth.c",
+			"keyfs.c",
+			"login.c",
+			"newns.c",
+			"none.c",
+			"passwd.c",
+			"pemdecode.c",
+			"pemencode.c",
+			"printnetkey.c",
+			"readnvram.c",
+			"rsagen.c",
+			"uniq.c",
+			"userpasswd.c",
+			"warning.c",
+			"wrkey.c"
+		]
+	}
+}

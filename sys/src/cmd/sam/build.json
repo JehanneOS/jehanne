@@ -1,0 +1,31 @@
+{
+	"sam": {
+		"Include": [
+			"../cmd.json"
+		],
+		"Install": "/arch/$ARCH/cmd/",
+		"Program": "sam",
+	 	"SourceFiles": [
+			"address.c",
+			"buff.c",
+			"cmd.c",
+			"disk.c",
+			"error.c",
+			"file.c",
+			"io.c",
+			"list.c",
+			"mesg.c",
+			"moveto.c",
+			"multi.c",
+			"plan9.c",
+			"rasp.c",
+			"regexp.c",
+			"sam.c",
+			"shell.c",
+			"string.c",
+			"sys.c",
+			"util.c",
+			"xec.c"
+		]
+	}
+}

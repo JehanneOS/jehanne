@@ -1,0 +1,14 @@
+{
+	"ipconfig": {
+		"Include": [
+			"../../cmd.json"
+		],
+		"Install": "/arch/$ARCH/cmd/ip",
+		"Program": "ipconfig",
+		"SourceFiles": [
+			"ipv6.c",
+			"main.c",
+			"ppp.c"
+		]
+	}
+}

@@ -1,0 +1,15 @@
+{
+	"libcomplete": {
+		"Cflags": [
+			"-Werror"
+		],
+		"Include": [
+			"../lib.json"
+		],
+		"Install": "/arch/$ARCH/lib/",
+		"Library": "libcomplete.a",
+		"SourceFiles": [
+			"complete.c"
+		]
+	}
+}

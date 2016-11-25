@@ -1,0 +1,18 @@
+{
+	"Cmd": {
+		"Include": [
+			"/sys/src/cmd/cmd.json"
+		],
+		"CFlags": [
+			"-Werror"
+		],
+		"Projects": [
+			"win/"
+		],
+		"Install": "/arch/$ARCH/aux/acme",
+		"SourceFilesCmd": [
+			"mkwnew.c",
+			"awd.c"
+		]
+	}
+}

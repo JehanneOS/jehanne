@@ -2,7 +2,7 @@ language: c
 install:
 - git submodule init
 - git submodule update --init --recursive --remote
-- ./hacking/buildtools.sh
+- ./hacking/buildtools.sh --no-drawterm
 script:
 - ./hacking/continuous-build.sh
 compiler:

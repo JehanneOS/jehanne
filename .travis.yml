@@ -1,6 +1,17 @@
 language: c
-install:
-- git submodule init
+git:
+  submodules: false
+sudo: required
+dist: trusty
+cache:
+  timeout: 1200
+  directories:
+  - tmp/toolchain/
+before_install:
+- sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
+- sudo add-apt-repository ppa:ubuntu-lxc/lxd-stable -y
+- sudo apt-get update
+- sudo apt-get install -y --force-yes $CC rc golang build-essential bison qemu-system
 - git submodule update --init --recursive --remote
 script:
 - ./hacking/continuous-build.sh

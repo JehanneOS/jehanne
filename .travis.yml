@@ -30,6 +30,6 @@ addons:
       name: JehanneOS/jehanne
       description: Build submitted via Travis CI
     notification_email: jehanneos@googlegroups.com
-    build_command_prepend: "cov-configure --template --comptype gcc --compiler $JEHANNE/hacking/cross/toolchain/bin/x86_64-jehanne-gcc"
+    build_command_prepend: "cov-configure --template --comptype gcc --compiler x86_64-jehanne-gcc"
     build_command: "./hacking/coverity-scan.sh"
     branch_pattern: coverity_scan

@@ -11,8 +11,9 @@ before_install:
 - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
 - sudo add-apt-repository ppa:ubuntu-lxc/lxd-stable -y
 - sudo apt-get update
-- sudo apt-get install -y --force-yes $CC rc golang build-essential bison qemu-system
+- sudo apt-get install -y --force-yes gcc-4.8 rc golang build-essential bison qemu-system
 - git submodule update --init --recursive --remote
+- ./hacking/coverity-scan.sh prepare
 script:
 - ./hacking/continuous-build.sh
 compiler:
@@ -24,12 +25,6 @@ env:
   - PATH=$PATH:$JEHANNE/hacking/cross/toolchain/bin:$JEHANNE/hacking/bin
   - secure: eu81pAD2iXg3b/rm9VYf+8bnlg09IpXdw/WMNeiXqxULCoNZI/1N7oEmLSBvqI068x+mzr6eT0P1C8zVm3wxhTSWs2JKzF0klIe4Tj0S2CjSGDx1GenO2zDdH9mSCvnx8a6xvNzms8O3xOGbV4jzolmckJYi2mLqZwtIxmShMijj8Ou046IMXhchEGFd5bx6rwN01OhFcTUVIHS73CMzZJQxXpT5zjuVDXKSnuX3BnTGHCTNNyoVmnomuvwNZmUch0q/SI8tlYzhsQrz77aZXMBkVqpFM5aTE/fOwgmwEf0Gc8kwa3YtQboxPxlXafn4ygVczMUI9mIXS2ql7ek1Mptxsx3IJUiou9iG31IhN7Pi7DyTIwGTcG6FvDw73oOL3zUY+DTfipNVDaN1GTM8ZPWJ0A/s7V9M+7sUqRyJ4sTpjPtPEmCBtDSDfFIXpq54LcjHAGyTjqveCcm/Wn2kTpxrABrQxPGVLbrGgT7dsZx6eD/vIfgbhKLj6NZUyWoDhErv0NFX7ZIG6brsvHAcY7YLu/NlW398VzwTgu38Fy180TRT/zrhxfTvsnhnrN0Jn/kr60CSXi8Fh1yaMl1vY6tcf662mGoX+pwvobGEJzDJYfMWkLjjq02jbV+nd7VkB3B9vgJtV1xfroGH2gN94iFZxg6FLwBpONWHbmh/JjY=
 addons:
-  apt:
-    sources:
-    - ubuntu-toolchain-r-test
-    packages:
-    - rc
-    - gcc-4.8
   coverity_scan:
     project:
       name: JehanneOS/jehanne

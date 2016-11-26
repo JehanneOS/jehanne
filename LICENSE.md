@@ -1,6 +1,6 @@
 ## License ##
 
-Jehanne inherits a lot of code from Plan9 through Harvey.
+Jehanne inherits a lot of code from Plan9 through [Plan9-9k][plan9-9k], [9front][9front] and [Harvey][harvey].
 
 Plan9 code is modified and redistributed under GNU General Public License, Version 2
 as explained in licence/LICENSE.Plan9.txt.
@@ -16,3 +16,7 @@ Jehanne contains a number of third-party packages under various licenses.
 They are retrieved from their respective sources - licenses 
 for these packages are not included here, but should be available 
 from the respective directories in /sys/src or /pkg.
+
+[harvey]: http://harvey-os.org "Harvey OS"
+[9front]: http://9front.org/ "THE PLAN FELL OFF"
+[plan9-9k]: https://bitbucket.org/forsyth/plan9-9k "Experimental 64-bit Plan 9 kernel"

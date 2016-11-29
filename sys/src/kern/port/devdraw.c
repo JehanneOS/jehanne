@@ -2214,9 +2214,9 @@ drawactive(int active)
 {
 	if(active){
 		drawblankscreen(0);
-		sdraw.blanktime = m->ticks;
+		sdraw.blanktime = sys->ticks;
 	}else{
-		if(blanktime && sdraw.blanktime && TK2SEC(m->ticks - sdraw.blanktime)/60 >= blanktime)
+		if(blanktime && sdraw.blanktime && TK2SEC(sys->ticks - sdraw.blanktime)/60 >= blanktime)
 			drawblankscreen(1);
 	}
 }

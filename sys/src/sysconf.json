@@ -80,7 +80,7 @@
 			"Id": 5,
 			"Name": "close",
 			"Ret": [
-				"int"
+				"long"
 			]
 		},
 		{
@@ -92,7 +92,7 @@
 			"Id": 6,
 			"Name": "create",
 			"Ret": [
-				"int"
+				"long"
 			]
 		},
 		{
@@ -170,7 +170,7 @@
 			"Id": 13,
 			"Name": "fstat",
 			"Ret": [
-				"int"
+				"long"
 			]
 		},
 		{
@@ -195,7 +195,7 @@
 			"Id": 15,
 			"Name": "fwstat",
 			"Ret": [
-				"int32_t"
+				"long"
 			]
 		},
 		{
@@ -248,7 +248,7 @@
 			"Id": 20,
 			"Name": "open",
 			"Ret": [
-				"int"
+				"long"
 			]
 		},
 		{
@@ -294,7 +294,7 @@
 			"Id": 24,
 			"Name": "remove",
 			"Ret": [
-				"int"
+				"long"
 			]
 		},
 		{

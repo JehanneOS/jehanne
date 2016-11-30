@@ -10,7 +10,7 @@
 #include <u.h>
 #include <libc.h>
 #include <auth.h>
-#include <fcall.h>
+#include <9P2000.h>
 #include "../boot/boot.h"
 
 char	cputype[64];
@@ -153,7 +153,7 @@ print("\n");
 		if(ai == nil)
 			print("authentication failed (%r), trying mount anyways\n");
 	}
-	if(mount(fd, afd, "/root", MREPL|MCREATE, rp, 'M') < 0)
+	if(mount(fd, afd, "/root", MREPL|MCREATE, rp, '9') < 0)
 		fatal("mount /");
 	rsp = rp;
 	rp = getenv("rootdir");
@@ -364,7 +364,7 @@ startconsole(void)
 	/* replace 0, 1 and 2 */
 	if((i = open("#s/screenconsole", ORDWR)) < 0)
 		fatal("open #s/screenconsole");
-	if(mount(i, -1, "/dev", MBEFORE, "", 'M') < 0)
+	if(mount(i, -1, "/dev", MBEFORE, "", '9') < 0)
 		fatal("mount /dev");
 	if((i = open("/dev/cons", OREAD))<0)
 		fatal("open /dev/cons, OREAD");
@@ -419,7 +419,7 @@ startcomconsole(void)
 	/* replace 0, 1 and 2 */
 	if((i = open("#s/comconsole", ORDWR)) < 0)
 		fatal("open #s/comconsole");
-	if(mount(i, -1, "/dev", MBEFORE, "", 'M') < 0)
+	if(mount(i, -1, "/dev", MBEFORE, "", '9') < 0)
 		fatal("mount /dev");
 	if((i = open("/dev/cons", OREAD))<0)
 		fatal("open /dev/cons, OREAD");

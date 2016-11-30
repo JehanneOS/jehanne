@@ -54,10 +54,10 @@ passthrough(int input, int output)
 
 	debug("%s (%d) shut down (r = %d, w = %d)\n", name, pid, r, w);
 	if(r < 0)
-		exits("read");
+		exits("passthrough: read");
 	if(w < 0)
-		exits("write");
+		exits("passthrough: write");
 	if(w < r)
-		exits("i/o error");
+		exits("passthrough: i/o error");
 	exits(nil);
 }

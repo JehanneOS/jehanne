@@ -20,7 +20,7 @@ char *tmpnam(char *s){
 		while(*p=='9') *p++='0';
 		if(*p=='\0') return NULL;
 		++*p;
-	}while(access(name, 0)==0);
+	}while(access(name, AEXIST)==0);
 	if(s){
 		strcpy(s, name);
 		return s;

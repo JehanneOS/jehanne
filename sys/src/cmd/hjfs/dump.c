@@ -1,6 +1,7 @@
 #include <u.h>
 #include <libc.h>
 #include <thread.h>
+#include <9P2000.h>
 #include "dat.h"
 #include "fns.h"
 
@@ -79,7 +80,7 @@ fsdump(Fs *fs)
 	}
 	if(chanwalk(ch, buf) < 0){
 		chh = chanclone(ch);
-		rc = chancreat(chh, buf, DMDIR|0555, OREAD);
+		rc = chancreat(chh, buf, DMDIR|0555, NP_OREAD);
 		chanclunk(chh);
 		if(rc < 0)
 			goto err;

@@ -759,7 +759,7 @@ lookforip(char *net)
 	char proto[64];
 
 	snprint(proto, sizeof proto, "%s/ipifc", net);
-	if(access(proto, 0) == 0)
+	if(access(proto, AEXIST) == 0)
 		return;
 	sysfatal("no ip stack bound onto %s", net);
 }

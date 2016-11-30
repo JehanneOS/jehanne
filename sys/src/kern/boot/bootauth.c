@@ -10,7 +10,7 @@
 #include <u.h>
 #include <libc.h>
 #include <auth.h>
-#include <fcall.h>
+#include <9P2000.h>
 #include "../boot/boot.h"
 
 char	*authaddr;
@@ -56,7 +56,7 @@ authentication(int cpuflag)
 	}
 
 	/* wait for agent to really be there */
-	while(access("/mnt/factotum", 0) < 0)
+	while(access("/mnt/factotum", AEXIST) < 0)
 		sleep(250);
 
 	if(cpuflag)

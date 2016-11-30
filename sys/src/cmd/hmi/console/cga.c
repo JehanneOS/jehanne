@@ -133,8 +133,8 @@ writecga(int conswrites, int device)
 
 	debug("writecga %d: shut down (r = %d, w = %d)\n", pid, r, w);
 	if(r < 0)
-		exits("read");
+		exits("writecga: read");
 	if(w < 0)
-		exits("write");
+		exits("writecga: write");
 	exits(nil);
 }

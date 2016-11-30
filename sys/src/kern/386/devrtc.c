@@ -80,7 +80,7 @@ rtcstat(Chan* c, uint8_t* dp, long n)
 }
 
 static Chan*
-rtcopen(Chan* c, int omode)
+rtcopen(Chan* c, unsigned long omode)
 {
 	return devopen(c, openmode(omode), rtcdir, nelem(rtcdir), devgen);
 }

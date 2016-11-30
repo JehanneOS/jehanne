@@ -10,7 +10,7 @@
 #include <u.h>
 #include <libc.h>
 #include <auth.h>
-#include <fcall.h>
+#include <9P2000.h>
 #include "iotrack.h"
 #include "dat.h"
 #include "dosfs.h"
@@ -204,7 +204,7 @@ ropen(void)
 	}
 	dp = f->ptr;
 	omode = 0;
-	if(!isroot(dp->paddr) && (req->mode & ORCLOSE)){
+	if(!isroot(dp->paddr) && (req->mode & NP_ORCLOSE)){
 		/*
 		 * check on parent directory of file to be deleted
 		 */
@@ -220,7 +220,7 @@ ropen(void)
 			return;
 		}
 		omode |= Orclose;
-	}else if(req->mode & ORCLOSE)
+	}else if(req->mode & NP_ORCLOSE)
 		omode |= Orclose;
 	if(getfile(f) < 0){
 		errno = Enonexist;
@@ -231,14 +231,14 @@ ropen(void)
 	else
 		attr = DDIR;
 	switch(req->mode & 7){
-	case OREAD:
-	case OEXEC:
+	case NP_OREAD:
+	case NP_OEXEC:
 		omode |= Oread;
 		break;
-	case ORDWR:
+	case NP_ORDWR:
 		omode |= Oread;
 		/* fall through */
-	case OWRITE:
+	case NP_OWRITE:
 		omode |= Owrite;
 		if(attr & DRONLY){
 			errno = Eperm;
@@ -249,7 +249,7 @@ ropen(void)
 		errno = Eio;
 		goto out;
 	}
-	if(req->mode & OTRUNC){
+	if(req->mode & NP_OTRUNC){
 		if(attr & DDIR || attr & DRONLY){
 			errno = Eperm;
 			goto out;
@@ -383,17 +383,17 @@ badperm:
 		return;
 	}
 	omode = 0;
-	if(req->mode & ORCLOSE)
+	if(req->mode & NP_ORCLOSE)
 		omode |= Orclose;
 	switch(req->mode & 7){
-	case OREAD:
-	case OEXEC:
+	case NP_OREAD:
+	case NP_OEXEC:
 		omode |= Oread;
 		break;
-	case ORDWR:
+	case NP_ORDWR:
 		omode |= Oread;
 		/* fall through */
-	case OWRITE:
+	case NP_OWRITE:
 		omode |= Owrite;
 		if(req->perm & DMDIR)
 			goto badperm;
@@ -586,7 +586,7 @@ doremove(Xfs *xf, Dosptr *dp)
 			p->flags |= BMOD;
 		}
 		putsect(p);
-	}		
+	}
 }
 
 void

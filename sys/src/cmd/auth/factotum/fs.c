@@ -249,11 +249,11 @@ static struct {
 	uint32_t perm;
 } dirtab[] = {
 	"confirm",	Qconfirm,	0600|DMEXCL,		/* we know this is slot #0 below */
-	"needkey", Qneedkey,	0600|DMEXCL,		/* we know this is slot #1 below */
-	"ctl",		Qctl,			0644,
-	"rpc",	Qrpc,		0666,
+	"needkey", 	Qneedkey,	0600|DMEXCL,		/* we know this is slot #1 below */
+	"ctl",		Qctl,		0644,
+	"rpc",		Qrpc,		0666,
 	"proto",	Qprotolist,	0444,
-	"log",	Qlog,		0400|DMEXCL,
+	"log",		Qlog,		0400|DMEXCL,
 };
 static int inuse[nelem(dirtab)];
 int *confirminuse = &inuse[0];
@@ -349,14 +349,14 @@ fsstat(Req *r)
 			respond(r, nil);
 			return;
 		}
-	respond(r, "file not found");	
+	respond(r, "file not found");
 }
 
 static void
 fsopen(Req *r)
 {
 	int i, *p, perm;
-	static int need[4] = {4, 2, 6, 1};
+	static int need[8] = {0, 4, 2, 6, 1, 0xff, 0xff, 0xff};
 	int n;
 	Fsstate *fss;
 
@@ -375,7 +375,7 @@ fsopen(Req *r)
 		perm = 5;
 
 	n = need[r->ifcall.mode&3];
-	if((r->ifcall.mode&~(3|OTRUNC)) || ((perm&n) != n)){
+	if((r->ifcall.mode&~(3|NP_OTRUNC)) || ((perm&n) != n)){
 		respond(r, "permission denied");
 		return;
 	}

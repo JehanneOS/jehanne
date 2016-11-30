@@ -64,13 +64,13 @@ print("ipconfig...");
 	if(access(ipconfigPath, AEXEC) < 0)
 		fatal("cannot access ipconfig");
 
-	if(access("#l0", 0) == 0 && bind("#l0", mpoint, MAFTER) < 0)
+	if(access("#l0", AEXIST) == 0 && bind("#l0", mpoint, MAFTER) < 0)
 		print("bind #l0: %r\n");
-	if(access("#l1", 0) == 0 && bind("#l1", mpoint, MAFTER) < 0)
+	if(access("#l1", AEXIST) == 0 && bind("#l1", mpoint, MAFTER) < 0)
 		print("bind #l1: %r\n");
-	if(access("#l2", 0) == 0 && bind("#l2", mpoint, MAFTER) < 0)
+	if(access("#l2", AEXIST) == 0 && bind("#l2", mpoint, MAFTER) < 0)
 		print("bind #l2: %r\n");
-	if(access("#l3", 0) == 0 && bind("#l3", mpoint, MAFTER) < 0)
+	if(access("#l3", AEXIST) == 0 && bind("#l3", mpoint, MAFTER) < 0)
 		print("bind #l3: %r\n");
 	werrstr("");
 

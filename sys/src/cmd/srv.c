@@ -169,7 +169,7 @@ main(int argc, char *argv[])
 Again:
 	try++;
 
-	if(access(srv, 0) == 0){
+	if(access(srv, AEXIST) == 0){
 		if(domount){
 			fd = open(srv, ORDWR);
 			if(fd >= 0)
@@ -206,7 +206,7 @@ Mount:
 	if(domount == 0 || reallymount == 0)
 		exits(0);
 
-	if((!doauth && mount(fd, -1, mtpt, mountflag, "", 'M') < 0)
+	if((!doauth && mount(fd, -1, mtpt, mountflag, "", '9') < 0)
 	|| (doauth && amount(fd, mtpt, mountflag, "") < 0)){
 		err[0] = 0;
 		errstr(err, sizeof err);

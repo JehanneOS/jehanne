@@ -393,7 +393,7 @@ shrstat(Chan *c, uint8_t *db, long n)
 }
 
 static Chan*
-shropen(Chan *c, int omode)
+shropen(Chan *c, unsigned long omode)
 {
 	Chan *nc;
 	Sch *sch;
@@ -448,7 +448,7 @@ shropen(Chan *c, int omode)
 Chan* createdir(Chan *c, Mhead *m);
 
 static Chan*
-shrcreate(Chan *c, char *name, int omode, int perm)
+shrcreate(Chan *c, char *name, unsigned long omode, unsigned long perm)
 {
 	Sch *sch;
 	Shr *shr;

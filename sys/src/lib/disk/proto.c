@@ -2,7 +2,7 @@
 #include <libc.h>
 #include <bio.h>
 #include <auth.h>
-#include <fcall.h>
+#include <9P2000.h>
 #include <disk.h>
 #include <regexp.h>
 

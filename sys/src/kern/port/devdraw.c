@@ -1046,7 +1046,7 @@ drawstat(Chan *c, uint8_t *db, long n)
 }
 
 static Chan*
-drawopen(Chan *c, int omode)
+drawopen(Chan *c, unsigned long omode)
 {
 	Client *cl;
 	DName *dn;

@@ -551,21 +551,26 @@ extern	void		freenetconninfo(NetConnInfo*);
 #define	MCACHE	0x0010	/* cache some data */
 #define	MMASK	0x0017	/* all bits on */
 
-#define	OREAD	0	/* open for read */
-#define	OWRITE	1	/* write */
-#define	ORDWR	2	/* read and write */
-#define	OSTAT	4	/* open for stat/wstat */
-#define	OEXEC	7	/* execute, == read but check execute permission */
-#define	OTRUNC	16	/* or'ed in (except for exec), truncate file first */
-#define	OCEXEC	32	/* or'ed in, close on exec */
-#define	ORCLOSE	64	/* or'ed in, remove on close */
-#define	OEXCL	0x1000	/* or'ed in, exclusive use (create only) */
-// #define	OBEHIND	0x2000	/* use write behind for writes [for 9n] */
+/* Open modes: Kernel reserved flags */
+#define OSTAT	0x00		/* open for stat/wstat */
+#define OREAD	0x01		/* open for read */
+#define OWRITE	0x02		/* write */
+#define ORDWR	(OREAD|OWRITE)	/* read and write */
+#define OEXEC	0x04		/* execute, == read but check execute permission */
+#define OCEXEC	0x08		/* or'ed in, close on exec */
+#define ORCLOSE	0x10		/* or'ed in, remove on close */
+#define OKMODE	0xff		/* least significant byte reserved for kernel use */
 
-#define	AEXIST	0	/* accessible: exists */
-#define	AEXEC	1	/* execute access */
-#define	AWRITE	2	/* write access */
-#define	AREAD	4	/* read access */
+/* Open modes: Popular flags among filesystems */
+#define OTRUNC	0x0100		/* or'ed in (except for exec), truncate file first */
+#define OEXCL	0x0200		/* or'ed in, exclusive create */
+
+/* Access modes */
+#define	AEXIST	OSTAT	/* accessible: exists */
+#define	AREAD	OREAD	/* read access */
+#define	AWRITE	OWRITE	/* write access */
+#define	AEXEC	OEXEC	/* execute access */
+#define AMASK	(OSTAT|OREAD|OWRITE|OEXEC)
 
 /* Segattch */
 #define	SG_RONLY	0040	/* read only */

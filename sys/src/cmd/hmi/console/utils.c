@@ -17,7 +17,7 @@
  */
 #include <u.h>
 #include <libc.h>
-#include <fcall.h>
+#include <9P2000.h>
 
 #include "console.h"
 
@@ -124,14 +124,14 @@ servecons(StreamFilter inputFilter, StreamFilter outputFilter, int *devmnt)
 
 	pid = getpid();
 
-	if(!debugging)
-		close(2);
-
 	rfork(RFNAMEG);
 
 	debug("%s %d: started, linecontrol = %d, blind = %d\n", argv0, pid, linecontrol, blind);
 
 	fs = fsinit(&mnt, devmnt);
+
+	if(!debugging)
+		close(2);
 
 	/* start the file system */
 	switch(rfork(RFPROC|RFMEM|RFNOWAIT|RFCENVG|RFNOTEG|RFCNAMEG|RFFDG)){

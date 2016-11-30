@@ -10,7 +10,7 @@
 #include <u.h>
 #include <libc.h>
 #include <auth.h>
-#include <fcall.h>
+#include <9P2000.h>
 #include "../boot/boot.h"
 
 static int32_t lusertime(char*);
@@ -59,7 +59,7 @@ settime(int islocal, int afd, char *rp)
 		f = open(timeserver, ORDWR);
 		if(f < 0)
 			return;
-		if(mount(f, afd, "/tmp", MREPL, rp, 'M') < 0){
+		if(mount(f, afd, "/tmp", MREPL, rp, '9') < 0){
 			warning("settime mount");
 			close(f);
 			if((!islocal) && (setlocaltime(timebuf, sizeof(timebuf)) == 0))

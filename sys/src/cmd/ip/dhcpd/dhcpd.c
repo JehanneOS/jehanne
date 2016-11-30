@@ -951,7 +951,7 @@ bootp(Req *rp)
 	}
 
 	/* ignore if the file is unreadable */
-	if((!rp->genrequest) && bp->file[0] && access(bp->file, 4) < 0){
+	if((!rp->genrequest) && bp->file[0] && access(bp->file, AREAD) < 0){
 		warning(0, "inaccessible bootfile1 %s", bp->file);
 		return;
 	}

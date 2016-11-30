@@ -134,7 +134,7 @@ newfd2(int fd[2], Chan *c[2])
 }
 
 Chan*
-fdtochan(int fd, int mode, int chkmnt, int iref)
+fdtochan(int fd, unsigned long mode, int chkmnt, int iref)
 {
 	Chan *c;
 	Fgrp *f;
@@ -157,16 +157,21 @@ fdtochan(int fd, int mode, int chkmnt, int iref)
 		error(Ebadusefd);
 	}
 
-	if(mode<0 || c->mode==ORDWR)
+	if(mode==~0 || c->mode==ORDWR)
 		return c;
 
+	/* In Jehanne OTRUNC is not a "kernel reserved flag" (see libc.h):
+	 * it's up to the server/device handing the request to ensure
+	 * that OREAD|OTRUNC or any other combination produce an error...
+	 *
 	if((mode&OTRUNC) && c->mode==OREAD) {
 		if(iref)
 			cclose(c);
 		error(Ebadusefd);
 	}
+	 */
 
-	if((mode&~OTRUNC) != c->mode) {
+	if((mode&c->mode) != mode) {
 		if(iref)
 			cclose(c);
 		error(Ebadusefd);
@@ -175,14 +180,14 @@ fdtochan(int fd, int mode, int chkmnt, int iref)
 	return c;
 }
 
-int
-openmode(int omode)
+unsigned long
+openmode(unsigned long omode)
 {
-	omode &= ~(OTRUNC|OCEXEC|ORCLOSE);
-	if(omode > OEXEC)
+	if((omode&OEXEC) && (omode&ORDWR))
 		error(Ebadarg);
-	if(omode == OEXEC)
-		return OREAD;
+
+	if((omode&OKMODE) == OEXEC)
+		return (omode|OREAD)&~OEXEC;
 	return omode;
 }
 
@@ -291,7 +296,7 @@ sysopen(char *aname, uint32_t omode)
 		nexterror();
 	}
 	aname = validaddr(aname, 1, 0);
-	if((omode&OEXEC) == OSTAT)
+	if((omode&OKMODE) == OSTAT)
 		c = namec(aname, Aaccess, 0, 0);
 	else
 		c = namec(aname, Aopen, omode, 0);
@@ -937,7 +942,7 @@ syschdir(char *aname)
  */
 
 static int dcok[] =  {
-	'M'
+	'9'
 };
 static int checkdc(int dc)
 {

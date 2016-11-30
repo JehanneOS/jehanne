@@ -1,7 +1,24 @@
+/*
+ * This file is part of Jehanne.
+ *
+ * Copyright (C) 2016 Giacomo Tesio <giacomo@tesio.it>
+ *
+ * Jehanne is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 2 of the License.
+ *
+ * Jehanne is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Jehanne.  If not, see <http://www.gnu.org/licenses/>.
+ */
 #include <u.h>
 #include <libc.h>
 #include <auth.h>
-#include <fcall.h>
+#include <9P2000.h>
 #include <thread.h>
 #include <9p.h>
 
@@ -23,6 +40,7 @@ static char Eperm[] = "permission denied";
 static char Eunknownfid[] = "unknown fid";
 static char Ebaddir[] = "bad directory in wstat";
 static char Ewalknodir[] = "walk in non-directory";
+static char Etruncread[] = "truncate on read open";
 
 static void
 setfcallerror(Fcall *f, char *err)
@@ -98,7 +116,7 @@ if(chatty9p)
 if(chatty9p)
 	if(r->error)
 		fprint(2, "<-%d- %F: %s\n", s->infd, &r->ifcall, r->error);
-	else	
+	else
 		fprint(2, "<-%d- %F\n", s->infd, &r->ifcall);
 
 	return r;
@@ -392,31 +410,43 @@ sopen(Srv *srv, Req *r)
 		respond(r, Ebotch);
 		return;
 	}
-	if((r->fid->qid.type&QTDIR) && (r->ifcall.mode&~ORCLOSE) != OREAD){
+	if((r->fid->qid.type&QTDIR) && (r->ifcall.mode&~ORCLOSE) != NP_OREAD){
 		respond(r, Eisdir);
 		return;
 	}
 	r->ofcall.qid = r->fid->qid;
-	switch(r->ifcall.mode&7){
+	switch(r->ifcall.mode&3){
 	default:
 		assert(0);
-	case OREAD:
-		p = AREAD;	
+	case NP_OREAD:
+		p = AREAD;
 		break;
-	case OWRITE:
+	case NP_OWRITE:
 		p = AWRITE;
 		break;
-	case ORDWR:
+	case NP_ORDWR:
 		p = AREAD|AWRITE;
 		break;
-	case OEXEC:
-		p = AEXEC;	
-		break;
-	case OSTAT:
-		p = AEXIST;
+	case NP_OEXEC:
+		p = AEXEC;
 		break;
 	}
-	if(r->ifcall.mode&OTRUNC)
+	if(r->ifcall.mode&NP_OZEROES){
+		/* According to http://man.cat-v.org/9front/5/open
+		 * all bits in NP_ZEROES should be zero
+		 */
+		respond(r, Ebotch);
+		return;
+	}
+	if((r->ifcall.mode&NP_OTRUNC) && (r->ifcall.mode&NP_OREAD)){
+		/* In Jehanne the kernel doesn't check OTRUNC invariants:
+		 * it's up to the receiving server/device to ensure that
+		 * a call to NP_OREAD|NP_OTRUNC will fail
+		 */
+		respond(r, Etruncread);
+		return;
+	}
+	if(r->ifcall.mode&NP_OTRUNC)
 		p |= AWRITE;
 	if((r->fid->qid.type&QTDIR) && p!=AREAD && p!=AEXIST){
 		respond(r, Eperm);
@@ -427,7 +457,7 @@ sopen(Srv *srv, Req *r)
 			respond(r, Eperm);
 			return;
 		}
-		if((r->ifcall.mode&ORCLOSE) && !dirwritable(r->fid)){
+		if((r->ifcall.mode&NP_ORCLOSE) && !dirwritable(r->fid)){
 			respond(r, Eperm);
 			return;
 		}
@@ -508,7 +538,7 @@ sread(Srv *srv, Req *r)
 	r->rbuf = emalloc9p(r->ifcall.count);
 	r->ofcall.data = r->rbuf;
 	o = r->fid->omode & 7;
-	if(o != OREAD && o != ORDWR && o != OEXEC){
+	if(o != NP_OREAD && o != NP_ORDWR && o != NP_OEXEC){
 		respond(r, Ebotch);
 		return;
 	}
@@ -550,7 +580,7 @@ swrite(Srv *srv, Req *r)
 	if(r->ifcall.count > srv->msize - IOHDRSZ)
 		r->ifcall.count = srv->msize - IOHDRSZ;
 	o = r->fid->omode & 7;
-	if(o != OWRITE && o != ORDWR){
+	if(o != NP_OWRITE && o != NP_ORDWR){
 		snprint(e, sizeof e, "write on fid with open mode 0x%ux", r->fid->omode);
 		respond(r, e);
 		return;
@@ -605,7 +635,7 @@ rremove(Req *r, char *error, char *errbuf)
 		return;
 	if(r->fid->file){
 		if(removefile(r->fid->file) < 0){
-			snprint(errbuf, ERRMAX, "remove %s: %r", 
+			snprint(errbuf, ERRMAX, "remove %s: %r",
 				r->fid->file->name);
 			r->error = errbuf;
 		}
@@ -632,8 +662,8 @@ sstat(Srv *srv, Req *r)
 		if(r->d.muid)
 			r->d.muid = estrdup9p(r->d.muid);
 	}
-	if(srv->stat)	
-		srv->stat(r);	
+	if(srv->stat)
+		srv->stat(r);
 	else if(r->fid->file)
 		respond(r, nil);
 	else
@@ -728,7 +758,7 @@ srvwork(void *v)
 		incref(&srv->rref);
 		if(r->error){
 			respond(r, r->error);
-			continue;	
+			continue;
 		}
 		qlock(&srv->slock);
 		switch(r->ifcall.type){
@@ -908,7 +938,7 @@ void
 responderror(Req *r)
 {
 	char errbuf[ERRMAX];
-	
+
 	rerrstr(errbuf, sizeof errbuf);
 	respond(r, errbuf);
 }

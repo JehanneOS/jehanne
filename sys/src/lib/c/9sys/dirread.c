@@ -9,7 +9,7 @@
 #define PORTABLE_SYSCALLS
 #include <u.h>
 #include <libc.h>
-#include <fcall.h>
+#include <9P2000.h>
 
 static
 int32_t

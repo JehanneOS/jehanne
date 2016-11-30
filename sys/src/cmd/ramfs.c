@@ -10,7 +10,7 @@
 #include <u.h>
 #include <libc.h>
 #include <auth.h>
-#include <fcall.h>
+#include <9P2000.h>
 
 /*
  * Rather than reading /adm/users, which is a lot of work for
@@ -248,7 +248,7 @@ main(int argc, char *argv[])
 		break;
 	default:
 		close(p[0]);	/* don't deadlock if child fails */
-		if(defmnt && mount(p[1], -1, defmnt, MREPL|MCREATE, "", 'M') < 0)
+		if(defmnt && mount(p[1], -1, defmnt, MREPL|MCREATE, "", '9') < 0)
 			error("mount failed");
 	}
 	exits(0);
@@ -406,26 +406,26 @@ ropen(Fid *f)
 			return Excl;
 	mode = thdr.mode;
 	if(r->qid.type & QTDIR){
-		if(mode != OREAD)
+		if(mode != NP_OREAD)
 			return Eperm;
 		rhdr.qid = r->qid;
 		return 0;
 	}
-	if(mode & ORCLOSE){
+	if(mode & NP_ORCLOSE){
 		/* can't remove root; must be able to write parent */
 		if(r->qid.path==0 || !perm(f, &ram[r->parent], Pwrite))
 			return Eperm;
 		f->rclose = 1;
 	}
-	trunc = mode & OTRUNC;
+	trunc = mode & NP_OTRUNC;
 	mode &= OPERM;
-	if(mode==OWRITE || mode==ORDWR || trunc)
+	if(mode==NP_OWRITE || mode==NP_ORDWR || trunc)
 		if(!perm(f, r, Pwrite))
 			return Eperm;
-	if(mode==OREAD || mode==ORDWR)
+	if(mode==NP_OREAD || mode==NP_ORDWR)
 		if(!perm(f, r, Pread))
 			return Eperm;
-	if(mode==OEXEC)
+	if(mode==NP_OEXEC)
 		if(!perm(f, r, Pexec))
 			return Eperm;
 	if(trunc && (r->perm&DMAPPEND)==0){

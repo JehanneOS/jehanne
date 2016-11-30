@@ -90,7 +90,7 @@ kprofstat(Chan *c, uint8_t *db, long n)
 }
 
 static Chan*
-kprofopen(Chan *c, int omode)
+kprofopen(Chan *c, unsigned long omode)
 {
 	if(c->qid.type & QTDIR){
 		if(omode != OREAD)

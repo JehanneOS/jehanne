@@ -6,7 +6,7 @@
 #include <mouse.h>
 #include <keyboard.h>
 #include <frame.h>
-#include <fcall.h>
+#include <9P2000.h>
 #include <plumb.h>
 #include "dat.h"
 #include "fns.h"
@@ -281,11 +281,11 @@ xfidopen(Xfid *x)
 		w->mouseopen = TRUE;
 		break;
 	case Qsnarf:
-		if(x->mode==ORDWR || x->mode==OWRITE)
+		if(x->mode==NP_ORDWR || x->mode==NP_OWRITE)
 			ntsnarf = 0;
 		break;
 	case Qwctl:
-		if(x->mode==OREAD || x->mode==ORDWR){
+		if(x->mode==NP_OREAD || x->mode==NP_ORDWR){
 			/*
 			 * It would be much nicer to implement fan-out for wctl reads,
 			 * so multiple people can see the resizings, but rio just isn't
@@ -346,14 +346,14 @@ xfidclose(Xfid *x)
 		break;
 	/* odd behavior but really ok: replace snarf buffer when /dev/snarf is closed */
 	case Qsnarf:
-		if(x->f->mode==ORDWR || x->f->mode==OWRITE){
+		if(x->f->mode==NP_ORDWR || x->f->mode==NP_OWRITE){
 			snarf = runerealloc(snarf, ntsnarf+1);
 			cvttorunes(tsnarf, ntsnarf, snarf, &nb, &nsnarf, &nulls);
 			ntsnarf = 0;
 		}
 		break;
 	case Qwctl:
-		if(x->f->mode==OREAD || x->f->mode==ORDWR)
+		if(x->f->mode==NP_OREAD || x->f->mode==NP_ORDWR)
 			w->wctlopen = FALSE;
 		break;
 	}
@@ -396,7 +396,7 @@ xfidwrite(Xfid *x)
 		alts[CWflush].v = nil;
 		alts[CWflush].op = CHANRCV;
 		alts[NCW].op = CHANEND;
-	
+
 		switch(alt(alts)){
 		case CWdata:
 			break;

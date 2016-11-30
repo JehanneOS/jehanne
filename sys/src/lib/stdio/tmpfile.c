@@ -32,7 +32,7 @@ FILE *tmpfile(void){
 	FILE *f;
 	static char name[]="/tmp/tf0000000000000";
 	char *p;
-	while(access(name, 0)==0){
+	while(access(name, AEXIST)==0){
 		p=name+7;
 		while(*p=='9') *p++='0';
 		if(*p=='\0') return NULL;
@@ -51,7 +51,7 @@ static void
 rmtmps(void)
 {
 	int i;
-	
+
 	for(i=0; i<ntmps; i++)
 		remove(tmpsmade[i]);
 }

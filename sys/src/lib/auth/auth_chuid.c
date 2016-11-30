@@ -31,7 +31,7 @@ auth_chuid(AuthInfo *ai, char *ns)
 	/* get a link to factotum as new user */
 	fd = open("/srv/factotum", ORDWR);
 	if(fd >= 0)
-		mount(fd, -1, "/mnt", MREPL, "", 'M');
+		mount(fd, -1, "/mnt", MREPL, "", '9');
 
 	/* set up new namespace */
 	return newns(ai->cuid, ns);

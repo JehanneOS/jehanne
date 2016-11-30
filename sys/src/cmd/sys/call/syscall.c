@@ -10,7 +10,7 @@
 #include <u.h>
 #include <libc.h>
 //#include <sys.h>
-#include <fcall.h>
+#include <9P2000.h>
 
 char	buf[1048576];
 #define	NARG	5

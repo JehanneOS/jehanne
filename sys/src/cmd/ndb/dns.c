@@ -1,7 +1,7 @@
 #include <u.h>
 #include <libc.h>
 #include <auth.h>
-#include <fcall.h>
+#include <9P2000.h>
 #include <bio.h>
 #include <ip.h>
 #include "dns.h"
@@ -287,7 +287,7 @@ mountinit(char *service, char *mntpt)
 		/*
 		 *  put ourselves into the file system
 		 */
-		if(mount(p[1], -1, mntpt, MAFTER, "", 'M') < 0)
+		if(mount(p[1], -1, mntpt, MAFTER, "", '9') < 0)
 			fprint(2, "dns mount failed: %r\n");
 		_exits(0);
 	}

@@ -897,7 +897,7 @@ mstat(Chan *c, uint8_t *db, long n)
 }
 
 static Chan*
-mopen(Chan *c, int omode)
+mopen(Chan *c, unsigned long omode)
 {
 	int	q;
 	Fsdev	*mp;

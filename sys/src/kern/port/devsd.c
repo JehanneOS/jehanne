@@ -654,7 +654,7 @@ sdstat(Chan* c, uint8_t* db, long n)
 }
 
 static Chan*
-sdopen(Chan* c, int omode)
+sdopen(Chan* c, unsigned long omode)
 {
 	SDpart *pp;
 	SDunit *unit;

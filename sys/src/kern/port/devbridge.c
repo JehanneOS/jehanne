@@ -120,11 +120,11 @@ struct Port
 	Chan	*data[2];	// channel to data
 
 	Proc	*readp;		// read proc
-	
+
 	// the following uniquely identifies the port
 	int	type;
 	char	name[KNAMELEN];
-	
+
 	// owner hash - avoids bind/unbind races
 	uint32_t	ownhash;
 
@@ -231,7 +231,7 @@ bridgestat(Chan* c, uint8_t* db, long n)
 }
 
 static Chan*
-bridgeopen(Chan* c, int omode)
+bridgeopen(Chan* c, unsigned long omode)
 {
 	Bridge *b;
 
@@ -352,7 +352,7 @@ bridgewrite(Chan *c, void *a, long n, int64_t off)
 	Bridge *b = bridgetab + c->devno;
 	Cmdbuf *cb;
 	char *arg0, *p;
-	
+
 	USED(off);
 	switch(TYPE(c->qid)) {
 	default:
@@ -435,7 +435,7 @@ bridgegen(Chan *c, char* _1, Dirtab* _2, int _3, int s, Dir *dp)
 	default:
 		/* non-directory entries end up here */
 		if(c->qid.type & QTDIR)
-			panic("bridgegen: unexpected directory");	
+			panic("bridgegen: unexpected directory");
 		if(s != 0)
 			return -1;
 		dt = dirtab[TYPE(c->qid)];
@@ -563,7 +563,7 @@ portbind(Bridge *b, int argc, char *argv[])
 		port->data[1] = port->data[0];
 
 		poperror();
-		cclose(ctl);		
+		cclose(ctl);
 
 		break;
 	case Ttun:
@@ -686,7 +686,7 @@ cacheupdate(Bridge *b, uint8_t d[Eaddrlen], int port)
 		log(b, Logcache, "bad source address: %E\n", d);
 		return;
 	}
-	
+
 	h = 0;
 	for(i=0; i<Eaddrlen; i++) {
 		h *= 7;
@@ -763,7 +763,7 @@ cachedump(Bridge *b)
 	off = seconds() - sec;
 	for(i=0; i<CacheSize; i++,ce++) {
 		if(ce->expire == 0)
-			continue;	
+			continue;
 		c = (sec < ce->expire)?'v':'e';
 		p += snprint(p, ep-p, "%E %2d %10ld %10ld %10ld %c\n", ce->d,
 			ce->port, ce->src, ce->dst, ce->expire+off, c);
@@ -789,7 +789,7 @@ ethermultiwrite(Bridge *b, Block *bp, Port *port)
 			freeb(bp);
 		nexterror();
 	}
-	
+
 	ep = (Etherpkt*)bp->rp;
 	mcast = ep->d[0] & 1;		/* multicast bit of ethernet address */
 
@@ -926,7 +926,7 @@ etherread(void *a)
 	Etherpkt *ep;
 	Centry *ce;
 	int32_t md;
-	
+
 	qlock(&b->ql);
 	port->readp = up;	/* hide identity under a rock for unbind */
 
@@ -1048,7 +1048,7 @@ etherwrite(Port *port, Block *bp)
 	}
 	port->outfrag++;
 	if(waserror()){
-		freeblist(bp);	
+		freeblist(bp);
 		nexterror();
 	}
 
@@ -1067,13 +1067,13 @@ etherwrite(Port *port, Block *bp)
 		xp = xp->next;
 	}
 	xp->rp += offset;
-	
+
 	if(0)
 		print("seglen=%d, dlen=%d, mf=%x, frag=%d\n",
 			seglen, dlen, mf, frag);
 	for(fragoff = 0; fragoff < dlen; fragoff += seglen) {
 		nb = allocb(ETHERHDRSIZE+IPHDR+seglen);
-		
+
 		feh = (Iphdr*)(nb->wp+ETHERHDRSIZE);
 
 		memmove(nb->wp, epkt, ETHERHDRSIZE+IPHDR);
@@ -1083,7 +1083,7 @@ etherwrite(Port *port, Block *bp)
 			seglen = dlen - fragoff;
 			hnputs(feh->frag, (frag+fragoff)>>3 | mf);
 		}
-		else	
+		else
 			hnputs(feh->frag, (frag+fragoff>>3) | IP_MF);
 
 		hnputs(feh->length, seglen + IPHDR);
@@ -1101,19 +1101,19 @@ etherwrite(Port *port, Block *bp)
 			chunk -= blklen;
 			if(xp->rp == xp->wp)
 				xp = xp->next;
-		} 
+		}
 
 		feh->cksum[0] = 0;
 		feh->cksum[1] = 0;
 		hnputs(feh->cksum, ipcsum(&feh->vihl));
-	
+
 		/* don't generate small packets */
 		if(BLEN(nb) < ETHERMINTU)
 			nb->wp = nb->rp + ETHERMINTU;
 		devtab[port->data[1]->qid.type]->bwrite(port->data[1], nb, 0);
 	}
 	poperror();
-	freeblist(bp);	
+	freeblist(bp);
 }
 
 // hold b lock

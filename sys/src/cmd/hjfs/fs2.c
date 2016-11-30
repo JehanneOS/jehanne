@@ -1,13 +1,13 @@
 #include <u.h>
 #include <libc.h>
 #include <thread.h>
-#include <fcall.h>
+#include <9P2000.h>
 #include "dat.h"
 #include "fns.h"
 
 Chan *
 chanattach(Fs *fs, int flags)
-{	
+{
 	Chan *ch;
 
 	ch = emalloc(sizeof(*ch));
@@ -39,7 +39,7 @@ chanwalk(Chan *ch, char *name)
 	Dentry *d;
 	Loc *l;
 	FLoc f;
-	
+
 	if(name == nil || name[0] == 0 || name[0] == '.' && name[1] == 0)
 		return 1;
 	chbegin(ch);
@@ -89,7 +89,7 @@ int
 namevalid(char *name)
 {
 	char *p;
-	
+
 	if(name == nil || name[0] == 0)
 		return 0;
 	if(name[0] == '.' && (name[1] == 0 || name[1] == '.' && name[2] == 0))
@@ -120,7 +120,7 @@ chancreat(Chan *ch, char *name, int perm, int mode)
 	if(willmodify(ch->fs, ch->loc, ch->flags & CHFNOLOCK) < 0)
 		goto error;
 	if(isdir = ((perm & DMDIR) != 0))
-		if((mode & (OWRITE | OEXEC | ORCLOSE | OTRUNC)) != 0)
+		if((mode & (NP_OWRITE | NP_OEXEC | NP_ORCLOSE | NP_OTRUNC)) != 0)
 			goto inval;
 	b = getbuf(ch->fs->d, ch->loc->blk, TDENTRY, 0);
 	if(b == nil)
@@ -133,7 +133,7 @@ chancreat(Chan *ch, char *name, int perm, int mode)
 		goto error;
 	}
 	if((ch->flags & CHFNOPERM) == 0){
-		if(!permcheck(ch->fs, d, ch->uid, OWRITE)){
+		if(!permcheck(ch->fs, d, ch->uid, NP_OWRITE)){
 			werrstr(Eperm);
 			goto error;
 		}
@@ -175,18 +175,18 @@ chancreat(Chan *ch, char *name, int perm, int mode)
 	}
 	b->op |= BDELWRI;
 	putbuf(b);
-	switch(mode & OEXEC){
-	case ORDWR:
+	switch(mode & NP_OEXEC){
+	case NP_ORDWR:
 		ch->open |= CHREAD;
-	case OWRITE:
+	case NP_OWRITE:
 		ch->open |= CHWRITE;
 		break;
-	case OEXEC:
-	case OREAD:
+	case NP_OEXEC:
+	case NP_OREAD:
 		ch->open |= CHREAD;
 		break;
 	}
-	if((mode & ORCLOSE) != 0)
+	if((mode & NP_ORCLOSE) != 0)
 		ch->open |= CHRCLOSE;
 	chend(ch);
 	return 1;
@@ -211,12 +211,12 @@ chanopen(Chan *ch, int mode)
 	chbegin(ch);
 	if(ch->open != 0)
 		goto inval;
-	if((ch->flags & CHFRO) != 0 && (mode & (ORCLOSE | OTRUNC | OWRITE | ORDWR)) != 0)
+	if((ch->flags & CHFRO) != 0 && (mode & (NP_ORCLOSE | NP_OTRUNC | NP_OWRITE | NP_ORDWR)) != 0)
 		goto inval;
-	if((mode & OTRUNC) != 0)
+	if((mode & NP_OTRUNC) != 0)
 		if(willmodify(ch->fs, ch->loc, ch->flags & CHFNOLOCK) < 0)
 			goto error;
-	if((mode & ORCLOSE) != 0){
+	if((mode & NP_ORCLOSE) != 0){
 		if(ch->loc->next == nil)
 			goto inval;
 		b = getbuf(ch->fs->d, ch->loc->next->blk, TDENTRY, 0);
@@ -226,7 +226,7 @@ chanopen(Chan *ch, int mode)
 		if(d == nil)
 			goto error;
 		if((ch->flags & CHFNOPERM) == 0)
-			if(!permcheck(ch->fs, d, ch->uid, OWRITE))
+			if(!permcheck(ch->fs, d, ch->uid, NP_OWRITE))
 				goto perm;
 		putbuf(b);
 	}
@@ -237,13 +237,13 @@ chanopen(Chan *ch, int mode)
 	if(d == nil)
 		goto error;
 	if((d->type & QTAPPEND) != 0)
-		mode &= ~OTRUNC;
-	if((d->type & QTDIR) != 0 && (mode & (ORCLOSE | OTRUNC | OWRITE | ORDWR)) != 0)
+		mode &= ~NP_OTRUNC;
+	if((d->type & QTDIR) != 0 && (mode & (NP_ORCLOSE | NP_OTRUNC | NP_OWRITE | NP_ORDWR)) != 0)
 		goto inval;
 	if((ch->flags & CHFNOPERM) == 0){
-		if(!permcheck(ch->fs, d, ch->uid, mode & OEXEC))
+		if(!permcheck(ch->fs, d, ch->uid, mode & NP_OEXEC))
 			goto perm;
-		if((mode & OTRUNC) != 0 && !permcheck(ch->fs, d, ch->uid, OWRITE))
+		if((mode & NP_OTRUNC) != 0 && !permcheck(ch->fs, d, ch->uid, NP_OWRITE))
 			goto perm;
 	}
 	if((ch->loc->type & QTEXCL) != 0){
@@ -258,23 +258,23 @@ chanopen(Chan *ch, int mode)
 			goto error;
 		}
 	}
-	switch(mode & OEXEC){
-	case ORDWR:
+	switch(mode & NP_OEXEC){
+	case NP_ORDWR:
 		ch->open |= CHREAD;
-	case OWRITE:
+	case NP_OWRITE:
 		ch->open |= CHWRITE;
 		break;
-	case OEXEC:
-	case OREAD:
+	case NP_OEXEC:
+	case NP_OREAD:
 		ch->open |= CHREAD;
 		break;
 	}
-	if((mode & OTRUNC) != 0){
+	if((mode & NP_OTRUNC) != 0){
 		trunc(ch->fs, ch->loc, b, 0);
 		modified(ch, d);
 		b->op |= BDELWRI;
 	}
-	if((mode & ORCLOSE) != 0)
+	if((mode & NP_ORCLOSE) != 0)
 		ch->open |= CHRCLOSE;
 	putbuf(b);
 	chend(ch);
@@ -492,7 +492,7 @@ chanstat(Chan *ch, Dir *di)
 {
 	Buf *b;
 	Dentry *d;
-	
+
 	chbegin(ch);
 	b = getbuf(ch->fs->d, ch->loc->blk, TDENTRY, 0);
 	if(b == nil){
@@ -627,7 +627,7 @@ chanclunk(Chan *ch)
 		if(d == nil)
 			goto error;
 		if((ch->flags & CHFNOPERM) == 0)
-			if(!permcheck(ch->fs, d, ch->uid, OWRITE)){
+			if(!permcheck(ch->fs, d, ch->uid, NP_OWRITE)){
 				werrstr(Eperm);
 				goto error;
 			}
@@ -703,7 +703,7 @@ chanwstat(Chan *ch, Dir *di)
 			goto error;
 		else if(rc == 0){
 			if((ch->flags & CHFNOPERM) == 0)
-				if(!permcheck(ch->fs, d, ch->uid, OWRITE))
+				if(!permcheck(ch->fs, d, ch->uid, NP_OWRITE))
 					goto perm;
 		} else if(f.blk != ch->loc->blk || f.deind != ch->loc->deind){
 			werrstr(Eexists);
@@ -725,7 +725,7 @@ chanwstat(Chan *ch, Dir *di)
 		if(isdir && di->length != 0)
 			goto inval;
 		if((ch->flags & CHFNOPERM) == 0)
-			if(di->length != d->size && !permcheck(ch->fs, d, ch->uid, OWRITE))
+			if(di->length != d->size && !permcheck(ch->fs, d, ch->uid, NP_OWRITE))
 				goto perm;
 	}
 	if(di->mtime != ~0 && !owner)

@@ -254,7 +254,7 @@ sslstat(Chan *c, uint8_t *db, long n)
 }
 
 static Chan*
-sslopen(Chan *c, int omode)
+sslopen(Chan *c, unsigned long omode)
 {
 	Dstate *s, **pp;
 	int perm;

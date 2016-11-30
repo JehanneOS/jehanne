@@ -111,7 +111,7 @@ srvname(Chan *c)
 }
 
 static Chan*
-srvopen(Chan *c, int omode)
+srvopen(Chan *c, unsigned long omode)
 {
 	Srv *sp;
 	Chan *nc;
@@ -153,12 +153,14 @@ srvopen(Chan *c, int omode)
 }
 
 static Chan*
-srvcreate(Chan *c, char *name, int omode, int perm)
+srvcreate(Chan *c, char *name, unsigned long omode, unsigned long perm)
 {
 	Srv *sp;
 
-	if(openmode(omode) != OWRITE)
-		error(Eperm);
+	if(openmode(omode & ~ORCLOSE) != OWRITE){
+		errorf("srvcreate: omode %#p openmode %#p", omode, openmode(omode & ~ORCLOSE));
+		//error(Eperm);
+	}
 
 	if(strlen(name) >= sizeof(up->genbuf))
 		error(Etoolong);

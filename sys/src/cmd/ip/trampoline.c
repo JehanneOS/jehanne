@@ -11,7 +11,7 @@
 #include <libc.h>
 #include <bio.h>
 #include <ndb.h>
-#include <fcall.h>
+#include <9P2000.h>
 
 enum
 {

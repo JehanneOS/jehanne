@@ -1,7 +1,7 @@
 #include <u.h>
 #include <libc.h>
 #include <auth.h>
-#include <fcall.h>
+#include <9P2000.h>
 #include <bio.h>
 #include <mp.h>
 #include <libsec.h>
@@ -32,7 +32,7 @@ struct Fid
 };
 
 struct Paq
-{	
+{
 	int ref;
 	Paq *up;
 	PaqDir *dir;
@@ -227,7 +227,7 @@ main(int argc, char *argv[])
 		usage();
 
 	init(argv[0], verify);
-	
+
 	if(!stdio){
 		if(pipe(pfd) < 0)
 			sysfatal("pipe: %r");
@@ -252,7 +252,7 @@ main(int argc, char *argv[])
 		break;
 	default:
 		close(pfd[1]);	/* don't deadlock if child fails */
-		if(mnt && mount(pfd[0], -1, mntpoint, MREPL|MCREATE, "", 'M') < 0)
+		if(mnt && mount(pfd[0], -1, mntpoint, MREPL|MCREATE, "", '9') < 0)
 			sysfatal("mount %s: %r", mntpoint);
 	}
 	exits(0);
@@ -403,21 +403,21 @@ ropen(Fid *f)
 		return Enotexist;
 	mode = rhdr.mode;
 	if(f->paq->qid.type & QTDIR){
-		if(mode != OREAD)
+		if(mode != NP_OREAD)
 			return Eperm;
 		thdr.qid = f->paq->qid;
 		return 0;
 	}
-	if(mode & ORCLOSE)
+	if(mode & NP_ORCLOSE)
 		return Erdonly;
-	trunc = mode & OTRUNC;
+	trunc = mode & NP_OTRUNC;
 	mode &= OPERM;
-	if(mode==OWRITE || mode==ORDWR || trunc)
+	if(mode==NP_OWRITE || mode==NP_ORDWR || trunc)
 		return Erdonly;
-	if(mode==OREAD)
+	if(mode==NP_OREAD)
 		if(!perm(f->paq->dir, f->user, Pread))
 			return Eperm;
-	if(mode==OEXEC)
+	if(mode==NP_OEXEC)
 		if(!perm(f->paq->dir, f->user, Pexec))
 			return Eperm;
 	thdr.qid = f->paq->qid;
@@ -714,7 +714,7 @@ blockLoad(uint32_t addr, int type)
 	b->age = cacheage;
 	b->addr = addr;
 	b->ref = 1;
-	
+
 	return b;
 }
 
@@ -881,7 +881,7 @@ init(char *file, int verify)
 		sysfatal("could not open file: %s: %r", file);
 	if(verify)
 		ds = sha1(0, 0, 0, 0);
-	
+
 	readHeader(&hdr, file, ds);
 	blocksize = hdr.blocksize;
 
@@ -991,7 +991,7 @@ void
 readHeader(PaqHeader *hdr, char *name, DigestState *ds)
 {
 	uint8_t buf[HeaderSize];
-	
+
 	if(Bread(bin, buf, HeaderSize) < HeaderSize)
 		sysfatal("could not read header: %s: %r", name);
 	if(ds)
@@ -1105,7 +1105,7 @@ gets(uint8_t *p)
 int
 checkDirSize(uint8_t *p, uint8_t *ep)
 {
-	int n;	
+	int n;
 	int i;
 
 	if(ep-p < 2)

@@ -137,7 +137,7 @@ exists(char *db, char *u)
 	char buf[KEYDBBUF+ANAMELEN+6];
 
 	sprint(buf, "%s/%s/expire", db, u);
-	if(access(buf, 0) < 0)
+	if(access(buf, AEXIST) < 0)
 		return 0;
 	return 1;
 }

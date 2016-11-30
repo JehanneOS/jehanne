@@ -349,7 +349,7 @@ static int m2p[] = {
 };
 
 static Chan*
-ipopen(Chan* c, int omode)
+ipopen(Chan* c, unsigned long omode)
 {
 	Conv *cv, *nc;
 	Proto *p;
@@ -501,7 +501,7 @@ ipopen(Chan* c, int omode)
 }
 
 static Chan*
-ipcreate(Chan* _1, char* _2, int _3, int _4)
+ipcreate(Chan* _1, char* _2, unsigned long _3, unsigned long _4)
 {
 	error(Eperm);
 	return nil;
@@ -819,7 +819,7 @@ setlport(Conv* c)
 	 * if we do (and we're a cpu server), we might as well restart
 	 * since we're now unable to service new connections.
 	 */
-	print("setlport: %s: %s: %I!%ud -> %I out of ports\n", 
+	print("setlport: %s: %s: %I!%ud -> %I out of ports\n",
 		p->name, c->restricted? "restrict": "", c->raddr, c->rport, c->laddr);
 	return "no ports available";
 

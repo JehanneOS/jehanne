@@ -15,7 +15,7 @@
 #include <mouse.h>
 #include <keyboard.h>
 #include <frame.h>
-#include <fcall.h>
+#include <9P2000.h>
 #include <plumb.h>
 #include "dat.h"
 #include "fns.h"
@@ -114,7 +114,7 @@ threadmain(int argc, char *argv[])
 		fontnames[0] = getenv("font");
 	if(fontnames[0] == nil)
 		fontnames[0] = "/lib/font/bit/fixed/unicode.6x13.font";
-	if(access(fontnames[0], 0) < 0){
+	if(access(fontnames[0], AEXIST) < 0){
 		fprint(2, "acme: can't access %s: %r\n", fontnames[0]);
 		exits("font open");
 	}
@@ -133,7 +133,7 @@ threadmain(int argc, char *argv[])
 		free(p);
 	}
 	if(maxtab == 0)
-		maxtab = 4; 
+		maxtab = 4;
 	if(loadfile)
 		rowloadfonts(loadfile);
 	putenv("font", fontnames[0]);
@@ -458,7 +458,7 @@ mousethread(void *v)
 	if(cplumb == nil)
 		alts[MPlumb].op = CHANNOP;
 	alts[NMALT].op = CHANEND;
-	
+
 	for(;;){
 		qlock(&row);
 		flushwarnings();

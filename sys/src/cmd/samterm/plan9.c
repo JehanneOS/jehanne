@@ -107,7 +107,7 @@ snarfswap(char *fromsam, int nc, char **tosam)
 		free(s1);
 	} else
 		s1[n] = 0;
-	f = create("/dev/snarf", 1, 0666);
+	f = create("/dev/snarf", OWRITE, 0666);
 	if(f >= 0){
 		write(f, fromsam, nc);
 		close(f);
@@ -167,7 +167,7 @@ extstart(void)
 	if(pipe(p) < 0)
 		return;
 	sprint(exname, "/srv/sam.%s", getuser());
-	fd = create(exname, 1, 0600);
+	fd = create(exname, OWRITE, 0600);
 	if(fd < 0){	/* assume existing guy is more important */
     Err:
 		close(p[0]);

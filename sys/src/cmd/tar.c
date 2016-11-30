@@ -9,7 +9,7 @@
 #include <u.h>
 #include <libc.h>
 #include <ctype.h>
-#include <fcall.h>		/* for %M */
+#include <9P2000.h>		/* for %M */
 #include <String.h>
 
 /*

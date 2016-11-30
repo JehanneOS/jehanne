@@ -9,7 +9,7 @@
 
 #include <u.h>
 #include <libc.h>
-#include <fcall.h>
+#include <9P2000.h>
 
 int
 read9pmsg(int fd, void *abuf, uint32_t n)

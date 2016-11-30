@@ -11,7 +11,7 @@
 #include <libc.h>
 #include <ctype.h>
 #include <auth.h>
-#include <fcall.h>
+#include <9P2000.h>
 #include <draw.h>
 #include <event.h>
 #include <ip.h>

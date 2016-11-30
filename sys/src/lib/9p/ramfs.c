@@ -1,7 +1,7 @@
 #include <u.h>
 #include <libc.h>
 #include <auth.h>
-#include <fcall.h>
+#include <9P2000.h>
 #include <thread.h>
 #include <9p.h>
 
@@ -91,7 +91,7 @@ fsopen(Req *r)
 
 	rf = r->fid->file->aux;
 
-	if(rf && (r->ifcall.mode&OTRUNC)){
+	if(rf && (r->ifcall.mode&NP_OTRUNC)){
 		rf->ndata = 0;
 		r->fid->file->length = 0;
 	}

@@ -76,7 +76,7 @@ globdir(uint8_t *p, uint8_t *namep)
 	/* If we ran out of pattern, append the name if accessible */
 	if(*newp=='\0'){
 		*t='\0';
-		if(access(globname, 0)==0)
+		if(access(globname, AEXIST)==0)
 			globv = newword(globname, globv);
 		return;
 	}
@@ -130,7 +130,7 @@ equtf(uint8_t *p, uint8_t *q)
 	Rune pr, qr;
 	if(*p!=*q)
 		return 0;
-	
+
 	chartorune(&pr, (char*)p);
 	chartorune(&qr, (char*)q);
 	return pr == qr;

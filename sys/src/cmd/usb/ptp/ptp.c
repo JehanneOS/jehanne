@@ -2,7 +2,7 @@
 #include <libc.h>
 #include <thread.h>
 #include <auth.h>
-#include <fcall.h>
+#include <9P2000.h>
 #include <9p.h>
 
 #include "usb.h"
@@ -295,7 +295,7 @@ vptprpc(Ioproc *io, int code, int flags, va_list a)
 		l = GET4(rpc.length);
 		l -= (4+2+2+4);
 		n -= (4+2+2+4);
-	
+
 		b = emalloc9p(l);
 		p = b;
 		e = b+l;
@@ -658,7 +658,7 @@ readchilds(Req *r, Node *nod)
 			*xx = x;
 			xx = &x->next;
 			*xx = nil;
-		}		
+		}
 		free(a);
 		break;
 
@@ -838,7 +838,7 @@ fsread(Req *r)
 					count = nod->d.length - offset;
 					pos = 3;
 				}
-				if(!ptprpc(r, GetPartialObject, 4|DataRecv, 
+				if(!ptprpc(r, GetPartialObject, 4|DataRecv,
 					nod->handle, offset, count, pos, &p, &np)){
 					if(np <= count){
 						memmove(r->ofcall.data, p, np);
@@ -900,7 +900,7 @@ fsremove(Req *r)
 static void
 fsopen(Req *r)
 {
-	if(r->ifcall.mode != OREAD){
+	if(r->ifcall.mode != NP_OREAD){
 		respond(r, Eperm);
 		return;
 	}
@@ -971,7 +971,7 @@ findendpoints(Dev *d, int *epin, int *epout, int *epint)
 	return -1;
 }
 
-Srv fs = 
+Srv fs =
 {
 	.attach = fsattach,
 	.destroyfid = fsdestroyfid,

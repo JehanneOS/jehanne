@@ -1,6 +1,6 @@
 #include <u.h>
 #include <libc.h>
-#include <fcall.h>
+#include <9P2000.h>
 #include <auth.h>
 #include "authlocal.h"
 

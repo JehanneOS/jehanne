@@ -56,13 +56,13 @@ etherstat(Chan* chan, uint8_t* dp, long n)
 }
 
 static Chan*
-etheropen(Chan* chan, int omode)
+etheropen(Chan* chan, unsigned long omode)
 {
 	return netifopen(&etherxx[chan->devno]->netif, chan, omode);
 }
 
 static Chan*
-ethercreate(Chan* _1, char* _2, int _3, int _4)
+ethercreate(Chan* _1, char* _2, unsigned long _3, unsigned long _4)
 {
 	error(Eperm);
 	return nil;

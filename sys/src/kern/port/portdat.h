@@ -72,7 +72,7 @@ typedef int    Devgen(Chan*, char*, Dirtab*, int, int, Dir*);
 #pragma incomplete Queue
 #pragma incomplete Timers
 
-#include <fcall.h>
+#include <9P2000.h>
 
 struct Ref
 {
@@ -202,7 +202,7 @@ struct Chan
 	int64_t		devoffset;		/* in underlying device; see read */
 	Dev*		dev;
 	uint32_t	devno;
-	uint16_t	mode;			/* read/write */
+	uint64_t	mode;			/* read/write */
 	uint16_t	flag;
 	Qid		qid;
 	int		fid;			/* for devmnt */
@@ -251,8 +251,8 @@ struct Dev
 	Chan*	(*attach)(Chan *c, Chan *ac, char *spec, int flags);
 	Walkqid*(*walk)(Chan*, Chan*, char**, int);
 	long	(*stat)(Chan*, uint8_t*, long);
-	Chan*	(*open)(Chan*, int);
-	Chan*	(*create)(Chan*, char*, int, int);
+	Chan*	(*open)(Chan*, unsigned long);
+	Chan*	(*create)(Chan*, char*, unsigned long, unsigned long);
 	void	(*close)(Chan*);
 	long	(*read)(Chan*, void*, long, int64_t);
 	Block*	(*bread)(Chan*, long, int64_t);

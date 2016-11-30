@@ -5,7 +5,7 @@
 #include <libc.h>
 #include <ctype.h>
 #include <authsrv.h>
-#include <fcall.h>
+#include <9P2000.h>
 #include <bio.h>
 #include <mp.h>
 #include <libsec.h>
@@ -209,7 +209,7 @@ main(int argc, char *argv[])
 		error("fork");
 	default:
 		close(p[1]);
-		if(mount(p[0], -1, mntpt, MREPL|MCREATE, "", 'M') < 0)
+		if(mount(p[0], -1, mntpt, MREPL|MCREATE, "", '9') < 0)
 			error("can't mount: %r");
 		exits(0);
 	}
@@ -374,7 +374,7 @@ Open(Fid *f)
 	if(!f->busy)
 		return "open of unused fid";
 	mode = rhdr.mode;
-	if(f->qtype == Quser && (mode & (OWRITE|OTRUNC)))
+	if(f->qtype == Quser && (mode & (NP_OWRITE|NP_OTRUNC)))
 		return "user already exists";
 	if((f->qtype == Qaeskey || f->qtype == Qpakhash) && !keydbaes)
 		return "keyfile not in aes format";

@@ -328,7 +328,7 @@ archstat(Chan* c, uint8_t* dp, long n)
 }
 
 static Chan*
-archopen(Chan* c, int omode)
+archopen(Chan* c, unsigned long omode)
 {
 	return devopen(c, omode, archdir, narchdir, devgen);
 }

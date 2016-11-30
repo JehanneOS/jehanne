@@ -10,7 +10,7 @@
 #include <u.h>
 #include <libc.h>
 #include <auth.h>
-#include <fcall.h>
+#include <9P2000.h>
 #include "iotrack.h"
 #include "dat.h"
 #include "dosfs.h"

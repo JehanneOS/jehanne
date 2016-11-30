@@ -419,7 +419,7 @@ acpistat(Chan *c, uint8_t *dp, long n)
 }
 
 static Chan*
-acpiopen(Chan *c, int omode)
+acpiopen(Chan *c, unsigned long omode)
 {
 	c = devopen(c, omode, acpidir, nelem(acpidir), acpigen);
 	switch((uint32_t)c->qid.path){
@@ -480,7 +480,7 @@ acpiread(Chan *c, void *a, long n, int64_t off)
 		p = seprint(p, e, "ngpe %d\n", ngpe);
 		USED(p);
 		return readstr(off, a, n, buf);
-		
+
 	case Qevent:
 		return qread(aconf.event, a, n);
 	}

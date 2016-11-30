@@ -77,7 +77,7 @@ initboot(void)
 	}
 	if((i = open(bootfs, ORDWR)) < 0)
 		return -1;
-	if(mount(i, -1, bootdir, MREPL, "", 'M') < 0)
+	if(mount(i, -1, bootdir, MREPL, "", '9') < 0)
 		return -1;
 	remove(bootfs);
 	return access(boot, AEXEC);

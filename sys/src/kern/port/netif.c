@@ -534,7 +534,7 @@ Lock netlock;
 static int
 netown(Netfile *p, char *o, int omode)
 {
-	static int access[] = { 0400, 0200, 0600, 0100 };
+	static int access[] = { 0000, 0400, 0200, 0600, 0100, 0xff, 0xff, 0xff };
 	int mode;
 	int t;
 

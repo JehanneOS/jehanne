@@ -787,7 +787,7 @@ consstat(Chan *c, uint8_t *dp, long n)
 }
 
 static Chan*
-consopen(Chan *c, int omode)
+consopen(Chan *c, unsigned long omode)
 {
 	c->aux = nil;
 	c = devopen(c, omode, consdir, nelem(consdir), devgen);

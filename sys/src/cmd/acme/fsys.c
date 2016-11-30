@@ -15,7 +15,7 @@
 #include <mouse.h>
 #include <keyboard.h>
 #include <frame.h>
-#include <fcall.h>
+#include <9P2000.h>
 #include <plumb.h>
 #include "dat.h"
 #include "fns.h"
@@ -279,7 +279,7 @@ fsysmount(Rune *dir, int ndir, Rune **incl, int nincl)
 	close(sfd);
 	m = fsysaddid(dir, ndir, incl, nincl);
 	sprint(buf, "%d", m->id);
-	if(mount(cfd, -1, "/mnt/acme", MREPL, buf, 'M') < 0){
+	if(mount(cfd, -1, "/mnt/acme", MREPL, buf, '9') < 0){
 		fsysdelid(m);
 		return nil;
 	}
@@ -482,7 +482,7 @@ fsyswalk(Xfid *x, Fid *f)
 			qunlock(&row);
 			dir = dirtabw;
 			goto Accept;
-	
+
     Regular:
 //			if(FILE(f->qid) == Qacme)	/* empty directory */
 //				break;
@@ -548,20 +548,20 @@ fsysopen(Xfid *x, Fid *f)
 	int m;
 
 	/* can't truncate anything, so just disregard */
-	x->mode &= ~(OTRUNC|OCEXEC);
+	x->mode &= ~(NP_OTRUNC);
 	/* can't execute or remove anything */
-	if(x->mode==OEXEC || (x->mode&ORCLOSE))
+	if(x->mode==NP_OEXEC || (x->mode&NP_ORCLOSE))
 		goto Deny;
 	switch(x->mode){
 	default:
 		goto Deny;
-	case OREAD:
+	case NP_OREAD:
 		m = 0400;
 		break;
-	case OWRITE:
+	case NP_OWRITE:
 		m = 0200;
 		break;
-	case ORDWR:
+	case NP_ORDWR:
 		m = 0600;
 		break;
 	}

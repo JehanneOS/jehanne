@@ -352,8 +352,8 @@ devdirread(Chan *c, char *d, long n, Dirtab *tab, int ntab, Devgen *gen)
 void
 devpermcheck(char *fileuid, int perm, int omode)
 {
-	int t;
-	static int access[] = { 0400, 0200, 0600, 0100 };
+	int required;
+	static int access[] = { 0000, 0400, 0200, 0600, 0100, 0xff, 0xff, 0xff };
 
 	if(strcmp(up->user, fileuid) == 0)
 		perm <<= 0;
@@ -362,13 +362,13 @@ devpermcheck(char *fileuid, int perm, int omode)
 	else
 		perm <<= 6;
 
-	t = access[omode&7];
-	if((t&perm) != t)
+	required = access[omode&7];
+	if((required&perm) != required)
 		error(Eperm);
 }
 
 Chan*
-devopen(Chan *c, int omode, Dirtab *tab, int ntab, Devgen *gen)
+devopen(Chan *c, unsigned long omode, Dirtab *tab, int ntab, Devgen *gen)
 {
 	int i;
 	Dir dir;
@@ -397,7 +397,7 @@ Return:
 }
 
 Chan*
-devcreate(Chan* _1, char* _2, int _3, int _4)
+devcreate(Chan* _1, char* _2, unsigned long _3, unsigned long _4)
 {
 	error(Eperm);
 	return nil;

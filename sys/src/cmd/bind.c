@@ -42,9 +42,9 @@ main(int argc, char *argv[])
 		if(qflag)
 			exits(0);
 		/* try to give a less confusing error than the default */
-		if(access(argv[0], 0) < 0)
+		if(access(argv[0], AEXIST) < 0)
 			fprint(2, "bind: %s: %r\n", argv[0]);
-		else if(access(argv[1], 0) < 0)
+		else if(access(argv[1], AEXIST) < 0)
 			fprint(2, "bind: %s: %r\n", argv[1]);
 		else
 			fprint(2, "bind %s %s: %r\n", argv[0], argv[1]);

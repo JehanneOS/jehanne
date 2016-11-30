@@ -817,7 +817,7 @@ usbload(int speed, int maxpkt)
 }
 
 static Chan*
-usbopen(Chan *c, int omode)
+usbopen(Chan *c, unsigned long omode)
 {
 	int q;
 	Ep *ep;

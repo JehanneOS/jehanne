@@ -259,7 +259,7 @@ fprint(2, "forkexec %s", file);
 for(i = 0; argv[i]; i++)fprint(2, " %s", argv[i]);
 fprint(2, " %d %d %d\n", sin, sout, serr);
 }
-	if(access(file, 1) != 0)
+	if(access(file, AEXEC) != 0)
 		return -1;
 fprint(2, "forking\n");
 	switch(pid = fork()){
@@ -375,7 +375,7 @@ trimdirs(Dir *d, int nd)
  * onlydirs is advisory -- it means you only
  * need to return the directories.  it's okay to
  * return files too (e.g., on unix where you can't
- * tell during the readdir), but that just makes 
+ * tell during the readdir), but that just makes
  * the globber work harder.
  */
 int
@@ -395,7 +395,7 @@ Again:
 				n = trimdirs(dir[f].dbuf, n);
 				if(n == 0)
 					goto Again;
-			}	
+			}
 			dir[f].n = n;
 		}else
 			dir[f].n = 0;

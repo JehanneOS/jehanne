@@ -10,7 +10,7 @@
 #include <u.h>
 #include <libc.h>
 #include <bio.h>
-#include <fcall.h>
+#include <9P2000.h>
 
 typedef struct NDir NDir;
 struct NDir

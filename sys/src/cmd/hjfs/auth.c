@@ -1,5 +1,6 @@
 #include <u.h>
 #include <libc.h>
+#include <9P2000.h>
 #include <thread.h>
 #include "dat.h"
 #include "fns.h"
@@ -54,7 +55,7 @@ usersparseline(char *l, PUser **u, int *nu)
 	PUser v;
 	char *f[5], *r, *s;
 	int c;
-	
+
 	if(*l == 0 || *l == '#')
 		return;
 	c = getfields(l, f, 5, 0, ":");
@@ -106,7 +107,7 @@ static int
 uidcomp(const void *a, const void *b)
 {
 	const short *aa, *bb;
-	
+
 	aa = a;
 	bb = b;
 	return *aa - *bb;
@@ -116,7 +117,7 @@ static int
 usercomp(const void *a, const void *b)
 {
 	const User *aa, *bb;
-	
+
 	aa = a;
 	bb = b;
 	return aa->uid - bb->uid;
@@ -129,7 +130,7 @@ usersload(Fs *fs, Chan *ch)
 	int bufl, i, j, rc, nu;
 	PUser *u;
 	User *v;
-	
+
 	buf = nil;
 	bufl = 0;
 	u = nil;
@@ -191,7 +192,7 @@ userssave(Fs *fs, Chan *ch)
 	int nu, i;
 	char buf[512], ubuf[USERLEN], *p, *e;
 	uint64_t off;
-	
+
 	rlock(&fs->udatal);
 	u = fs->udata;
 	if(u == nil){
@@ -305,16 +306,14 @@ permcheck(Fs *fs, Dentry *d, short uid, int mode)
 		perm >>= 6;
 	else if(ingroup(fs, uid, d->gid, 0))
 		perm >>= 3;
-	switch(mode & 7){
-	case OSTAT:
-		return 1;
-	case OREAD:
+	switch(mode & 3){
+	case NP_OREAD:
 		return (perm & 4) != 0;
-	case OWRITE:
+	case NP_OWRITE:
 		return (perm & 2) != 0;
-	case OEXEC:
+	case NP_OEXEC:
 		return (perm & 1) != 0;
-	case ORDWR:
+	case NP_ORDWR:
 		return (perm & 6) == 6;
 	}
 	return 0;
@@ -324,7 +323,7 @@ char *
 uid2name(Fs *fs, short uid, char *buf)
 {
 	User *u;
-	
+
 	rlock(&fs->udatal);
 	u = lookupuid(fs, uid);
 	if(buf == nil)
@@ -374,7 +373,7 @@ createuserdir(Fs *fs, char *name, short uid)
 		return;
 	ch->uid = uid;
 	if(chanwalk(ch, "usr") > 0)
-		chancreat(ch, name, DMDIR | 0775, OREAD);
+		chancreat(ch, name, DMDIR | 0775, NP_OREAD);
 	chanclunk(ch);
 }
 

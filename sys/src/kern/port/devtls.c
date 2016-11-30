@@ -399,7 +399,7 @@ tlsstat(Chan *c, uint8_t *db, long n)
 }
 
 static Chan*
-tlsopen(Chan *c, int omode)
+tlsopen(Chan *c, unsigned long omode)
 {
 	TlsRec *tr, **pp;
 	int t, perm;

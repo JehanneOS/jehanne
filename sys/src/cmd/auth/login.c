@@ -110,7 +110,7 @@ mountfactotum(char *srvname)
 	fd = open(srvname, ORDWR);
 	if(fd < 0)
 		sysfatal("opening factotum: %r");
-	mount(fd, -1, "/mnt", MBEFORE, "", 'M');
+	mount(fd, -1, "/mnt", MBEFORE, "", '9');
 	close(fd);
 }
 
@@ -164,7 +164,7 @@ startfactotum(char *user, char *password, char *srvname)
 	}
 
 	/* wait for agent to really be there */
-	while(access(srvname, 0) < 0)
+	while(access(srvname, AEXIST) < 0)
 		sleep(250);
 
 	/* mount it */

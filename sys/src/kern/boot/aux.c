@@ -139,7 +139,7 @@ setenv(char *name, char *val)
 	char ename[64];
 
 	snprint(ename, sizeof ename, "#e/%s", name);
-	f = create(ename, 1, 0666);
+	f = create(ename, OWRITE, 0666);
 	if(f < 0){
 		fprint(2, "create %s: %r\n", ename);
 		return;
@@ -162,7 +162,7 @@ srvcreate(char *name, int fd)
 		srvname = name;
 
 	snprint(buf, sizeof buf, "#s/%s", srvname);
-	f = create(buf, 1, 0600);
+	f = create(buf, OWRITE, 0600);
 	if(f < 0)
 		fatal(buf);
 	sprint(buf, "%d", fd);

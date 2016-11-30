@@ -6,7 +6,7 @@
 #include <libsec.h>
 #include <String.h>
 #include <thread.h>	/* only for 9p.h */
-#include <fcall.h>
+#include <9P2000.h>
 #include <9p.h>
 
 #pragma varargck type "N" Attr*

@@ -176,7 +176,7 @@ rootstat(Chan *c, uint8_t *dp, long n)
 }
 
 static Chan*
-rootopen(Chan *c, int omode)
+rootopen(Chan *c, unsigned long omode)
 {
 	return devopen(c, omode, nil, 0, devgen);
 }

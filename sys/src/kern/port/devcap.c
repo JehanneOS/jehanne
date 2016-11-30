@@ -80,7 +80,7 @@ capstat(Chan *c, uint8_t *db, long n)
  *  if the stream doesn't exist, create it
  */
 static Chan*
-capopen(Chan *c, int omode)
+capopen(Chan *c, unsigned long omode)
 {
 	if(c->qid.type & QTDIR){
 		if(omode != OREAD)

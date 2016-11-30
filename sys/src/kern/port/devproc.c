@@ -294,7 +294,7 @@ nonone(Proc *p)
 }
 
 static Chan*
-procopen(Chan *c, int omode)
+procopen(Chan *c, unsigned long omode)
 {
 	Proc *p;
 	Pgrp *pg;

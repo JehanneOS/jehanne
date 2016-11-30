@@ -117,7 +117,7 @@ pcistat(Chan* c, uint8_t* dp, long n)
 }
 
 static Chan*
-pciopen(Chan *c, int omode)
+pciopen(Chan *c, unsigned long omode)
 {
 	return devopen(c, omode, nil, 0, pcigen);
 }

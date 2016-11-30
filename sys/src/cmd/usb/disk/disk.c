@@ -7,7 +7,7 @@
 #include <u.h>
 #include <libc.h>
 #include <ctype.h>
-#include <fcall.h>
+#include <9P2000.h>
 #include <thread.h>
 #include <9p.h>
 #include "scsireq.h"

@@ -273,7 +273,7 @@ uartstat(Chan *c, uint8_t *dp, long n)
 }
 
 static Chan*
-uartopen(Chan *c, int omode)
+uartopen(Chan *c, unsigned long omode)
 {
 	Uart *p;
 

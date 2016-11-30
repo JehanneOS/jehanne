@@ -137,7 +137,7 @@ rescue(void)
 			continue;
 		if(io == -1){
 			sprint(buf, "%s/sam.save", home);
-			io = create(buf, 1, 0777);
+			io = create(buf, OWRITE, 0777);
 			if(io<0)
 				return;
 		}

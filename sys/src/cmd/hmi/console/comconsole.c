@@ -71,6 +71,7 @@ main(int argc, char *argv[])
 	fd = servecons(passthrough, passthrough, &devmnt);
 
 	if(srv){
+		debug("%s (%d): posting %d\n", argv0, getpid(), fd);
 		post(srv, fd);
 		exits(0);
 	} else {

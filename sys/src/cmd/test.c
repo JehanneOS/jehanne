@@ -152,16 +152,16 @@ e3(void)
 		return(isdir(nxtarg(0)));
 
 	if(EQ(a, "-r"))
-		return(tio(nxtarg(0), 4));
+		return(tio(nxtarg(0), AREAD));
 
 	if(EQ(a, "-w"))
-		return(tio(nxtarg(0), 2));
+		return(tio(nxtarg(0), AWRITE));
 
 	if(EQ(a, "-x"))
-		return(tio(nxtarg(0), 1));
+		return(tio(nxtarg(0), AEXEC));
 
 	if(EQ(a, "-e"))
-		return(tio(nxtarg(0), 0));
+		return(tio(nxtarg(0), AEXIST));
 
 	if(EQ(a, "-c"))
 		return(0);

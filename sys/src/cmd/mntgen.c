@@ -9,7 +9,7 @@
 
 #include <u.h>
 #include <libc.h>
-#include <fcall.h>
+#include <9P2000.h>
 #include <thread.h>
 #include <9p.h>
 #include <mp.h>
@@ -59,7 +59,7 @@ hash(char *name)
 static void
 fsopen(Req *r)
 {
-	if(r->ifcall.mode != OREAD)
+	if(r->ifcall.mode != NP_OREAD)
 		respond(r, "permission denied");
 	else
 		respond(r, nil);
@@ -210,7 +210,7 @@ fsattach(Req *r)
 		respond(r, "invalid attach specifier");
 		return;
 	}
-	
+
 	r->ofcall.qid = (Qid){0, 0, QTDIR};
 	r->fid->qid = r->ofcall.qid;
 	respond(r, nil);

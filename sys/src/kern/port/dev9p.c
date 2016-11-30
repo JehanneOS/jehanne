@@ -359,7 +359,7 @@ mntchan(void)
 {
 	Chan *c;
 
-	c = devattach('M', 0);
+	c = devattach('9', 0);
 	lock(&mntalloc);
 	c->devno = mntalloc.id++;
 	unlock(&mntalloc);
@@ -486,8 +486,75 @@ mntstat(Chan *c, uint8_t *dp, long n)
 	return nstat;
 }
 
+static unsigned long
+ninep2mode(int omode9p)
+{
+	unsigned long mode = 0;
+
+	/* 9P2000 allows a single byte for open mode and all the
+	 * constants are hardcoded in the protocol
+	 * see http://man.cat-v.org/9front/5/open
+	 */
+	if((omode9p&~0xff) || (omode9p&NP_OZEROES))
+		error("invalid 9P2000 open mode");
+
+	switch(omode9p & ~(NP_OTRUNC|NP_ORCLOSE)){
+	case NP_OREAD:
+		return OREAD;
+	case NP_OWRITE:
+		mode = OWRITE;
+		break;
+	case NP_ORDWR:
+		mode = ORDWR;
+		break;
+	case NP_OEXEC:
+		mode = OEXEC;
+		break;
+	default:
+		error("invalid 9P2000 open mode");
+	}
+	if(omode9p & NP_OTRUNC)
+		mode |= OTRUNC;
+	if(omode9p & NP_ORCLOSE)
+		mode |= ORCLOSE;
+
+	return mode;
+}
+
+static int
+mode2ninep(unsigned long mode)
+{
+	int omode9p = 0;
+
+	openmode(mode); /* error check only */
+
+	/* 9P2000 allows a single byte for open mode and all the
+	 * constants are hardcoded in the protocol
+	 * see http://man.cat-v.org/9front/5/open
+	 */
+	if((mode&OKMODE) == OREAD)
+		return NP_OREAD;
+	if((mode&ORDWR) == ORDWR)
+		omode9p |= NP_ORDWR;
+	else if(mode & OWRITE)
+		omode9p |= NP_OWRITE;
+	else if(mode & OEXEC)
+		omode9p |= NP_OEXEC;
+	if(mode & ORCLOSE)
+		omode9p |= NP_ORCLOSE;
+
+	/* this is an approssimation: in Jehanne this bit might means
+	 * something different to a server, but then the
+	 * server should not use 9P2000
+	 */
+	if(mode & OTRUNC)
+		omode9p |= NP_OTRUNC;
+
+	return omode9p;
+}
+
 static Chan*
-mntopencreate(int type, Chan *c, char *name, int omode, int perm)
+mntopencreate(int type, Chan *c, char *name, unsigned long omode, int perm)
 {
 	Mnt *mnt;
 	Mntrpc *r;
@@ -500,7 +567,7 @@ mntopencreate(int type, Chan *c, char *name, int omode, int perm)
 	}
 	r->request.type = type;
 	r->request.fid = c->fid;
-	r->request.mode = omode;
+	r->request.mode = mode2ninep(omode);
 	if(type == Tcreate){
 		r->request.perm = perm;
 		r->request.name = name;
@@ -509,7 +576,7 @@ mntopencreate(int type, Chan *c, char *name, int omode, int perm)
 
 	c->qid = r->reply.qid;
 	c->offset = 0;
-	c->mode = openmode(omode);
+	c->mode = ninep2mode(mode2ninep(omode)); // discards unsopported flags
 	c->iounit = r->reply.iounit;
 	if(c->iounit == 0 || c->iounit > mnt->msize-IOHDRSZ)
 		c->iounit = mnt->msize-IOHDRSZ;
@@ -524,13 +591,13 @@ mntopencreate(int type, Chan *c, char *name, int omode, int perm)
 }
 
 static Chan*
-mntopen(Chan *c, int omode)
+mntopen(Chan *c, unsigned long omode)
 {
 	return mntopencreate(Topen, c, nil, omode, 0);
 }
 
 static Chan*
-mntcreate(Chan *c, char *name, int omode, int perm)
+mntcreate(Chan *c, char *name, unsigned long omode, unsigned long perm)
 {
 	return mntopencreate(Tcreate, c, name, omode, perm);
 }
@@ -1171,9 +1238,9 @@ rpcattn(void *v)
 	return r->done || r->m->rip == 0;
 }
 
-Dev mntdevtab = {
-	'M',
-	"mnt",
+Dev ninepdevtab = {
+	'9',
+	"ninep",
 
 	mntreset,
 	devinit,

@@ -9,7 +9,7 @@
 
 #include <u.h>
 #include <libc.h>
-#include <fcall.h>
+#include <9P2000.h>
 
 int
 dirfwstat(int fd, Dir *d)

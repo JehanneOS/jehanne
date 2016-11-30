@@ -90,7 +90,7 @@ envstat(Chan *c, uint8_t *db, long n)
 }
 
 static Chan*
-envopen(Chan *c, int omode)
+envopen(Chan *c, unsigned long omode)
 {
 	Egrp *eg;
 	Evalue *e;
@@ -137,7 +137,7 @@ envopen(Chan *c, int omode)
 }
 
 static Chan*
-envcreate(Chan *c, char *name, int omode, int _1)
+envcreate(Chan *c, char *name, unsigned long omode, unsigned long _1)
 {
 	Egrp *eg;
 	Evalue *e;

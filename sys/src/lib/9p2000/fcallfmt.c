@@ -9,7 +9,7 @@
 
 #include <u.h>
 #include <libc.h>
-#include <fcall.h>
+#include <9P2000.h>
 
 static uint32_t dumpsome(char*, char*, char*, int32_t);
 static void fdirconv(char*, char*, Dir*);

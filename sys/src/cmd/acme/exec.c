@@ -15,7 +15,7 @@
 #include <mouse.h>
 #include <keyboard.h>
 #include <frame.h>
-#include <fcall.h>
+#include <9P2000.h>
 #include <plumb.h>
 #include "dat.h"
 #include "fns.h"
@@ -165,7 +165,7 @@ execute(Text *t, uint32_t aq0, uint32_t aq1, int external, Text *argt)
 			f |= 2;
 		}
 		aa = getbytearg(argt, TRUE, TRUE, &a);
-		if(a){	
+		if(a){
 			if(strlen(a) > EVENTSIZE){	/* too big; too bad */
 				free(aa);
 				free(a);
@@ -921,7 +921,7 @@ putall(Text*ta, Text*b, Text*tc, int d, int ie, Rune*f, int g)
 			if(w->nopen[QWevent] > 0)
 				continue;
 			a = runetobyte(w->body.file->name, w->body.file->nname);
-			e = access(a, 0);
+			e = access(a, AEXIST);
 			if(w->body.file->mod || w->body.ncache)
 				if(e < 0)
 					warning(nil, "no auto-Put of %s: %r\n", a);

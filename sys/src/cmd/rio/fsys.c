@@ -6,7 +6,7 @@
 #include <mouse.h>
 #include <keyboard.h>
 #include <frame.h>
-#include <fcall.h>
+#include <9P2000.h>
 #include "dat.h"
 #include "fns.h"
 
@@ -237,7 +237,7 @@ filsysmount(Filsys *fs, int id)
 
 	close(fs->sfd);	/* close server end so mount won't hang if exiting */
 	sprint(buf, "%d", id);
-	if(mount(fs->cfd, -1, "/mnt/wsys", MREPL, buf, 'M') < 0){
+	if(mount(fs->cfd, -1, "/mnt/wsys", MREPL, buf, '9') < 0){
 		fprint(2, "mount failed: %r\n");
 		return -1;
 	}
@@ -497,26 +497,26 @@ filsysopen(Filsys *fs, Xfid *x, Fid *f)
 	int m;
 
 	/* can't truncate anything, so just disregard */
-	x->mode &= ~(OTRUNC|OCEXEC);
+	x->mode &= ~(NP_OTRUNC);
 	/* can't execute or remove anything */
-	if(x->mode==OEXEC || (x->mode&ORCLOSE))
+	if(x->mode==NP_OEXEC || (x->mode&NP_ORCLOSE))
 		goto Deny;
 	switch(x->mode){
 	default:
 		goto Deny;
-	case OREAD:
+	case NP_OREAD:
 		m = 0400;
 		break;
-	case OWRITE:
+	case NP_OWRITE:
 		m = 0200;
 		break;
-	case ORDWR:
+	case NP_ORDWR:
 		m = 0600;
 		break;
 	}
 	if(((f->dir->perm&~(DMDIR|DMAPPEND))&m) != m)
 		goto Deny;
-		
+
 	sendp(x->c, xfidopen);
 	return nil;
 

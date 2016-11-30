@@ -1,6 +1,7 @@
 #include <u.h>
 #include <libc.h>
 #include <thread.h>
+#include <9P2000.h>
 #include <bio.h>
 #include "dat.h"
 #include "fns.h"
@@ -156,7 +157,7 @@ cmdcreate(int argc, char **argv)
 		chanclunk(ch);
 		return -1;
 	}
-	if(chancreat(ch, n, perm, OREAD) < 0){
+	if(chancreat(ch, n, perm, NP_OREAD) < 0){
 		chanclunk(ch);
 		return -1;
 	}

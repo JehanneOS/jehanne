@@ -17,7 +17,7 @@
  */
 #include <u.h>
 #include <libc.h>
-#include <fcall.h>
+#include <9P2000.h>
 
 #include "console.h"
 
@@ -703,10 +703,18 @@ rwalk(Fcall *req, Fcall *rep)
 static int
 ropen(Fcall *req, Fcall *rep)
 {
-	static int need[4] = { 4, 2, 6, 1 };
+	static int need[4] = {
+		4,	/* NP_OREAD */
+		2,	/* NP_OWRITE */
+		6,	/* NP_ORDWR */
+		1	/* NP_OEXEC */
+	};
 	struct Qtab *t;
 	Fid *f;
 	int n;
+
+	if(req->mode&NP_OZEROES)
+		return rerror(rep, "invalid 9P2000 open mode");
 
 	f = findFid(req->fid);
 	if(f == nil)
@@ -742,11 +750,11 @@ ropen(Fcall *req, Fcall *rep)
 			}
 			break;
 		case Qcons:
-			if(ISCLOSED(inputfid) && (req->mode & OREAD) == OREAD)
+			if(ISCLOSED(inputfid) && (req->mode & NP_OREAD) == NP_OREAD)
 				return rerror(rep, "input device closed");
-			if(ISCLOSED(outputfid) && (req->mode & OWRITE) == OWRITE)
+			if(ISCLOSED(outputfid) && (req->mode & NP_OWRITE) == NP_OWRITE)
 				return rerror(rep, "output device closed");
-			if((req->mode & OWRITE) == OWRITE)
+			if((req->mode & NP_OWRITE) == NP_OWRITE)
 				rep->iounit = ScreenBufferSize;
 			break;
 		default:
@@ -816,7 +824,7 @@ rwrite(Fcall *req, Fcall *rep)
 	f = findFid(req->fid);
 	if(f == nil)
 		return rerror(rep, "bad fid");
-	if(ISCLOSED(f) || (f->opened & OWRITE) != OWRITE)
+	if(ISCLOSED(f) || (f->opened & NP_OWRITE) != NP_OWRITE)
 		return rerror(rep, "i/o error");
 
 	switch(f->qid.path){
@@ -972,7 +980,7 @@ fsinit(int *mnt, int *mntdev)
 
 	pipe(tmp);
 	*mnt = tmp[0];
-	*mntdev = 'M';
+	*mntdev = '9';
 
 	return tmp[1];
 }

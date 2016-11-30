@@ -10,7 +10,7 @@
 #include <u.h>
 #include <libc.h>
 #include <auth.h>
-#include <fcall.h>
+#include <9P2000.h>
 #include "exportfs.h"
 
 extern char *netdir, *local, *remote;
@@ -192,7 +192,7 @@ Xwalk(Fsrpc *t)
 			wf->ref++;
 			goto Accept;
 		}
-	
+
 		wf = file(f->f, t->work.wname[i]);
 		if(wf == 0){
 			errstr(err, sizeof err);
@@ -308,7 +308,7 @@ Xcreate(Fsrpc *t)
 		t->busy = 0;
 		return;
 	}
-	
+
 
 	path = makepath(f->f, t->work.name);
 	f->fid = create(path, t->work.mode, t->work.perm);
@@ -469,7 +469,7 @@ slave(Fsrpc *f)
 			f->busy = 0;
 			return;
 		case Topen:
-		  	if((f->work.mode&3) == OWRITE || (f->work.mode&OTRUNC)){
+		  	if((f->work.mode&3) == NP_OWRITE || (f->work.mode&NP_OTRUNC)){
 				reply(&f->work, &rhdr, Ereadonly);
 				f->busy = 0;
 				return;
@@ -485,7 +485,7 @@ slave(Fsrpc *f)
 				if(pid != p->pid)
 					fatal("rendezvous sync fail");
 				return;
-			}	
+			}
 		}
 
 		if(++nproc > MAXPROC)
@@ -499,7 +499,7 @@ slave(Fsrpc *f)
 		case 0:
 			if (local[0] != '\0')
 				if (netdir[0] != '\0')
-					procsetname("%s: %s -> %s", netdir, 
+					procsetname("%s: %s -> %s", netdir,
 						local, remote);
 				else
 					procsetname("%s -> %s", local, remote);
@@ -534,7 +534,7 @@ blockingslave(void)
 	pid = getpid();
 
 	m = rendezvous((void*)pid, 0);
-	
+
 	for(;;) {
 		p = rendezvous((void*)pid, (void*)pid);
 		if(p == (void*)~0)			/* Interrupted */
@@ -607,7 +607,7 @@ openmount(int sfd)
 	dup(p[0], 0);
 	dup(p[0], 1);
 	exec("/cmd/exportfs", arg);
-	_exits("whoops: exec failed");	
+	_exits("whoops: exec failed");
 	return -1;
 }
 
@@ -630,7 +630,7 @@ slaveopen(Fsrpc *p)
 		close(f->fid);
 		f->fid = -1;
 	}
-	
+
 	path = makepath(f->f, "");
 	DEBUG(DFD, "\topen: %s %d\n", path, work->mode);
 

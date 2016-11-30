@@ -15,7 +15,7 @@
 #include <mouse.h>
 #include <keyboard.h>
 #include <frame.h>
-#include <fcall.h>
+#include <9P2000.h>
 #include <bio.h>
 #include <plumb.h>
 #include "dat.h"
@@ -384,7 +384,7 @@ rowdump(Row *row, char *file)
 					0, 0,
 					100*(w->r.min.y-c->r.min.y)/Dy(c->r),
 					fontname);
-			}else if((w->dirty==FALSE && access(a, 0)==0) || w->isdir){
+			}else if((w->dirty==FALSE && access(a, AEXIST)==0) || w->isdir){
 				dumped = FALSE;
 				t->file->dumpid = w->id;
 				Bprint(b, "f%11d %11d %11d %11d %11d %s\n", i, w->id,

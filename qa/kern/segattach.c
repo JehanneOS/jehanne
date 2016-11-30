@@ -58,7 +58,7 @@ main(void)
 	}
 	if(p == (char*)seg+(1024*1024)){
 		print("FAIL: segfree: no page previously freed had been faulted\n");
-		exit("FAIL");
+		exits("FAIL");
 	}
 
 	if(segdetach(seg) < 0){

@@ -606,9 +606,9 @@ inittime(void)
 		mode = ORDWR;
 
 	/* bind in clocks */
-	if(access("/dev/time", 0) < 0)
+	if(access("/dev/time", AEXIST) < 0)
 		bind("#c", "/dev", MAFTER);
-	if(access("/dev/rtc", 0) < 0)
+	if(access("/dev/rtc", AEXIST) < 0)
 		bind("#r", "/dev", MAFTER);
 
 	/* figure out what interface we have */
@@ -1374,7 +1374,7 @@ background(void)
 	if(inbackground)
 		return;
 
-	if(!debug) 
+	if(!debug)
 		switch(rfork(RFPROC|RFFDG|RFNAMEG|RFNOTEG|RFNOWAIT)){
 		case -1:
 			sysfatal("forking: %r");

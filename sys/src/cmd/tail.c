@@ -99,7 +99,7 @@ main(int argc, char **argv)
 		count--;
 	if(argc > 2)
 		usage();
-	if(argc > 1 && (file=open(argv[1],0)) < 0)
+	if(argc > 1 && (file=open(argv[1], OREAD)) < 0)
 		fatal(argv[1]);
 	seekable = isseekable(file);
 
@@ -355,9 +355,9 @@ getnumber(char *s)
 	if(count < 0 ||	(int)count != count)
 		fatal("too big");
 	return 1;
-}	
+}
 
-void		
+void
 fatal(char *s)
 {
 	char buf[ERRMAX];
@@ -380,7 +380,7 @@ usage(void)
  */
 static int
 isseekable(int fd)
-{	
+{
 	int64_t m;
 
 	m = seek(fd, 0, 1);

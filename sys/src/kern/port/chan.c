@@ -1285,7 +1285,7 @@ namec(char *aname, int amode, int omode, int perm)
 			n = chartorune(&r, up->genbuf+1)+1;
 		}
 		/* actually / is caught by parsing earlier */
-		if(utfrune("M", r))
+		if(utfrune("9", r))
 			error(Enoattach);
 		/*
 		 * noattach is sandboxing.

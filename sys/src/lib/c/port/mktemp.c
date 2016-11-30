@@ -29,7 +29,7 @@ mktemp(char *as)
 	}
 	s++;
 	i = 'a';
-	while(access(as, 0) != -1) {
+	while(access(as, AEXIST) != -1) {
 		if (i == 'z')
 			return "/";
 		*s = i++;

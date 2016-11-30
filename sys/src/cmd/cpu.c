@@ -18,7 +18,7 @@
 #include <libc.h>
 #include <bio.h>
 #include <auth.h>
-#include <fcall.h>
+#include <9P2000.h>
 #include <libsec.h>
 
 #define	Maxfdata 8192
@@ -239,7 +239,7 @@ main(int argc, char **argv)
 	/* start up a process to pass along notes */
 	lclnoteproc(data);
 
-	/* 
+	/*
 	 *  Wait for the other end to execute and start our file service
 	 *  of /mnt/term
 	 */
@@ -356,7 +356,7 @@ remoteside(int old)
 	strcpy(buf, VERSION9P);
 	if(fversion(fd, 64*1024, buf, sizeof buf) < 0)
 		exits("fversion failed");
-	if(mount(fd, -1, "/mnt/term", MCREATE|MREPL, "", 'M') < 0)
+	if(mount(fd, -1, "/mnt/term", MCREATE|MREPL, "", '9') < 0)
 		exits("mount failed");
 
 	close(fd);
@@ -439,7 +439,7 @@ readstr(int fd, char *str, int len)
 
 	while(len) {
 		n = read(fd, str, 1);
-		if(n < 0) 
+		if(n < 0)
 			return -1;
 		if(*str == '\0')
 			return 0;
@@ -712,7 +712,7 @@ rmtnoteproc(void)
 			syslog(0, "cpu", "cpu -R: can't open %s", rmtnotefile);
 			_exits(0);
 		}
-	
+
 		for(;;){
 			n = read(fd, buf, sizeof(buf)-1);
 			if(n <= 0){
@@ -1029,7 +1029,7 @@ nofids:
 			}
 			break;
 		case Topen:
-			if(f.mode != OREAD){
+			if(f.mode != NP_OREAD){
 				f.type = Rerror;
 				f.ename = Eperm;
 				break;
@@ -1122,7 +1122,7 @@ lclnoteproc(int netfd)
 		return;
 	case 0:
 		close(pfd[0]);
-		if(mount(pfd[1], -1, "/dev", MBEFORE, "", 'M') < 0)
+		if(mount(pfd[1], -1, "/dev", MBEFORE, "", '9') < 0)
 			fprint(2, "cpu: can't mount note proc: %r\n");
 		close(pfd[1]);
 		return;

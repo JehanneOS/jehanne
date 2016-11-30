@@ -15,7 +15,7 @@
 #include <mouse.h>
 #include <keyboard.h>
 #include <frame.h>
-#include <fcall.h>
+#include <9P2000.h>
 #include <plumb.h>
 #include "dat.h"
 #include "fns.h"
@@ -351,7 +351,7 @@ includefile(Rune *dir, Rune *file, int nfile)
 	m = runestrlen(dir);
 	a = emalloc((m+1+nfile)*UTFmax+1);
 	sprint(a, "%S/%.*S", dir, nfile, file);
-	n = access(a, 0);
+	n = access(a, AEXIST);
 	free(a);
 	if(n < 0)
 		return (Runestr){nil, 0};
@@ -377,7 +377,7 @@ includename(Text *t, Rune *r, int n)
 		sprint(buf, "/%s/include", objtype);
 		objdir = bytetorune(buf, &i);
 		objdir = runerealloc(objdir, i+1);
-		objdir[i] = '\0';	
+		objdir[i] = '\0';
 	}
 
 	w = t->w;
@@ -536,7 +536,7 @@ expandfile(Text *t, uint32_t q0, uint32_t q1, Expand *e)
 	if(w != nil)
 		goto Isfile;
 	/* if it's the name of a file, it's a file */
-	if(access(e->bname, 0) < 0){
+	if(access(e->bname, AEXIST) < 0){
 		free(e->bname);
 		e->bname = nil;
 		goto Isntfile;

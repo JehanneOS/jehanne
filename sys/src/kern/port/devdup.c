@@ -58,7 +58,7 @@ dupstat(Chan *c, uint8_t *db, long n)
 }
 
 static Chan*
-dupopen(Chan *c, int omode)
+dupopen(Chan *c, unsigned long omode)
 {
 	Chan *f;
 	int fd, twicefd;

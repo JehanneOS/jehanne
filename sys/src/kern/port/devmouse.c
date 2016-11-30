@@ -180,7 +180,7 @@ mousestat(Chan *c, uint8_t *db, long n)
 }
 
 static Chan*
-mouseopen(Chan *c, int omode)
+mouseopen(Chan *c, unsigned long omode)
 {
 	switch((uint32_t)c->qid.path){
 	case Qdir:
@@ -212,7 +212,7 @@ mouseopen(Chan *c, int omode)
 }
 
 static Chan*
-mousecreate(Chan *c, char *j, int i, int u)
+mousecreate(Chan *c, char *j, unsigned long i, unsigned long u)
 {
 	error(Eperm);
 	return nil;

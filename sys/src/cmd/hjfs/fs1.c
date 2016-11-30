@@ -1,7 +1,7 @@
 #include <u.h>
 #include <libc.h>
 #include <thread.h>
-#include <fcall.h>
+#include <9P2000.h>
 #include "dat.h"
 #include "fns.h"
 
@@ -184,12 +184,12 @@ void
 writeusers(Fs *fs)
 {
 	Chan *ch;
-	
+
 	ch = chanattach(fs, 0);
 	if(ch == nil)
 		goto error;
 	ch->uid = -1;
-	chancreat(ch, "cfg", DMDIR | 0775, OREAD);
+	chancreat(ch, "cfg", DMDIR | 0775, NP_OREAD);
 	chanclunk(ch);
 	ch = chanattach(fs, 0);
 	if(ch == nil)
@@ -198,9 +198,9 @@ writeusers(Fs *fs)
 	if(chanwalk(ch, "cfg") <= 0)
 		goto error;
 	if(chanwalk(ch, "users") > 0){
-		if(chanopen(ch, OWRITE|OTRUNC) <= 0)
+		if(chanopen(ch, NP_OWRITE|NP_OTRUNC) <= 0)
 			goto error;
-	}else if(chancreat(ch, "users", 0664, OWRITE) <= 0)
+	}else if(chancreat(ch, "users", 0664, NP_OWRITE) <= 0)
 			goto error;
 	if(userssave(fs, ch) < 0){
 		chanremove(ch);
@@ -219,7 +219,7 @@ void
 readusers(Fs *fs)
 {
 	Chan *ch;
-	
+
 	ch = chanattach(fs, 0);
 	if(ch == nil)
 		goto err;
@@ -228,7 +228,7 @@ readusers(Fs *fs)
 		goto err;
 	if(chanwalk(ch, "users") <= 0)
 		goto err;
-	if(chanopen(ch, OREAD) < 0)
+	if(chanopen(ch, NP_OREAD) < 0)
 		goto err;
 	if(usersload(fs, ch) < 0)
 		goto err;
@@ -247,7 +247,7 @@ ream(Fs *fs)
 	Buf *b, *c;
 	uint64_t i, firsti, lasti;
 	int j, je;
-	
+
 	d = fs->d;
 	dprint("hjfs: reaming %s\n", d->name);
 	b = getbuf(d, SUPERBLK, TSUPERBLOCK, 1);
@@ -300,7 +300,7 @@ initfs(Dev *d, int doream, int flags)
 	Fs *fs;
 	Buf *b;
 	FLoc f;
-	
+
 	fs = emalloc(sizeof(*fs));
 	fs->d = d;
 	if(doream)
@@ -353,7 +353,7 @@ int
 newqid(Fs *fs, uint64_t *q)
 {
 	Buf *b;
-	
+
 	b = getbuf(fs->d, SUPERBLK, TSUPERBLOCK, 0);
 	if(b == nil)
 		return -1;
@@ -367,7 +367,7 @@ Loc *
 getloc(Fs *fs, FLoc f, Loc *next)
 {
 	Loc *l;
-	
+
 	qlock(&fs->loctree);
 	if(next != nil && next->child != nil){
 		l = next->child;
@@ -818,7 +818,7 @@ findentry(Fs *fs, FLoc *l, Buf *b, char *name, FLoc *rl, int dump)
 	Dentry *d;
 	uint64_t r;
 	Buf *c;
-	
+
 	d = getdent(l, b);
 	if(d == nil)
 		return -1;
@@ -844,7 +844,7 @@ findentry(Fs *fs, FLoc *l, Buf *b, char *name, FLoc *rl, int dump)
 		putbuf(c);
 	}
 	werrstr(Enoent);
-	return 0;	
+	return 0;
 }
 
 void
@@ -872,7 +872,7 @@ deltraverse(Fs *fs, Del *p, Buf *b, Del **last)
 	uint64_t i, s, r;
 	int j, rc;
 	Del *dd;
-	
+
 	frb = b == nil;
 	if(frb){
 		b = getbuf(fs->d, p->blk, TDENTRY, 0);

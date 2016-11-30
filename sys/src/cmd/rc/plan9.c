@@ -320,7 +320,7 @@ ForkExecute(char *file, char **argv, int sin, int sout, int serr)
 {
 	int pid;
 
-	if(access(file, 1) != 0)
+	if(access(file, AEXEC) != 0)
 		return -1;
 	switch(pid = fork()){
 	case -1:
@@ -447,7 +447,7 @@ trimdirs(Dir *d, int nd)
  * onlydirs is advisory -- it means you only
  * need to return the directories.  it's okay to
  * return files too (e.g., on unix where you can't
- * tell during the readdir), but that just makes 
+ * tell during the readdir), but that just makes
  * the globber work harder.
  */
 int
@@ -467,7 +467,7 @@ Again:
 				n = trimdirs(dir[f].dbuf, n);
 				if(n == 0)
 					goto Again;
-			}	
+			}
 			dir[f].n = n;
 		}else
 			dir[f].n = 0;
@@ -562,7 +562,7 @@ Executable(char *file)
 int
 Creat(char *file)
 {
-	return create(file, 1, 0666L);
+	return create(file, OWRITE, 0666L);
 }
 
 int
@@ -649,7 +649,7 @@ void
 delwaitpid(int pid)
 {
 	int r, w;
-	
+
 	for(r=w=0; r<nwaitpids; r++)
 		if(waitpids[r] != pid)
 			waitpids[w++] = waitpids[r];

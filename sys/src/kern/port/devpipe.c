@@ -171,7 +171,7 @@ pipestat(Chan *c, uint8_t *db, long n)
  *  if the stream doesn't exist, create it
  */
 static Chan*
-pipeopen(Chan *c, int omode)
+pipeopen(Chan *c, unsigned long omode)
 {
 	Pipe *p;
 

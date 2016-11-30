@@ -471,7 +471,7 @@ tracestat(Chan *c, uint8_t *db, long n)
 }
 
 static Chan*
-traceopen(Chan *c, int omode)
+traceopen(Chan *c, unsigned long omode)
 {
 
 	/* if there is no tracelog, allocate one. Open always fails

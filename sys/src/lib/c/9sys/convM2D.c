@@ -9,7 +9,7 @@
 
 #include	<u.h>
 #include	<libc.h>
-#include	<fcall.h>
+#include	<9P2000.h>
 
 int
 statcheck(uint8_t *buf, uint32_t nbuf)

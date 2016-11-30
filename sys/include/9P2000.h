@@ -14,6 +14,17 @@
 
 #define	MAXWELEM	16
 
+/* Plan9/9p2000 flags for Topen Tcreate */
+#define	NP_OREAD	0	/* open for read */
+#define	NP_OWRITE	1	/* write */
+#define	NP_ORDWR	2	/* read and write */
+#define	NP_OEXEC	3	/* execute, == read but check execute permission */
+#define	NP_OTRUNC	16	/* or'ed in (except for exec), truncate file first */
+#define	NP_ORCLOSE	64	/* or'ed in, remove on close */
+
+/* bits that must be zero in open/create mode */
+#define NP_OZEROES	~(NP_OREAD|NP_OWRITE|NP_ORDWR|NP_OEXEC|NP_OTRUNC|NP_ORCLOSE)
+
 typedef
 struct	Fcall
 {
@@ -44,7 +55,7 @@ struct	Fcall
 			char	*aname;		/* Tauth, Tattach */
 		};
 		struct {
-			uint32_t	perm;		/* Tcreate */ 
+			uint32_t	perm;		/* Tcreate */
 			char	*name;		/* Tcreate */
 			uint8_t	mode;		/* Tcreate, Topen */
 		};

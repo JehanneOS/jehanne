@@ -1460,14 +1460,20 @@ errorf(char *fmt, ...)
 void
 error(char *err)
 {
+	errorl(err, -1);
+}
+
+void
+errorl(char *err, long syscallerr)
+{
 	if(up == nil)
-		panic("error(%s) not in a process", err);
+		panic("errorl(%s, %lld) not in a process", err, syscallerr);
 	spllo();
 
 	if(up->nerrlab >= NERR)
 		panic("error stack too deep");
-	if(err != up->errstr)
-		kstrcpy(up->errstr, err, ERRMAX);
+	up->syscallerr = syscallerr;
+	kstrcpy(up->errstr, err, ERRMAX);
 	setlabel(&up->errlab[NERR-1]);
 	nexterror();
 }

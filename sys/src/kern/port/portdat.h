@@ -647,6 +647,7 @@ struct Proc
 	uint8_t		arg[MAXSYSARG*sizeof(void*)];	/* system call arguments */
 	int		nerrlab;
 	Label		errlab[NERR];
+	long		syscallerr;	/* (negative) error code to return from syscalls */
 	char*		syserrstr;	/* last error from a system call, errbuf0 or 1 */
 	char*		errstr;		/* reason we're unwinding the error stack, errbuf1 or 0 */
 	char		errbuf0[ERRMAX];

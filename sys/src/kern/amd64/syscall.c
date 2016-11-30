@@ -293,6 +293,7 @@ syscall(Syscalls scallnr, Ureg* ureg)
 		poperror();
 	} else {
 		/* failure: save the error buffer for errstr */
+		retv.l = up->syscallerr;
 		tmp = up->syserrstr;
 		up->syserrstr = up->errstr;
 		up->errstr = tmp;

@@ -18,21 +18,6 @@
 #include <u.h>
 #include <libc.h>
 
-static int
-opensegment(int pid)
-{
-	char file[128];
-	int32_t f;
-
-	sprint(file, "#p/%d/segment", pid);
-	f = open(file, OWRITE);
-	if(f < 0){
-		sprint(file, "/proc/%d/segment", pid);
-		f = open(file, OWRITE);
-	}
-	return f;
-}
-
 void*
 segattach(int attr, const char *class, void *va, unsigned long len)
 {
@@ -40,8 +25,7 @@ segattach(int attr, const char *class, void *va, unsigned long len)
 	long tmp;
 	char msg[256];
 
-	tmp = getpid();
-	fd = opensegment(tmp);
+	fd = open("#0/segments", OWRITE);
 	if(fd < 0)
 		return (void*)-1;
 
@@ -57,8 +41,7 @@ segdetach(void *addr)
 	int fd, tmp;
 	char msg[256];
 
-	tmp = getpid();
-	fd = opensegment(tmp);
+	fd = open("#0/segments", OWRITE);
 	if(fd < 0)
 		return -1;
 
@@ -74,8 +57,7 @@ segfree(void *addr, unsigned long len)
 	int fd, tmp;
 	char msg[256];
 
-	tmp = getpid();
-	fd = opensegment(tmp);
+	fd = open("#0/segments", OWRITE);
 	if(fd < 0)
 		return -1;
 

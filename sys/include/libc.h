@@ -396,6 +396,7 @@ extern	char*	mktemp(char*);
 extern	double	modf(double, double*);
 extern	void	notejmp(void*, jmp_buf, int);
 extern	void	perror(const char*);
+extern	int	pipe(int pipes[2]);
 extern	int	postnote(int, int, const char *);
 extern	double	pow10(int);
 extern	int	putenv(const char*, const char*);

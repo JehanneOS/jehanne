@@ -1,7 +1,7 @@
 /*
  * This file is part of Jehanne.
  *
- * Copyright (C) 2016 Giacomo Tesio <giacomo@tesio.it>
+ * Copyright (C) 2015-2017 Giacomo Tesio <giacomo@tesio.it>
  *
  * Jehanne is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,14 +15,23 @@
  * You should have received a copy of the GNU General Public License
  * along with Jehanne.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include <u.h>
+#include <libc.h>
 
-#include	<u.h>
-#include	<libc.h>
+typedef union PipeSet
+{
+	long	merged;
+	int	fd[2];
+} PipeSet;
 
 int
-getpid(void)
+pipe(int pipes[2])
 {
-	int pid;
-	pid = (int)remove("#0/pid");
-	return pid;
+	PipeSet pset;
+	pset.merged = remove("#0/pipes");
+	if(pset.merged == -1)
+		return -1;
+	pipes[0] = pset.fd[0];
+	pipes[1] = pset.fd[1];
+	return 0;
 }

@@ -26,7 +26,7 @@
  * The sys*() routines needn't poperror() as they return directly to syscall().
  */
 
-static void
+void
 unlockfgrp(Fgrp *f)
 {
 	int ex;
@@ -74,7 +74,7 @@ growfd(Fgrp *f, int fd)	/* fd is always >= 0 */
 /*
  *  this assumes that the fgrp is locked
  */
-static int
+int
 findfreefd(Fgrp *f, int start)
 {
 	int fd;
@@ -105,32 +105,6 @@ newfd(Chan *c)
 	f->fd[fd] = c;
 	unlockfgrp(f);
 	return fd;
-}
-
-static int
-newfd2(int fd[2], Chan *c[2])
-{
-	Fgrp *f;
-
-	f = up->fgrp;
-	lock(&f->l);
-	fd[0] = findfreefd(f, 0);
-	if(fd[0] < 0){
-		unlockfgrp(f);
-		return -1;
-	}
-	fd[1] = findfreefd(f, fd[0]+1);
-	if(fd[1] < 0){
-		unlockfgrp(f);
-		return -1;
-	}
-	if(fd[1] > f->maxfd)
-		f->maxfd = fd[1];
-	f->fd[fd[0]] = c[0];
-	f->fd[fd[1]] = c[1];
-	unlockfgrp(f);
-
-	return 0;
 }
 
 Chan*
@@ -201,44 +175,6 @@ sysfd2path(int fd, char* buf, int nbuf)
 	c = fdtochan(fd, -1, 0, 1);
 	snprint(buf, nbuf, "%s", chanpath(c));
 	cclose(c);
-
-	return 0;
-}
-
-int
-syspipe(int* a)
-{
-	int fd[2];
-	Chan *c[2];
-	static char *datastr[] = {"data", "data1"};
-
-	a = validaddr(a, sizeof(fd), 1);
-	evenaddr(PTR2UINT(a));
-
-	c[0] = namec("#|", Atodir, 0, 0);
-	c[1] = nil;
-	fd[0] = -1;
-	fd[1] = -1;
-
-	if(waserror()){
-		cclose(c[0]);
-		if(c[1])
-			cclose(c[1]);
-		nexterror();
-	}
-	c[1] = cclone(c[0]);
-	if(walk(&c[0], datastr+0, 1, 1, nil) < 0)
-		error(Egreg);
-	if(walk(&c[1], datastr+1, 1, 1, nil) < 0)
-		error(Egreg);
-	c[0] = c[0]->dev->open(c[0], ORDWR);
-	c[1] = c[1]->dev->open(c[1], ORDWR);
-	if(newfd2(fd, c) < 0)
-		error(Enofd);
-	poperror();
-
-	a[0] = fd[0];
-	a[1] = fd[1];
 
 	return 0;
 }

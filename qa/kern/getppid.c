@@ -38,13 +38,8 @@ main(void)
 			exits("FAIL");
 		}
 		rfork(RFNOMNT|RFCNAMEG);
-		if(getppid() != -1){
-			print("FAIL: rfork(RFNOMNT|RFCNAMEG)); getppid() != -1\n");
-			exits("FAIL");
-		}
-		rerrstr(err, ERRMAX);
-		if(strcmp("getppid: cannot open neither #c/ppid nor /dev/ppid", err)){
-			print("FAIL: rfork(RFNOMNT|RFCNAMEG)); getppid() set errstr '%s'\n", err);
+		if(getppid() != ppid){
+			print("FAIL: rfork(RFNOMNT|RFCNAMEG)); getppid() != getmainpid()\n");
 			exits("FAIL");
 		}
 		exits(nil);

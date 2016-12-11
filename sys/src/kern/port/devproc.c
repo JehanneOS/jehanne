@@ -1,3 +1,20 @@
+/*
+ * This file is part of Jehanne.
+ *
+ * Copyright (C) 2015-2016 Giacomo Tesio <giacomo@tesio.it>
+ *
+ * Jehanne is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 2 of the License.
+ *
+ * Jehanne is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Jehanne.  If not, see <http://www.gnu.org/licenses/>.
+ */
 #include	"u.h"
 #include	"../port/lib.h"
 #include	"mem.h"
@@ -51,11 +68,6 @@ enum
 	CMwaitstop,
 	CMwired,
 	CMtrace,
-
-	/* segments */
-	CMsegattach,
-	CMsegdetach,
-	CMsegfree,
 };
 
 enum{
@@ -83,7 +95,7 @@ Dirtab procdir[] =
 	"ns",		{Qns},		0,			0444,
 	"proc",		{Qproc},	0,			0400,
 	"regs",		{Qregs},	sizeof(Ureg),		0000,
-	"segment",	{Qsegment},	0,			0644,
+	"segment",	{Qsegment},	0,			0444,
 	"status",	{Qstatus},	STATSIZE,		0444,
 	"text",		{Qtext},	0,			0000,
 	"wait",		{Qwait},	0,			0400,
@@ -108,9 +120,6 @@ Cmdtab proccmd[] = {
 	CMwaitstop,		"waitstop",		1,
 	CMwired,		"wired",		2,
 	CMtrace,		"trace",		0,
-	CMsegattach,		"attach",		5,
-	CMsegdetach,		"detach",		2,
-	CMsegfree,		"free",			3,
 };
 
 /*
@@ -366,7 +375,6 @@ procopen(Chan *c, unsigned long omode)
 
 	case Qsegment:
 		if(omode != OREAD && omode != OSTAT)
-		if(omode != OWRITE || up->pid != pid)
 			error(Eperm);
 		break;
 
@@ -1092,137 +1100,6 @@ mntscan(Mntwalk *mw, Proc *p)
 	runlock(&pg->ns);
 }
 
-static uintptr_t
-segattach(Proc* p, int attr, const char* name, uintptr_t va, usize len)
-{
-	unsigned int sno, tmp;
-	ProcSegment *s;
-	uintptr_t pa, size;
-
-
-	if((va != 0 && va < UTZERO) || iskaddr(va))
-		error("virtual address below text or in kernel");
-
-	vmemchr((void *)name, 0, ~0);
-
-	for(sno = 0; sno < NSEG; sno++)
-		if(p->seg[sno] == nil && sno != ESEG)
-			break;
-
-	if(sno == NSEG)
-		error("too many segments in process");
-
-	len = ROUNDUP(va+len, PGSZ) - ROUNDDN(va, PGSZ);
-	va = ROUNDDN(va, PGSZ);
-
-	if(rawmem_find((char**)&name, &pa, &tmp, &size)){
-		s = 0;
-		wlock(&p->seglock);
-		if(pa){
-			if(!segment_physical(&s, attr&SegPermissionMask, attr&SegFlagMask, va, pa))
-				goto SegAttachEbadarg;
-		} else if(size != -1){
-			if(!segment_global(&s, attr&SegPermissionMask, va, (char*)name))
-				goto SegAttachEbadarg;
-		} else {
-			if(!segment_virtual(&s, tmp&SegmentTypesMask, attr&SegPermissionMask&~SgExecute, attr&SegFlagMask, va, va+len))
-				goto SegAttachEbadarg;
-		}
-		for(tmp = 0; tmp < NSEG; tmp++){
-			if(p->seg[tmp])
-			if((p->seg[tmp]->base > s->base && p->seg[tmp]->base < s->top)
-			|| (p->seg[tmp]->top > s->base && p->seg[tmp]->top < s->top)){
-				goto SegAttachEsoverlap;
-			}
-		}
-		up->seg[sno] = s;
-		wunlock(&p->seglock);
-		return s->base;
-	}
-	error("segment not found");
-SegAttachEbadarg:
-	wunlock(&p->seglock);
-	error(Ebadarg);
-SegAttachEsoverlap:
-	wunlock(&p->seglock);
-	segment_release(&s);
-	error(Esoverlap);
-}
-
-static uintptr_t
-segdetach(Proc* p, uintptr_t va)
-{
-	if(!proc_segment_detach(p, va))
-		error(Ebadarg);
-
-	mmuflush();
-	return 0;
-}
-
-static uintptr_t
-segfree(Proc* p, uintptr_t va, unsigned long len)
-{
-	ProcSegment *s;
-	uintptr_t from, to;
-
-	from = PTR2UINT(va);
-	to = ROUNDDN(from + len, PGSZ);
-
-	s = proc_segment(p, from);
-	if(s == nil || to < from || to > s->top)
-		error(Ebadarg);
-
-	from = ROUNDUP(from, PGSZ);
-	if(from == to)
-		return 0;
-
-	segment_free_pages(s, from, to);
-	mmuflush();
-	return 0;
-}
-
-static long
-procsegctl(Proc *p, char *va, int n)
-{
-	Cmdbuf *cb;
-	Cmdtab *ct;
-	int attr;
-	const char *class;
-	uintptr_t vareq;
-	unsigned long len;
-	long result;
-
-	cb = parsecmd(va, n);
-	if(waserror()){
-		free(cb);
-		nexterror();
-	}
-
-	ct = lookupcmd(cb, proccmd, nelem(proccmd));
-	switch(ct->index){
-	default:
-		error(Ebadctl);
-		return -1;
-	case CMsegattach:
-		attr = strtoul(cb->f[1], 0, 0);
-		vareq = strtoull(cb->f[2], 0, 0);
-		len = strtoull(cb->f[3], 0, 0);
-		class = cb->f[4];
-		result = segattach(p, attr, class, vareq, len);
-		break;
-	case CMsegdetach:
-		vareq = strtoull(cb->f[1], 0, 0);
-		result = segdetach(p, vareq);
-		break;
-	case CMsegfree:
-		vareq = strtoull(cb->f[1], 0, 0);
-		len = strtoull(cb->f[2], 0, 0);
-		result = segfree(p, vareq, len);
-		break;
-	}
-	poperror();
-	return result;
-}
 
 static long
 procwrite(Chan *c, void *va, long n, int64_t off)
@@ -1298,10 +1175,6 @@ procwrite(Chan *c, void *va, long n, int64_t off)
 
 	case Qfpregs:
 		n = fpudevprocio(p, va, n, offset, 1);
-		break;
-
-	case Qsegment:
-		n = procsegctl(p, va, n);
 		break;
 
 	case Qctl:

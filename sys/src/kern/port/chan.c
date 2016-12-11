@@ -1291,9 +1291,10 @@ namec(char *aname, int amode, int omode, int perm)
 		 * noattach is sandboxing.
 		 *
 		 * the OK exceptions are:
-		 *	|  it only gives access to pipes you create
-		 *	d  this process's file descriptors
-		 *	e  this process's environment
+		 *	|  current process's pipes
+		 * 	0  current process's kernel infos
+		 *	d  current process's file descriptors
+		 *	e  current process's environment
 		 * NOTE: Plan9 also allows
 		 *	c  time and pid, but also cons and consctl
 		 *	p  control of your own processes (and unfortunately
@@ -1303,7 +1304,7 @@ namec(char *aname, int amode, int omode, int perm)
 		 * Who actually need them can bind #c and #p somewhere
 		 * before rfork(RFNOMNT)
 		 */
-		if(up->pgrp->noattach && utfrune("|de", r)==nil)
+		if(up->pgrp->noattach && utfrune("|0de", r)==nil)
 			error(Enoattach);
 		dev = devtabget(r, 1);			//XDYNX
 		if(dev == nil)

@@ -36,6 +36,7 @@
 					"root",
 					"rtc",
 					"sd",
+					"self",
 					"shr",
 					"srv",
 					"ssl",

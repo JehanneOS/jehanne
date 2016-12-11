@@ -680,8 +680,6 @@ enum{
 	Qnull,
 	Qosversion,
 	Qpgrpid,
-	Qpid,
-	Qppid,
 	Qrandom,
 	Qreboot,
 	Qswap,
@@ -713,8 +711,6 @@ static Dirtab consdir[]={
 	"null",		{Qnull},	0,		0666,
 	"osversion",	{Qosversion},	0,		0444,
 	"pgrpid",	{Qpgrpid},	NUMSIZE,	0444,
-	"pid",		{Qpid},		NUMSIZE,	0444,
-	"ppid",		{Qppid},	NUMSIZE,	0444,
 	"random",	{Qrandom},	0,		0444,
 	"reboot",	{Qreboot},	0,		0664,
 	"swap",		{Qswap},	0,		0664,
@@ -943,12 +939,6 @@ consread(Chan *c, void *buf, long n, int64_t off)
 
 	case Qpgrpid:
 		return readnum(offset, buf, n, up->pgrp->pgrpid, NUMSIZE);
-
-	case Qpid:
-		return readnum(offset, buf, n, up->pid, NUMSIZE);
-
-	case Qppid:
-		return readnum(offset, buf, n, up->parentpid, NUMSIZE);
 
 	case Qtime:
 		return readtime(offset, buf, n);

@@ -12,7 +12,7 @@ dupgen(Chan *c, char * _1, Dirtab* _2, int _3, int s, Dir *dp)
 {
 	Fgrp *fgrp = up->fgrp;
 	Chan *f;
-	static int perm[] = { 0400, 0200, 0600, 0 };
+	static int perm[] = { 0, 0400, 0200, 0600, 0 };
 	int p;
 	Qid q;
 
@@ -31,7 +31,7 @@ dupgen(Chan *c, char * _1, Dirtab* _2, int _3, int s, Dir *dp)
 		p = 0400;
 		sprint(up->genbuf, "%dctl", s/2);
 	}else{
-		p = perm[f->mode&3];
+		p = perm[f->mode&7];
 		sprint(up->genbuf, "%d", s/2);
 	}
 	mkqid(&q, s+1, 0, QTFILE);

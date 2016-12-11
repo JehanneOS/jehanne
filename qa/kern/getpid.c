@@ -36,13 +36,8 @@ main(void)
 		exits("FAIL");
 	}
 	rfork(RFNOMNT|RFCNAMEG);
-	if(getpid() != -1){
-		print("FAIL: rfork(RFNOMNT|RFCNAMEG)); getpid() != -1\n");
-		exits("FAIL");
-	}
-	rerrstr(err, ERRMAX);
-	if(strcmp("getpid: cannot open neither #c/pid nor /dev/pid", err)){
-		print("FAIL: rfork(RFNOMNT|RFCNAMEG)); getpid() set errstr '%s'\n", err);
+	if(getpid() != pid){
+		print("FAIL: rfork(RFNOMNT|RFCNAMEG)); getpid() != getmainpid()\n");
 		exits("FAIL");
 	}
 

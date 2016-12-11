@@ -58,6 +58,7 @@
 			"9sys/getwd.c",
 			"9sys/iounit.c",
 			"9sys/nulldir.c",
+			"9sys/pipe.c",
 			"9sys/postnote.c",
 			"9sys/privalloc.c",
 			"9sys/pushssl.c",

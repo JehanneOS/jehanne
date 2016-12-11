@@ -32,6 +32,7 @@
 					"proc",
 					"root",
 					"sd",
+					"self",
 					"shr",
 					"srv",
 					"uart"

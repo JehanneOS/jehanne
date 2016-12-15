@@ -597,14 +597,24 @@ mountfix(Chan *c, uint8_t *op, int32_t n, int32_t maxn)
 }
 
 long
-syspread(int fd, void *p, int32_t n, int64_t off)
+syspread(int fd, void *p, long n, int64_t off)
 {
 	int32_t nn;
 	long nnn;
 	int sequential;
 	Chan *c;
 
-	p = validaddr(p, n, 1);
+	if(n >= 0)
+		p = validaddr(p, n, 1);
+	else if(p != nil) {
+		/* in Jehanne, a negative length can be meaningful to
+		 * the target device/server, but with a negative length
+		 * to read the buffer must be nil
+		 */
+		pprint("trap: invalid address %#p/%ld in sys call pc=%#P\n", p, n, userpc(nil));
+		postnote(up, 1, "sys: bad address in syscall", NDebug);
+		error(Ebadarg);
+	}
 
 	c = fdtochan(fd, OREAD, 1, 1);
 
@@ -679,7 +689,7 @@ syspread(int fd, void *p, int32_t n, int64_t off)
 }
 
 long
-syspwrite(int fd, void *p, int32_t n, int64_t off)
+syspwrite(int fd, void *p, long n, int64_t off)
 {
 	long r;
 	int sequential;
@@ -856,20 +866,6 @@ sysfstat(int fd, uint8_t* p, int n)
 	cclose(c);
 
 	return r;
-}
-
-int
-syschdir(char *aname)
-{
-	Chan *c;
-
-	aname = validaddr(aname, 1, 0);
-
-	c = namec(aname, Atodir, 0, 0);
-	cclose(up->dot);
-	up->dot = c;
-
-	return 0;
 }
 
 /* white list of devices we allow mounting on.

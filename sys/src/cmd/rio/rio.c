@@ -157,7 +157,7 @@ threadmain(int argc, char *argv[])
 		usage();
 	}ARGEND
 
-	if(getwd(buf, sizeof buf) == nil)
+	if(getwd(buf, sizeof buf) <= 0)
 		startdir = estrdup(".");
 	else
 		startdir = estrdup(buf);
@@ -324,7 +324,7 @@ shutdown(void * _, char *msg)
 {
 	int i;
 	static Lock shutdownlk;
-	
+
 	killprocs();
 	for(i=0; oknotes[i]; i++)
 		if(strncmp(oknotes[i], msg, strlen(oknotes[i])) == 0){
@@ -344,7 +344,7 @@ killprocs(void)
 
 	for(i=0; i<nwindow; i++)
 		if(window[i]->notefd >= 0)
-			write(window[i]->notefd, "hangup", 6); 
+			write(window[i]->notefd, "hangup", 6);
 }
 
 void
@@ -418,7 +418,7 @@ int
 whichcorner(Rectangle r, Point p)
 {
 	int i, j;
-	
+
 	i = portion(p.x, r.min.x, r.max.x);
 	j = portion(p.y, r.min.y, r.max.y);
 	return 3*j+i;
@@ -995,7 +995,7 @@ bandsize(Window *w)
 	drawborder(r, 1);
 	or = r;
 	startp = p;
-	
+
 	while(mouse->buttons==but){
 		p = onscreen(mouse->xy);
 		r = whichrect(w->screenr, p, which);

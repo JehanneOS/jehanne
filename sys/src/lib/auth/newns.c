@@ -77,7 +77,7 @@ buildns(int newns, char *user, char *file)
 	/* make sure we managed to cd into the new name space */
 	if(newns && !cdroot){
 		path = malloc(1024);
-		if(path == nil || getwd(path, 1024) == 0 || chdir(path) < 0)
+		if(path == nil || getwd(path, 1024) <= 0 || chdir(path) < 0)
 			chdir("/");
 		if(path != nil)
 			free(path);
@@ -222,7 +222,7 @@ unquote(char *s)
 {
 	char *r, *w;
 	int inquote;
-	
+
 	inquote = 0;
 	for(r=w=s; *r; r++){
 		if(*r != '\''){
@@ -267,7 +267,7 @@ nextdollar(char *arg)
 {
 	char *p;
 	int inquote;
-	
+
 	inquote = 0;
 	for(p=arg; *p; p++){
 		if(*p == '\'')

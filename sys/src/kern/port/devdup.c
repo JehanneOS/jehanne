@@ -64,9 +64,9 @@ dupopen(Chan *c, unsigned long omode)
 	int fd, twicefd;
 
 	if(c->qid.type & QTDIR){
-		if(omode != 0)
+		if(omode != OREAD)
 			error(Eisdir);
-		c->mode = 0;
+		c->mode = OREAD;
 		c->flag |= COPEN;
 		c->offset = 0;
 		return c;

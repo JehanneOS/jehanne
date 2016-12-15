@@ -1,26 +1,45 @@
 /*
- * This file is part of the UCB release of Plan 9. It is subject to the license
- * terms in the LICENSE file found in the top-level directory of this
- * distribution and at http://akaros.cs.berkeley.edu/files/Plan9License. No
- * part of the UCB release of Plan 9, including this file, may be copied,
- * modified, propagated, or distributed except according to the terms contained
- * in the LICENSE file.
+ * This file is part of Jehanne.
+ *
+ * Copyright (C) 2016 Giacomo Tesio <giacomo@tesio.it>
+ *
+ * Jehanne is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 2 of the License.
+ *
+ * Jehanne is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Jehanne.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <u.h>
 #include <libc.h>
 
-char*
+/* Fills buf with the current workking directory.
+ *
+ * Returns
+ * - 0 on error
+ * - the negated length of the working directory path if nbuf is too small
+ * - the (positive) length of the working directory on success
+ */
+long
 getwd(char *buf, int nbuf)
 {
-	int n, fd;
+	long n;
+	int fd;
 
-	fd = open(".", OREAD);
+	fd = open("#0/wdir", OREAD);
 	if(fd < 0)
-		return nil;
-	n = fd2path(fd, buf, nbuf);
+		return 0;
+	n = read(fd, nil, -1);
+	if(n == ~0)	/* an error occurred */
+		return 0;
+	if(nbuf >= ~n)
+		n = read(fd, buf, nbuf);
 	close(fd);
-	if(n < 0)
-		return nil;
-	return buf;
+	return n;
 }

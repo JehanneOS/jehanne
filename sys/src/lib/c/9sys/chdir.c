@@ -18,30 +18,21 @@
 
 #include <u.h>
 #include <libc.h>
-/*
- * Print working (current) directory
- */
 
-void
-main(int argc, char *argv[])
+int
+chdir(const char *dirname)
 {
-	long len;
-	char path[512];
-	char *ppath = path;
+	char buf[32];
+	int tmp, fd;
 
-	len = getwd(ppath, sizeof(path));
-	if(len == 0)
-		goto Error;
-	if(len < 0){
-		len = ~len;
-		ppath = malloc(len*sizeof(char));
-		if(getwd(ppath, len*sizeof(char)) <= 0)
-			goto Error;
-	}
-	print("%s\n", ppath);
-	exits(0);
-
-Error:
-	fprint(2, "pwd: %r\n");
-	exits("getwd");
+	tmp = getpid();
+	snprint(buf, sizeof(buf), "/proc/%d/wdir", tmp);
+	fd = open(buf, OWRITE);
+	if(fd < 0)
+		fd = open("#0/wdir", OWRITE);
+	if(fd < 0)
+		return fd;
+	tmp = write(fd, dirname, 1+strlen(dirname));
+	close(fd);
+	return tmp;
 }

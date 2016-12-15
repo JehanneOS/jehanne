@@ -1366,7 +1366,7 @@ main(int argc, char *argv[])
 		ret = extract(argv);
 		break;
 	case Replace:
-		if (getwd(origdir, sizeof origdir) == nil)
+		if (getwd(origdir, sizeof origdir) <= 0)
 			strcpy(origdir, "/tmp");
 		ret = replace(argv);
 		break;

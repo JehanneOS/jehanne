@@ -37,6 +37,7 @@ typedef enum SelfNodes
 	Qppid,
 	Qsegments,
 	Qpipes,
+	Qwdir,
 } SelfNodes;
 
 typedef enum SegmentsCmd
@@ -65,8 +66,48 @@ static Dirtab selfdir[]={
 	"ppid",		{Qppid},		0,		0,
 	"segments",	{Qsegments},		0,		0644,
 	"pipes",	{Qpipes},		0,		0,
+	"wdir",		{Qwdir},		0,		0644,
 };
 
+
+static int
+selfgen(Chan *c, char *name, Dirtab *tab, int ntab, int i, Dir *dp)
+{
+	long length;
+	if(tab == 0)
+		return -1;
+	if(i == DEVDOTDOT){
+		if(QID(c->qid) != Qdir)
+			panic("selfwalk %llux", c->qid.path);
+		devdir(c, selfdir[0].qid, "#0", 0, up->user, selfdir[0].perm, dp);
+		return 1;
+	}
+
+	if(name){
+		for(i=1; i<ntab; i++)
+			if(strcmp(tab[i].name, name) == 0)
+				break;
+		if(i==ntab)
+			return -1;
+		tab += i;
+	}else{
+		/* skip over the first element, that for . itself */
+		i++;
+		if(i >= ntab)
+			return -1;
+		tab += i;
+	}
+	if(tab->qid.path == Qwdir) {
+		/* file length might be relevant to the caller to
+		 * malloc enough space in the buffer
+		 */
+		length = 1 + strlen(up->dot->path->s);
+	} else {
+		length = tab->length;
+	}
+	devdir(c, tab->qid, tab->name, length, up->user, tab->perm, dp);
+	return 1;
+}
 
 static Chan*
 selfattach(Chan *c, Chan *ac, char *spec, int flags)
@@ -77,21 +118,78 @@ selfattach(Chan *c, Chan *ac, char *spec, int flags)
 static Walkqid*
 selfwalk(Chan *c, Chan *nc, char **name, int nname)
 {
-	return devwalk(c, nc, name, nname, selfdir, nelem(selfdir), devgen);
+	return devwalk(c, nc, name, nname, selfdir, nelem(selfdir), selfgen);
 }
 
 static long
 selfstat(Chan *c, uint8_t *dp, long n)
 {
-	return devstat(c, dp, n, selfdir, nelem(selfdir), devgen);
+	return devstat(c, dp, n, selfdir, nelem(selfdir), selfgen);
 }
 
 static Chan*
 selfopen(Chan *c, unsigned long omode)
 {
 	c->aux = nil;
-	c = devopen(c, omode, selfdir, nelem(selfdir), devgen);
+	c = devopen(c, omode, selfdir, nelem(selfdir), selfgen);
 	return c;
+}
+
+long
+read_working_dir(Proc* p, void *va, long n, int64_t off)
+{
+	int i, j;
+	char *path;
+	Chan *dot;
+
+	dot = up->dot;
+	path = dot->path->s;
+	i = 1 + strlen(path);
+	if(va == nil){
+		/* the user is actually asking for the space */
+		if(off != 0 && off != ~0) {
+			/* #0/wdir does not allow offset in read */
+			error("offset reading wdir size");
+		}
+		errorl("not enough space in buffer", ~i);
+	}
+	if(off > i)
+		return 0;
+	j = i - off;
+	if(n < j)
+		j = n;
+	memmove(va, path, j);
+
+	return j;
+}
+
+
+long
+write_working_dir(Proc* p, void *va, long n, int64_t off)
+{
+	Chan *c, *dot;
+	char *path, *epath;
+
+	dot = p->dot;
+	path = va;
+	epath = vmemchr(path, 0, n);
+
+	if(n <= 0)
+		error(Ebadarg);
+	if(off != 0 && off != ~0)
+		error("offset writing wdir");
+	if(epath-path>=n)
+		error("no terminal zero writing wdir");
+
+	c = namec(path, Atodir, 0, 0);
+	if(CASV(&p->dot, dot, c)){
+		cclose(dot);
+	} else {
+		cclose(c);
+		error("race writing wdir");
+	}
+
+	return 0;
 }
 
 static long
@@ -104,6 +202,8 @@ selfread(Chan *c, void *va, long n, int64_t off)
 
 	offset = off;
 	switch(QID(c->qid)){
+	case Qdir:
+		return devdirread(c, va, n, selfdir, nelem(selfdir), selfgen);
 	case Qsegments:
 		rlock(&up->seglock);
 		j = 0;
@@ -127,6 +227,8 @@ selfread(Chan *c, void *va, long n, int64_t off)
 			exhausted("segments");
 		memmove(va, &statbuf[offset], n);
 		return n;
+	case Qwdir:
+		return read_working_dir(up, va, n, off);
 	default:
 		error(Egreg);
 	}
@@ -271,10 +373,10 @@ selfwrite(Chan *c, void *va, long n, int64_t off)
 	default:
 		error(Egreg);
 	case Qsegments:
-		n = procsegctl(up, va, n);
-		break;
+		return procsegctl(up, va, n);
+	case Qwdir:
+		return write_working_dir(up, va, n, off);
 	}
-	return n;
 }
 
 static int

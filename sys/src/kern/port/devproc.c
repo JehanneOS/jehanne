@@ -25,6 +25,12 @@
 #include	<trace.h>
 #include	"ureg.h"
 
+extern long write_working_dir(Proc* p, void *va, long n, int64_t off);
+extern long read_working_dir(Proc* p, void *va, long n, int64_t off);
+
+/* We can have up to 32 files in proc/n sice we dedicate 5 bits in Qid
+ * to it (see QSHIFT)
+ */
 enum
 {
 	Qdir,
@@ -47,6 +53,7 @@ enum
 	Qwait,
 	Qprofile,
 	Qsyscall,
+	Qwdir,
 };
 
 enum
@@ -76,23 +83,25 @@ enum{
 };
 
 #define STATSIZE	(2*KNAMELEN+NUMSIZE+9*NUMSIZE + 1)
-/*
- * Status, fd, and ns are left fully readable (0444) because of their use in debugging,
- * particularly on shared servers.
- * Arguably, ns and fd shouldn't be readable; if you'd prefer, change them to 0000
+/* In Plan 9 status, fd, and ns were left fully readable (0444)
+ * because of their use in debugging, particularly on shared servers.
+ *
+ * In Jehanne the process owner and the host owner can read
+ * status and fd, but not others (0440).
+ * TODO: allow per process stats and permissions.
  */
 Dirtab procdir[] =
 {
 	"args",		{Qargs},	0,			0660,
 	"ctl",		{Qctl},		0,			0000,
-	"fd",		{Qfd},		0,			0444,
+	"fd",		{Qfd},		0,			0440,
 	"fpregs",	{Qfpregs},	0,			0000,
 	"kregs",	{Qkregs},	sizeof(Ureg),		0400,
 	"mem",		{Qmem},		0,			0000,
 	"note",		{Qnote},	0,			0000,
 	"noteid",	{Qnoteid},	0,			0664,
 	"notepg",	{Qnotepg},	0,			0000,
-	"ns",		{Qns},		0,			0444,
+	"ns",		{Qns},		0,			0440,
 	"proc",		{Qproc},	0,			0400,
 	"regs",		{Qregs},	sizeof(Ureg),		0000,
 	"segment",	{Qsegment},	0,			0444,
@@ -100,6 +109,7 @@ Dirtab procdir[] =
 	"text",		{Qtext},	0,			0000,
 	"wait",		{Qwait},	0,			0400,
 	"syscall",	{Qsyscall},	0,			0400,
+	"wdir",		{Qwdir},	0,			0640,
 };
 
 static
@@ -124,7 +134,7 @@ Cmdtab proccmd[] = {
 
 /*
  * Qids are, in path:
- *	 4 bits of file type (qids above)
+ *	 5 bits of file type (qids above)
  *	23 bits of process slot number + 1
  *	     in vers,
  *	32 bits of pid, for consistency checking
@@ -230,6 +240,14 @@ procgen(Chan *c, char *name, Dirtab *tab, int _1, int s, Dir *dp)
 	switch(QID(c->qid)) {
 	case Qwait:
 		len = p->nwait;	/* incorrect size, but >0 means there's something to read */
+		break;
+	}
+	switch(QID(tab->qid)){
+	case Qwdir:
+		/* file length might be relevant to the caller to
+		 * malloc enough space in the buffer
+		 */
+		len = 1 + strlen(p->dot->path->s);
 		break;
 	}
 
@@ -422,6 +440,17 @@ procopen(Chan *c, unsigned long omode)
 			error(Eperm);
 		c->pgrpid.path = pg->pgrpid+1;
 		c->pgrpid.vers = p->noteid;
+		break;
+
+	case Qwdir:
+		if(p == up)	/* self write is always allowed */
+			break;
+		if(omode > ORDWR)
+			error(Eperm);
+		if(strcmp(up->user, p->user) != 0	/* process owner can read/write */
+		|| !iseve()				/* host owner can read */
+		|| (omode&OWRITE) != 0)
+			error(Eperm);
 		break;
 
 	default:
@@ -1058,6 +1087,10 @@ procread(Chan *c, void *va, long n, int64_t off)
 		r = procfds(p, va, n, offset);
 		psdecref(p);
 		return r;
+	case Qwdir:
+		r = read_working_dir(p, va, n, off);
+		psdecref(p);
+		return r;
 	}
 	error(Egreg);
 	return 0;			/* not reached */
@@ -1212,6 +1245,9 @@ procwrite(Chan *c, void *va, long n, int64_t off)
 		}
 		if(p->noteid != id)
 			error(Ebadarg);
+		break;
+	case Qwdir:
+		n = write_working_dir(p, va, n, off);
 		break;
 	default:
 		poperror();

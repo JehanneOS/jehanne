@@ -215,7 +215,7 @@ segmentopen(Chan *c, int omode)
 	switch(TYPE(c)){
 	case Qtopdir:
 	case Qsegdir:
-		if(omode != 0)
+		if(omode != OREAD)
 			error(Eisdir);
 		break;
 	case Qctl:

@@ -6,13 +6,6 @@
 #include	"fns.h"
 #include	"../port/error.h"
 
-//char *faulttypes[] = {
-	//[FT_WRITE] "write",
-	//[FT_READ] "read",
-	//[FT_EXEC] "exec"
-//};
-
-
 int
 fault(uintptr_t addr, uintptr_t pc, int ftype)
 {
@@ -70,132 +63,6 @@ fault(uintptr_t addr, uintptr_t pc, int ftype)
 	return -1;
 }
 
-//int
-//fixfault(Segment *s, uintptr_t addr, int ftype, int dommuput)
-//{
-	//int type;
-	//Pte **p, *etp;
-	//uintptr_t soff;
-	//uintmem mmuphys;
-	//Page **pg, *old, *new;
-	//Page *(*fn)(Segment*, uintptr_t);
-	//uintptr_t pgsize;
-	//Pages *pages;
-
-	//pages = s->pages;	/* TO DO: segwalk */
-	//pgsize = 1<<pages->lg2pgsize;
-	//addr &= ~(pgsize-1);
-	//soff = addr-s->pages->base;
-
-	//p = &pages->map[soff/pages->ptemapmem];
-	//if(*p == nil)
-		//*p = ptealloc();
-
-	//etp = *p;
-	//pg = &etp->pages[(soff&(pages->ptemapmem-1))>>pages->lg2pgsize];
-
-	//if(pg < etp->first)
-		//etp->first = pg;
-	//if(pg > etp->last)
-		//etp->last = pg;
-
-	//type = s->type&SG_TYPE;
-	//if(*pg == nil){
-		//switch(type){
-		//case SG_BSS:			/* Zero fill on demand */
-		//case SG_SHARED:
-		//case SG_STACK:
-			//new = newpage(1, s->pages->lg2pgsize, &s->lk);
-			//if(new == nil)
-				//return -1;
-			//*pg = new;
-			//break;
-
-		//case SG_LOAD:
-		//case SG_TEXT:	/* demand load */
-		//case SG_DATA:
-			//if(!loadimagepage(s->image, s, pg, addr))
-				//return -1;
-			//break;
-
-		//case SG_PHYSICAL:
-			//fn = s->pseg->pgalloc;
-			//if(fn != nil)
-				//*pg = (*fn)(s, addr);
-			//else {
-				//new = smalloc(sizeof(Page));
-				//new->pa = s->pseg->pa+(addr-s->pages->base);
-				//new->r.ref = 1;
-				//new->lg2size = s->pseg->lg2pgsize;
-				//if(new->lg2size == 0)
-					//new->lg2size = PGSHFT;	/* TO DO */
-				//*pg = new;
-			//}
-			//break;
-		//default:
-			//panic("fault on demand");
-			//break;
-		//}
-	//}
-	//mmuphys = 0;
-	//switch(type) {
-	//default:
-		//panic("fault");
-		//break;
-
-	//case SG_TEXT:
-		//DBG("text pg %#p: %#p -> %#P %d\n", pg, addr, (*pg)->pa, (*pg)->r.ref);
-		//mmuphys = PPN((*pg)->pa) | PTERONLY|PTEVALID;
-		//break;
-
-	//case SG_BSS:
-	//case SG_SHARED:
-	//case SG_STACK:
-	//case SG_DATA:			/* copy on write */
-		//DBG("data pg %#p: %#p -> %#P %d\n", pg, addr, (*pg)->pa, (*pg)->r.ref);
-		///*
-		 //*  It's only possible to copy on write if
-		 //*  we're the only user of the segment.
-		 //*/
-		//if(ftype != FT_WRITE && sys->copymode == 0 && s->r.ref == 1) {
-			//mmuphys = PPN((*pg)->pa)|PTERONLY|PTEVALID;
-			//break;
-		//}
-
-		//old = *pg;
-		//if(old->r.ref > 1){
-			///* shared (including image pages): make private writable copy */
-			//new = newpage(0, s->pages->lg2pgsize, &s->lk);
-			//if(new != nil)
-				//copypage(old, new);
-			//*pg = new;
-			//putpage(old);
-			//if(new == nil)
-				//return -1;
-			//DBG("data' pg %#p: %#p -> %#P %d\n", *pg, addr, old->pa, old->r.ref);
-		//}else if(old->r.ref <= 0)
-			//panic("fault: page %#p %#P ref %d <= 0", old, old->pa, old->r.ref);
-		//mmuphys = PPN((*pg)->pa) | PTEWRITE | PTEVALID;
-		//break;
-
-	//case SG_PHYSICAL:
-		//mmuphys = PPN((*pg)->pa) | PTEVALID;
-		//if((s->pseg->attr & SG_WRITE))
-			//mmuphys |= PTEWRITE;
-		//if((s->pseg->attr & SG_CACHED) == 0)
-			//mmuphys |= PTEUNCACHED;
-		//break;
-	//}
-	//runlock(&s->lk);
-
-	//if(dommuput)
-		//mmuput(addr, mmuphys, *pg);
-	//if(ftype == FT_EXEC)
-		//peekAtExecFaults(addr);
-
-	//return 0;
-//}
-
 /*
  * Called only in a system call
  */
@@ -225,7 +92,7 @@ void*
 validaddr(void* addr, long len, int write)
 {
 	if(!okaddr(PTR2UINT(addr), len, write)){
-		pprint("trap: invalid address %#p/%lud in sys call pc=%#P\n", addr, len, userpc(nil));
+		pprint("trap: invalid address %#p/%ld in sys call pc=%#P\n", addr, len, userpc(nil));
 		postnote(up, 1, "sys: bad address in syscall", NDebug);
 		error(Ebadarg);
 	}

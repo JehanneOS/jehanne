@@ -231,7 +231,7 @@ main(int argc, char **argv)
 	/* Tell the remote side the command to execute and where our working directory is */
 	if(cflag)
 		writestr(data, cmd, "command", 0);
-	if(getwd(dat, sizeof(dat)) == 0)
+	if(getwd(dat, sizeof(dat)) <= 0)
 		writestr(data, "NO", "dir", 0);
 	else
 		writestr(data, dat, "dir", 0);

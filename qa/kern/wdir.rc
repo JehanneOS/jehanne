@@ -1,0 +1,33 @@
+#!/cmd/rc
+
+rm -fr /tmp/abcdefghijklmnopqrstuvwxyz/
+
+dir=/tmp/abcdefghijklmnopqrstuvwxyz/abcdefghijklmnopqrstuvwxyz/abcdefghijklmnopqrstuvwxyz/abcdefghijklmnopqrstuvwxyz/abcdefghijklmnopqrstuvwxyz/abcdefghijklmnopqrstuvwxyz/abcdefghijklmnopqrstuvwxyz/abcdefghijklmnopqrstuvwxyz/abcdefghijklmnopqrstuvwxyz/abcdefghijklmnopqrstuvwxyz/abcdefghijklmnopqrstuvwxyz/abcdefghijklmnopqrstuvwxyz/abcdefghijklmnopqrstuvwxyz/abcdefghijklmnopqrstuvwxyz/abcdefghijklmnopqrstuvwxyz/abcdefghijklmnopqrstuvwxyz/abcdefghijklmnopqrstuvwxyz/abcdefghijklmnopqrstuvwxyz/abcdefghijklmnopqrstuvwxyz/abcdefghijklmnopqrstuvwxyz/abcdefghijklmnopqrstuvwxyz/abcdefghijklmnopqrstuvwxyz/abcdefghijklmnopqrstuvwxyz/abcdefghijklmnopqrstuvwxyz/abcdefghijklmnopqrstuvwxyz/abcdefghijklmnopqrstuvwxyz/abcdefghijklmnopqrstuvwxyz/abcdefghijklmnopqrstuvwxyz/abcdefghijklmnopqrstuvwxyz/abcdefghijklmnopqrstuvwxyz/abcdefghijklmnopqrstuvwxyz/abcdefghijklmnopqrstuvwxyz/abcdefghijklmnopqrstuvwxyz/abcdefghijklmnopqrstuvwxyz/abcdefghijklmnopqrstuvwxyz/abcdefghijklmnopqrstuvwxyz/abcdefghijklmnopqrstuvwxyz
+
+mkdir -p $dir
+cd $dir
+
+cwd=`{pwd}
+
+if ( ! ~ $dir $cwd ) {
+	echo FAIL: '''pwd''' returned $cwd instead of '$dir'
+	exit FAIL
+}
+
+cwd=`{cat '#0/wdir'}
+if ( ! ~ $dir $cwd ) {
+	echo FAIL: '''cat #0/wdir''' returned $cwd instead of '$dir'
+	exit FAIL
+}
+
+ppath=/proc/$pid/wdir
+
+cwd=`{cat $ppath}
+if ( ! ~ $dir $cwd ) {
+	echo FAIL: cat $ppath returned $cwd instead of '$dir'
+	exit FAIL
+}
+
+rm -fr /tmp/abcdefghijklmnopqrstuvwxyz/
+echo PASS
+exit PASS

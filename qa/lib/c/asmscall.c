@@ -20,41 +20,6 @@
 
 int verbose = 1;
 
-#define asm_nsec() ({ \
-	register long __ret asm ("rax"); \
-	__asm__ __volatile__ ( \
-		"syscall" \
-		: "=r" (__ret) \
-		: "0"(19) \
-		: "cc", "rcx", "r11", "memory" \
-	); \
-	__ret; })
-
-#define asm_mount(/* int */ fd, /* int */ afd, /* char* */ old, /* int */ flag, /* char* */ aname, /* int */ mdev) ({ \
-	register long r10 asm("r10") = flag; \
-	register long r8 asm("r8") = (uintptr_t)aname; \
-	register long r9 asm("r9") = mdev; \
-	register int __ret asm ("eax"); \
-	__asm__ __volatile__ ( \
-		"syscall" \
-		: "=r" (__ret) \
-		: "0"(16), "D"(fd), "S"(afd), "d"(old), "r"(r10), "r"(r8), "r"(r9) \
-		: "cc", "rcx", "r11", "memory" \
-	); \
-	__ret; })
-
-/*
-long
-asm_nsec(void)
-{
-	register int *p1 asm ("r0");
-	register int *p2 asm ("r1");
-	register int *result asm ("r0");
-	asm ("sysint" : "=r" (result) : "0" (p1), "r" (p2));
-	return result ;
-}
-*/
-
 void
 main(void)
 {
@@ -62,9 +27,9 @@ main(void)
 	uint64_t start, end;
 	char *msg;
 
-	start = asm_nsec();
+	start = sys_nsec();
 	sleep(1);
-	end = asm_nsec();
+	end = sys_nsec();
 
 	if (end <= start)
 		ret = 1;
@@ -80,7 +45,7 @@ main(void)
 
 	int fd;
 	fd = open("#|", ORDWR);
-	asm_mount(fd, -1, "/tmp", MREPL, "", 'M');
+	sys_mount(fd, -1, "/tmp", MREPL, "", 'M');
 
 	print("PASS\n");
 	exits("PASS");

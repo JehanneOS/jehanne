@@ -25,10 +25,44 @@
 /* bits that must be zero in open/create mode */
 #define NP_OZEROES	~(NP_OREAD|NP_OWRITE|NP_ORDWR|NP_OEXEC|NP_OTRUNC|NP_ORCLOSE)
 
+typedef enum NinepMsgType
+{
+	Tversion =	100,
+	Rversion,
+	Tauth =		102,
+	Rauth,
+	Tattach =	104,
+	Rattach,
+	Terror =	106,	/* illegal */
+	Rerror,
+	Tflush =	108,
+	Rflush,
+	Twalk =		110,
+	Rwalk,
+	Topen =		112,
+	Ropen,
+	Tcreate =	114,
+	Rcreate,
+	Tread =		116,
+	Rread,
+	Twrite =	118,
+	Rwrite,
+	Tclunk =	120,
+	Rclunk,
+	Tremove =	122,
+	Rremove,
+	Tstat =		124,
+	Rstat,
+	Twstat =	126,
+	Rwstat,
+	Tmax,
+} NinepMsgType;
+
+
 typedef
 struct	Fcall
 {
-	uint8_t	type;
+	NinepMsgType	type : 8;
 	uint32_t	fid;
 	uint16_t	tag;
 	union {
@@ -106,39 +140,6 @@ struct	Fcall
 #define	NOTAG		(uint16_t)~0U	/* Dummy tag */
 #define	NOFID		(uint32_t)~0U	/* Dummy fid */
 #define	IOHDRSZ		24	/* ample room for Twrite/Rread header (iounit) */
-
-enum
-{
-	Tversion =	100,
-	Rversion,
-	Tauth =		102,
-	Rauth,
-	Tattach =	104,
-	Rattach,
-	Terror =	106,	/* illegal */
-	Rerror,
-	Tflush =	108,
-	Rflush,
-	Twalk =		110,
-	Rwalk,
-	Topen =		112,
-	Ropen,
-	Tcreate =	114,
-	Rcreate,
-	Tread =		116,
-	Rread,
-	Twrite =	118,
-	Rwrite,
-	Tclunk =	120,
-	Rclunk,
-	Tremove =	122,
-	Rremove,
-	Tstat =		124,
-	Rstat,
-	Twstat =	126,
-	Rwstat,
-	Tmax,
-};
 
 extern unsigned int	convM2S(uint8_t*, uint, Fcall*);
 extern unsigned int	convS2M(Fcall*, uint8_t*, uint);

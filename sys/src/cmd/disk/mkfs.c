@@ -179,7 +179,7 @@ copy(Dir *d)
 		if(!p)
 			error("internal temporary file error");
 		strcpy(p+1, "__mkfstmp");
-		t = create(cptmp, OWRITE, 0666);
+		t = ocreate(cptmp, OWRITE, 0666);
 		if(t < 0){
 			warn("can't create %q: %r", newfile);
 			close(f);
@@ -261,7 +261,7 @@ mkdir(Dir *d)
 		arch(d);
 		return;
 	}
-	fd = create(newfile, OREAD, d->mode);
+	fd = ocreate(newfile, OREAD, d->mode);
 	nulldir(&nd);
 	nd.mode = d->mode;
 	nd.gid = d->gid;

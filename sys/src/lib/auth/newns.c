@@ -340,7 +340,7 @@ setenv(char *name, char *val)
 	int32_t s;
 
 	sprint(ename, "#e/%s", name);
-	f = create(ename, OWRITE, 0664);
+	f = ocreate(ename, OWRITE, 0664);
 	if(f < 0)
 		return -1;
 	s = strlen(val);

@@ -616,7 +616,7 @@ open_file(char *name)
 	if ((bp = malloc(sizeof(Biobuf))) == 0)
 		quit("Out of memory");
 	if ((fd = open(name, OWRITE)) < 0 &&
-	    (fd = create(name, OWRITE, 0666)) < 0)
+	    (fd = ocreate(name, OWRITE, 0666)) < 0)
 		quit("Cannot create %s", name);
 	Binit(bp, fd, OWRITE);
 	Bseek(bp, 0, 2);

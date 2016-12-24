@@ -58,7 +58,7 @@ enabledebug(const char *file)
 	if (!debugging) {
 		if((fd = open(file, OCEXEC|OTRUNC|OWRITE)) < 0){
 			debug("open: %r\n");
-			if((fd = create(file, OCEXEC|OWRITE, 0666)) < 0)
+			if((fd = ocreate(file, OCEXEC|OWRITE, 0666)) < 0)
 				sysfatal("create %r");
 		}
 		dup(fd, 2);
@@ -211,9 +211,9 @@ post(char *srv, int fd)
 
 	fprint(2, "post %s...\n", srv);
 	sprint(buf, "#s/%s", srv);
-	f = create(buf, OWRITE, 0666);
+	f = ocreate(buf, OWRITE, 0666);
 	if(f < 0)
-		sysfatal("create(%s)", srv);
+		sysfatal("ocreate(%s)", srv);
 	sprint(buf, "%d", fd);
 	if(write(f, buf, strlen(buf)) != strlen(buf))
 		sysfatal("write");

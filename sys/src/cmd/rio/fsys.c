@@ -89,7 +89,7 @@ post(char *name, char *envname, int srvfd)
 	int fd;
 	char buf[32];
 
-	fd = create(name, OWRITE|ORCLOSE|OCEXEC, 0600);
+	fd = ocreate(name, OWRITE|ORCLOSE|OCEXEC, 0600);
 	if(fd < 0)
 		error(name);
 	snprint(buf, sizeof(buf), "%d", srvfd);

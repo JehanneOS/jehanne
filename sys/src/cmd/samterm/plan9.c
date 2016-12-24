@@ -1,4 +1,4 @@
-/* 
+/*
  * This file is part of the UCB release of Plan 9. It is subject to the license
  * terms in the LICENSE file found in the top-level directory of this
  * distribution and at http://akaros.cs.berkeley.edu/files/Plan9License. No
@@ -107,7 +107,7 @@ snarfswap(char *fromsam, int nc, char **tosam)
 		free(s1);
 	} else
 		s1[n] = 0;
-	f = create("/dev/snarf", OWRITE, 0666);
+	f = ocreate("/dev/snarf", OWRITE, 0666);
 	if(f >= 0){
 		write(f, fromsam, nc);
 		close(f);
@@ -167,7 +167,7 @@ extstart(void)
 	if(pipe(p) < 0)
 		return;
 	sprint(exname, "/srv/sam.%s", getuser());
-	fd = create(exname, OWRITE, 0600);
+	fd = ocreate(exname, OWRITE, 0600);
 	if(fd < 0){	/* assume existing guy is more important */
     Err:
 		close(p[0]);

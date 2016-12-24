@@ -498,7 +498,7 @@ ninep2mode(int omode9p)
 	if((omode9p&~0xff) || (omode9p&NP_OZEROES))
 		error("invalid 9P2000 open mode");
 
-	switch(omode9p & ~(NP_OTRUNC|NP_ORCLOSE)){
+	switch(omode9p & ~(NP_OTRUNC|NP_ORCLOSE|NP_OCEXEC)){
 	case NP_OREAD:
 		return OREAD;
 	case NP_OWRITE:
@@ -513,10 +513,12 @@ ninep2mode(int omode9p)
 	default:
 		error("invalid 9P2000 open mode");
 	}
-	if(omode9p & NP_OTRUNC)
-		mode |= OTRUNC;
+	if(omode9p & NP_OCEXEC)
+		mode |= OCEXEC;
 	if(omode9p & NP_ORCLOSE)
 		mode |= ORCLOSE;
+	if(omode9p & NP_OTRUNC)
+		mode |= OTRUNC;
 
 	return mode;
 }
@@ -542,6 +544,8 @@ mode2ninep(unsigned long mode)
 		omode9p |= NP_OEXEC;
 	if(mode & ORCLOSE)
 		omode9p |= NP_ORCLOSE;
+	if(mode & OCEXEC)
+		omode9p |= NP_OCEXEC;
 
 	/* this is an approssimation: in Jehanne this bit might means
 	 * something different to a server, but then the

@@ -157,7 +157,7 @@ srvcreate(Chan *c, char *name, unsigned long omode, unsigned long perm)
 {
 	Srv *sp;
 
-	if(openmode(omode & ~ORCLOSE) != OWRITE){
+	if(openmode(omode & ~(ORCLOSE|OTRUNC)) != OWRITE){
 		errorf("srvcreate: omode %#p openmode %#p", omode, openmode(omode & ~ORCLOSE));
 		//error(Eperm);
 	}

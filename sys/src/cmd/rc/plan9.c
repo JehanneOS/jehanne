@@ -562,7 +562,7 @@ Executable(char *file)
 int
 Creat(char *file)
 {
-	return create(file, OWRITE, 0666L);
+	return ocreate(file, OWRITE, 0666L);
 }
 
 int

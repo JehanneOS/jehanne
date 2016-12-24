@@ -188,9 +188,9 @@ main(int argc, char *argv[])
 		parse("/cfg/ndb/local");
 		parse("/cfg/ndb/friends");
 	}
-	
+
 	sprint(fn, "/cfg/ndb/db.%-.24s", domname);
-	fd = create(fn, OWRITE, 0664);
+	fd = ocreate(fn, OWRITE, 0664);
 	if(fd < 0){
 		fprint(2, "can't create %s: %r\n", fn);
 		exits("boom");
@@ -201,7 +201,7 @@ main(int argc, char *argv[])
 	close(fd);
 
 	sprint(fn, "/cfg/ndb/equiv.%-.21s", domname);
-	fd = create(fn, OWRITE, 0664);
+	fd = ocreate(fn, OWRITE, 0664);
 	if(fd < 0){
 		fprint(2, "can't create %s: %r\n", fn);
 		exits("boom");
@@ -211,7 +211,7 @@ main(int argc, char *argv[])
 	close(fd);
 
 	sprint(fn, "/cfg/ndb/txt.%-.23s", domname);
-	fd = create(fn, OWRITE, 0664);
+	fd = ocreate(fn, OWRITE, 0664);
 	if(fd < 0){
 		fprint(2, "can't create %s: %r\n", fn);
 		exits("boom");

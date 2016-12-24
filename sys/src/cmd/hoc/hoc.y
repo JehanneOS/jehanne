@@ -23,7 +23,7 @@ void	warning(char*, char*);
 %token	<sym>	FUNCTION PROCEDURE RETURN FUNC PROC READ
 %type	<formals>	formals
 %type	<inst>	expr stmt asgn prlist stmtlist
-%type	<inst>	cond while for if begin end 
+%type	<inst>	cond while for if begin end
 %type	<sym>	procname
 %type	<narg>	arglist
 %right	'=' ADDEQ SUBEQ MULEQ DIVEQ MODEQ
@@ -39,7 +39,7 @@ list:	  /* nothing */
 	| list '\n'
 	| list defn '\n'
 	| list asgn '\n'  { code2(xpop, STOP); return 1; }
-	| list stmt '\n'  { code(STOP); return 1; } 
+	| list stmt '\n'  { code(STOP); return 1; }
 	| list expr '\n'  { code2(printtop, STOP); return 1; }
 	| list error '\n' { yyerrok; }
 	;
@@ -357,7 +357,7 @@ moreinput(void)
 			expr = infile+2;
 		sprint(buf, "/tmp/hocXXXXXXX");
 		infile = mktemp(buf);
-		fd = create(infile, ORDWR|ORCLOSE, 0600);
+		fd = ocreate(infile, ORDWR|ORCLOSE, 0600);
 		if(fd < 0){
 			fprint(2, "%s: can't create temp. file: %r\n", progname);
 			return 0;

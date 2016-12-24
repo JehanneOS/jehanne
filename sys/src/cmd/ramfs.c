@@ -207,7 +207,7 @@ main(int argc, char *argv[])
 		if(defmnt == 0){
 			char buf[64];
 			snprint(buf, sizeof buf, "#s/%s", service);
-			fd = create(buf, OWRITE|ORCLOSE, 0666);
+			fd = ocreate(buf, OWRITE|ORCLOSE, 0666);
 			if(fd < 0)
 				error("create failed");
 			sprint(buf, "%d", p[1]);

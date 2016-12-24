@@ -228,7 +228,7 @@ post(char *srv, int fd)
 	char buf[128];
 
 	fprint(2, "post...\n");
-	f = create(srv, OWRITE, 0666);
+	f = ocreate(srv, OWRITE, 0666);
 	if(f < 0){
 		sprint(buf, "create(%s)", srv);
 		error(buf);

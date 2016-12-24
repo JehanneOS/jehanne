@@ -1030,7 +1030,7 @@ syscreate(char* aname, uint32_t omode, uint32_t perm)
 	int fd;
 	Chan *c;
 
-	openmode(omode & ~OEXCL);	/* error check only; OEXCL okay here */
+	openmode(omode);	/* error check only; OEXCL okay here */
 	c = nil;
 	if(waserror()) {
 		if(c != nil)

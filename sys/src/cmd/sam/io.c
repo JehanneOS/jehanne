@@ -1,4 +1,4 @@
-/* 
+/*
  * This file is part of the UCB release of Plan 9. It is subject to the license
  * terms in the LICENSE file found in the top-level directory of this
  * distribution and at http://akaros.cs.berkeley.edu/files/Plan9License. No
@@ -55,7 +55,7 @@ writef(File *f)
 	if(genc)
 		free(genc);
 	genc = Strtoc(&genstr);
-	if((io=create(genc, OWRITE, 0666L)) < 0)
+	if((io=ocreate(genc, OWRITE, 0666L)) < 0)
 		error_r(Ecreate, genc);
 	dprint("%s: ", genc);
 	if(statfd(io, 0, 0, 0, &length, &appendonly) > 0 && appendonly && length>0)
@@ -232,7 +232,7 @@ connectto(char *machine, char **argv)
 	int p1[2], p2[2];
 	char **av;
 	int ac;
-	
+
 	// count args
 	for(av = argv; *av; av++)
 		;

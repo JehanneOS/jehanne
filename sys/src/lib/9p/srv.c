@@ -410,7 +410,7 @@ sopen(Srv *srv, Req *r)
 		respond(r, Ebotch);
 		return;
 	}
-	if((r->fid->qid.type&QTDIR) && (r->ifcall.mode&~ORCLOSE) != NP_OREAD){
+	if((r->fid->qid.type&QTDIR) && (r->ifcall.mode&~NP_ORCLOSE) != NP_OREAD){
 		respond(r, Eisdir);
 		return;
 	}
@@ -537,7 +537,7 @@ sread(Srv *srv, Req *r)
 		r->ifcall.count = srv->msize - IOHDRSZ;
 	r->rbuf = emalloc9p(r->ifcall.count);
 	r->ofcall.data = r->rbuf;
-	o = r->fid->omode & 7;
+	o = r->fid->omode & 3;
 	if(o != NP_OREAD && o != NP_ORDWR && o != NP_OEXEC){
 		respond(r, Ebotch);
 		return;
@@ -579,7 +579,7 @@ swrite(Srv *srv, Req *r)
 	}
 	if(r->ifcall.count > srv->msize - IOHDRSZ)
 		r->ifcall.count = srv->msize - IOHDRSZ;
-	o = r->fid->omode & 7;
+	o = r->fid->omode & 3;
 	if(o != NP_OWRITE && o != NP_ORDWR){
 		snprint(e, sizeof e, "write on fid with open mode 0x%ux", r->fid->omode);
 		respond(r, e);
@@ -952,7 +952,7 @@ postfd(char *name, int pfd)
 	snprint(buf, sizeof buf, "/srv/%s", name);
 	if(chatty9p)
 		fprint(2, "postfd %s\n", buf);
-	fd = create(buf, OWRITE|ORCLOSE|OCEXEC, 0600);
+	fd = ocreate(buf, OWRITE|ORCLOSE|OCEXEC, 0600);
 	if(fd < 0){
 		if(chatty9p)
 			fprint(2, "create fails: %r\n");
@@ -981,7 +981,7 @@ sharefd(char *name, char *desc, int pfd)
 	snprint(buf, sizeof buf, "#σc/%s/%s", name, desc);
 	if(chatty9p)
 		fprint(2, "sharefd %s\n", buf);
-	fd = create(buf, OWRITE, 0600);
+	fd = ocreate(buf, OWRITE, 0600);
 	if(fd < 0){
 		if(chatty9p)
 			fprint(2, "create fails: %r\n");

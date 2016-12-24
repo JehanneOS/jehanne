@@ -125,7 +125,7 @@ copy(char *from, char *to, int todir)
 		failed = 1;
 		return;
 	}
-	fdt=create(to, OWRITE, mode);
+	fdt=ocreate(to, OWRITE, mode);
 	if(fdt<0){
 		fprint(2, "cp: can't create %s: %r\n", to);
 		close(fdf);
@@ -145,7 +145,7 @@ copy(char *from, char *to, int todir)
 			dirt.gid = dirb->gid;
 		if(dirfwstat(fdt, &dirt) < 0)
 			fprint(2, "cp: warning: can't wstat %s: %r\n", to);
-	}			
+	}
 	free(dirb);
 	close(fdf);
 	close(fdt);

@@ -24,12 +24,12 @@ putenv(const char *name, const char *val)
 	snprint(ename, sizeof ename, "/env/%s", name);
 	if(strcmp(ename+5, name) != 0)
 		return -1;
-	f = create(ename, OWRITE, 0664);
+	f = ocreate(ename, OWRITE, 0664);
 	if(f < 0){
 		/* try with #e, in case of a previous rfork(RFCNAMEG)
 		 */
 		snprint(ename, sizeof ename, "#e/%s", name);
-		f = create(ename, OWRITE, 0664);
+		f = ocreate(ename, OWRITE, 0664);
 		if(f < 0)
 			return -1;
 		return -1;

@@ -68,7 +68,7 @@ main(int argc, char **argv)
 {
 	Ndbtuple *t, *nt;
 	int n;
-	Dir *d;	
+	Dir *d;
 	uint8_t buf[8];
 	char file[128];
 	int fd;
@@ -125,7 +125,7 @@ main(int argc, char **argv)
 
 	/* create the hash file */
 	snprint(file, sizeof(file), "%s.%s", argv[1], argv[2]);
-	fd = create(file, ORDWR, 0664);
+	fd = ocreate(file, ORDWR, 0664);
 	if(fd < 0){
 		fprint(2, "mkhash: can't create %s\n", file);
 		exits(syserr());

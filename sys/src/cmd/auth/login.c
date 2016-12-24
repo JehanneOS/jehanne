@@ -71,7 +71,7 @@ setenv(char *var, char *val)
 {
 	int fd;
 
-	fd = create(var, OWRITE, 0644);
+	fd = ocreate(var, OWRITE, 0644);
 	if(fd < 0)
 		print("init: can't open %s\n", var);
 	else{

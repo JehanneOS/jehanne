@@ -28,7 +28,7 @@ main(void)
 	static Rune r[16] = L"Ciao Mondo!";
 	static Rune buf[16];
 
-	if((fd = create("/tmp/runetest.txt", OWRITE, 0666L)) < 0) {
+	if((fd = ocreate("/tmp/runetest.txt", OWRITE, 0666L)) < 0) {
 		print("FAIL: open: %r\n");
 		exits("FAIL");
 	}

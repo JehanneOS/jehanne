@@ -396,6 +396,7 @@ extern	void	longjmp(jmp_buf, int);
 extern	char*	mktemp(char*);
 extern	double	modf(double, double*);
 extern	void	notejmp(void*, jmp_buf, int);
+extern	int	ocreate(const char* path, unsigned int omode, unsigned int perm);
 extern	void	perror(const char*);
 extern	int	pipe(int pipes[2]);
 extern	int	postnote(int, int, const char *);
@@ -565,14 +566,12 @@ extern	void		freenetconninfo(NetConnInfo*);
 
 /* Open modes: Popular flags among filesystems */
 #define OTRUNC	0x0100		/* or'ed in (except for exec), truncate file first */
-#define OEXCL	0x0200		/* or'ed in, exclusive create */
 
 /* Access modes */
-#define	AEXIST	OSTAT	/* accessible: exists */
-#define	AREAD	OREAD	/* read access */
-#define	AWRITE	OWRITE	/* write access */
-#define	AEXEC	OEXEC	/* execute access */
-#define AMASK	(OSTAT|OREAD|OWRITE|OEXEC)
+#define	AEXIST	0	/* accessible: exists */
+#define	AREAD	4	/* read access */
+#define	AWRITE	2	/* write access */
+#define	AEXEC	1	/* execute access */
 
 /* Segattch */
 #define	SG_RONLY	0040	/* read only */
@@ -654,58 +653,23 @@ struct Waitmsg
 	char		*msg;
 } Waitmsg;
 
-//extern	void	_exits(const char*) __attribute__ ((noreturn));
-
 extern	int	access(const char*, int);
-//extern	int64_t	alarm(uint64_t);
-//extern	int	await(char*, int);
-//extern	int64_t	awake(int64_t);
 extern	int	awakened(int64_t);
-//extern	int	bind(const char*, const char*, int);
 extern	int	brk(void*);
-//extern	int	chdir(const char*);
-//extern	int	close(int);
-//extern	int	create(const char*, int, uint32_t);
-//extern	int	dup(int, int);
-//extern	int	errstr(char*, uint32_t);
-//extern	int	exec(const char*, char* const[]);
 extern	int	execl(const char*, ...);
 extern	int	forgivewkp(int64_t);
 extern	pid_t	fork(void);
-//extern	pid_t	rfork(int);
-//extern	int	fauth(int, const char*);
-//extern	int	fstat(int, uint8_t*, int);
-//extern	int	fwstat(int, uint8_t*, int);
-//extern	int	fversion(int, int, char*, int);
-//extern	int	mount(int, int, const char*, int, const char*, int);
-//extern	int	unmount(const char*, const char*);
-//extern	int	noted(int);
-//extern	int	notify(void(*)(void*, char*));
-//extern	int	open(const char*, int);
-//extern	int	fd2path(int, char*, int);
-// extern	int	fdflush(int);
-//extern	int	pipe(int*);
-//extern	int32_t	pread(int, void*, int32_t, int64_t);
-//extern	int32_t	pwrite(int, const void*, int32_t, int64_t);
-//extern	int32_t	read(int, void*, int32_t);
 extern	int32_t	readn(int, void*, int32_t);
-//extern	int	remove(const char*);
 extern	void*	sbrk(uint32_t);
 extern	int32_t	oseek(int, int32_t, int);
-//extern	int64_t	seek(int, int64_t, int);
 extern	void*	segattach(int, const char*, void*, unsigned long);
 extern	int	segdetach(void*);
 extern	int	segfree(void*, unsigned long);
-//extern	int	semacquire(int32_t*, int);
-//extern	int32_t	semrelease(int32_t*, int32_t);
 extern	void	sleep(int32_t);
 extern	int	stat(const char*, uint8_t*, int);
-//extern	int	tsemacquire(int32_t*, uint64_t);
 extern	Waitmsg*	wait(void);
 extern	int	waitpid(void);
-//extern	int32_t	write(int, const void*, int32_t);
 extern	int	wstat(const char*, uint8_t*, int);
-//extern	void*	rendezvous(void*, void*);
 
 extern	Dir*	dirstat(const char*);
 extern	Dir*	dirfstat(int);

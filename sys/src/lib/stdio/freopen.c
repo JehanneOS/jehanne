@@ -42,13 +42,13 @@ FILE *freopen(const char *name, const char *mode, FILE *f){
 		f->fd=open(name, (*mode == '+'? ORDWR: OREAD));
 		break;
 	case 'w':
-		f->fd=create(name, (*mode == '+'? ORDWR: OWRITE), 0666);
+		f->fd=ocreate(name, (*mode == '+'? ORDWR: OWRITE), 0666);
 		break;
 	case 'a':
 		m = (*mode == '+'? ORDWR: OWRITE);
 		f->fd=open(name, m);
 		if(f->fd<0)
-			f->fd=create(name, m, 0666);
+			f->fd=ocreate(name, m, 0666);
 		seek(f->fd, 0LL, 2);
 		break;
 	}

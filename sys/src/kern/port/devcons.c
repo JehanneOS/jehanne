@@ -245,11 +245,9 @@ void
 prflush(void)
 {
 	unsigned long now;
-//	uint32_t now;
 
 	now = sys->ticks;
 	while(consactive())
-//		uartpush();
 		if(sys->ticks - now >= 30*HZ)
 			break;
 }
@@ -365,7 +363,6 @@ print(char *fmt, ...)
 	n = vseprint(buf, buf+sizeof(buf), fmt, arg) - buf;
 	va_end(arg);
 	putstrn(buf, n);
-if(strchr(buf, '\n') != nil)prflush();
 
 	return n;
 }
@@ -452,7 +449,7 @@ panic(char *fmt, ...)
 	buf[n] = '\n';
 	putstrn(buf, n+1);
 //	dumpstack();
-	prflush();
+//	prflush();
 //	dump();
 
 	exit(1);

@@ -20,10 +20,11 @@
 #define	NP_ORDWR	2	/* read and write */
 #define	NP_OEXEC	3	/* execute, == read but check execute permission */
 #define	NP_OTRUNC	16	/* or'ed in (except for exec), truncate file first */
+#define NP_OCEXEC	32	/* or'ed in, close on exec */
 #define	NP_ORCLOSE	64	/* or'ed in, remove on close */
 
 /* bits that must be zero in open/create mode */
-#define NP_OZEROES	~(NP_OREAD|NP_OWRITE|NP_ORDWR|NP_OEXEC|NP_OTRUNC|NP_ORCLOSE)
+#define NP_OZEROES	~(NP_OREAD|NP_OWRITE|NP_ORDWR|NP_OEXEC|NP_OTRUNC|NP_OCEXEC|NP_ORCLOSE)
 
 typedef enum NinepMsgType
 {

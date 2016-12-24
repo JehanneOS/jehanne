@@ -204,7 +204,6 @@ extern	uint64_t	strtoull(char*, char**, int);
 
 /* OPEN MODES: Popular flags among filesystems */
 #define OTRUNC	0x0100		/* or'ed in (except for exec), truncate file first */
-#define OEXCL	0x0200		/* or'ed in, exclusive create */
 
 #define NCONT	0	/* continue after note */
 #define NDFLT	1	/* terminate after note */

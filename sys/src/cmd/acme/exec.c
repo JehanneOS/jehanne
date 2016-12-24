@@ -594,7 +594,7 @@ putfile(File *f, int q0, int q1, Rune *namer, int nname)
 			goto Rescue1;
 		}
 	}
-	fd = create(name, OWRITE, 0666);
+	fd = ocreate(name, OWRITE, 0666);
 	if(fd < 0){
 		warning(nil, "can't create file %s: %r\n", name);
 		goto Rescue1;
@@ -1379,7 +1379,7 @@ Hard:
 		n += i;
 		memmove(buf+n, "/cmd", 5);
 		n += 5;
-		fd = create("/env/path", OWRITE, 0666);
+		fd = ocreate("/env/path", OWRITE, 0666);
 		write(fd, buf, n);
 		close(fd);
 	}

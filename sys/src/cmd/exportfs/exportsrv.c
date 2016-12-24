@@ -311,7 +311,7 @@ Xcreate(Fsrpc *t)
 
 
 	path = makepath(f->f, t->work.name);
-	f->fid = create(path, t->work.mode, t->work.perm);
+	f->fid = ocreate(path, t->work.mode, t->work.perm);
 	free(path);
 	if(f->fid < 0) {
 		errstr(err, sizeof err);

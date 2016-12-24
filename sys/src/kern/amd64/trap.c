@@ -609,7 +609,8 @@ faultamd64(Ureg* ureg, void* _1)
 	insyscall = up->insyscall;
 	up->insyscall = 1;
 if(iskaddr(addr)){
-	print("kaddr %#llux pc %#p\n", addr, ureg->ip); prflush();
+	print("kaddr %#llux pc %#p\n", addr, ureg->ip);
+//	prflush();
 	dumpregs(ureg);
 }
 	if(fault(addr, ureg->ip, ftype) < 0){

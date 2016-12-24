@@ -1306,7 +1306,7 @@ openfreqfile(void)
 	}
 	fd = open(p, ORDWR);
 	if(fd < 0)
-		fd = create(p, ORDWR, 0666);
+		fd = ocreate(p, ORDWR, 0666);
 	free(p);
 	if(fd < 0)
 		return -1;

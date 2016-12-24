@@ -106,7 +106,7 @@ main(int argc, char **argv)
 		open("/dev/null", OWRITE);
 		if(pipe(pipefd) < 0)
 			panic("pipe");
-		srvfd = create(srvfile, OWRITE|ORCLOSE, 0600);
+		srvfd = ocreate(srvfile, OWRITE|ORCLOSE, 0600);
 		if(srvfd < 0)
 			panic(srvfile);
 		fprint(srvfd, "%d", pipefd[0]);

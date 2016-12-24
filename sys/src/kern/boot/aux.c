@@ -30,7 +30,7 @@ savelogsproc(void)
 
 	out = open("/sys/log/kernel", OWRITE);
 	if(out < 0){
-		out = create("/sys/log/kernel", OWRITE, 0600);
+		out = ocreate("/sys/log/kernel", OWRITE, 0600);
 		if(out < 0){
 			fprint(2, "savelogs: cannot create /sys/log/kernel: %r\n");
 			return;
@@ -139,7 +139,7 @@ setenv(char *name, char *val)
 	char ename[64];
 
 	snprint(ename, sizeof ename, "#e/%s", name);
-	f = create(ename, OWRITE, 0666);
+	f = ocreate(ename, OWRITE, 0666);
 	if(f < 0){
 		fprint(2, "create %s: %r\n", ename);
 		return;
@@ -162,7 +162,7 @@ srvcreate(char *name, int fd)
 		srvname = name;
 
 	snprint(buf, sizeof buf, "#s/%s", srvname);
-	f = create(buf, OWRITE, 0600);
+	f = ocreate(buf, OWRITE, 0600);
 	if(f < 0)
 		fatal(buf);
 	sprint(buf, "%d", fd);

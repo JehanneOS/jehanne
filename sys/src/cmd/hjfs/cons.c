@@ -359,7 +359,7 @@ consproc(void *v)
 	char *s;
 	char *args[MAXARGS];
 	int rc;
-	
+
 	in = (Biobuf *) v;
 	for(;;){
 		s = Brdstr(in, '\n', 1);
@@ -398,7 +398,7 @@ initcons(char *service)
 	char buf[512];
 
 	snprint(buf, sizeof(buf), "/srv/%s.cmd", service);
-	fd = create(buf, OWRITE|ORCLOSE, 0600);
+	fd = ocreate(buf, OWRITE|ORCLOSE, 0600);
 	if(fd < 0)
 		return;
 	pipe(pfd);

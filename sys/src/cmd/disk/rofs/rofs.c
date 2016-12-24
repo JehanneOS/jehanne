@@ -233,7 +233,7 @@ main(int argc, char *argv[])
 			sysfatal("pipe: %r");
 		if(srv){
 			snprint(buf, sizeof buf, "#s/%s", srvname);
-			fd = create(buf, OWRITE, 0666);
+			fd = ocreate(buf, OWRITE, 0666);
 			if(fd < 0)
 				sysfatal("create %s: %r", buf);
 			if(fprint(fd, "%d", pfd[0]) < 0)

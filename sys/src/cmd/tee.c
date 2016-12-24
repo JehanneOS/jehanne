@@ -56,10 +56,10 @@ main(int argc, char **argv)
 		if(aflag) {
 			openf[n] = open(argv[0], OWRITE);
 			if(openf[n] < 0)
-				openf[n] = create(argv[0], OWRITE, 0666);
+				openf[n] = ocreate(argv[0], OWRITE, 0666);
 			seek(openf[n], 0L, 2);
 		} else
-			openf[n] = create(argv[0], OWRITE, 0666);
+			openf[n] = ocreate(argv[0], OWRITE, 0666);
 		if(openf[n] < 0) {
 			fprint(2, "tee: cannot open %s: %r\n", argv[0]);
 		} else

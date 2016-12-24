@@ -322,7 +322,7 @@ rowdump(Row *row, char *file)
 		sprint(buf, "%s/acme.dump", home);
 		file = buf;
 	}
-	fd = create(file, OWRITE, 0600);
+	fd = ocreate(file, OWRITE, 0600);
 	if(fd < 0){
 		warning(nil, "can't open %s: %r\n", file);
 		goto Rescue;
@@ -666,7 +666,7 @@ rowload(Row *row, char *file, int initing)
 		if(ndumped >= 0){
 			/* simplest thing is to put it in a file and load that */
 			sprint(buf, "/tmp/d%d.%.4sacme", getpid(), getuser());
-			fd = create(buf, OWRITE|ORCLOSE, 0600);
+			fd = ocreate(buf, OWRITE|ORCLOSE, 0600);
 			if(fd < 0){
 				free(r);
 				warning(nil, "can't create temp file: %r\n");

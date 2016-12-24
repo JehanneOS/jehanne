@@ -308,7 +308,7 @@ mountinit(char *service, char *mntpt)
 	/*
 	 *  make a /srv/cs
 	 */
-	f = create(service, OWRITE|ORCLOSE, 0666);
+	f = ocreate(service, OWRITE|ORCLOSE, 0666);
 	if(f < 0)
 		error(service);
 	snprint(buf, sizeof(buf), "%d", p[1]);

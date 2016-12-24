@@ -13,7 +13,7 @@ wrbio(char *file, Acctbio *a)
 
 	fd = open(file, OWRITE);
 	if(fd < 0){
-		fd = create(file, OWRITE, 0660);
+		fd = ocreate(file, OWRITE, 0660);
 		if(fd < 0)
 			error("can't create %s", file);
 	}

@@ -53,7 +53,7 @@ static void
 fulfill(Req *req, Event *e)
 {
 	int n;
-	
+
 	n = e->len;
 	if(n > req->ifcall.count)
 		n = req->ifcall.count;
@@ -124,7 +124,7 @@ static void
 pushevent(Dev *d, char *data)
 {
 	Event *e;
-	
+
 	qlock(&evlock);
 	e = evlast;
 	evlast = emallocz(sizeof(Event), 1);
@@ -225,7 +225,7 @@ formatdev(Dev *d, int type)
 	Usbdev *u = d->usb;
 	return smprint("%s %d %.4x %.4x %.6lx %s\n",
 		type ? "detach" : "attach",
-		d->id, u->vid, u->did, u->csp, 
+		d->id, u->vid, u->did, u->csp,
 		d->hname != nil ? d->hname : "");
 }
 
@@ -239,7 +239,7 @@ enumerate(Event **l)
 	Port *p;
 	Dev *d;
 	int i;
-	
+
 	for(h = hubs; h != nil; h = h->next){
 		for(i = 1; i <= h->nport; i++){
 			p = &h->port[i];
@@ -447,7 +447,7 @@ main(int argc, char **argv)
 		break;
 	} ARGEND;
 
-	busyfd = create("/env/usbbusy", ORCLOSE, 0600);
+	busyfd = ocreate("/env/usbbusy", ORCLOSE, 0600);
 	quotefmtinstall();
 	initevent();
 	rfork(RFNOTEG);

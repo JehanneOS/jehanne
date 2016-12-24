@@ -382,7 +382,7 @@ commands(void)
 			if(!wrapp ||
 			  ((io = open(file, OWRITE)) == -1) ||
 			  ((seek(io, 0L, 2)) == -1))
-				if((io = create(file, OWRITE, 0666)) < 0)
+				if((io = ocreate(file, OWRITE, 0666)) < 0)
 					error(file);
 			Binit(&iobuf, io, OWRITE);
 			wrapp = 0;
@@ -681,7 +681,7 @@ rescue(void)
 	if(dol > zero) {
 		addr1 = zero+1;
 		addr2 = dol;
-		io = create("ed.hup", OWRITE, 0666);
+		io = ocreate("ed.hup", OWRITE, 0666);
 		if(io > 0){
 			Binit(&iobuf, io, OWRITE);
 			putfile();
@@ -1110,7 +1110,7 @@ init(void)
 	iblock = -1;
 	oblock = -1;
 	ichanged = 0;
-	if((tfile = create(tfname, ORDWR, 0600)) < 0){
+	if((tfile = ocreate(tfname, ORDWR, 0600)) < 0){
 		error1(T);
 		exits(0);
 	}

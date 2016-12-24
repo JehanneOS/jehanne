@@ -267,7 +267,7 @@ mountinit(char *service, char *mntpt)
 	/*
 	 *  make a /srv/dns
 	 */
-	if((f = create(service, OWRITE|ORCLOSE, 0666)) < 0)
+	if((f = ocreate(service, OWRITE|ORCLOSE, 0666)) < 0)
 		sysfatal("create %s failed: %r", service);
 	snprint(buf, sizeof buf, "%d", p[1]);
 	if(write(f, buf, strlen(buf)) != strlen(buf))

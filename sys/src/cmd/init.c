@@ -220,7 +220,7 @@ setenv(char *name, char *val)
 {
 	int fd;
 
-	fd = create(name, OWRITE, 0644);
+	fd = ocreate(name, OWRITE, 0644);
 	if(fd < 0)
 		fprint(2, "init: can't create %s: %r\n", name);
 	else{

@@ -142,7 +142,7 @@ putfile(SConn *conn, char *id, char *pf)
 	}
 
 	snprint(s, Maxmsg, "%s/store/%s/%s", SECSTORE_DIR, id, pf);
-	pd = create(s, OWRITE, 0660);
+	pd = ocreate(s, OWRITE, 0660);
 	if(pd < 0){
 		syslog(0, LOG, "can't open %s: %r", s);
 		return -1;

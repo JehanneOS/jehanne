@@ -129,7 +129,7 @@ main(int argc, char *argv[])
 	case -1:
 		error("fork");
 	case 0:
-		fd = create("/env/prompt", OWRITE, 0666);
+		fd = ocreate("/env/prompt", OWRITE, 0666);
 		if (fd >= 0) {
 			fprint(fd, "%s%% ", lock);
 			close(fd);

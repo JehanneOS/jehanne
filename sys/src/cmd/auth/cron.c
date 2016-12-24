@@ -78,11 +78,11 @@ int
 sleepuntil(uint32_t tm)
 {
 	uint32_t now = time(0);
-	
+
 	if (now < tm) {
 		sleep((tm - now)*1000);
 	}
-	
+
 	return 0;
 }
 
@@ -117,7 +117,7 @@ fatal(char *fmt, ...)
 static int
 openlock(char *file)
 {
-	return create(file, ORDWR, 0600);
+	return ocreate(file, ORDWR, 0600);
 }
 
 static int
@@ -258,7 +258,7 @@ createuser(void)
 	dirfwstat(fd, &d);
 	close(fd);
 	snprint(file, sizeof file, "/cron/%s/cron", user);
-	fd = create(file, OREAD, 0644);
+	fd = ocreate(file, OREAD, 0644);
 	if(fd < 0)
 		fatal("couldn't create %s: %r", file);
 	nulldir(&d);
@@ -626,7 +626,7 @@ initcap(void)
 }
 
 /*
- *  create a change uid capability 
+ *  create a change uid capability
  */
 char*
 mkcap(char *from, char *to)

@@ -1,4 +1,4 @@
-/* 
+/*
  * This file is part of the UCB release of Plan 9. It is subject to the license
  * terms in the LICENSE file found in the top-level directory of this
  * distribution and at http://akaros.cs.berkeley.edu/files/Plan9License. No
@@ -41,9 +41,9 @@ plan9(File *f, int type, String *s, int nest)
 		snarf(f, addr.r.p1, addr.r.p2, &plan9buf, 1);
 	if((pid=fork()) == 0){
 		if(downloaded){	/* also put nasty fd's into errfile */
-			fd = create(errfile, OWRITE, 0666L);
+			fd = ocreate(errfile, OWRITE, 0666L);
 			if(fd < 0)
-				fd = create("/dev/null", OWRITE, 0666L);
+				fd = ocreate("/dev/null", OWRITE, 0666L);
 			dup(fd, 2);
 			close(fd);
 			/* 2 now points at err file */

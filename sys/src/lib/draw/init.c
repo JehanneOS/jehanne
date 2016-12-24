@@ -102,7 +102,7 @@ geninitdraw(char *devdir, void(*error)(Display*, char*),
 		if(fd >= 0){
 			read(fd, display->oldlabel, (sizeof display->oldlabel)-1);
 			close(fd);
-			fd = create(buf, OWRITE, 0666);
+			fd = ocreate(buf, OWRITE, 0666);
 			if(fd >= 0){
 				write(fd, label, strlen(label));
 				close(fd);

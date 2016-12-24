@@ -133,7 +133,7 @@ Bopen(char *name, int mode)
 		f = open(name, mode);
 		break;
 	case OWRITE:
-		f = create(name, mode, 0666);
+		f = ocreate(name, mode, 0666);
 		break;
 	}
 	if(f < 0)

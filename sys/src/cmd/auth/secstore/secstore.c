@@ -86,7 +86,7 @@ getfile(SConn *conn, char *gf, uint8_t **buf, uint32_t *buflen, uint8_t *key, in
 	 * conn is already encrypted against wiretappers, but gf is also
 	 * encrypted against server breakin.
 	 */
-	if(buf == nil && (fd = create(gf, OWRITE, 0600)) < 0){
+	if(buf == nil && (fd = ocreate(gf, OWRITE, 0600)) < 0){
 		fprint(2, "secstore: can't open %s: %r\n", gf);
 		return -1;
 	}

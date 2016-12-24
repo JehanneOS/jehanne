@@ -1,4 +1,4 @@
-/* 
+/*
  * This file is part of the UCB release of Plan 9. It is subject to the license
  * terms in the LICENSE file found in the top-level directory of this
  * distribution and at http://akaros.cs.berkeley.edu/files/Plan9License. No
@@ -22,7 +22,7 @@ tempdisk(void)
 		buf[5] = i;
 		if(access(buf, AEXIST) == 0)
 			continue;
-		fd = create(buf, ORDWR|ORCLOSE|OCEXEC, 0600);
+		fd = ocreate(buf, ORDWR|ORCLOSE|OCEXEC, 0600);
 		if(fd >= 0)
 			return fd;
 	}

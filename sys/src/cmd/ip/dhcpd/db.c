@@ -106,7 +106,7 @@ lockopen(char *file)
 		}
 		if(strstr(err, "exist")){
 			/* no file, create an exclusive access file */
-			fd = create(file, ORDWR, DMEXCL|0664);
+			fd = ocreate(file, ORDWR, DMEXCL|0664);
 			if(fd >= 0)
 				return fd;
 		}
@@ -400,7 +400,7 @@ commitbinding(Binding *b)
 	}
 	setbinding(b, b->offeredto, now + b->offer);
 	b->lasttouched = now;
-	
+
 	if(writebinding(fd, b) < 0){
 		close(fd);
 		return -1;
@@ -429,7 +429,7 @@ releasebinding(Binding *b, char *id)
 	}
 	b->lease = 0;
 	b->expoffer = 0;
-	
+
 	if(writebinding(fd, b) < 0){
 		close(fd);
 		return -1;

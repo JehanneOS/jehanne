@@ -216,7 +216,7 @@ main(int argc, char *argv[])
 	}
 	if(ofile){
 		if(dotrunc)
-			obf = create(ofile, OWRITE, 0664);
+			obf = ocreate(ofile, OWRITE, 0664);
 		else
 			obf = open(ofile, OWRITE);
 		if(obf < 0) {

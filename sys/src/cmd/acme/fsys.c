@@ -548,7 +548,7 @@ fsysopen(Xfid *x, Fid *f)
 	int m;
 
 	/* can't truncate anything, so just disregard */
-	x->mode &= ~(NP_OTRUNC);
+	x->mode &= ~(NP_OTRUNC|NP_OCEXEC);
 	/* can't execute or remove anything */
 	if(x->mode==NP_OEXEC || (x->mode&NP_ORCLOSE))
 		goto Deny;

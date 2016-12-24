@@ -191,7 +191,7 @@ main(int argc, char *argv[])
 
 	f = 1;
 	if(args.ofile) {
-		f = create(args.ofile, OWRITE, 0666);
+		f = ocreate(args.ofile, OWRITE, 0666);
 		if(f < 0) {
 			fprint(2, "sort: create %s: %r\n", args.ofile);
 			done("create");
@@ -334,7 +334,7 @@ tempout(void)
 	sort4(args.linep, args.nline);
 	tf = tempfile(args.ntemp);
 	args.ntemp++;
-	f = create(tf, OWRITE, 0666);
+	f = ocreate(tf, OWRITE, 0666);
 	if(f < 0) {
 		fprint(2, "sort: create %s: %r\n", tf);
 		done("create");
@@ -410,7 +410,7 @@ mergeout(Biobuf *b)
 		if(n > Nmerge) {
 			tf = tempfile(args.ntemp);
 			args.ntemp++;
-			f = create(tf, OWRITE, 0666);
+			f = ocreate(tf, OWRITE, 0666);
 			if(f < 0) {
 				fprint(2, "sort: create %s: %r\n", tf);
 				done("create");

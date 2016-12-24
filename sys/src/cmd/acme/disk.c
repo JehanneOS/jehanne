@@ -33,7 +33,7 @@ tempfile(void)
 		buf[5] = i;
 		if(access(buf, AEXIST) == 0)
 			continue;
-		fd = create(buf, ORDWR|ORCLOSE|OCEXEC, 0600);
+		fd = ocreate(buf, ORDWR|ORCLOSE|OCEXEC, 0600);
 		if(fd >= 0)
 			return fd;
 	}

@@ -1222,7 +1222,7 @@ namec(char *aname, int amode, int omode, int perm)
 	Elemlist e;
 	Rune r;
 	Mhead *mh;
-	char *createerr, tmperrbuf[ERRMAX];
+	char tmperrbuf[ERRMAX];
 	char *name;
 	Dev *dev;
 
@@ -1309,13 +1309,7 @@ namec(char *aname, int amode, int omode, int perm)
 		dev = devtabget(r, 1);			//XDYNX
 		if(dev == nil)
 			error(Ebadsharp);
-		//if(waserror()){
-		//	devtabdecr(dev);
-		//	nexterror();
-		//}
 		c = dev->attach(nil, nil, up->genbuf+n, 0);
-		//poperror();
-		//devtabdecr(dev);
 		break;
 
 	default:
@@ -1403,7 +1397,6 @@ namec(char *aname, int amode, int omode, int perm)
 	case Aaccess:
 	case Aremove:
 	case Aopen:
-	Open:
 		/* save&update the name; domount might change c */
 		path = c->path;
 		incref(&path->r);
@@ -1482,58 +1475,13 @@ namec(char *aname, int amode, int omode, int perm)
 	case Acreate:
 		/*
 		 * We've already walked all but the last element.
-		 * If the last exists, try to open it OTRUNC.
-		 * If omode&OEXCL is set, just give up.
+		 * If the last exists just give up.
 		 */
 		e.nelems++;
 		e.nerror++;
-		if(walk(&c, e.elems+e.nelems-1, 1, nomount, nil) == 0){
-			if(omode&OEXCL)
-				error(Eexist);
-			omode |= OTRUNC;
-			goto Open;
-		}
+		if(walk(&c, e.elems+e.nelems-1, 1, nomount, nil) == 0)
+			error(Eexist);
 
-		/*
-		 * The semantics of the create(2) system call are that if the
-		 * file exists and can be written, it is to be opened with truncation.
-		 * On the other hand, the create(5) message fails if the file exists.
-		 * If we get two create(2) calls happening simultaneously,
-		 * they might both get here and send create(5) messages, but only
-		 * one of the messages will succeed.  To provide the expected create(2)
-		 * semantics, the call with the failed message needs to try the above
-		 * walk again, opening for truncation.  This correctly solves the
-		 * create/create race, in the sense that any observable outcome can
-		 * be explained as one happening before the other.
-		 * The create/create race is quite common.  For example, it happens
-		 * when two rc subshells simultaneously update the same
-		 * environment variable.
-		 *
-		 * The implementation still admits a create/create/remove race:
-		 * (A) walk to file, fails
-		 * (B) walk to file, fails
-		 * (A) create file, succeeds, returns
-		 * (B) create file, fails
-		 * (A) remove file, succeeds, returns
-		 * (B) walk to file, return failure.
-		 *
-		 * This is hardly as common as the create/create race, and is really
-		 * not too much worse than what might happen if (B) got a hold of a
-		 * file descriptor and then the file was removed -- either way (B) can't do
-		 * anything with the result of the create call.  So we don't care about this race.
-		 *
-		 * Applications that care about more fine-grained decision of the races
-		 * can use the OEXCL flag to get at the underlying create(5) semantics;
-		 * by default we provide the common case.
-		 *
-		 * We need to stay behind the mount point in case we
-		 * need to do the first walk again (should the create fail).
-		 *
-		 * We also need to cross the mount point and find the directory
-		 * in the union in which we should be creating.
-		 *
-		 * The channel staying behind is c, the one moving forward is cnew.
-		 */
 		mh = nil;
 		cnew = nil;		/* is this assignment necessary? */
 		if(!waserror()){	/* try create */
@@ -1555,7 +1503,7 @@ namec(char *aname, int amode, int omode, int perm)
 			cnew->path = c->path;
 			incref(&cnew->path->r);
 
-			cnew = cnew->dev->create(cnew, e.elems[e.nelems-1], omode&~(OEXCL|OCEXEC), perm);
+			cnew = cnew->dev->create(cnew, e.elems[e.nelems-1], omode&~(OCEXEC), perm);
 			poperror();
 			if(omode & OCEXEC)
 				cnew->flag |= CCEXEC;
@@ -1570,19 +1518,7 @@ namec(char *aname, int amode, int omode, int perm)
 		/* create failed */
 		cclose(cnew);
 		putmhead(mh);
-		if(omode & OEXCL)
-			nexterror();
-		/* save error */
-		createerr = up->errstr;
-		up->errstr = tmperrbuf;
-		/* note: we depend that walk does not error */
-		if(walk(&c, e.elems+e.nelems-1, 1, nomount, nil) < 0){
-			up->errstr = createerr;
-			error(createerr);	/* report true error */
-		}
-		up->errstr = createerr;
-		omode |= OTRUNC;
-		goto Open;
+		nexterror();
 
 	default:
 		panic("unknown namec access %d", amode);

@@ -20,7 +20,7 @@ plumbopen(char *name, int omode)
 
 	if(name[0] == '/')
 		return open(name, omode);
-		
+
 	/* find elusive plumber */
 	if(access("/mnt/plumb/send", AWRITE) >= 0)
 		plumber = "/mnt/plumb";
@@ -51,7 +51,7 @@ plumbopen(char *name, int omode)
 
 	/* try creating port; used by non-standard plumb implementations */
 	rerrstr(err, sizeof err);
-	fd = create(buf, omode, 0600);
+	fd = ocreate(buf, omode, 0600);
 	if(fd >= 0)
 		return fd;
 	errstr(err, sizeof err);

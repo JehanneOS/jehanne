@@ -1,4 +1,4 @@
-/* 
+/*
  * This file is part of the UCB release of Plan 9. It is subject to the license
  * terms in the LICENSE file found in the top-level directory of this
  * distribution and at http://akaros.cs.berkeley.edu/files/Plan9License. No
@@ -47,7 +47,7 @@ void main(int argc, char *argv[])
 	int i;
 	String *t;
 	char *termargs[10], **ap;
-	
+
 	ap = termargs;
 	*ap++ = "samterm";
 	ARGBEGIN{
@@ -75,7 +75,7 @@ void main(int argc, char *argv[])
 		break;
 	}ARGEND
 	*ap = nil;
-	
+
 	Strinit(&cmdstr);
 	Strinit0(&lastpat);
 	Strinit0(&lastregexp);
@@ -137,7 +137,7 @@ rescue(void)
 			continue;
 		if(io == -1){
 			sprint(buf, "%s/sam.save", home);
-			io = create(buf, OWRITE, 0777);
+			io = ocreate(buf, OWRITE, 0777);
 			if(io<0)
 				return;
 		}

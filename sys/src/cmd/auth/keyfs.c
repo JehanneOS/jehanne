@@ -770,7 +770,7 @@ writeusers(void)
 	}
 
 	/* write file */
-	fd = create(userkeys, OWRITE, 0660);
+	fd = ocreate(userkeys, OWRITE, 0660);
 	if(fd < 0){
 		free(buf);
 		fprint(2, "keyfs: can't write keys file\n");

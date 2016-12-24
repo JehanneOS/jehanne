@@ -75,7 +75,7 @@ post(char *name, char *envname, int srvfd)
 	int fd;
 	char buf[32];
 
-	fd = create(name, OWRITE, 0600);
+	fd = ocreate(name, OWRITE, 0600);
 	if(fd < 0)
 		return;
 	sprint(buf, "%d",srvfd);

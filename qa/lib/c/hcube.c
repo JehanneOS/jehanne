@@ -16,7 +16,7 @@ fdfork(int fd, int post)
 		pipe(ch);
 
 		len = snprint(path, sizeof path, "hcube.%d.%d", getpid(), seq++);
-		pfd = create(path, OWRITE|ORCLOSE, 0666);
+		pfd = ocreate(path, OWRITE|ORCLOSE, 0666);
 		if(pfd == -1)
 			sysfatal("fdfork: create: %r");
 		snprint(buf, sizeof buf, "%d", ch[0]);

@@ -18,7 +18,7 @@ ensure_exists(char *f, uint32_t perm)
 		return;
 	if(verbose)
 		fprint(2,"first time setup for secstore: create %s %lo\n", f, perm);
-	fd = create(f, OREAD, perm);
+	fd = ocreate(f, OREAD, perm);
 	if(fd < 0)
 		sysfatal("unable to create %s: %r", f);
 	close(fd);

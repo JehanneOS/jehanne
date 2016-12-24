@@ -882,7 +882,7 @@ replace(char **argv)
 	Pushstate ps;
 
 	if (usefile && docreate)
-		ar = create(usefile, OWRITE, 0666);
+		ar = ocreate(usefile, OWRITE, 0666);
 	else if (usefile)
 		ar = open(usefile, ORDWR);
 	else
@@ -1065,10 +1065,10 @@ openfname(Hdr *hp, char *fname, int dir, int mode)
 		if (!keepexisting || access(fname, AEXIST) < 0) {
 			int rw = (dir? OREAD: OWRITE);
 
-			fd = create(fname, rw, mode);
+			fd = ocreate(fname, rw, mode);
 			if (fd < 0) {
 				mkpdirs(fname);
-				fd = create(fname, rw, mode);
+				fd = ocreate(fname, rw, mode);
 			}
 			if (fd < 0 && (!dir || xaccess(fname, AEXIST) < 0))
 			    	cantcreate(fname, mode);

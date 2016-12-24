@@ -62,7 +62,7 @@ main(int argc, char **argv)
 	default:
 		usage();
 	}ARGEND
-	
+
 	Binits(&bin, 0, OREAD, binbuf, sizeof binbuf);
 	while(p = Brdline(&bin, '\n')){
 		p[Blinelen(&bin)-1] = '\0';
@@ -142,7 +142,7 @@ mkdirs(char *name, char *namep)
 		if(p[1] == '\0')
 			return;
 		*p = 0;
-		fd = create(buf, OREAD, 0775|DMDIR);
+		fd = ocreate(buf, OREAD, 0775|DMDIR);
 		close(fd);
 		*p = '/';
 	}
@@ -156,7 +156,7 @@ mkdir(char *name, uint32_t mode, uint32_t mtime, char *uid, char *gid)
 	char *p;
 	char olderr[256];
 
-	fd = create(name, OREAD, mode);
+	fd = ocreate(name, OREAD, mode);
 	if(fd < 0){
 		rerrstr(olderr, sizeof(olderr));
 		if((d = dirstat(name)) == nil || !(d->mode & DMDIR)){

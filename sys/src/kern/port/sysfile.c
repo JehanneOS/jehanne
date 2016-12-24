@@ -611,8 +611,8 @@ syspread(int fd, void *p, long n, int64_t off)
 		 * the target device/server, but with a negative length
 		 * to read the buffer must be nil
 		 */
-		pprint("trap: invalid address %#p/%ld in sys call pc=%#P\n", p, n, userpc(nil));
-		postnote(up, 1, "sys: bad address in syscall", NDebug);
+		pprint("trap: invalid address %#p/%ld in pread pc=%#P\n", p, n, userpc(nil));
+		postnote(up, 1, "sys: bad address in pread", NDebug);
 		error(Ebadarg);
 	}
 
@@ -697,7 +697,17 @@ syspwrite(int fd, void *p, long n, int64_t off)
 
 	r = n;
 
-	p = validaddr(p, n, 0);
+	if(n >= 0)
+		p = validaddr(p, n, 0);
+	else if(p != nil) {
+		/* in Jehanne, a negative length can be meaningful to
+		 * the target device/server, but with a negative length
+		 * to write the buffer must be nil
+		 */
+		pprint("trap: invalid address %#p/%ld in pwrite pc=%#P\n", p, n, userpc(nil));
+		postnote(up, 1, "sys: bad address in pwrite", NDebug);
+		error(Ebadarg);
+	}
 	n = 0;
 	c = fdtochan(fd, OWRITE, 1, 1);
 

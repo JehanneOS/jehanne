@@ -1065,7 +1065,7 @@ procread(Chan *c, void *va, long n, int64_t off)
 			return i;
 		}
 		int2flag(mw->cm->mflag, flag);
-		if(strcmp(mw->cm->to->path->s, "#M") == 0){
+		if(strcmp(mw->cm->to->path->s, "#9") == 0){
 			srv = srvname(mw->cm->to->mchan);
 			i = snprint(va, n, "mount %s %s %s %s\n", flag,
 				srv==nil? mw->cm->to->mchan->path->s : srv,

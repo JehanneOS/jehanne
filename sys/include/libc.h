@@ -572,6 +572,7 @@ extern	void		freenetconninfo(NetConnInfo*);
 #define	AREAD	4	/* read access */
 #define	AWRITE	2	/* write access */
 #define	AEXEC	1	/* execute access */
+#define AMASK	(AEXIST|AREAD|AWRITE|AEXEC)
 
 /* Segattch */
 #define	SG_RONLY	0040	/* read only */

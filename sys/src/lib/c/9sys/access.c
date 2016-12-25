@@ -1,10 +1,19 @@
 /*
- * This file is part of the UCB release of Plan 9. It is subject to the license
- * terms in the LICENSE file found in the top-level directory of this
- * distribution and at http://akaros.cs.berkeley.edu/files/Plan9License. No
- * part of the UCB release of Plan 9, including this file, may be copied,
- * modified, propagated, or distributed except according to the terms contained
- * in the LICENSE file.
+ * This file is part of Jehanne.
+ *
+ * Copyright (C) 2016 Giacomo Tesio <giacomo@tesio.it>
+ *
+ * Jehanne is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 2 of the License.
+ *
+ * Jehanne is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Jehanne.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <u.h>
@@ -14,27 +23,19 @@ int
 access(const char *name, int mode)
 {
 	int fd;
-	Dir *db;
 
 	static char omode[] = {
-		0,
+		OSTAT,
 		OEXEC,
 		OWRITE,
 		ORDWR,
 		OREAD,
-		OEXEC,  /* only approximate */
+		OEXEC,  /* 5=4+1 READ|EXEC, EXEC is enough */
 		ORDWR,
-		ORDWR   /* only approximate */
+		ORDWR   /* 7=4+2+1 READ|WRITE|EXEC, ignore EXEC */
 	};
 
-	if(mode == AEXIST){
-		db = dirstat(name);
-		free(db);
-		if(db != nil)
-			return 0;
-		return -1;
-	}
-	fd = open(name, omode[mode&7]);
+	fd = open(name, omode[mode&AMASK]);
 	if(fd >= 0){
 		close(fd);
 		return 0;

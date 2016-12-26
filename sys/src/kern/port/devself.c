@@ -35,6 +35,7 @@ typedef enum SelfNodes
 	/* Process control */
 	Qpid,
 	Qppid,
+	Qpgrpid,
 	Qsegments,
 	Qpipes,
 	Qwdir,
@@ -64,6 +65,7 @@ static Dirtab selfdir[]={
 	".",		{Qdir, 0, QTDIR},	0,		DMDIR|0777,
 	"pid",		{Qpid},			0,		0,
 	"ppid",		{Qppid},		0,		0,
+	"pgrpid",	{Qpgrpid},		0,		0,
 	"segments",	{Qsegments},		0,		0644,
 	"pipes",	{Qpipes},		0,		0,
 	"wdir",		{Qwdir},		0,		0644,
@@ -452,6 +454,9 @@ selfremove(Chan* c)
 		break;
 	case Qppid:
 		errorl("got parent pid", up->parentpid);
+		break;
+	case Qpgrpid:
+		errorl("got process group number", up->pgrp->pgrpid);
 		break;
 	case Qpipes:
 		pipeset = newpipe();

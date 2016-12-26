@@ -676,7 +676,6 @@ enum{
 	Qhostowner,
 	Qnull,
 	Qosversion,
-	Qpgrpid,
 	Qrandom,
 	Qreboot,
 	Qswap,
@@ -707,7 +706,6 @@ static Dirtab consdir[]={
 	"kprint",	{Qkprint, 0, QTEXCL},	0,	DMEXCL|0440,
 	"null",		{Qnull},	0,		0666,
 	"osversion",	{Qosversion},	0,		0444,
-	"pgrpid",	{Qpgrpid},	NUMSIZE,	0444,
 	"random",	{Qrandom},	0,		0444,
 	"reboot",	{Qreboot},	0,		0664,
 	"swap",		{Qswap},	0,		0664,
@@ -933,9 +931,6 @@ consread(Chan *c, void *buf, long n, int64_t off)
 
 	case Qkprint:
 		return qread(kprintoq, buf, n);
-
-	case Qpgrpid:
-		return readnum(offset, buf, n, up->pgrp->pgrpid, NUMSIZE);
 
 	case Qtime:
 		return readtime(offset, buf, n);

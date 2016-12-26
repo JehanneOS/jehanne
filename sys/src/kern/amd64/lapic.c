@@ -419,6 +419,10 @@ lapictimerset(uint64_t next)
 
 	period = apic->max;
 	if(next != 0){
+		if(apic->div == 0){
+			print("lapictimerset: apic not ready, wait for gdb\n");
+			waitdebugger();
+		}
 		period = next - fastticks(nil);	/* fastticks is just rdtsc() */
 		period /= apic->div;
 

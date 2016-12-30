@@ -214,7 +214,7 @@ int		mregfmt(Fmt*);
 uint64_t		ms2fastticks(uint32_t);
 void		mul64fract(uint64_t*, uint64_t, uint64_t);
 void		muxclose(Mnt*);
-Chan*		namec(char*, int, int, int);
+Chan*		namec(char*, int, long, long);
 void		nameerror(char*, char*);
 Chan*		newchan(void);
 int		newfd(Chan*);

@@ -18,13 +18,15 @@ enum
 	Round	= 7
 };
 
+#define brk_(p) ((uintptr_t)~create("#0/brk", -1, p))
+
 int
 brk(void *p)
 {
 	uintptr_t bl;
 
 	bl = ((uintptr_t)p + Round) & ~Round;
-	if(brk_((void*)bl) < 0)
+	if(brk_(bl) < 0)
 		return -1;
 	bloc = (char*)bl;
 	return 0;
@@ -36,7 +38,7 @@ sbrk(uint32_t n)
 	uintptr_t bl;
 
 	bl = ((uintptr_t)bloc + Round) & ~Round;
-	if(brk_((void*)(bl+n)) < 0)
+	if(brk_(bl+n) < 0)
 		return (void*)-1;
 	bloc = (char*)bl + n;
 	return (void*)bl;

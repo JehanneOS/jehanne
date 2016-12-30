@@ -1025,12 +1025,13 @@ sysunmount(char* name, char* old)
 }
 
 int
-syscreate(char* aname, uint32_t omode, uint32_t perm)
+syscreate(char* aname, long omode, long perm)
 {
 	int fd;
 	Chan *c;
 
-	openmode(omode);	/* error check only; OEXCL okay here */
+	if(omode >= 0)
+		openmode(omode);	/* error check only */
 	c = nil;
 	if(waserror()) {
 		if(c != nil)

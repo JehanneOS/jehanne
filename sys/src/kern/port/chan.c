@@ -1214,7 +1214,7 @@ nameerror(char *name, char *err)
  * correct name so they can rewrite the stat info.
  */
 Chan*
-namec(char *aname, int amode, int omode, int perm)
+namec(char *aname, int amode, long omode, long perm)
 {
 	int len, n, nomount;
 	Chan *c, *cnew;
@@ -1479,6 +1479,7 @@ namec(char *aname, int amode, int omode, int perm)
 		 */
 		e.nelems++;
 		e.nerror++;
+		if(omode >=0) /* a negative omode means this is a message for the server */
 		if(walk(&c, e.elems+e.nelems-1, 1, nomount, nil) == 0)
 			error(Eexist);
 

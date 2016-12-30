@@ -55,19 +55,9 @@
 		},
 		{
 			"Args": [
-				"const void*"
-			],
-			"Id": 3,
-			"Name": "brk_",
-			"Ret": [
-				"uintptr_t"
-			]
-		},
-		{
-			"Args": [
 				"int"
 			],
-			"Id": 4,
+			"Id": 3,
 			"Name": "close",
 			"Ret": [
 				"long"
@@ -76,10 +66,10 @@
 		{
 			"Args": [
 				"const char*",
-				"uint32_t",
-				"uint32_t"
+				"long",
+				"long"
 			],
-			"Id": 5,
+			"Id": 4,
 			"Name": "create",
 			"Ret": [
 				"long"
@@ -90,7 +80,7 @@
 				"int32_t",
 				"int32_t"
 			],
-			"Id": 6,
+			"Id": 5,
 			"Name": "dup",
 			"Ret": [
 				"int32_t"
@@ -101,7 +91,7 @@
 				"char*",
 				"int"
 			],
-			"Id": 7,
+			"Id": 6,
 			"Name": "errstr",
 			"Ret": [
 				"int"
@@ -112,7 +102,7 @@
 				"const char*",
 				"const char**"
 			],
-			"Id": 8,
+			"Id": 7,
 			"Name": "exec",
 			"Ret": [
 				"uintptr_t"
@@ -122,7 +112,7 @@
 			"Args": [
 				"const char*"
 			],
-			"Id": 9,
+			"Id": 8,
 			"Name": "_exits",
 			"Ret": [
 				"int"
@@ -133,7 +123,7 @@
 				"int",
 				"const char*"
 			],
-			"Id": 10,
+			"Id": 9,
 			"Name": "fauth",
 			"Ret": [
 				"int"
@@ -145,7 +135,7 @@
 				"const char*",
 				"uint32_t"
 			],
-			"Id": 11,
+			"Id": 10,
 			"Name": "fd2path",
 			"Ret": [
 				"int32_t"
@@ -157,7 +147,7 @@
 				"uint8_t*",
 				"int"
 			],
-			"Id": 12,
+			"Id": 11,
 			"Name": "fstat",
 			"Ret": [
 				"long"
@@ -170,7 +160,7 @@
 				"const char*",
 				"int"
 			],
-			"Id": 13,
+			"Id": 12,
 			"Name": "fversion",
 			"Ret": [
 				"int"
@@ -182,7 +172,7 @@
 				"const uint8_t*",
 				"uint32_t"
 			],
-			"Id": 14,
+			"Id": 13,
 			"Name": "fwstat",
 			"Ret": [
 				"long"
@@ -197,7 +187,7 @@
 				"const char*",
 				"int"
 			],
-			"Id": 15,
+			"Id": 14,
 			"Name": "mount",
 			"Ret": [
 				"int"
@@ -207,7 +197,7 @@
 			"Args": [
 				"int"
 			],
-			"Id": 16,
+			"Id": 15,
 			"Name": "noted",
 			"Ret": [
 				"int"
@@ -217,14 +207,14 @@
 			"Args": [
 				"const void*"
 			],
-			"Id": 17,
+			"Id": 16,
 			"Name": "notify",
 			"Ret": [
 				"int"
 			]
 		},
 		{
-			"Id": 18,
+			"Id": 17,
 			"Name": "nsec",
 			"Ret": [
 				"long"
@@ -235,7 +225,7 @@
 				"const char*",
 				"uint32_t"
 			],
-			"Id": 19,
+			"Id": 18,
 			"Name": "open",
 			"Ret": [
 				"long"
@@ -248,7 +238,7 @@
 				"long",
 				"long"
 			],
-			"Id": 20,
+			"Id": 19,
 			"Name": "pread",
 			"Ret": [
 				"long"
@@ -261,7 +251,7 @@
 				"long",
 				"long"
 			],
-			"Id": 21,
+			"Id": 20,
 			"Name": "pwrite",
 			"Ret": [
 				"long"
@@ -271,7 +261,7 @@
 			"Args": [
 				"const char*"
 			],
-			"Id": 22,
+			"Id": 21,
 			"Name": "remove",
 			"Ret": [
 				"long"
@@ -282,7 +272,7 @@
 				"const void*",
 				"void*"
 			],
-			"Id": 23,
+			"Id": 22,
 			"Name": "rendezvous",
 			"Ret": [
 				"void*"
@@ -292,7 +282,7 @@
 			"Args": [
 				"uint32_t"
 			],
-			"Id": 24,
+			"Id": 23,
 			"Name": "rfork",
 			"Ret": [
 				"int"
@@ -304,7 +294,7 @@
 				"long",
 				"int"
 			],
-			"Id": 25,
+			"Id": 24,
 			"Name": "seek",
 			"Ret": [
 				"long"
@@ -315,7 +305,7 @@
 				"int*",
 				"int"
 			],
-			"Id": 26,
+			"Id": 25,
 			"Name": "semacquire",
 			"Ret": [
 				"int"
@@ -326,7 +316,7 @@
 				"int*",
 				"int"
 			],
-			"Id": 27,
+			"Id": 26,
 			"Name": "semrelease",
 			"Ret": [
 				"int"
@@ -337,7 +327,7 @@
 				"int*",
 				"uint64_t"
 			],
-			"Id": 28,
+			"Id": 27,
 			"Name": "tsemacquire",
 			"Ret": [
 				"int"
@@ -348,7 +338,7 @@
 				"const char*",
 				"const char*"
 			],
-			"Id": 29,
+			"Id": 28,
 			"Name": "unmount",
 			"Ret": [
 				"int"
@@ -358,7 +348,7 @@
 			"Args": [
 				"unsigned long"
 			],
-			"Id": 30,
+			"Id": 29,
 			"Name": "alarm",
 			"Ret": [
 				"long"

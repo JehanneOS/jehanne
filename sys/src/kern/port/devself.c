@@ -15,12 +15,12 @@
  * You should have received a copy of the GNU General Public License
  * along with Jehanne.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include	"u.h"
-#include	"../port/lib.h"
-#include	"mem.h"
-#include	"dat.h"
-#include	"fns.h"
-#include	"../port/error.h"
+#include "u.h"
+#include "../port/lib.h"
+#include "mem.h"
+#include "dat.h"
+#include "fns.h"
+#include "../port/error.h"
 
 #define QID(q)		((((uint32_t)(q).path)&0x0000001F)>>0)
 #define STATSIZE	(2*KNAMELEN+NUMSIZE+9*NUMSIZE + 1)
@@ -33,6 +33,7 @@ typedef enum SelfNodes
 	Qdir,
 
 	/* Process control */
+	Qbrk,
 	Qpid,
 	Qppid,
 	Qpgrpid,
@@ -63,6 +64,7 @@ typedef union PipeSet
 
 static Dirtab selfdir[]={
 	".",		{Qdir, 0, QTDIR},	0,		DMDIR|0777,
+	"brk",		{Qbrk},			0,		0,
 	"pid",		{Qpid},			0,		0,
 	"ppid",		{Qppid},		0,		0,
 	"pgrpid",	{Qpgrpid},		0,		0,
@@ -115,6 +117,84 @@ static Chan*
 selfattach(Chan *c, Chan *ac, char *spec, int flags)
 {
 	return devattach('0', spec);
+}
+
+static uintptr_t
+grow_bss(uintptr_t addr)
+{
+	ProcSegment *s, *ns;
+	uintptr_t newtop;
+	long newsize;
+	int i;
+
+	s = up->seg[BSEG];
+	if(s == nil)
+		panic("grow_bss: no bss segment");
+
+	if(addr == 0)
+		return s->top;
+
+	qlock(&s->ql);
+	if(waserror()){
+		qunlock(&s->ql);
+		nexterror();
+	}
+
+	DBG("grow_bss addr %#p base %#p top %#p\n",
+		addr, s->base, s->top);
+	/* We may start with the bss overlapping the data */
+	if(addr < s->base) {
+		if(up->seg[DSEG] == 0 || addr < up->seg[DSEG]->base)
+			error(Enovmem);
+		addr = s->base;
+	}
+
+	newtop = ROUNDUP(addr, PGSZ);
+	newsize = (newtop - s->table->base)/PGSZ;
+
+
+	DBG("grow_bss addr %#p newtop %#p newsize %ld\n", addr, newtop, newsize);
+
+	if(newtop < s->top) {
+		/* for simplicity we only allow the bss to grow,
+		 * memory will be freed on process exit
+		 */
+		panic("grow_bss: shrinking bss");
+	}
+
+	rlock(&up->seglock);
+	for(i = 0; i < NSEG; i++) {
+		ns = up->seg[i];
+		if(ns == 0 || ns == s)
+			continue;
+		if(newtop >= ns->base && newtop < ns->top){
+			runlock(&up->seglock);
+			error(Esoverlap);
+		}
+	}
+	runlock(&up->seglock);
+
+	if(!umem_available(newtop - s->top))
+		error(Enovmem);
+
+	if(!segment_grow(s, newtop))
+		error(Enovmem);
+
+	poperror();
+	qunlock(&s->ql);
+
+	return s->top;
+}
+
+static Chan*
+selfcreate(Chan* c, char* name, unsigned long omode, unsigned long perm)
+{
+	long e;
+	if(strcmp(name, "brk") == 0){
+		e = (long)grow_bss(perm);
+		errorl("brk set", ~e);
+	}
+	error(Eperm);
 }
 
 static Walkqid*
@@ -483,7 +563,7 @@ Dev selfdevtab = {
 	selfwalk,
 	selfstat,
 	selfopen,
-	devcreate,
+	selfcreate,
 	selfclose,
 	selfread,
 	devbread,

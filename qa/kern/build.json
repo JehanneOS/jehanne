@@ -11,6 +11,7 @@
 			"alarm.c",
 			"args.c",
 			"awake.c",
+			"brk.c",
 			"execl.c",
 			"float.c",
 			"fork.c",

@@ -73,7 +73,6 @@
 			"../port/syscallfmt.c",
 			"../port/sysfile.c",
 			"../port/sysproc.c",
-			"../port/sysseg.c",
 			"../port/tod.c",
 			"../port/uidgid.c",
 			"../port/usbehci.c"

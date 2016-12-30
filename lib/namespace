@@ -4,7 +4,8 @@ bind -a $rootdir /
 bind -c $rootdir/mnt /mnt
 
 # kernel devices
-bind #c /dev
+bind #0 /dev
+bind -a #c /dev
 bind #d /fd
 bind -c #e /env
 bind #p /proc

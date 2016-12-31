@@ -15,7 +15,7 @@ void	usage(void);
 void	catch(void *c, char*);
 
 char *keyspec = "";
-int mntdevice = 'M';
+int mntdevice = '9';
 
 int
 amount0(int fd, char *mntpt, int flags, char *aname, char *keyspec)

@@ -674,7 +674,6 @@ enum{
 	Qkprint,
 	Qhostdomain,
 	Qhostowner,
-	Qnull,
 	Qosversion,
 	Qrandom,
 	Qreboot,
@@ -684,7 +683,6 @@ enum{
 	Qtime,
 	Quser,
 	Qusers,
-	Qzero,
 };
 
 enum
@@ -704,7 +702,6 @@ static Dirtab consdir[]={
 	"hostowner",	{Qhostowner},	0,		0664,
 	"kmesg",	{Qkmesg},	0,		0440,
 	"kprint",	{Qkprint, 0, QTEXCL},	0,	DMEXCL|0440,
-	"null",		{Qnull},	0,		0666,
 	"osversion",	{Qosversion},	0,		0444,
 	"random",	{Qrandom},	0,		0444,
 	"reboot",	{Qreboot},	0,		0664,
@@ -714,7 +711,6 @@ static Dirtab consdir[]={
 	"time",		{Qtime},	NUMSIZE+3*VLNUMSIZE,	0664,
 	"user",		{Quser},	0,		0666,
 	"users",		{Qusers},	0,		0644,
-	"zero",		{Qzero},	0,		0444,
 };
 
 int
@@ -956,9 +952,6 @@ consread(Chan *c, void *buf, long n, int64_t off)
 		free(b);
 		return n;
 
-	case Qnull:
-		return 0;
-
 //	case Qconfig:
 //		return readstr((uint32_t)offset, buf, n, configfile);
 
@@ -1035,10 +1028,6 @@ consread(Chan *c, void *buf, long n, int64_t off)
 
 	case Qdrivers:
 		return devtabread(c, buf, n, off);
-
-	case Qzero:
-		memset(buf, 0, n);
-		return n;
 
 	case Qosversion:
 		return readstr(offset, buf, n, "2000");
@@ -1126,9 +1115,6 @@ conswrite(Chan *c, void *va, long n, int64_t off)
 
 	case Qusers:
 		return userswrite(a, n);
-
-	case Qnull:
-		break;
 
 //	case Qconfig:
 //		error(Eperm);

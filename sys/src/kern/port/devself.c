@@ -40,6 +40,11 @@ typedef enum SelfNodes
 	Qsegments,
 	Qpipes,
 	Qwdir,
+
+	/* safe resources */
+	Qnull,
+	Qzero,
+
 } SelfNodes;
 
 typedef enum SegmentsCmd
@@ -71,6 +76,9 @@ static Dirtab selfdir[]={
 	"segments",	{Qsegments},		0,		0644,
 	"pipes",	{Qpipes},		0,		0,
 	"wdir",		{Qwdir},		0,		0644,
+
+	"null",		{Qnull},		0,		0666,
+	"zero",		{Qzero},		0,		0444,
 };
 
 
@@ -319,6 +327,12 @@ selfread(Chan *c, void *va, long n, int64_t off)
 	case Qpgrpid:
 		return readnum(offset, va, n, up->pgrp->pgrpid, NUMSIZE);
 
+	case Qnull:
+		return 0;
+	case Qzero:
+		memset(va, 0, n);
+		return n;
+
 	default:
 		error(Egreg);
 	}
@@ -466,6 +480,9 @@ selfwrite(Chan *c, void *va, long n, int64_t off)
 		return procsegctl(up, va, n);
 	case Qwdir:
 		return write_working_dir(up, va, n, off);
+
+	case Qnull:
+		return n;
 	}
 }
 

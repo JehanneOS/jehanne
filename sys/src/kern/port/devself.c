@@ -65,9 +65,9 @@ typedef union PipeSet
 static Dirtab selfdir[]={
 	".",		{Qdir, 0, QTDIR},	0,		DMDIR|0777,
 	"brk",		{Qbrk},			0,		0,
-	"pid",		{Qpid},			0,		0,
-	"ppid",		{Qppid},		0,		0,
-	"pgrpid",	{Qpgrpid},		0,		0,
+	"pid",		{Qpid},			0,		0400,
+	"ppid",		{Qppid},		0,		0400,
+	"pgrpid",	{Qpgrpid},		0,		0400,
 	"segments",	{Qsegments},		0,		0644,
 	"pipes",	{Qpipes},		0,		0,
 	"wdir",		{Qwdir},		0,		0644,
@@ -311,6 +311,14 @@ selfread(Chan *c, void *va, long n, int64_t off)
 		return n;
 	case Qwdir:
 		return read_working_dir(up, va, n, off);
+
+	case Qpid:
+		return readnum(offset, va, n, up->pid, NUMSIZE);
+	case Qppid:
+		return readnum(offset, va, n, up->parentpid, NUMSIZE);
+	case Qpgrpid:
+		return readnum(offset, va, n, up->pgrp->pgrpid, NUMSIZE);
+
 	default:
 		error(Egreg);
 	}

@@ -134,7 +134,9 @@ connectlocal(void)
 {
 	int fd;
 
-	if(bind("#c", "/dev", MREPL) < 0)
+	if(bind("#0", "/dev", MREPL) < 0)
+		fatal("bind #0");
+	if(bind("#c", "/dev", MAFTER) < 0)
 		fatal("bind #c");
 	if(bind("#p", "/proc", MREPL) < 0)
 		fatal("bind #p");

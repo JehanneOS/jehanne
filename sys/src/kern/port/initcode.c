@@ -30,6 +30,7 @@ char c[] = "#c";
 char e[] = "#e";
 char ec[] = "#ec";
 char s[] = "#s";
+char self[] = "#0";
 char srv[] = "/srv";
 char env[] = "/env";
 char arg1[] = "-qas";
@@ -95,6 +96,7 @@ startboot(char *argv0, char **argv)
 	for(i = 0; i < sizeof buf; ++i)
 		buf[i] = '\0';
 
+	bind(self, dev, MREPL);
 	bind(c, dev, MAFTER);
 	bind(ec, env, MAFTER);
 	bind(e, env, MCREATE|MAFTER);

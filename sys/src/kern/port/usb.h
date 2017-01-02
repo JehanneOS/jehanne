@@ -163,8 +163,9 @@ struct Ep
 	uint32_t	load;		/* in microseconds, for a fransfer of maxpkt bytes */
 	void*	aux;		/* for controller specific info */
 	int	rhrepl;		/* fake root hub replies */
-	int	toggle[2];	/* saved toggles (while ep is not in use) */
-	int32_t	pollival;		/* poll interval ([µ]frames; intr/iso) */
+	int	toggle[3];	/* saved toggles (while ep is not in use) 
+				   NOTE: 3 because OREAD == 1 and OWRITE == 2; index 0 is wasted; TODO fix this */
+	int32_t	pollival;	/* poll interval ([µ]frames; intr/iso) */
 	int32_t	hz;		/* poll frequency (iso) */
 	int32_t	samplesz;	/* sample size (iso) */
 	int	ntds;		/* nb. of Tds per µframe */

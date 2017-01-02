@@ -1785,7 +1785,7 @@ epopen(Ep *ep)
 		break;
 	case Tbulk:
 	case Tintr:
-		io = ep->aux = smalloc(sizeof(Qio)*2);
+		io = ep->aux = smalloc(sizeof(Qio)*3); // allocate 3 Qio because OREAD == 1 and OWRITE == 2; index 0 is wasted; TODO: fix this
 		io[OREAD].debug = io[OWRITE].debug = ep->debug;
 		usbid = ((ep->nb&Epmax)<<7)|(ep->dev->nb&Devmax);
 		if(ep->mode != OREAD){

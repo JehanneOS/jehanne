@@ -144,9 +144,9 @@ static Dirtab usbdir[] =
 
 char *usbmodename[] =
 {
-	[OREAD]	"r",
+	[OREAD]		"r",
 	[OWRITE]	"w",
-	[ORDWR]	"rw",
+	[ORDWR]		"rw",
 };
 
 static char *ttname[] =
@@ -223,7 +223,7 @@ name2mode(char *mode)
 {
 	int i;
 
-	for(i = 0; i < nelem(usbmodename); i++)
+	for(i = OREAD; i < nelem(usbmodename); i++)
 		if(strcmp(mode, usbmodename[i]) == 0)
 			return i;
 	return -1;
@@ -821,7 +821,7 @@ usbopen(Chan *c, unsigned long omode)
 {
 	int q;
 	Ep *ep;
-	int mode;
+	unsigned long mode;
 
 	mode = openmode(omode);
 	q = QID(c->qid);

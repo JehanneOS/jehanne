@@ -2059,7 +2059,7 @@ epopen(Ep *ep)
 		ep->pollival = 1;	/* assume this; doesn't really matter */
 		/* and fall... */
 	case Tintr:
-		io = ep->aux = smalloc(sizeof(Qio)*2);
+		io = ep->aux = smalloc(sizeof(Qio)*3);
 		io[OREAD].debug = io[OWRITE].debug = ep->debug;
 		usbid = (ep->nb&Epmax)<<7 | (ep->dev->nb&Devmax);
 		if(ep->mode != OREAD){

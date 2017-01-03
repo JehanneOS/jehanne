@@ -1,0 +1,47 @@
+{
+	"Cmd": {
+		"Include": [
+			"../cmd.json"
+		],
+		"Install": "/arch/$ARCH/cmd/pict/",
+		"SourceFiles": [
+			"torgbv.c",
+			"totruecolor.c",
+			"writerawimage.c",
+			"readjpg.c",
+			"writejpg.c",
+			"multichan.c",
+			"readgif.c",
+			"writegif.c",
+			"onechan.c",
+			"readpng.c",
+			"writepng.c",
+			"readppm.c",
+			"writeppm.c",
+			"readtif.c",
+			"writetif.c",
+			"readyuv.c",
+			"readbmp.c",
+			"readtga.c",
+			"readv210.c"
+		],
+		"SourceFilesCmd": [
+			"jpg.c",
+			"tojpg.c",
+			"gif.c",
+			"togif.c",
+			"ppm.c",
+			"toppm.c",
+			"png.c",
+			"topng.c",
+			"tif.c",
+			"totif.c",
+			"yuv.c",
+			"ico.c",
+			"toico.c",
+			"bmp.c",
+			"tga.c",
+			"v210.c"
+		]
+	}
+}

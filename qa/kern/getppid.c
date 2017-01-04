@@ -22,7 +22,6 @@ void
 main(void)
 {
 	int ppid;
-	char err[ERRMAX];
 	Waitmsg *w;
 
 	if(rfork(RFPROC) == 0){

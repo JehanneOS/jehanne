@@ -22,7 +22,6 @@ void
 main(void)
 {
 	int pid;
-	char err[ERRMAX];
 
 	pid = getmainpid(); // this comes from exec() syscall
 

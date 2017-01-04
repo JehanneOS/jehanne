@@ -46,7 +46,7 @@ fault(uintptr_t addr, uintptr_t pc, int ftype)
 		pexit("out of memory", 1);
 
 	if(s != nil){
-		print("%s fault fail %s(%c%c%c) pid %d (%s) addr 0x%p pc 0x%p\n",
+		pprint("%s fault fail %s(%c%c%c) pid %d (%s) addr 0x%p pc 0x%p\n",
 			fault_types[ftype],
 			segment_types[s->type],
 			(s->permissions & SgRead) != 0 ? 'r' : '-',
@@ -54,7 +54,7 @@ fault(uintptr_t addr, uintptr_t pc, int ftype)
 			(s->permissions & SgExecute) != 0 ? 'x' : '-',
 			up->pid, up->text, faddr, pc);
 	} else {
-		print("%s fault fail, no segment, pid %d (%s) addr 0x%p pc 0x%p\n",
+		pprint("%s fault fail, no segment, pid %d (%s) addr 0x%p pc 0x%p\n",
 			fault_types[ftype],
 			up->pid, up->text, faddr, pc);
 	}

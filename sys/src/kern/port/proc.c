@@ -1473,7 +1473,8 @@ errorl(char *err, long syscallerr)
 	if(up->nerrlab >= NERR)
 		panic("error stack too deep");
 	up->syscallerr = syscallerr;
-	kstrcpy(up->errstr, err, ERRMAX);
+	if(err != nil)
+		kstrcpy(up->errstr, err, ERRMAX);
 	setlabel(&up->errlab[NERR-1]);
 	nexterror();
 }

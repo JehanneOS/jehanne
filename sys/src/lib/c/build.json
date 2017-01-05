@@ -50,6 +50,7 @@
 			"9sys/dirread.c",
 			"9sys/dirstat.c",
 			"9sys/dirwstat.c",
+			"9sys/dup.c",
 			"9sys/fork.c",
 			"9sys/getnetconninfo.c",
 			"9sys/getenv.c",

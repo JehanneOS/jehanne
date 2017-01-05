@@ -69,6 +69,12 @@ union FPdbleword
  };
 };
 
+typedef union FdPair
+{
+	int fd[2];
+	long aslong;
+} FdPair;
+
 typedef __builtin_va_list va_list;
 
 #define va_start(v,l)	__builtin_va_start(v,l)

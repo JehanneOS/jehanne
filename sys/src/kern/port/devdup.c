@@ -5,6 +5,9 @@
 #include	"fns.h"
 #include	"../port/error.h"
 
+#define INT_MAX ((1<<31)-1)
+extern int sysdup(int ofd, int nfd);
+
 /* Qid is (2*fd + (file is ctl))+1 */
 
 static int
@@ -55,6 +58,20 @@ static long
 dupstat(Chan *c, uint8_t *db, long n)
 {
 	return devstat(c, db, n, (Dirtab *)0, 0L, dupgen);
+}
+
+static Chan*
+dupcreate(Chan* c, char* name, unsigned long omode, unsigned long perm)
+{
+	FdPair in, out;
+
+	if((omode|OCEXEC) == ~0 && c->qid.path == 0){
+		in.aslong = perm;
+		out.aslong = 0;
+		out.fd[1] = sysdup(in.fd[0], in.fd[1]);
+		errorl(nil, ~out.aslong);
+	}
+	error(Eperm);
 }
 
 static Chan*
@@ -134,7 +151,7 @@ Dev dupdevtab = {
 	dupwalk,
 	dupstat,
 	dupopen,
-	devcreate,
+	dupcreate,
 	dupclose,
 	dupread,
 	devbread,

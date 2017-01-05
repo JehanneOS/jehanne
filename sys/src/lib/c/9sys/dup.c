@@ -1,7 +1,7 @@
 /*
  * This file is part of Jehanne.
  *
- * Copyright (C) 2015-2017 Giacomo Tesio <giacomo@tesio.it>
+ * Copyright (C) 2017 Giacomo Tesio <giacomo@tesio.it>
  *
  * Jehanne is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,13 +19,17 @@
 #include <libc.h>
 
 int
-pipe(int pipes[2])
+dup(int oldfd, int newfd)
 {
-	FdPair pset;
-	pset.aslong = remove("#0/pipes");
-	if(pset.aslong == -1)
+	FdPair in, out;
+	long f;
+
+	in.fd[0] = oldfd;
+	in.fd[1] = newfd;
+
+	f = create("#d/new", -1, in.aslong);
+	if(f == -1)
 		return -1;
-	pipes[0] = pset.fd[0];
-	pipes[1] = pset.fd[1];
-	return 0;
+	out.aslong = ~f;
+	return out.fd[1];
 }

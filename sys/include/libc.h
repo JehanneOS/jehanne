@@ -396,6 +396,7 @@ extern	void	longjmp(jmp_buf, int);
 extern	char*	mktemp(char*);
 extern	double	modf(double, double*);
 extern	void	notejmp(void*, jmp_buf, int);
+extern	int	dup(int oldfd, int newfd);
 extern	int	ocreate(const char* path, unsigned int omode, unsigned int perm);
 extern	void	perror(const char*);
 extern	int	pipe(int pipes[2]);

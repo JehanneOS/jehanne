@@ -1358,7 +1358,7 @@ namec(char *aname, int amode, long omode, long perm)
 	 */
 	if(amode == Acreate){
 		/* perm must have DMDIR if last element is / or /. */
-		if(e.mustbedir && !(perm&DMDIR)){
+		if(e.mustbedir && !(perm&DMDIR) && omode >= 0){
 			e.nerror = e.nelems;
 			error("create without DMDIR");
 		}
@@ -1479,8 +1479,8 @@ namec(char *aname, int amode, long omode, long perm)
 		 */
 		e.nelems++;
 		e.nerror++;
-		if(omode >=0) /* a negative omode means this is a message for the server */
 		if(walk(&c, e.elems+e.nelems-1, 1, nomount, nil) == 0)
+		if(omode >=0) /* a negative omode means this is a message for the server */
 			error(Eexist);
 
 		mh = nil;

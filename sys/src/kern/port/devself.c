@@ -61,12 +61,6 @@ Cmdtab proccmd[] = {
 	CMsegfree,		"free",			3,
 };
 
-typedef union PipeSet
-{
-	long	merged;
-	int	fd[2];
-} PipeSet;
-
 static Dirtab selfdir[]={
 	".",		{Qdir, 0, QTDIR},	0,		DMDIR|0777,
 	"brk",		{Qbrk},			0,		0,
@@ -198,11 +192,14 @@ static Chan*
 selfcreate(Chan* c, char* name, unsigned long omode, unsigned long perm)
 {
 	long e;
-	if(strcmp(name, "brk") == 0){
+
+	switch(QID(c->qid)){
+	default:
+		error(Eperm);
+	case Qbrk:
 		e = (long)grow_bss(perm);
-		errorl("brk set", ~e);
+		errorl(nil, ~e);
 	}
-	error(Eperm);
 }
 
 static Walkqid*
@@ -517,7 +514,7 @@ newfd2(int fd[2], Chan *c[2])
 static long
 newpipe(void)
 {
-	PipeSet pipe;
+	FdPair pipe;
 	Chan *c[2];
 	static char *datastr[] = {"data", "data1"};
 
@@ -543,7 +540,7 @@ newpipe(void)
 		error(Enofd);
 	poperror();
 
-	return pipe.merged;
+	return pipe.aslong;
 }
 
 static void

@@ -1163,9 +1163,3 @@ syssemrelease(int* addr, int delta)
 
 	return semrelease(s, addr, delta);
 }
-
-long
-sysnsec(void)
-{
-	return todget(nil);
-}

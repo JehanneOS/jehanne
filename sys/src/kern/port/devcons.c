@@ -1039,6 +1039,17 @@ consread(Chan *c, void *buf, long n, int64_t off)
 	return -1;		/* never reached */
 }
 
+static void
+consremove(Chan* c)
+{
+	switch((uint32_t)c->qid.path){
+	default:
+		error(Eperm);
+	case Qtime:
+		errorl("fugit irreparabile tempus", todget(nil));
+	}
+}
+
 static long
 conswrite(Chan *c, void *va, long n, int64_t off)
 {
@@ -1198,7 +1209,7 @@ Dev consdevtab = {
 	devbread,
 	conswrite,
 	devbwrite,
-	devremove,
+	consremove,
 	devwstat,
 };
 

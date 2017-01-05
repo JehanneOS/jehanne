@@ -59,6 +59,7 @@
 			"9sys/getppid.c",
 			"9sys/getwd.c",
 			"9sys/iounit.c",
+			"9sys/nsec.c",
 			"9sys/nulldir.c",
 			"9sys/ocreate.c",
 			"9sys/pipe.c",

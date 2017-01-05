@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Giacomo Tesio <giacomo@tesio.it>
+ * Copyright (C) 2015-2017 Giacomo Tesio <giacomo@tesio.it>
  *
  * This file is part of the UCB release of Plan 9. It is subject to the license
  * terms in the LICENSE file found in the top-level directory of this
@@ -396,6 +396,7 @@ extern	void	longjmp(jmp_buf, int);
 extern	char*	mktemp(char*);
 extern	double	modf(double, double*);
 extern	void	notejmp(void*, jmp_buf, int);
+extern 	unsigned long nsec(void);
 extern	int	dup(int oldfd, int newfd);
 extern	int	ocreate(const char* path, unsigned int omode, unsigned int perm);
 extern	void	perror(const char*);

@@ -203,18 +203,11 @@
 			]
 		},
 		{
-			"Id": 16,
-			"Name": "nsec",
-			"Ret": [
-				"long"
-			]
-		},
-		{
 			"Args": [
 				"const char*",
 				"uint32_t"
 			],
-			"Id": 17,
+			"Id": 16,
 			"Name": "open",
 			"Ret": [
 				"long"
@@ -227,7 +220,7 @@
 				"long",
 				"long"
 			],
-			"Id": 18,
+			"Id": 17,
 			"Name": "pread",
 			"Ret": [
 				"long"
@@ -240,7 +233,7 @@
 				"long",
 				"long"
 			],
-			"Id": 19,
+			"Id": 18,
 			"Name": "pwrite",
 			"Ret": [
 				"long"
@@ -250,7 +243,7 @@
 			"Args": [
 				"const char*"
 			],
-			"Id": 20,
+			"Id": 19,
 			"Name": "remove",
 			"Ret": [
 				"long"
@@ -261,7 +254,7 @@
 				"const void*",
 				"void*"
 			],
-			"Id": 21,
+			"Id": 20,
 			"Name": "rendezvous",
 			"Ret": [
 				"void*"
@@ -271,7 +264,7 @@
 			"Args": [
 				"uint32_t"
 			],
-			"Id": 22,
+			"Id": 21,
 			"Name": "rfork",
 			"Ret": [
 				"int"
@@ -283,7 +276,7 @@
 				"long",
 				"int"
 			],
-			"Id": 23,
+			"Id": 22,
 			"Name": "seek",
 			"Ret": [
 				"long"
@@ -294,7 +287,7 @@
 				"int*",
 				"int"
 			],
-			"Id": 24,
+			"Id": 23,
 			"Name": "semacquire",
 			"Ret": [
 				"int"
@@ -305,7 +298,7 @@
 				"int*",
 				"int"
 			],
-			"Id": 25,
+			"Id": 24,
 			"Name": "semrelease",
 			"Ret": [
 				"int"
@@ -316,7 +309,7 @@
 				"int*",
 				"uint64_t"
 			],
-			"Id": 26,
+			"Id": 25,
 			"Name": "tsemacquire",
 			"Ret": [
 				"int"
@@ -327,7 +320,7 @@
 				"const char*",
 				"const char*"
 			],
-			"Id": 27,
+			"Id": 26,
 			"Name": "unmount",
 			"Ret": [
 				"int"
@@ -337,7 +330,7 @@
 			"Args": [
 				"unsigned long"
 			],
-			"Id": 28,
+			"Id": 27,
 			"Name": "alarm",
 			"Ret": [
 				"long"

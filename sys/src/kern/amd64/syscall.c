@@ -350,7 +350,7 @@ syscall(Syscalls scallnr, Ureg* ureg)
 		noted(ureg, ureg->di);
 
 	splhi();
-	if(scallnr != SysRfork && scallnr != SysNsec && (up->procctl || up->nnote))
+	if(scallnr != SysRfork && (up->procctl || up->nnote))
 		notify(ureg);
 
 	/* if we delayed sched because we held a lock, sched now */

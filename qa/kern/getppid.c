@@ -24,6 +24,7 @@ main(void)
 	int ppid;
 	Waitmsg *w;
 
+	rfork(RFNAMEG);
 	if(rfork(RFPROC) == 0){
 		ppid = getmainpid(); // this comes from exec() syscall
 

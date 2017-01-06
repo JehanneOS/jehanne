@@ -28,8 +28,16 @@ main(void)
 	char *msg;
 
 	start = sys_remove("#c/time");
+	if (start == -1){
+		print("FAIL: start: remove #c/time: %r");
+		exits("FAIL");
+	}
 	sleep(1);
 	end = sys_remove("#c/time");
+	if (end == -1){
+		print("end: start: remove #c/time: %r");
+		exits("FAIL");
+	}
 
 	if (end <= start)
 		ret = 1;

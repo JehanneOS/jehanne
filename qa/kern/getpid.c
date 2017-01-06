@@ -23,6 +23,7 @@ main(void)
 {
 	int pid;
 
+	rfork(RFNAMEG);
 	pid = getmainpid(); // this comes from exec() syscall
 
 	if(getpid() != pid){

@@ -18,7 +18,7 @@ enum
 	Round	= 7
 };
 
-#define brk_(p) ((uintptr_t)~create("#0/brk", -1, p))
+#define brk_(p) ((uintptr_t)~create("#0/brk/set", -1, p))
 
 int
 brk(void *p)

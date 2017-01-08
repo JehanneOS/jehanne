@@ -63,7 +63,7 @@ Cmdtab proccmd[] = {
 
 static Dirtab selfdir[]={
 	".",		{Qdir, 0, QTDIR},	0,		DMDIR|0777,
-	"brk",		{Qbrk},			0,		0,
+	"brk",		{Qbrk, 0, QTDIR},	0,		DMDIR|0300,
 	"pid",		{Qpid},			0,		0400,
 	"ppid",		{Qppid},		0,		0400,
 	"pgrpid",	{Qpgrpid},		0,		0400,
@@ -197,6 +197,8 @@ selfcreate(Chan* c, char* name, unsigned long omode, unsigned long perm)
 	default:
 		error(Eperm);
 	case Qbrk:
+		if(strcmp(name, "set") != 0)
+			error(Eperm);
 		e = (long)grow_bss(perm);
 		errorl(nil, ~e);
 	}

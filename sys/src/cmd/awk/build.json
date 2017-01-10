@@ -11,8 +11,7 @@
 			"git clean -xdf ./"
 		],
 		"Cflags": [
-			"-DYYMALLOC=malloc",
-			"-Werror"
+			"-DYYMALLOC=malloc"
 		],
 		"Install": "/arch/$ARCH/cmd/",
 		"Program": "awk",

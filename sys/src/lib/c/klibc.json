@@ -2,8 +2,7 @@
 	"KernelLibc": {
 		"Cflags": [
 			"-DKERNEL",
-			"-fasm",
-			"-Werror"
+			"-fasm"
 		],
 		"Include": [
 			"../klib.json"

@@ -1,7 +1,6 @@
 {
 	"lib9p": {
 		"Cflags": [
-			"-Werror",
 			"-DPORTABLE_SYSCALLS"
 		],
 		"Include": [

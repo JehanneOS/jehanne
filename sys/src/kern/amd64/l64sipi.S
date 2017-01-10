@@ -21,7 +21,7 @@
 #define __ASSEMBLER__
 #endif
 
-.section .text, "awx"
+.section .text
 
 /*
  * Real mode. Welcome to 1978.
@@ -205,7 +205,7 @@ _start64v:
 
 _ndnr:
 	jmp	_ndnr
-	
+
 .globl sipihandlerend
 sipihandlerend:
 	jmp	sipihandlerend

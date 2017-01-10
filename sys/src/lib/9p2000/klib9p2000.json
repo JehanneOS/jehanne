@@ -1,8 +1,7 @@
 {
 	"9p2000": {
 		"Cflags": [
-			"-fasm",
-			"-Werror"
+			"-fasm"
 		],
 		"Include": [
 			"../klib.json"

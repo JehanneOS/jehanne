@@ -3,9 +3,6 @@
 		"Include": [
 			"/sys/src/cmd/cmd.json"
 		],
-		"CFlags": [
-			"-Werror"
-		],
 		"Install": "/arch/$ARCH/cmd/",
 		"Program": "acme",
 		"SourceFiles": [

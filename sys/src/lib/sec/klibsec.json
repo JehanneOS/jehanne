@@ -4,8 +4,7 @@
 			"../klib.json"
 		],
 		"Cflags": [
-			"-I../mp/port/",
-			"-Werror"
+			"-I../mp/port/"
 		],
 		"Install": "/arch/$ARCH/lib/",
 		"Library": "klibsec.a",

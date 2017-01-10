@@ -14,6 +14,7 @@
 			"-O0",
 			"-static",
 			"-Wall",
+			"-Werror",
 			"-Wno-main",
 			"-Wno-missing-braces",
 			"-Wno-parentheses",

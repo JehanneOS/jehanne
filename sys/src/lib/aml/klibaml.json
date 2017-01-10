@@ -1,8 +1,7 @@
 {
 	"KernelLibaml": {
 		"Cflags": [
-			"-fasm",
-			"-Werror"
+			"-fasm"
 		],
 		"Include": [
 			"../klib.json"

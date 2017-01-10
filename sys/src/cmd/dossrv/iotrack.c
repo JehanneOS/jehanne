@@ -19,14 +19,14 @@
 static Iotrack	hiob[HIOB+1];		/* hash buckets + lru list */
 static Iotrack	iobuf[NIOBUF];		/* the real ones */
 
-#define	UNLINK(p, nx, pr)	((p)->pr->nx = (p)->nx, (p)->nx->pr = (p)->pr)
+#define	UNLINK(p, nx, pr)	{(p)->pr->nx = (p)->nx; (p)->nx->pr = (p)->pr;}
 
-#define	LINK(h, p, nx, pr)	((p)->nx = (h)->nx, (p)->pr = (h), \
-				 (h)->nx->pr = (p), (h)->nx = (p))
+#define	LINK(h, p, nx, pr)	{(p)->nx = (h)->nx; (p)->pr = (h), \
+				 (h)->nx->pr = (p); (h)->nx = (p);}
 
-#define	HTOFRONT(h, p)	((h)->hnext != (p) && (UNLINK(p,hnext,hprev), LINK(h,p,hnext,hprev)))
+#define	HTOFRONT(h, p)	if((h)->hnext != (p)) { UNLINK(p,hnext,hprev); LINK(h,p,hnext,hprev); }
 
-#define	TOFRONT(h, p)	((h)->next  != (p) && (UNLINK(p, next, prev), LINK(h,p, next, prev)))
+#define	TOFRONT(h, p)	if((h)->next  != (p)) { UNLINK(p, next, prev); LINK(h,p, next, prev); }
 
 Iosect *
 getsect(Xfs *xf, int32_t addr)

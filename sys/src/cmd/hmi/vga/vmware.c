@@ -58,7 +58,7 @@ enum {
 	Calphacursor = 1<<9,
 
 	Rpalette = 1024,
-};	
+};
 
 typedef struct Vmware	Vmware;
 struct Vmware {
@@ -200,12 +200,13 @@ options(Vga* vga, Ctlr* ctlr)
 	ctlr->flag |= Hlinear|Henhanced|Foptions;
 }
 
-
+#if 0
 static void
 clock(Vga* vga, Ctlr* ctlr)
 {
 	/* BEST CLOCK ROUTINE EVER! */
 }
+#endif
 
 static void
 init(Vga* vga, Ctlr* ctlr)
@@ -281,7 +282,7 @@ dump(Vga* vga, Ctlr* ctlr)
 	printitem(ctlr->name, "depth");
 	Bprint(&stdout, " %d\n", vm->depth);
 	printitem(ctlr->name, "linear");
-	
+
 }
 
 Ctlr vmware = {

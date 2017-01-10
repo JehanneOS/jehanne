@@ -66,6 +66,7 @@ tvp3026xi(uint8_t index)
 	return r;
 }
 
+#if 0
 static void
 tvp3026o(uint8_t reg, uint8_t data)
 {
@@ -74,6 +75,7 @@ tvp3026o(uint8_t reg, uint8_t data)
 	crt55 = tvp3026io(reg, data);
 	vgaxo(Crtx, 0x55, crt55);
 }
+#endif
 
 void
 tvp3026xo(uint8_t index, uint8_t data)
@@ -125,6 +127,7 @@ init(Vga* vga, Ctlr* ctlr)
 	ctlr->flag |= Finit;
 }
 
+#if 0
 static void
 load(Vga* vga, Ctlr* ctlr)
 {
@@ -147,6 +150,7 @@ load(Vga* vga, Ctlr* ctlr)
 
 	ctlr->flag |= Fload;
 }
+#endif
 
 static void
 dump(Vga* vga, Ctlr* ctlr)

@@ -1,8 +1,5 @@
 {
 	"Console": {
-		"Cflags": [
-			"-Werror"
-		],
 		"Include": [
 			"/arch/$ARCH/include/cflags.json"
 		],

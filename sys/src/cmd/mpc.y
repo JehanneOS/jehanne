@@ -55,6 +55,8 @@ void	diag(Node*, char*, ...);
 void	com(Node*);
 void	fcom(Node*,Node*,Node*);
 
+int	yylex(void);
+
 #pragma varargck argpos cprint 1
 #pragma varargck argpos diag 2
 
@@ -80,7 +82,7 @@ void	fcom(Node*,Node*,Node*);
 %left	'^'
 %right	'('
 
-%token	<lval>	MOD IF ELSE WHILE BREAK 
+%token	<lval>	MOD IF ELSE WHILE BREAK
 %token	<sval>	NAME NUM
 
 %%
@@ -312,7 +314,7 @@ Loop:
 		if(getch() == '<') return LSH;
 		ungetc();
 		return '<';
-	case '>': 
+	case '>':
 		if(getch() == '>') return RSH;
 		ungetc();
 		return '>';
@@ -1051,7 +1053,7 @@ diag(Node *n, char *fmt, ...)
 {
 	static char buf[1024];
 	va_list a;
-	
+
 	va_start(a, fmt);
 	vsnprint(buf, sizeof(buf), fmt, a);
 	va_end(a);

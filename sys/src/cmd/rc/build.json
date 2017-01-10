@@ -10,9 +10,6 @@
 			"yacc -d syn.y",
 			"cp y.tab.h x.tab.h"
 		],
-		"Cflags": [
-			"-Wl,--verbose"
-		],
 		"Install": "/arch/$ARCH/cmd/",
 		"Program": "rc",
 		"SourceFiles": [

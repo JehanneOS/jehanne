@@ -1,8 +1,5 @@
 {
 	"libthread": {
-		"Cflags": [
-			"-Werror"
-		],
 		"Include": [
 			"/arch/$ARCH/include/cflags.json",
 			"../lib.json"

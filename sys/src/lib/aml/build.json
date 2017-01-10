@@ -1,8 +1,7 @@
 {
 	"Libaml": {
 		"Cflags": [
-			"-fasm",
-			"-Werror"
+			"-fasm"
 		],
 		"Include": [
 			"../lib.json"

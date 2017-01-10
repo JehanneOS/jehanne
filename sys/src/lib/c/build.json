@@ -1,8 +1,7 @@
 {
 	"CrtFiles": {
 		"Cflags": [
-			"-fasm",
-			"-Werror"
+			"-fasm"
 		],
 		"Include": [
 			"../lib.json"
@@ -18,8 +17,7 @@
 	},
 	"Libc": {
 		"Cflags": [
-			"-fasm",
-			"-Werror"
+			"-fasm"
 		],
 		"Include": [
 			"../lib.json"

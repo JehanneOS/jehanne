@@ -9,7 +9,7 @@ fi
 cd $JEHANNE/sys/src/kern/amd64
 
 gcc -c -O0 -static -fplan9-extensions -mno-red-zone -ffreestanding -fno-builtin -mcmodel=kernel l64sipi.S
-ld -Ttext 0x00003000 l64sipi.o -o l64sipi
+ld -Ttext 0x00003000 -e 0x00003000 l64sipi.o -o l64sipi
 objcopy -O binary -j .text l64sipi l64sipi.out
 
 echo 'uint8_t sipihandler[]={' > sipi.h

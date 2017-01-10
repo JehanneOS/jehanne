@@ -16,6 +16,8 @@
 #include "dosfs.h"
 #include "fns.h"
 
+extern int putlongname(Xfs *xf, Dosptr *ndp, char *name, char sname[13]);
+
 void
 rversion(void)
 {

@@ -19,14 +19,16 @@ static Xfs	*xhead;
 static Xfile	*xfiles[FIDMOD], *freelist;
 static MLock	xlock, xlocks[FIDMOD], freelock;
 
+#if 0
 static int
 okmode(int omode, int fmode)
 {
 	if(omode == OREAD)
 		return fmode & 4;
 	/* else ORDWR */
-	return (fmode & 6) == 6;
+	return (fmode & ORDWR) == ORDWR;
 }
+#endif
 
 Xfs *
 getxfs(char *user, char *name)
@@ -56,7 +58,7 @@ getxfs(char *user, char *name)
 	offset = 0;
 	if(p = strrchr(name, ':')){
 		*p++ = 0;
-		offset = strtol(p, (const char **)&q, 0);
+		offset = strtol(p, &q, 0);
 		chat("name %s, offset %ld\n", p, offset);
 		if(offset < 0 || p == q){
 			errno = Enofilsys;

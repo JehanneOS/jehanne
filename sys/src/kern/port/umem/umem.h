@@ -55,8 +55,6 @@ extern int page_dispose(PagePointer *slot);
  */
 extern int page_assign(PagePointer *target, PagePointer page);
 
-extern char* pages_stats(char *s, char *e);
-
 /* Replace the page in *slot with a copy
  *
  * Returns 1 on success, 0 on failure.
@@ -247,3 +245,13 @@ extern void proc_check_pages(void);
 extern int proc_own_pagepool(Proc *p);
 extern int proc_segment_detach(Proc *p, uintptr_t va);
 
+typedef struct MemoryStats
+{
+	unsigned long memory;
+	unsigned long kernel;
+	unsigned long user_available;
+	unsigned long user;
+} MemoryStats;
+
+/* fills stats with memory statistics */
+extern void memory_stats(MemoryStats *stats);

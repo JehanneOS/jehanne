@@ -831,7 +831,8 @@ consread(Chan *c, void *buf, long n, int64_t off)
 {
 	uint64_t l;
 	Mach *mp;
-	char *b, *bp, *s, ch;
+	MemoryStats mstats;
+	char *b, *bp, ch;
 	char tmp[6*NUMSIZE+1];		/* must be >= 6*NUMSIZE (Qcputime) */
 	int i, id, send;
 	long offset;
@@ -997,26 +998,18 @@ consread(Chan *c, void *buf, long n, int64_t off)
 		return n;
 
 	case Qswap:
-		bp = smalloc(READSTR);
-		if(waserror()){
-			free(bp);
-			nexterror();
-		}
-		s = pages_stats(bp, bp+READSTR);
-		s = seprintphysstats(s, bp+READSTR);
-		l = s - bp;
-		b = buf;
-		i = readstr(offset, b, n, bp);
-		poperror();
-		free(bp);
-		b += i;
-		n -= i;
-		if(offset > l)
-			offset -= l;
-		else
-			offset = 0;
+		memory_stats(&mstats);
+		snprint(tmp, sizeof tmp,
+			"%llud memory\n"
+			"%llud pagesize\n"
+			"%lud kernel\n"
+			"%lud/%lud user\n",
+			mstats.memory,
+			(unsigned long)PGSZ,
+			mstats.kernel,
+			mstats.user, mstats.user_available);
 
-		return i + mallocreadsummary(c, b, n, offset);
+		return readstr(offset, buf, n, tmp);
 
 	case Qsysname:
 		if(sysname == nil)

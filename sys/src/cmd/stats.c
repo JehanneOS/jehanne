@@ -467,7 +467,7 @@ readswap(Machine *m, uint64_t *a)
 {
 	if(strstr(m->buf, "memory\n")){
 		/* new /dev/swap - skip first 3 numbers */
-		if(!readnums(m, 7, a, 1))
+		if(!readnums(m, 5, a, 1))
 			return 0;
 		a[0] = a[3];
 		a[1] = a[4];

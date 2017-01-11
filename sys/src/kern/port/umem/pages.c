@@ -100,15 +100,18 @@ umem_init(void)
 
 }
 
-char*
-pages_stats(char *s, char *e)
+void
+memory_stats(MemoryStats *stats)
 {
-	plock();
-	s = seprint(s, e, "%lud/%lud %dK user pages avail\n",
-		pool.freepages + pool.blankpages,
-		pool.npages, (pool.freepages + pool.blankpages)*PGSZ/KiB);
-	punlock();
-	return s;
+	uintptr_t km;
+	if(stats == nil)
+		panic("memory_stats: nil pointer, pc %#p", getcallerpc());
+	km = ROUNDUP((uintptr_t)end - KTZERO, PGSZ);
+	km += ROUNDDN(sys->vmunmapped - (uintptr_t)end, PGSZ);
+	stats->memory = sys->pmoccupied;
+	stats->kernel = km;
+	stats->user_available = pool.npages*PGSZ;
+	stats->user = (pool.npages - pool.blankpages - pool.freepages)*PGSZ;
 }
 
 KMap*

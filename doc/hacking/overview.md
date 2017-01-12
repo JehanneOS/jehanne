@@ -6,6 +6,9 @@ useful.
 
 Here you find a quick tour of the project organization.
 
+Further help can be obtained from the [mailing list]: you are welcome
+to challenge my assumptions.
+
 Coding Styles
 =============
 Jehanne is a small operating system, but it's composed of a kernel, a
@@ -21,13 +24,106 @@ Other libraries and commands may come from the Unix ecosystem:
 we stick with the existing conventions there too.
 
 Here I describe the **arbitrary** conventions that are followed for
-original C components **and for the kernel**.
+new original C components **and for the kernel**.
 This unfortunately means that, depending on the age of a kernel file,
 you will find either the loosely followed Pike' style or my ugly
-conventions.
+rules and conventions.
 
+Fortunately, if you contribute a new interesting program, you are free
+to choose your favourite coding style, declare it clearly in a README
+file and stick with it. Note however that this won't apply to libraries.
 
+Use good sense
+--------------
 
+> Le bon sens est la chose du monde la mieux partagée; car 
+> chacun pense en être si bien pourvu, que ceux même qui sont les
+> plus difficiles à contenter en toute autre chose n’ont point coutume
+> d’en désirer plus qu’ils en ont.  
+>
+> -- [René Descartes], [Discours de la méthode]
+
+In Jehanne good sense is both **strictly enforced** and **loosely defined**.  
+This way nobody will try to sell you books, lectures or TED conferences
+about it.
+
+These are my rules of thumb:
+
+1. **Keep it simple**  
+   Never add features just because you can. Remove redundant features.
+   Decouple unrelated features. Use obvious names for files and folders.
+2. **Encapsulate**  
+   Use properly scoped functions to access structures' members.
+3. **Do not abstract**  
+   Replace abstractions used less than 3 times. Remove unused code.
+
+Aestetics
+---------
+
+I do not care too much about aestetics, just readability.  
+Unfortunately, just like any other programmer, what I find readable
+largely depends on the codebase that I had to debug.
+
+The conventions I try to honor are:
+
+1.  Tabs are 8 characters.
+2.  Lines should be no longer than readable. You can use macros to
+    improve readability.
+3.  Format blocks like this:
+        
+        if(x == nil)
+        	do_something();
+        
+        if(x == y){
+        	...
+        } else {
+        	...
+        }
+        
+        switch(v){
+        case AnOption:	
+        	...
+        	break;
+        case AnotherOption:	
+        	...
+        	break;
+        default:
+        	...
+        	break;
+        }
+
+4.  Format functions like this:
+
+        /* will wlock/wunlock pool_lock */
+        static void
+        freelist_add(ImagePointer ptr, ElfImage *img)
+        {
+        	body of function
+        }
+
+5.  Use one space around `=`  `+`  `-`  `<`  `>`  `*`  `/`  `%`  
+    `|`  `&`  `^`  `<=`  `>=`  `==`  `!=`  `?`  `:`, but no space between
+    unary operators (`&`  `*`  `+`  `-`  `~`  `!`  `sizeof`  `typeof`
+    `alignof`  `__attribute__`  `defined`  `++`  `--`) and their 
+    operand, and obviously no space around the `.` and `->` structure
+    member operators
+
+6.  Use short names in local variables and module functions when the
+    meaning is obvious in the context using them (`tmp`, `i`, `j`).  
+
+7.  Use descriptive names for globally visible functions and variables
+    (eg `proc_segment_detach`). In Jehanne's kernel a few frequently
+    used global variables are allowed to violate this rule: 
+    `up` (current user process), `m` (current processor) and `sys`.
+    
+8.  Use `typedefs` for struct and enums (CamelCase) but not for pointers.
+
+9.  Functions should be short, do one thing, hold few local variables
+    and `goto` a centralized cleanup section error.
+    Return values should consider errors as first class citizens.  
+    Use Plan9's `error()` machinery only in functions directly called by
+    other modules (like `Dev` methods and exported ones), not just
+    to easily unroll the stack.
 
 Hacking Tools
 =============
@@ -35,10 +131,6 @@ Hacking Tools
 To fasten development, a set of simple tools have been created.
 As tools to a greater goal, they are **disposable** and can only evolve
 as required by Jehanne's development.
-
-This document is a brief overview of such tools and it will follow
-their fate.
-Further help can be obtained from the [mailing list].
 
 Development Environment
 -----------------------
@@ -196,3 +288,6 @@ downloaded as git submodules and compiled by `./hacking/buildtools.sh`.
 [Go 9P2000 server]: https://github.com/lionkov/ninep
 [drawterm]: https://github.com/0intro/drawterm
 [style(6)]: http://man.cat-v.org/9front/6/style
+[encapsulation]: http://www.tonymarston.co.uk/php-mysql/abstraction.txt
+[René Descartes]: https://en.wikipedia.org/wiki/Ren%C3%A9_Descartes
+[Discours de la méthode]: http://www.gutenberg.org/files/59/59-h/59-h.htm

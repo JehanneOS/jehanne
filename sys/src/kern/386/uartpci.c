@@ -25,7 +25,7 @@ uartpci(int ctlrno, Pcidev* p, int barno, int n, int freq, char* name)
 		return nil;
 	}
 
-	head = uart = malloc(sizeof(Uart)*n);
+	head = uart = mallocz(sizeof(Uart)*n, 1);
 
 	for(i = 0; i < n; i++){
 		ctlr = i8250alloc(io, p->intl, p->tbdf);

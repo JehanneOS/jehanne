@@ -282,20 +282,21 @@ write_working_dir(Proc* p, void *va, long n, int64_t off)
 }
 
 static long
-selfread(Chan *c, void *va, long n, int64_t off)
+selfread(Chan *c, void *va, long n, int64_t offset)
 {
-	int64_t offset;
 	ProcSegment *sg;
 	int i, j;
 	char statbuf[NSEG*STATSIZE];
+	
+	if(offset < 0)
+		error("invalid offset");
 
-	offset = off;
 	switch(QID(c->qid)){
 	case Qdir:
 		return devdirread(c, va, n, selfdir, nelem(selfdir), selfgen);
 	case Qsegments:
-		rlock(&up->seglock);
 		j = 0;
+		rlock(&up->seglock);
 		for(i = 0; i < NSEG; i++) {
 			sg = up->seg[i];
 			if(sg == 0)
@@ -317,7 +318,7 @@ selfread(Chan *c, void *va, long n, int64_t off)
 		memmove(va, &statbuf[offset], n);
 		return n;
 	case Qwdir:
-		return read_working_dir(up, va, n, off);
+		return read_working_dir(up, va, n, offset);
 
 	case Qpid:
 		return readnum(offset, va, n, up->pid, NUMSIZE);

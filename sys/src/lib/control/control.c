@@ -243,8 +243,11 @@ controlsetthread(void *v)
 			prevbut=mouse.buttons;
 			break;
 		case ACtl:
-			_ctlcontrol(cs, str);
-			free(str);
+			if(str != nil){
+				_ctlcontrol(cs, str);
+				free(str);
+				str = nil;
+			}
 			break;
 		case AExit:
 			threadexits(nil);

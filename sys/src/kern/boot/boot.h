@@ -62,7 +62,7 @@ extern void	savelogs(void);
 /* libc equivalent */
 extern int	cache(int);
 extern char*	checkkey(Method*, char*, char*);
-extern void	fatal(char*);
+extern void	fatal(char*) __attribute__ ((noreturn));
 extern void	getpasswd(char*, int);
 extern void	key(int, Method*);
 extern int	outin(char*, char*, int);

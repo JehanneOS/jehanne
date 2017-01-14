@@ -65,7 +65,7 @@ void		closeegrp(Egrp*);
 void		closefgrp(Fgrp*);
 void		closepgrp(Pgrp*);
 void		closergrp(Rgrp*);
-void		cmderror(Cmdbuf*, char*);
+void		cmderror(Cmdbuf*, char*) __attribute__ ((noreturn));
 int		cmount(Chan**, Chan*, int, char*);
 #define	commonerror()	(up->errstr)
 #define	commonuser()	(up->user)
@@ -125,8 +125,8 @@ int		eqchanddq(Chan*, int, uint32_t, Qid, int);
 int		eqqid(Qid, Qid);
 void		error(char*) __attribute__ ((noreturn));
 void		errorl(char*, long) __attribute__ ((noreturn));
-void		errorf(char*, ...);
-void		exhausted(char*);
+void		errorf(char*, ...) __attribute__ ((noreturn));
+void		exhausted(char*) __attribute__ ((noreturn));
 void		exit(int) __attribute__ ((noreturn));
 uint64_t		fastticks(uint64_t*);
 uint64_t		fastticks2us(uint64_t);

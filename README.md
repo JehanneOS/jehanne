@@ -52,7 +52,7 @@ To build Jehanne and play with it, you need to have git, golang, qemu,
 gcc, binutils and bison installed.
 For example on Debian GNU/Linux you should be able to get going with
 
-	sudo aptitude install git golang build-essential bison qemu-system
+	sudo aptitude install git golang build-essential flex bison qemu-system
 
 After the repository clone, you can give a look with
 

@@ -280,6 +280,8 @@ freelist_pop(int blankslot, int originally_allocated)
 	unsigned short *next, *fptr;
 	ImagePointer ptr = 0;
 
+	fimg = nil;
+
 	wlock(&pool_lock);
 
 	/* if more blanks have been allocated after blankslot,
@@ -287,7 +289,8 @@ freelist_pop(int blankslot, int originally_allocated)
 	 * instead
 	 */
 	if(originally_allocated < pool.allocated){
-		return pool.allocated - blankslot;
+		ptr = pool.allocated - blankslot;
+		goto Done;
 	}
 
 	if(pool.sleeping == 0)

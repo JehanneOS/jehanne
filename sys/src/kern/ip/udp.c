@@ -199,8 +199,9 @@ udpkick(void *x, Block *bp)
 		return;
 
 	ucb = (Udpcb*)c->ptcl;
-	switch(ucb->headers) {
-	case 7:
+
+	/* ucb->headers can only be 0 or 7 (see udpctl) */
+	if(ucb->headers) {
 		/* get user specified addresses */
 		bp = pullupblock(bp, UDP_USEAD7);
 		if(bp == nil)
@@ -215,19 +216,14 @@ udpkick(void *x, Block *bp)
 		bp->rp += IPaddrlen;		/* Ignore ifc address */
 		rport = nhgets(bp->rp);
 		bp->rp += 2+2;			/* Ignore local port */
-		break;
-	default:
-		rport = 0;
-		break;
-	}
 
-	if(ucb->headers) {
 		if(memcmp(laddr, v4prefix, IPv4off) == 0
 		|| ipcmp(laddr, IPnoaddr) == 0)
 			version = 4;
 		else
 			version = 6;
 	} else {
+		rport = 0;
 		if( (memcmp(c->raddr, v4prefix, IPv4off) == 0 &&
 			memcmp(c->laddr, v4prefix, IPv4off) == 0)
 			|| ipcmp(c->raddr, IPnoaddr) == 0)

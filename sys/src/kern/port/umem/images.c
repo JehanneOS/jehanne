@@ -305,6 +305,9 @@ freelist_pop(int blankslot, int originally_allocated)
 		}
 	}
 
+	if(fimg == nil)
+		panic("no free image in sleeping free list");
+
 	mkqid(&fimg->qid, ~0, ~0, QTDIR); /* so that it cannot be found by hash */
 	ptr = *fptr;
 	*fptr = fimg->fnext;

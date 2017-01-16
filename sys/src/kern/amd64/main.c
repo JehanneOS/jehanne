@@ -95,7 +95,7 @@ options(int argc, char* argv[])
 		}else if(strcmp(next, "idlespin") == 0){
 			onIdleSpin();
 		}else{
-			strncpy(envcopy, next, sizeof envcopy);
+			strncpy(envcopy, next, sizeof(envcopy)-1);
 			gettokens(envcopy, env, 2, "=");
 			if(strcmp(env[0], "maxcores") == 0){
 				maxcores = strtol(env[1], 0, 0);

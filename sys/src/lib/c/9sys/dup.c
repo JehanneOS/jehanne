@@ -30,6 +30,11 @@ dup(int oldfd, int newfd)
 	f = create("#d/new", -1, in.aslong);
 	if(f == -1)
 		return -1;
+	if(f >= 0){
+		/* this should never happen */
+		close(f);
+		return -1;
+	}
 	out.aslong = ~f;
 	return out.fd[1];
 }

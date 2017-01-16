@@ -118,6 +118,9 @@ rtcextract(void)
 			break;
 	}
 
+	if(i == 10000)
+		return -1;
+
 	/*
 	 *  convert from BCD
 	 */

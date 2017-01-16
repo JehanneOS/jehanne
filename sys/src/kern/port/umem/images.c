@@ -193,7 +193,7 @@ segments_fill(ElfSegment* segments, Ldseg *infos)
 	if(segments[0].npages > (SEGMAPSIZE*PTEPERTAB))
 		return 0;
 	if(segments[0].pages != nil)
-		free(&segments[0].pages);
+		free(segments[0].pages);
 	segments[0].pages = mallocz(sizeof(PagePointer)*segments[0].npages, 1);
 	if(segments[0].pages == nil)
 		return 0;
@@ -206,7 +206,7 @@ segments_fill(ElfSegment* segments, Ldseg *infos)
 	if(segments[1].npages > (SEGMAPSIZE*PTEPERTAB))
 		return 0;
 	if(segments[1].pages != nil)
-		free(&segments[1].pages);
+		free(segments[1].pages);
 	segments[1].pages = mallocz(sizeof(PagePointer)*segments[1].npages, 1);
 	if(segments[1].pages == nil){
 		free(segments[0].pages);

@@ -14,8 +14,6 @@
 // which is implemented in kernel device #a.  See also /lib/rfc/rfc2246.
 
 enum {
-	TLSFinishedLen = 12,
-	SSL3FinishedLen = MD5dlen+SHA1dlen,
 	MaxKeyData = 160,	// amount of secret we may need
 	MaxChunk = 1<<15,
 	MAXdlen = SHA2_512dlen,
@@ -48,9 +46,15 @@ typedef struct Namedcurve{
 	void (*init)(mpint *p, mpint *a, mpint *b, mpint *x, mpint *y, mpint *n, mpint *h);
 } Namedcurve;
 
+typedef enum FinishedLength{
+	BeforeSetVersion = 0,
+	TLSFinishedLen = 12,
+	SSL3FinishedLen = MD5dlen+SHA1dlen,
+} FinishedLength;
+
 typedef struct Finished{
 	uint8_t verify[SSL3FinishedLen];
-	int n;
+	FinishedLength n;	// see https://github.com/JehanneOS/jehanne/issues/4
 } Finished;
 
 typedef struct HandshakeHash {
@@ -80,7 +84,7 @@ struct TlsSec {
 	// byte generation and handshake checksum
 	void (*prf)(uint8_t*, int, uint8_t*, int, char*, uint8_t*, int, uint8_t*, int);
 	void (*setFinished)(TlsSec*, HandshakeHash, uint8_t*, int);
-	int nfin;
+	FinishedLength nfin;
 };
 
 typedef struct TlsConnection{

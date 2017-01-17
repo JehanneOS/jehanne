@@ -109,10 +109,7 @@ convM2S(uint8_t *ap, uint32_t nap, Fcall *f)
 		if(p == nil)
 			break;
 		p = gstring(p, ep, &f->aname);
-		if(p == nil)
-			break;
 		break;
-
 	case Tattach:
 		if(p+BIT32SZ > ep)
 			return 0;
@@ -126,10 +123,7 @@ convM2S(uint8_t *ap, uint32_t nap, Fcall *f)
 		if(p == nil)
 			break;
 		p = gstring(p, ep, &f->aname);
-		if(p == nil)
-			break;
 		break;
-
 	case Twalk:
 		if(p+BIT32SZ+BIT32SZ+BIT16SZ > ep)
 			return 0;
@@ -246,16 +240,10 @@ convM2S(uint8_t *ap, uint32_t nap, Fcall *f)
 
 	case Rauth:
 		p = gqid(p, ep, &f->aqid);
-		if(p == nil)
-			break;
 		break;
-
 	case Rattach:
 		p = gqid(p, ep, &f->qid);
-		if(p == nil)
-			break;
 		break;
-
 	case Rwalk:
 		if(p+BIT16SZ > ep)
 			return 0;

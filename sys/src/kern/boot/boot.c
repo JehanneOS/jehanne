@@ -368,11 +368,13 @@ startconsole(void)
 		fatal("mount /dev");
 	if((i = open("/dev/cons", OREAD))<0)
 		fatal("open /dev/cons, OREAD");
-	dup(i, 0);
+	if(dup(i, 0) != 0)
+		fatal("dup(i, 0)");
 	close(i);
 	if((i = open("/dev/cons", OWRITE))<0)
 		fatal("open /dev/cons, OWRITE");
-	dup(i, 1);
+	if(dup(i, 1) != 1)
+		fatal("dup(i, 1)");
 	close(i);
 	if(dup(1, 2) != 2)
 		fatal("dup(1, 2)");
@@ -423,11 +425,13 @@ startcomconsole(void)
 		fatal("mount /dev");
 	if((i = open("/dev/cons", OREAD))<0)
 		fatal("open /dev/cons, OREAD");
-	dup(i, 0);
+	if(dup(i, 0) != 0)
+		fatal("dup(i, 0)");
 	close(i);
 	if((i = open("/dev/cons", OWRITE))<0)
 		fatal("open /dev/cons, OWRITE");
-	dup(i, 1);
+	if(dup(i, 1) != 1)
+		fatal("dup(i, 1)");
 	close(i);
 	if(dup(1, 2) != 2)
 		fatal("dup(1, 2)");

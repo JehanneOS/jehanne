@@ -70,9 +70,11 @@ cache(int fd)
 		fatal("fork");
 	case 0:
 		close(p[1]);
-		dup(fd, 0);
+		if(dup(fd, 0) != 0)
+			fatal("dup(fd, 0)");
 		close(fd);
-		dup(p[0], 1);
+		if(dup(p[0], 1) != 1)
+			fatal("dup(p[0], 1)");
 		close(p[0]);
 		if(fflag)
 			execl("/boot/cfs", "bootcfs", "-rs", "-f", partition, 0);

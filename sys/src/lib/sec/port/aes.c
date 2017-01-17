@@ -142,12 +142,12 @@ aesXCBCmac(uint8_t *p, int len, AESstate *s)
 	/* the last one */
 
 	memmove(q, p, len);
-	p2 = q+len;
 	if(len == AESbsize)
 		mackey = s->mackey + AESbsize;	/* k2 */
 	else{
 		mackey = s->mackey+2*AESbsize;	/* k3 */
-		*p2++ = 1 << 7;			/* padding */
+		p2 = q+len;			/* padding */
+		*p2++ = 1 << 7;
 		len = AESbsize - len - 1;
 		memset(p2, 0, len);
 	}

@@ -128,6 +128,7 @@ aesXCBCmac(uint8_t *p, int len, AESstate *s)
 	uint8_t q[AESbsize];
 
 	assert(s->keybytes == 16);	/* more complicated for bigger */
+	assert(s->rounds <= sizeof(s->mackey)/sizeof(uint32_t));
 	memset(s->ivec, 0, AESbsize);	/* E[0] is 0+ */
 
 	for(; len > AESbsize; len -= AESbsize){

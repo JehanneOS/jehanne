@@ -64,12 +64,16 @@ static Chan*
 dupcreate(Chan* c, char* name, unsigned long omode, unsigned long perm)
 {
 	FdPair in, out;
+	int d;
 
 	if((omode|OCEXEC) == ~0 && c->qid.path == 0){
 		in.aslong = perm;
-		out.aslong = 0;
-		out.fd[1] = sysdup(in.fd[0], in.fd[1]);
-		errorl(nil, ~out.aslong);
+		out.aslong = ~0;
+		d = sysdup(in.fd[0], in.fd[1]);
+		if(d >= 0){
+			out.fd[1] = d;
+			errorl(nil, ~out.aslong);
+		}
 	}
 	error(Eperm);
 }

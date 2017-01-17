@@ -19,4 +19,5 @@ _assert(const char *s)
 		(*__assert)((char*)s);
 	fprint(2, "assert failed: %s\n", s);
 	abort();
+	__builtin_unreachable();
 }

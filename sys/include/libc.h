@@ -360,7 +360,7 @@ enum
 	PNGROUP		= 2,
 };
 
-extern	void	_assert(const char*);
+extern	void	_assert(const char*) __attribute__ ((noreturn));
 extern	int	abs(int);
 extern	int	atexit(void(*)(void));
 extern	void	atexitdont(void(*)(void));

@@ -50,6 +50,7 @@ ccpoly_encrypt(uint8_t *dat, uint32_t ndat, uint8_t *aad, uint32_t naad, uint8_t
 	DigestState ds;
 
 	ccpolyotk(cs, &ds);
+	ds.malloced = 0;
 	if(cs->ivwords == 2){
 		poly1305(aad, naad, nil, 0, nil, &ds);
 		ccpolylen(naad, nil, &ds);
@@ -72,6 +73,7 @@ ccpoly_decrypt(uint8_t *dat, uint32_t ndat, uint8_t *aad, uint32_t naad, uint8_t
 	uint8_t tmp[16];
 
 	ccpolyotk(cs, &ds);
+	ds.malloced = 0;
 	if(cs->ivwords == 2){
 		poly1305(aad, naad, nil, 0, nil, &ds);
 		ccpolylen(naad, nil, &ds);

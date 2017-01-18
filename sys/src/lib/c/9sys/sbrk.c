@@ -1,56 +1,60 @@
 /*
- * This file is part of the UCB release of Plan 9. It is subject to the license
- * terms in the LICENSE file found in the top-level directory of this
- * distribution and at http://akaros.cs.berkeley.edu/files/Plan9License. No
- * part of the UCB release of Plan 9, including this file, may be copied,
- * modified, propagated, or distributed except according to the terms contained
- * in the LICENSE file.
+ * This file is part of Jehanne.
+ *
+ * Copyright (C) 2017 Giacomo Tesio <giacomo@tesio.it>
+ *
+ * Jehanne is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 2 of the License.
+ *
+ * Jehanne is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Jehanne.  If not, see <http://www.gnu.org/licenses/>.
  */
-
+#define PORTABLE_SYSCALLS
 #include <u.h>
 #include <libc.h>
 
 extern	char	end[];
-static	char	*bloc = { end };
+static	char	*last_brk = { end };
 
-enum
-{
-	Round	= 7
-};
+#define ROUND_BRK(b) (((uintptr_t)b + 7) & ~7)
 
-uintptr_t
-brk_(uintptr_t p)
+static uintptr_t
+setbrk(uintptr_t p)
 {
-	long f;
-	f = create("#0/brk/set", -1, p);
-	if(f >= 0){
-		/* this should never happen */
-		close(f);
-		return -1;
-	}
-	return (uintptr_t)~f;
+	long b;
+	/* assert: devself is still working */
+	assert((b = create("#0/brk/set", -1, p)) < 0);
+	if(b == -1)
+		return ~0; // an error occurred
+	return (uintptr_t)~b;
 }
 
 int
 brk(void *p)
 {
-	uintptr_t bl;
+	uintptr_t new_brk;
 
-	bl = ((uintptr_t)p + Round) & ~Round;
-	if(brk_(bl) < 0)
+	new_brk = ROUND_BRK(p);
+	if(setbrk(new_brk) == ~0)
 		return -1;
-	bloc = (char*)bl;
+	last_brk = (char*)new_brk;
 	return 0;
 }
 
 void*
-sbrk(uint32_t n)
+sbrk(uint32_t increment)
 {
-	uintptr_t bl;
+	uintptr_t new_brk;
 
-	bl = ((uintptr_t)bloc + Round) & ~Round;
-	if(brk_(bl+n) < 0)
+	new_brk = ROUND_BRK(last_brk);
+	if(setbrk(new_brk+increment) == ~0)
 		return (void*)-1;
-	bloc = (char*)bl + n;
-	return (void*)bl;
+	last_brk = (char*)new_brk + increment;
+	return (void*)new_brk;
 }

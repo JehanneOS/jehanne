@@ -37,6 +37,8 @@ system(const char *command)
 			// TODO: fix this http://man7.org/linux/man-pages/man3/system.3.html
 			while((w = wait()) && w->pid != pid)
 				free(w);
+			if(w == nil)
+				return -1;
 			if(w->msg[0] != 0){
 				s = strstr(w->msg, __POSIX_EXIT_PREFIX);
 				if(s){

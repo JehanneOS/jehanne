@@ -8,6 +8,9 @@
 			"-std=gnu11"
 		],
 		"Install": "/arch/$ARCH/qa/lib/c",
+		"Post": [
+			"cp *.rc $JEHANNE/arch/$ARCH/qa/lib/c/"
+		],
 		"SourceFilesCmd": [
 			"asmscall.c",
 			"cleanname.c",

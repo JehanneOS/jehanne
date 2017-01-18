@@ -1,12 +1,19 @@
 /*
- * Copyright (C) 2016 Giacomo Tesio <giacomo@tesio.it>
+ * This file is part of Jehanne.
  *
- * This file is part of the UCB release of Plan 9. It is subject to the license
- * terms in the LICENSE file found in the top-level directory of this
- * distribution and at http://akaros.cs.berkeley.edu/files/Plan9License. No
- * part of the UCB release of Plan 9, including this file, may be copied,
- * modified, propagated, or distributed except according to the terms contained
- * in the LICENSE file.
+ * Copyright (C) 2017 Giacomo Tesio <giacomo@tesio.it>
+ *
+ * Jehanne is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 2 of the License.
+ *
+ * Jehanne is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Jehanne.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <u.h>
@@ -15,17 +22,23 @@
 char*
 getenv(const char *name)
 {
-	int r, f;
-	int32_t s;
-	char *ans;
-	char *p, *ep, ename[100];
+	int f;
+	int32_t l;
+	char path[127+5+1], *value;
 
-	if(strchr(name, '/') != nil)
-		return nil;
-	snprint(ename, sizeof ename, "/env/%s", name);
-	if(strcmp(ename+5, name) != 0)
-		return nil;
-	f = open(ename, OREAD);
+	assert(name != nil);
+	if(name[0]=='\0')
+		goto BadName;
+	if(strcmp(name, ".")==0 || strcmp(name, "..")==0)
+		goto BadName;
+	if(strchr(name, '/')!=nil)
+		goto BadName;
+
+	snprint(path, sizeof path, "/env/%s", name);
+	if(strcmp(path+5, name) != 0)
+		goto BadName;
+
+	f = open(path, OREAD);
 	if(f < 0){
 		/* try with #e, in case of a previous rfork(RFCNAMEG)
 		 *
@@ -34,25 +47,24 @@ getenv(const char *name)
 		 * using #ec when the open in #e fails is both
 		 * slow and not flexible enough.
 		 */
-		snprint(ename, sizeof ename, "#e/%s", name);
-		f = open(ename, OREAD);
+		snprint(path, sizeof path, "#e/%s", name);
+		f = open(path, OREAD);
 		if(f < 0)
 			return nil;
 	}
-	s = seek(f, 0, 2);
-	ans = malloc(s+1);
-	if(ans) {
-		setmalloctag(ans, getcallerpc());
-		seek(f, 0, 0);
-		r = read(f, ans, s);
-		if(r >= 0) {
-			ep = ans + s - 1;
-			for(p = ans; p < ep; p++)
-				if(*p == '\0')
-					*p = ' ';
-			ans[s] = '\0';
-		}
-	}
+	l = seek(f, 0, 2);
+	value = malloc(l+1);
+	if(value == nil)
+		goto Done;
+	setmalloctag(value, getcallerpc());
+	seek(f, 0, 0);
+	if(read(f, value, l) >= 0)
+		value[l] = '\0';
+Done:
 	close(f);
-	return ans;
+	return value;
+
+BadName:
+	werrstr("bad env name: '%s'", name);
+	return nil;
 }

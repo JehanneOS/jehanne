@@ -10,6 +10,7 @@ mptobe(mpint *b, uint8_t *p, uint32_t n, uint8_t **pp)
 {
 	int m;
 
+	assert((p == nil) != (pp == nil));
 	m = (mpsignif(b)+7)/8;
 	if(m == 0)
 		m++;

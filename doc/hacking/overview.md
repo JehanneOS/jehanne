@@ -1,5 +1,6 @@
-Hacking Jehanne
-===============
+---
+title: Hacking Jehanne
+---
 
 Jehanne is a work in progress that still needs a lot of effort to become
 useful.
@@ -49,28 +50,33 @@ about it.
 
 These are my rules of thumb:
 
-1. **Keep it simple**  
-   Never add features just because you can. Remove redundant features.
-   Decouple unrelated features. Use obvious names for files and folders.
-2. **Encapsulate**  
-   Use properly scoped functions to access structures' members.
-3. **Do not abstract**  
-   Replace abstractions used less than 3 times. Remove unused code.
+**Keep it simple**  
+: Never add features just because you can. Remove redundant features.
+  Decouple unrelated features. Use obvious names for files and folders.
+
+**Encapsulate**  
+: Use properly scoped functions to access structures' members.
+
+**Do not abstract**  
+: Replace abstractions used less than 3 times. Remove unused code.
 
 Aestetics
 ---------
 
-I do not care too much about aestetics, just readability.  
+I do not care too much about aestetics, but readability matters.  
 Unfortunately, just like any other programmer, what I find readable
-largely depends on the codebase that I had to debug.
+largely depends on the code that I had to debug in the past.
 
 The conventions I try to honor are:
 
 1.  Tabs are 8 characters.
+
 2.  Lines should be no longer than readable. You can use macros to
     improve readability.
-3.  Format blocks like this:
-        
+
+3.  Format blocks like these:
+
+    ```c
         if(x == nil)
         	do_something();
         
@@ -91,15 +97,18 @@ The conventions I try to honor are:
         	...
         	break;
         }
+    ```
 
 4.  Format functions like this:
 
+    ```c
         /* will wlock/wunlock pool_lock */
         static void
         freelist_add(ImagePointer ptr, ElfImage *img)
         {
-        	body of function
+        	...
         }
+    ```
 
 5.  Use one space around `=`  `+`  `-`  `<`  `>`  `*`  `/`  `%`  
     `|`  `&`  `^`  `<=`  `>=`  `==`  `!=`  `?`  `:`, but no space between
@@ -119,8 +128,8 @@ The conventions I try to honor are:
 8.  Use `typedefs` for struct and enums (CamelCase) but not for pointers.
 
 9.  Functions should be short, do one thing, hold few local variables
-    and `goto` a centralized cleanup section error.
-    Return values should consider errors as first class citizens.  
+    and `goto` a centralized cleanup section on error.
+    Keep in mind errors when designing the return values of your functions.  
     Use Plan9's `error()` machinery only in functions directly called by
     other modules (like `Dev` methods and exported ones), not just
     to easily unroll the stack.
@@ -134,7 +143,6 @@ as required by Jehanne's development.
 
 Development Environment
 -----------------------
-
 Currently, Jehanne is coded and cross compiled from Linux (I work on a
 stable Debian GNU/Linux).
 
@@ -154,6 +162,12 @@ environment with `./hacking/devshell.sh` that will start a new Bash:
 * the environment variable `$TOOLPREFIX` will contain the prefix of
   the cross compiling toolchain
 
+`devshell.sh` also gives you an hook to customize your development
+environment without touching the repository: if the
+`$JEHANNE_DEVELOPER_DIR` (default: `~/.jehanne/`) exists and contains 
+a script named `devshell.sh`, such script will be sourced.
+For example my own `devshell.sh` starts a couple of terminals.
+
 To build the cross compiler you "only" need to run
 `(cd $JEHANNE/hacking/cross/; ./init.sh; git clean -xdf src/)`.
 It will automatically download and compile Binutils and GCC
@@ -170,7 +184,6 @@ usually build it alone.
 
 The build system
 ----------------
-
 Jehanne's build system is an evolution of the Harvey's original one
 based on Go and Json. It violates the [principle of least surprise],
 so that [I was originally pretty skeptic about it], but it turns out
@@ -198,6 +211,112 @@ dependencies or file changes: it always run the **entire build**
 described in the provided JSON **and nothing more**. Thus it's simple,
 fast enough and fully **predictable**.
 
+Qemu (and friends)
+------------------
+Jehanne has been tested on Qemu, Bochs, VMVare and Hyper-V, but the day
+to day testing is done with Qemu.
+
+To run the system in Qemu you can run:
+
+`./hacking/runOver9P.sh`
+: that connects a 9P2000 server running on the linux host 
+  to mount `$JEHANNE` as the root file system
+
+`./hacking/runDisk.sh [path/to/disk/image]`
+: that uses the disk image
+  provided (or `$DISK`) to as the root file system
+
+`./hacking/QA.sh` 
+: used by `runqemu` to start the workhorse or to execute the QA checks
+  (it should not be executed directly).
+
+These scripts react to a few environment variables:
+
+`$KERNEL`
+: kernel to load (default: `jehanne.32bit`)
+
+`$KERNDIR`
+: directory containing $KERNEL (default: `$JEHANNE/arch/$ARCH/kern/`)
+
+`$KAPPEND`
+: additional parameters for the kernel
+
+`$NCPU`
+: number of simmetric processors to use
+
+Qemu will multiplex the terminal I/O between Jehanne's serial console
+and Qemu monitor. To switch between the two use `Ctrl-a x`. 
+To stop Qemu use `Ctrl-a c`.
+
+To create or update a bootable usb stick (or a disk image to be used
+with Bochs or Qemu) you can use:
+
+`./hacking/disk-create.sh` 
+: creates a raw disk image at `$DISK`
+  (default `./hacking/sample-disk.img`). It uses syslinux, its bios
+  files (looked up at `$SYSLINUXBIOS`) and fdisk, but it can be run as
+  a user **without** `sudo`. The image will contains two separate
+  partitions, one for syslinux, the kernel and the initial ram disk
+  (the `dos` partition) and one for the rest of the system
+  (the `plan9` partition) in a [hjfs] file system.
+
+`./hacking/disk-boot-update.sh`
+: updates syslinux, the kernel and
+  the initial ram disk in the appropriate partition of `$DISK`
+
+`./hacking/disk-update.sh file1 file2 ...`
+: copy the files provided as arguments **to** the [hjfs] partition of `$DISK`.
+
+`./hacking/disk-get.sh file1 files2 ...`
+: copy the files provided as
+  arguments **from** the [hjfs] partition of `$DISK`
+  to `$JEHANNE/usr/glenda/tmp`.
+
+Note that **the whole process does NOT require root privileges**:
+you don't need to trust Jehanne's developers but you have to `dd` the
+usb stick yourself.
+
+Debugging
+---------
+Once you get used to the codebase, debugging Jehanne is pretty simple.
+
+First start the system in Qemu with either `./hacking/runOver9P.sh` or 
+`./hacking/runDisk.sh`. If `$KAPPEND` contains the string "waitgdb",
+Jehanne will stop at an early stage after the boot and will wait for a
+gdb connection.
+
+To start such connection you can use the script `./hacking/gdb.sh` that
+will provide you a small but useful set of functions to ease your session:
+
+`jhn-connect [host:port]`
+: will connect to host:port (default localhost:1234); it's better than
+  a simple `target remote :1234` because it integrates well with
+  the `waitgdb` kernel argument and it is faster to type (jh TAB c TAB)
+
+`jhn-log-syscalls`
+: will log all syscalls.
+
+`jhn-log-errors`
+: will log errors
+
+`jhn-break-cmd arch/amd64/path/to/cmd "cmd" [address]`
+: will set a breakpoint at the provided address in the user space
+  program named "cmd" (default address: `0x4000c0`, aka `_main`)
+
+`jhn-break-pid arch/amd64/path/to/cmd pid [address]`
+: will set a breakpoint at the provided address in the user space
+  program running at pid (default address: `0x4000c0`)
+
+Note how **in Jehanne you can debug any program or library running in
+user space** with few simple gdb functions.
+
+If `$JEHANNE_DEVELOPER_DIR/gdbinit` exists it is sourced, providing
+another hook to ease your debug as you like.
+
+If `$JEHANNE_GDB_LOGS` is defined the whole session will be logged there,
+prepended with the current commit hash and a brief summary of the
+repository status. 
+
 The workhorse
 -------------
 A simplified kernel is built before the others: [the workhorse].
@@ -211,18 +330,30 @@ Custom Go tools
 Here is a brief summary of the other custom tools in
 `./hacking/src/jehanne/cmd/`:
 
-* `runqemu` runs Jehanne in a qemu instance and send commands to it.
+`runqemu` 
+: runs Jehanne in a qemu instance and send commands to it.
   It is used both during compilation (to create the initial ram disk,
   for example) and to run [quality checks].
-* `ksyscalls` and `usyscalls` produce the boring code for system calls,
+
+`ksyscalls` and `usyscalls`
+: produce the boring code for system calls,
   in kernel and in libc respectively. It reads [sysconf.json].
-* `mksys` produces several headers reading from the [sysconf.json] too
-* `data2c` and `elf2c` embeed in programs in kernels (mainly in the
-  workhorse).
-* `fetch` downloads external resources listed in [a fetch.json file]
-* `telnet` can connect a running instance of Jehanne.
+
+`mksys`
+: produces several headers reading from the [sysconf.json] too
+
+`data2c` and `elf2c`
+: embeed in programs in kernels (mainly in the workhorse).
+
+`fetch`
+: downloads external resources listed in [a fetch.json file]
+
+`telnet`
+: can connect a running instance of Jehanne.
   It was used before drawterm was available.
-* `preen` pretty print the JSON files used by `build`
+
+`preen`
+: pretty print the JSON files used by `build`
 
 Inside the development shell, these tools are available in `$PATH`.
 
@@ -230,34 +361,6 @@ Miscellaneous utilities
 -----------------------
 Among [devtools] you can also find several shell scripts and files
 that are designed to be used only from the repository root.
-
-To get a bootable usb stick (or a disk image to be used with Bochs
-or Qemu) you can use:
-
-* `./hacking/disk-create.sh` creates a raw disk image at `$DISK`
-  (default `./hacking/sample-disk.img`). It uses syslinux, its bios
-  files (looked up at `$SYSLINUXBIOS`) and fdisk, but it can be run as
-  a user **without** `sudo`. The image will contains two separate
-  partitions, one for syslinux, the kernel and the initial ram disk
-  (the `dos` partition) and one for the rest of the system
-  (the `plan9` partition) in a [hjfs] file system.
-* `./hacking/disk-boot-update.sh` updates syslinux, the kernel and
-  the initial ram disk in the appropriate partition of `$DISK`
-* `./hacking/disk-update.sh file1 file2 ...`  copy the files provided
-  as arguments **to** the [hjfs] partition of `$DISK`.
-* `./hacking/disk-get.sh file1 files2 ...` copy the files provided as
-  arguments **from** the [hjfs] partition of `$DISK`
-  to `$JEHANNE/usr/glenda/tmp`.
-
-To run the system in Qemu you can use:
-
-* `./hacking/runOver9P.sh` that uses a 9P2000 file server running on
-  the host as the root file system
-* `./hacking/runDisk.sh [path/to/disk/image]` that uses the disk image
-  provided (or `$DISK`) to as the root file system.
-
-Moreover `./hacking/QA.sh` is used by `runqemu` to start the workhorse
-and execute the QA checks.
 
 In the default configuration (see [cfg/startup]), Jehanne is started as
 a cpu server owned by glenda. You can connect it with the

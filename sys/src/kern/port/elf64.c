@@ -315,7 +315,7 @@ elf64ldseg(Chan *c, uintptr_t *entryp, Ldseg **rp, char *mach, uint32_t minpgsz)
 	}
 
 	if(c->dev->read(c, &ehdr, sizeof ehdr, 0) != sizeof ehdr){
-		print("elf64ldseg: too short for header\n");
+		pprint("elf64ldseg: too short for header\n");
 		goto done; // too short to be elf but could be something else
 	}
 
@@ -330,6 +330,8 @@ elf64ldseg(Chan *c, uintptr_t *entryp, Ldseg **rp, char *mach, uint32_t minpgsz)
 			get16 = get16be;
 			get32 = get32be;
 			get64 = get64be;
+		} else {
+			error(Ebadexec);
 		}
 
 		if(fp[EI_CLASS] == ELFCLASS64){
@@ -343,7 +345,7 @@ elf64ldseg(Chan *c, uintptr_t *entryp, Ldseg **rp, char *mach, uint32_t minpgsz)
 					if(elfmachs[i].e_machine == e_machine && !strcmp(mach, elfmachs[i].mach))
 						break;
 				if(i == nelem(elfmachs)){
-					print("elf64ldseg: e_machine %d incorrect for host %s\n", e_machine, mach);
+					pprint("elf64ldseg: e_machine %d incorrect for host %s\n", e_machine, mach);
 					error(Ebadexec);
 				}
 			}
@@ -353,18 +355,18 @@ elf64ldseg(Chan *c, uintptr_t *entryp, Ldseg **rp, char *mach, uint32_t minpgsz)
 			phentsize = get16(ehdr.e_phentsize);
 
 			if(phentsize*phnum > minpgsz){
-				print("elf64ldseg: phentsize %d phnum %d exceeds page size %d\n", phentsize, phnum, minpgsz);
+				pprint("elf64ldseg: phentsize %d phnum %d exceeds page size %d\n", phentsize, phnum, minpgsz);
 				error(Ebadexec);
 			}
 
 			phbuf = malloc(phentsize*phnum);
 			if(phbuf == nil){
-				print("elf64ldseg: malloc fail\n");
+				pprint("elf64ldseg: malloc fail\n");
 				error(Ebadexec);
 			}
 
 			if(c->dev->read(c, phbuf, phentsize*phnum, phoff) != phentsize*phnum){
-				print("elf64ldseg: read program header fail\n");
+				pprint("elf64ldseg: read program header fail\n");
 				error(Ebadexec);
 			}
 
@@ -378,7 +380,7 @@ elf64ldseg(Chan *c, uintptr_t *entryp, Ldseg **rp, char *mach, uint32_t minpgsz)
 			}
 			ldseg = malloc(si * sizeof ldseg[0]);
 			if(ldseg == nil){
-				print("elf64ldseg: malloc fail\n");
+				pprint("elf64ldseg: malloc fail\n");
 				error(Ebadexec);
 			}
 
@@ -407,22 +409,22 @@ elf64ldseg(Chan *c, uintptr_t *entryp, Ldseg **rp, char *mach, uint32_t minpgsz)
 						ldseg[si].permissions |= SgExecute;
 
 					if(memsz < filesz){
-						print("elf64ldseg: memsz %d < filesz %d\n", memsz, filesz);
+						pprint("elf64ldseg: memsz %d < filesz %d\n", memsz, filesz);
 						error(Ebadexec);
 					}
 
 					if(!ispow2(align)){
-						print("elf64ldseg: align 0x%x not a power of 2\n", align);
+						pprint("elf64ldseg: align 0x%x not a power of 2\n", align);
 						error(Ebadexec);
 					}
 
 					if(align < minpgsz){
-						print("elf64ldseg: align 0x%x < minpgsz 0x%x\n", align, minpgsz);
+						pprint("elf64ldseg: align 0x%x < minpgsz 0x%x\n", align, minpgsz);
 						error(Ebadexec);
 					}
 
 					if(offset & (align-1) != vaddr & (align-1)){
-						print("elf64ldseg: va offset 0x%x != file offset 0x%x (align 0x%x)\n",
+						pprint("elf64ldseg: va offset 0x%x != file offset 0x%x (align 0x%x)\n",
 							offset & (align-1),
 							vaddr & (align-1),
 							align
@@ -450,7 +452,7 @@ elf64ldseg(Chan *c, uintptr_t *entryp, Ldseg **rp, char *mach, uint32_t minpgsz)
 							lda->pg0vaddr, lda->pg0vaddr + lda->pg0off + lda->memsz,
 							ldb->pg0vaddr, ldb->pg0vaddr + ldb->pg0off + ldb->memsz
 						)){
-							print("elf64ldseg: load segs %p:%p and %p:%p ovelap\n",
+							pprint("elf64ldseg: load segs %p:%p and %p:%p ovelap\n",
 								lda->pg0vaddr, lda->pg0vaddr + lda->pg0off + lda->memsz,
 								ldb->pg0vaddr, ldb->pg0vaddr + ldb->pg0off + ldb->memsz
 							);
@@ -460,7 +462,7 @@ elf64ldseg(Chan *c, uintptr_t *entryp, Ldseg **rp, char *mach, uint32_t minpgsz)
 				}
 			}
 		} else {
-			print("elf64ldseg: not elfclass64\n");
+			pprint("elf64ldseg: not elfclass64\n");
 			error(Ebadexec);
 		}
 	}

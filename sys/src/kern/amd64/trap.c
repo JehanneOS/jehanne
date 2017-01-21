@@ -332,7 +332,7 @@ trap(Ureg* ureg)
 				preempted();
 		}
 	}
-	else if(vno <= nelem(excname) && user){
+	else if(vno < nelem(excname) && user){
 		spllo();
 		if(vno == 0xd)	/* General Protection */
 			dumpregs(ureg);

@@ -1808,10 +1808,19 @@ msgRecv(TlsConnection *c, Msg *m)
 		break;
 	case HFinished:
 		m->u.finished.n = c->finished.n;
-		if(n < m->u.finished.n)
-			goto Short;
-		memmove(m->u.finished.verify, p, m->u.finished.n);
-		n -= m->u.finished.n;
+		switch(m->u.finished.n){
+		case TLSFinishedLen:
+		case SSL3FinishedLen:
+			if(n < m->u.finished.n)
+				goto Short;
+			memmove(m->u.finished.verify, p, m->u.finished.n);
+			n -= m->u.finished.n;
+			break;
+		case BeforeSetVersion:
+		default:
+			tlsError(c, EDecodeError, "unexpected HFinished length");
+			goto Err;
+		}
 		break;
 	}
 

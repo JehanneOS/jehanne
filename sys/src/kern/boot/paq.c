@@ -60,8 +60,10 @@ connectpaq(void)
 		*argp++ = "/dev/flash/ramdisk";
 		*argp = 0;
 
-		dup(p[0], 0);
-		dup(p[1], 1);
+		if(dup(p[0], 0) != 0)
+			fatal("dup(p[0], 0)");
+		if(dup(p[1], 1) != 1)
+			fatal("dup(p[1], 1)");
 		close(p[0]);
 		close(p[1]);
 		exec("/boot/paqfs", (const char**)arg);

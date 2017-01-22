@@ -135,3 +135,37 @@
 
 #define	KVATOP	(KSEG0&KSEG1&KSEG2)
 #define	iskaddr(a)	(((uintptr_t)(a)&KVATOP) == KVATOP)
+
+/*
+ *  known x86 segments (in GDT) and their selectors
+ */
+#define	NULLSEG	0	/* null segment */
+#define	KDSEG	1	/* kernel data/stack */
+#define	KESEG	2	/* kernel executable */	
+#define	UDSEG	3	/* user data/stack */
+#define	UESEG	4	/* user executable */
+#define	TSSSEG	5	/* task segment */
+#define	APMCSEG		6	/* APM code segment */
+#define	APMCSEG16	7	/* APM 16-bit code segment */
+#define	APMDSEG		8	/* APM data segment */
+#define	KESEG16		9	/* kernel executable 16-bit */
+#define	LDTSEG		10	/* local descriptor table */
+#define	PROCSEG0	11	/* per process descriptor0 */
+#define	NPROCSEG	3	/* number of per process descriptors */
+#define	NGDT		14	/* number of GDT entries required */
+
+#define	SELGDT	(0<<2)	/* selector is in gdt */
+#define	SELLDT	(1<<2)	/* selector is in ldt */
+
+#define	SELECTOR(i, t, p)	(((i)<<3) | (t) | (p))
+
+#define	NULLSEL	SELECTOR(NULLSEG, SELGDT, 0)
+#define	KDSEL	SELECTOR(KDSEG, SELGDT, 0)
+#define	KESEL	SELECTOR(KESEG, SELGDT, 0)
+#define	UESEL	SELECTOR(UESEG, SELGDT, 3)
+#define	UDSEL	SELECTOR(UDSEG, SELGDT, 3)
+#define	TSSSEL	SELECTOR(TSSSEG, SELGDT, 0)
+#define	APMCSEL 	SELECTOR(APMCSEG, SELGDT, 0)
+#define	APMCSEL16	SELECTOR(APMCSEG16, SELGDT, 0)
+#define	APMDSEL		SELECTOR(APMDSEG, SELGDT, 0)
+#define	LDTSEL	SELECTOR(LDTSEG, SELGDT, 0)

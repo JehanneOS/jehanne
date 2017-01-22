@@ -23,6 +23,7 @@ RMap	rmapram = {"physical memory"};
 
 static RMap	rmapunavail = {"unavailable physical addresses"};
 
+
 /*
  * called before first call to asmmapinit/asmmodinit or e820,
  * to mark the kernel text and data out of bounds.
@@ -263,3 +264,4 @@ asmmodinit(uint32_t start, uint32_t end, char* _1)
 		sys->pmstart = end;
 	}
 }
+

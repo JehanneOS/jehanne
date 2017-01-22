@@ -20,6 +20,13 @@
 #define SUPPORT_MWAIT	(m->cpuinfo[1][2] & (1<<3))
 void	onIdleSpin(void);
 
+int	bios32call(BIOS32ci*, uint16_t[3]);
+int	bios32ci(BIOS32si*, BIOS32ci*);
+void	bios32close(BIOS32si*);
+BIOS32si* bios32open(char*);
+void*	sigsearch(char*);
+int	checksum(void *v, int n);
+
 void	mouseenable(void);
 int	mousecmd(int);
 
@@ -130,7 +137,7 @@ uint32_t	pcibarsize(Pcidev*, int);
 int	pcicap(Pcidev*, int);
 int	pcicfgr8(Pcidev*, int);
 int	pcicfgr16(Pcidev*, int);
-uint32_t	pcicfgr32(Pcidev*, int);
+int	pcicfgr32(Pcidev*, int);
 void	pcicfgw8(Pcidev*, int, int);
 void	pcicfgw16(Pcidev*, int, int);
 void	pcicfgw32(Pcidev*, int, int);

@@ -358,70 +358,6 @@ mpparse(PCMP* pcmp)
 	}
 }
 
-static int
-sigchecksum(void* address, int length)
-{
-	uint8_t *p, sum;
-
-	sum = 0;
-	for(p = address; length-- > 0; p++)
-		sum += *p;
-
-	return sum;
-}
-
-static void*
-sigscan(uint8_t* address, int length, char* signature)
-{
-	uint8_t *e, *p;
-	int siglength;
-
-	DBG("check for %s in system base memory @ %#p\n", signature, address);
-
-	e = address+length;
-	siglength = strlen(signature);
-	for(p = address; p+siglength < e; p += 16){
-		if(memcmp(p, signature, siglength))
-			continue;
-		return p;
-	}
-
-	return nil;
-}
-
-static uintmem mptab[] = {0, 1024, 0x9fc00, 1024, 0xf0000, 0x10000};
-
-static void*
-sigsearch(char* signature)
-{
-	uintmem p;
-	int i;
-	uint8_t *bda;
-	void *r;
-
-	/*
-	 * Search for the data structure:
-	 * 1) within the first KiB of the Extended BIOS Data Area (EBDA), or
-	 * 2) within the last KiB of system base memory if the EBDA segment
-	 *    is undefined, or
-	 * 3) within the BIOS ROM address space between 0xf0000 and 0xfffff
-	 */
-
-	for(i = 0; i < nelem(mptab); i += 2)
-		if(r = sigscan(KADDR(mptab[i]), mptab[i+1], signature))
-			return r;
-	bda = KADDR(0x400);
-	if((p = (bda[0x0F]<<8|bda[0x0E])<<4) != 0){
-		if((r = sigscan(KADDR(p), 1024, signature)) != nil)
-			return r;
-	}
-	if((p = ((bda[0x14]<<8)|bda[0x13])*1024) != 0){
-		if((r = sigscan(KADDR(p-1024), 1024, signature)) != nil)
-			return r;
-	}
-	return nil;
-}
-
 void
 mpsinit(void)
 {
@@ -441,7 +377,7 @@ mpsinit(void)
 	}
 	if(mp->revision != 1 && mp->revision != 4)
 		return;
-	if(sigchecksum(mp, mp->length*16) != 0)
+	if(checksum(mp, mp->length*16) != 0)
 		return;
 
 	if((pcmp = vmap(l32get(mp->addr), sizeof(PCMP))) == nil)
@@ -454,7 +390,7 @@ mpsinit(void)
 	vunmap(pcmp, sizeof(PCMP));
 	if((pcmp = vmap(l32get(mp->addr), n)) == nil)
 		return;
-	if(sigchecksum(pcmp, l16get(pcmp->length)) != 0){
+	if(checksum(pcmp, l16get(pcmp->length)) != 0){
 		vunmap(pcmp, n);
 		return;
 	}
@@ -472,7 +408,7 @@ mpsinit(void)
 	}
 	if(pcmp->xchecksum != 0){
 		p = ((uint8_t*)pcmp) + l16get(pcmp->length);
-		i = sigchecksum(p, l16get(pcmp->xlength));
+		i = checksum(p, l16get(pcmp->xlength));
 		if(((i+pcmp->xchecksum) & 0xff) != 0){
 			print("extended table checksums to %#ux\n", i);
 			vunmap(pcmp, n);

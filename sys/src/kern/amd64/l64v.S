@@ -262,6 +262,15 @@ wbinvd:
 	ret
 
 /*
+ * BIOS32.
+ */
+.global bios32call
+bios32call:
+	xorl	%eax, %eax
+	incl	%eax
+	ret
+
+/*
  * Serialisation.
  */
 .global lfence

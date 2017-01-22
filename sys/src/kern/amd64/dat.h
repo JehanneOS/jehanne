@@ -15,6 +15,8 @@
  * You should have received a copy of the GNU General Public License
  * along with Jehanne.  If not, see <http://www.gnu.org/licenses/>.
  */
+typedef struct BIOS32si	BIOS32si;
+typedef struct BIOS32ci	BIOS32ci;
 typedef struct Fxsave Fxsave;
 typedef struct IOConf IOConf;
 typedef struct ISAConf ISAConf;
@@ -40,6 +42,7 @@ typedef uint64_t uintmem;			/* horrible name */
 typedef struct Ureg Ureg;
 typedef struct Vctl Vctl;
 
+#pragma incomplete BIOS32si
 #pragma incomplete Ureg
 
 #define MAXSYSARG	5	/* for mount(fd, afd, mpt, flag, arg) */
@@ -339,6 +342,15 @@ struct ISAConf {
 	int		nopt;
 	char*		opt[NISAOPT];
 };
+
+typedef struct BIOS32ci {		/* BIOS32 Calling Interface */
+	uint32_t	eax;
+	uint32_t	ebx;
+	uint32_t	ecx;
+	uint32_t	edx;
+	uint32_t	esi;
+	uint32_t	edi;
+} BIOS32ci;
 
 /*
  * The Mach structures must be available via the per-processor

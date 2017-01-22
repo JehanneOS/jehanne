@@ -271,35 +271,36 @@ struct Pcisiz
 typedef struct Pcidev Pcidev;
 struct Pcidev
 {
-	int	tbdf;			/* type+bus+device+function */
-	uint16_t	vid;			/* vendor ID */
-	uint16_t	did;			/* device ID */
+	int		tbdf;		/* type+bus+device+function */
+	uint16_t	vid;		/* vendor ID */
+	uint16_t	did;		/* device ID */
 	uint16_t	svid;		/* subsystem vid */
 	uint16_t	sdid;		/* subsystem did */
 
 	uint16_t	pcr;
 
-	uint8_t	rid;
-	uint8_t	ccrp;
-	uint8_t	ccru;
-	uint8_t	ccrb;
-	uint8_t	cls;
-	uint8_t	ltr;
+	uint8_t		rid;
+	uint8_t		ccrp;
+	uint8_t		ccru;
+	uint8_t		ccrb;
+	uint8_t		cls;
+	uint8_t		ltr;
 
 	struct {
-		uint32_t	bar;		/* base address */
-		int	size;
+		uint32_t	bar;	/* base address */
+		int		size;
 	} mem[6];
 
 	struct {
 		uint32_t	bar;
-		int	size;
+		int		size;
 	} rom;
 	uint8_t	intl;			/* interrupt line */
 
 	Pcidev*	list;
 	Pcidev*	link;			/* next device on this bno */
 
+	Pcidev*	parent;			/* up a bus */
 	Pcidev*	bridge;			/* down a bus */
 	struct {
 		uint32_t	bar;
@@ -307,7 +308,7 @@ struct Pcidev
 	} ioa, mema;
 
 	int	pmrb;			/* power management register block */
-	void*	xcfg;		/* PCIe configuration block */
+	void*	xcfg;			/* PCIe configuration block */
 };
 
 #define PCIWINDOW	0

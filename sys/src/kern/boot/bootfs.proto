@@ -32,6 +32,7 @@ cmd
 		ipconfig 500 sys sys /arch/amd64/cmd/ip/ipconfig
 	hmi
 		screenconsole 500 sys sys /arch/amd64/cmd/hmi/screenconsole
+		comconsole 500 sys sys /arch/amd64/cmd/hmi/comconsole
 	usb
 		usbd 500 sys sys /arch/amd64/cmd/usb/usbd
 		disk 500 sys sys /arch/amd64/cmd/usb/disk

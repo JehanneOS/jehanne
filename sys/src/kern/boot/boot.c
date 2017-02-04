@@ -55,9 +55,14 @@ boot(int argc, char *argv[])
 	/*
 	 *  start /dev/cons
 	 */
-	if(startconsole() < 0)
+	if(readfile("#ec/console", buf, sizeof(cputype)) >= 0
+	&& strcmp("comconsole", buf) == 0){
 		if(startcomconsole() < 0)
 			fatal("no console found");
+	} else if(startconsole() < 0){
+		if(startcomconsole() < 0)
+			fatal("no console found");
+	}
 
 	/*
 	 * init will reinitialize its namespace.

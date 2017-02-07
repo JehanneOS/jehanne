@@ -199,6 +199,11 @@ auth_proxy(int fd, AuthGetkey *getkey, char *fmt, ...)
 	p = vsmprint(fmt, arg);
 	va_end(arg);
 
+	if(p == nil){
+		werrstr("not enough memory: %r");
+		return nil;
+	}
+
 	ai = nil;
 	afd = open("/mnt/factotum/rpc", ORDWR);
 	if(afd < 0){

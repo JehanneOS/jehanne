@@ -710,7 +710,10 @@ extern int		dirmodefmt(Fmt*);
 
 extern char *argv0;
 /* #define	ARGBEGIN	for((argv0||(argv0=*argv)),argv++,argc--;\ */
-#define ARGBEGIN        for((argv0?0:(argv0=*argv)),argv++,argc--;\
+#define ARGBEGIN        if(argv0==nil){\
+				argv0=*argv;\
+			}\
+			for(argv++,argc--;\
 			    argv[0] && argv[0][0]=='-' && argv[0][1];\
 			    argc--, argv++) {\
 				char *_args, *_argt;\

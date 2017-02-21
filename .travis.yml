@@ -10,6 +10,7 @@ cache:
 before_install:
 - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
 - sudo add-apt-repository ppa:ubuntu-lxc/lxd-stable -y
+- sudo add-apt-repository ppa:jacob/virtualisation -y
 - sudo apt-get update
 - sudo apt-get install -y --force-yes gcc-4.8 rc golang build-essential flex bison qemu-system syslinux
 - git submodule update --init --recursive --remote

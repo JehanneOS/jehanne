@@ -17,13 +17,13 @@
  * designed for formats which themselves call fmt
  */
 int
-fmtprint(Fmt *f, const char *fmt, ...)
+jehanne_fmtprint(Fmt *f, const char *fmt, ...)
 {
 	va_list va;
 	int n;
 
 	va_start(va, fmt);
-	n = fmtvprint(f, fmt, va);
+	n = jehanne_fmtvprint(f, fmt, va);
 	va_end(va);
 	return n;
 }

@@ -19,17 +19,17 @@ _threadmalloc(int32_t size, int z)
 {
 	void *m;
 
-	m = malloc(size);
+	m = jehanne_malloc(size);
 	if (m == nil)
-		sysfatal("Malloc of size %ld failed: %r", size);
-	setmalloctag(m, getcallerpc());
+		jehanne_sysfatal("Malloc of size %ld failed: %r", size);
+	jehanne_setmalloctag(m, jehanne_getcallerpc());
 	totalmalloc += size;
 	if (size > 100000000) {
-		fprint(2, "Malloc of size %ld, total %ld\n", size, totalmalloc);
+		jehanne_fprint(2, "Malloc of size %ld, total %ld\n", size, totalmalloc);
 		abort();
 	}
 	if (z)
-		memset(m, 0, size);
+		jehanne_memset(m, 0, size);
 	return m;
 }
 
@@ -40,11 +40,11 @@ _threadsysfatal(char *fmt, ...)
 	char buf[1024];	/* size doesn't matter; we're about to exit */
 
 	va_start(arg, fmt);
-	vseprint(buf, buf+sizeof(buf), fmt, arg);
+	jehanne_vseprint(buf, buf+sizeof(buf), fmt, arg);
 	va_end(arg);
 	if(argv0)
-		fprint(2, "%s: %s\n", argv0, buf);
+		jehanne_fprint(2, "%s: %s\n", argv0, buf);
 	else
-		fprint(2, "%s\n", buf);
+		jehanne_fprint(2, "%s\n", buf);
 	threadexitsall(buf);
 }

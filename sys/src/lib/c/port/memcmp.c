@@ -11,7 +11,7 @@
 #include	<libc.h>
 
 int
-memcmp(const void *a1, const void *a2, uint32_t n)
+jehanne_memcmp(const void *a1, const void *a2, uint32_t n)
 {
 	const char *s1, *s2;
 	uint32_t c1, c2;

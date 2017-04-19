@@ -11,7 +11,7 @@
 #include <libc.h>
 
 int
-utflen(const char *s)
+jehanne_utflen(const char *s)
 {
 	int c;
 	int32_t n;
@@ -25,7 +25,7 @@ utflen(const char *s)
 				return n;
 			s++;
 		} else
-			s += chartorune(&rune, s);
+			s += jehanne_chartorune(&rune, s);
 		n++;
 	}
 }

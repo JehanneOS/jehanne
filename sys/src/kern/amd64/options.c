@@ -58,11 +58,11 @@ confoptions(void)
 	}
 	*p = 0;
 
-	n = getfields(cp, line, MAXCONF, 1, "\n");
+	n = jehanne_getfields(cp, line, MAXCONF, 1, "\n");
 	for(i = 0; i < n; i++){
 		if(*line[i] == '#')
 			continue;
-		cp = strchr(line[i], '=');
+		cp = jehanne_strchr(line[i], '=');
 		if(cp == nil)
 			continue;
 		*cp++ = '\0';
@@ -78,7 +78,7 @@ getconf(char *name)
 	int i;
 
 	for(i = 0; i < nconf; i++)
-		if(cistrcmp(confname[i], name) == 0)
+		if(jehanne_cistrcmp(confname[i], name) == 0)
 			return confval[i];
 	return 0;
 }
@@ -101,29 +101,29 @@ isaconfig(char *class, int ctlrno, ISAConf *isa)
 	char cc[32], *p;
 	int i;
 
-	snprint(cc, sizeof cc, "%s%d", class, ctlrno);
+	jehanne_snprint(cc, sizeof cc, "%s%d", class, ctlrno);
 	p = getconf(cc);
 	if(p == nil)
 		return 0;
 
 	isa->type = "";
-	isa->nopt = tokenize(p, isa->opt, NISAOPT);
+	isa->nopt = jehanne_tokenize(p, isa->opt, NISAOPT);
 	for(i = 0; i < isa->nopt; i++){
 		p = isa->opt[i];
-		if(cistrncmp(p, "type=", 5) == 0)
+		if(jehanne_cistrncmp(p, "type=", 5) == 0)
 			isa->type = p + 5;
-		else if(cistrncmp(p, "port=", 5) == 0)
-			isa->port = strtoul(p+5, &p, 0);
-		else if(cistrncmp(p, "irq=", 4) == 0)
-			isa->irq = strtoul(p+4, &p, 0);
-		else if(cistrncmp(p, "dma=", 4) == 0)
-			isa->dma = strtoul(p+4, &p, 0);
-		else if(cistrncmp(p, "mem=", 4) == 0)
-			isa->mem = strtoul(p+4, &p, 0);
-		else if(cistrncmp(p, "size=", 5) == 0)
-			isa->size = strtoul(p+5, &p, 0);
-		else if(cistrncmp(p, "freq=", 5) == 0)
-			isa->freq = strtoul(p+5, &p, 0);
+		else if(jehanne_cistrncmp(p, "port=", 5) == 0)
+			isa->port = jehanne_strtoul(p+5, &p, 0);
+		else if(jehanne_cistrncmp(p, "irq=", 4) == 0)
+			isa->irq = jehanne_strtoul(p+4, &p, 0);
+		else if(jehanne_cistrncmp(p, "dma=", 4) == 0)
+			isa->dma = jehanne_strtoul(p+4, &p, 0);
+		else if(jehanne_cistrncmp(p, "mem=", 4) == 0)
+			isa->mem = jehanne_strtoul(p+4, &p, 0);
+		else if(jehanne_cistrncmp(p, "size=", 5) == 0)
+			isa->size = jehanne_strtoul(p+5, &p, 0);
+		else if(jehanne_cistrncmp(p, "freq=", 5) == 0)
+			isa->freq = jehanne_strtoul(p+5, &p, 0);
 	}
 	return 1;
 }

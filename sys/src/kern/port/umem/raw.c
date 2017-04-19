@@ -52,7 +52,7 @@ void
 rawmem_init(void)
 {
 	areas_allocated = 8;
-	memory_areas = malloc(areas_allocated*sizeof(RawMemory));
+	memory_areas = jehanne_malloc(areas_allocated*sizeof(RawMemory));
 	if(memory_areas == nil)
 		panic("rawmem_init: out of memory");
 	rawmem_register("shared", 0, SgShared, -1);
@@ -110,7 +110,7 @@ LookupArea:
 	}
 	if(areas_used == areas_allocated){
 		areas_allocated += 8;
-		tmp = realloc(memory_areas, areas_allocated*sizeof(RawMemory));
+		tmp = jehanne_realloc(memory_areas, areas_allocated*sizeof(RawMemory));
 		if(tmp == nil)
 			goto RegisterFailed;
 		memory_areas = tmp;
@@ -119,11 +119,11 @@ LookupArea:
 	if(pa == 0){
 		tmp = memory_areas+areas_used-virtual_areas;
 		while(tmp < memory_areas+areas_used){
-			if(strcmp(tmp->name, name) > 0)
+			if(jehanne_strcmp(tmp->name, name) > 0)
 				break;
 			++tmp;
 		}
-		memmove(tmp+1, tmp, sizeof(RawMemory)*(memory_areas+areas_used-tmp));
+		jehanne_memmove(tmp+1, tmp, sizeof(RawMemory)*(memory_areas+areas_used-tmp));
 		++virtual_areas;
 	} else {
 		tmp = memory_areas;
@@ -137,7 +137,7 @@ LookupArea:
 				panic("rawmem_register: '%s' overlaps with '%s', pc %#p", name, tmp->name, getcallerpc());
 			++tmp;
 		}
-		memmove(tmp+1, tmp, sizeof(RawMemory)*(memory_areas+areas_used-tmp));
+		jehanne_memmove(tmp+1, tmp, sizeof(RawMemory)*(memory_areas+areas_used-tmp));
 	}
 
 	tmp->name = name;	/* TODO: ensure this is a readonly constant */
@@ -179,7 +179,7 @@ rawmem_find(char** name, uintptr_t *pa, unsigned int *attr, uintptr_t *size)
 	while(result == nil && b < t)
 	{
 		i = b + ((t - b)/2);
-		if((c = strcmp(memory_areas[i].name, *name)) == 0)
+		if((c = jehanne_strcmp(memory_areas[i].name, *name)) == 0)
 			result = &memory_areas[i];
 		else if(c < 0)
 			b = i + 1;
@@ -188,7 +188,7 @@ rawmem_find(char** name, uintptr_t *pa, unsigned int *attr, uintptr_t *size)
 	}
 	t = areas_used - virtual_areas;
 	for(i = 0; result == nil && i < t; ++i)
-		if(strcmp(*name, memory_areas[i].name) == 0)
+		if(jehanne_strcmp(*name, memory_areas[i].name) == 0)
 			result = &memory_areas[i];
 	if(result != nil){
 		*name = memory_areas[i].name;

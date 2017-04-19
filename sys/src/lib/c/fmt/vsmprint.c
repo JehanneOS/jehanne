@@ -22,12 +22,12 @@ fmtStrFlush(Fmt *f)
 	n = (int)(uintptr_t)f->farg;
 	n *= 2;
 	s = f->start;
-	f->start = realloc(s, n);
+	f->start = jehanne_realloc(s, n);
 	if(f->start == nil){
 		f->farg = nil;
 		f->to = nil;
 		f->stop = nil;
-		free(s);
+		jehanne_free(s);
 		return 0;
 	}
 	f->farg = (void*)(uintptr_t)n;
@@ -37,17 +37,17 @@ fmtStrFlush(Fmt *f)
 }
 
 int
-fmtstrinit(Fmt *f)
+jehanne_fmtstrinit(Fmt *f)
 {
 	int n;
 
-	memset(f, 0, sizeof *f);
+	jehanne_memset(f, 0, sizeof *f);
 	f->runes = 0;
 	n = 32;
-	f->start = malloc(n);
+	f->start = jehanne_malloc(n);
 	if(f->start == nil)
 		return -1;
-	setmalloctag(f->start, getcallerpc());
+	jehanne_setmalloctag(f->start, jehanne_getcallerpc());
 	f->to = f->start;
 	f->stop = (char*)f->start + n - 1;
 	f->flush = fmtStrFlush;
@@ -60,24 +60,24 @@ fmtstrinit(Fmt *f)
  * print into an allocated string buffer
  */
 char*
-vsmprint(const char *fmt, va_list args)
+jehanne_vsmprint(const char *fmt, va_list args)
 {
 	Fmt f;
 	int n;
 
-	if(fmtstrinit(&f) < 0)
+	if(jehanne_fmtstrinit(&f) < 0)
 		return nil;
 	//f.args = args;
 	va_copy(f.args,args);
-	n = dofmt(&f, fmt);
+	n = jehanne_dofmt(&f, fmt);
 	va_end(f.args);
 	if(f.start == nil)		/* realloc failed? */
 		return nil;
 	if(n < 0){
-		free(f.start);
+		jehanne_free(f.start);
 		return nil;
 	}
-	setmalloctag(f.start, getcallerpc());
+	jehanne_setmalloctag(f.start, jehanne_getcallerpc());
 	*(char*)f.to = '\0';
 	return f.start;
 }

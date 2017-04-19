@@ -44,7 +44,7 @@ chandial(char *dest, char *local, char *dir, Chan **ctlp)
 		ds.netdir = "/net";
 
 	/* no connection server, don't translate */
-	snprint(clone, sizeof(clone), "%s/%s/clone", ds.netdir, ds.proto);
+	jehanne_snprint(clone, sizeof(clone), "%s/%s/clone", ds.netdir, ds.proto);
 	return call(clone, ds.rem, &ds);
 }
 
@@ -66,19 +66,19 @@ call(char *clone, char *dest, DS *ds)
 	name[n] = 0;
 	for(p = name; *p == ' '; p++)
 		;
-	sprint(name, "%lud", strtoul(p, 0, 0));
-	p = strrchr(clone, '/');
+	jehanne_sprint(name, "%lud", jehanne_strtoul(p, 0, 0));
+	p = jehanne_strrchr(clone, '/');
 	*p = 0;
 	if(ds->dir)
-		snprint(ds->dir, Maxpath, "%s/%s", clone, name);
-	snprint(data, sizeof(data), "%s/%s/data", clone, name);
+		jehanne_snprint(ds->dir, Maxpath, "%s/%s", clone, name);
+	jehanne_snprint(data, sizeof(data), "%s/%s/data", clone, name);
 
 	/* connect */
 	if(ds->local)
-		snprint(name, sizeof(name), "connect %s %s", dest, ds->local);
+		jehanne_snprint(name, sizeof(name), "connect %s %s", dest, ds->local);
 	else
-		snprint(name, sizeof(name), "connect %s", dest);
-	cchan->dev->write(cchan, name, strlen(name), 0);
+		jehanne_snprint(name, sizeof(name), "connect %s", dest);
+	cchan->dev->write(cchan, name, jehanne_strlen(name), 0);
 
 	/* open data connection */
 	dchan = namec(data, Aopen, ORDWR, 0);
@@ -99,10 +99,10 @@ _dial_string_parse(char *str, DS *ds)
 {
 	char *p, *p2;
 
-	strncpy(ds->buf, str, Maxstring);
+	jehanne_strncpy(ds->buf, str, Maxstring);
 	ds->buf[Maxstring-1] = 0;
 
-	p = strchr(ds->buf, '!');
+	p = jehanne_strchr(ds->buf, '!');
 	if(p == 0) {
 		ds->netdir = 0;
 		ds->proto = "net";

@@ -11,7 +11,7 @@
 #include <libc.h>
 
 double
-fabs(double arg)
+jehanne_fabs(double arg)
 {
 
 	if(arg < 0)

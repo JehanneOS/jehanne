@@ -19,7 +19,7 @@
 #include <libc.h>
 
 int
-dup(int oldfd, int newfd)
+jehanne_dup(int oldfd, int newfd)
 {
 	FdPair in, out;
 	long f;

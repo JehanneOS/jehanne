@@ -13,6 +13,7 @@
 		"Install": "/arch/$ARCH/cmd/",
 		"Program": "rc",
 		"SourceFiles": [
+			"/sys/src/lib/c/lib9.c",
 			"code.c",
 			"exec.c",
 			"getflags.c",

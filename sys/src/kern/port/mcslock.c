@@ -120,7 +120,7 @@ unlock(Lock *l)
 	LockEntry *ql;
 
 	if(l->head == nil){
-		print("unlock: not locked: pc %#p\n", getcallerpc());
+		jehanne_print("unlock: not locked: pc %#p\n", getcallerpc());
 		return;
 	}
 	ql = findle(l);

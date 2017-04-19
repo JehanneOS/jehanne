@@ -153,10 +153,10 @@ md4(uint8_t *p, uint32_t len, uint8_t *digest, MD4state *s)
 	uint8_t *e;
 
 	if(s == nil){
-		s = malloc(sizeof(*s));
+		s = jehanne_malloc(sizeof(*s));
 		if(s == nil)
 			return nil;
-		memset(s, 0, sizeof(*s));
+		jehanne_memset(s, 0, sizeof(*s));
 		s->malloced = 1;
 	}
 
@@ -174,7 +174,7 @@ md4(uint8_t *p, uint32_t len, uint8_t *digest, MD4state *s)
 		i = 64 - s->blen;
 		if(len < i)
 			i = len;
-		memmove(s->buf + s->blen, p, i);
+		jehanne_memmove(s->buf + s->blen, p, i);
 		len -= i;
 		s->blen += i;
 		p += i;
@@ -195,7 +195,7 @@ md4(uint8_t *p, uint32_t len, uint8_t *digest, MD4state *s)
 	/* save the left overs if not last call */
 	if(digest == 0){
 		if(len){
-			memmove(s->buf, p, len);
+			jehanne_memmove(s->buf, p, len);
 			s->blen += len;
 		}
 		return s;
@@ -209,7 +209,7 @@ md4(uint8_t *p, uint32_t len, uint8_t *digest, MD4state *s)
 		p = s->buf;
 		len = s->blen;
 	} else {
-		memmove(buf, p, len);
+		jehanne_memmove(buf, p, len);
 		p = buf;
 	}
 	s->len += len;
@@ -218,7 +218,7 @@ md4(uint8_t *p, uint32_t len, uint8_t *digest, MD4state *s)
 		i = 56 - len;
 	else
 		i = 120 - len;
-	memset(e, 0, i);
+	jehanne_memset(e, 0, i);
 	*e = 0x80;
 	len += i;
 
@@ -233,7 +233,7 @@ md4(uint8_t *p, uint32_t len, uint8_t *digest, MD4state *s)
 	/* return result and free state */
 	encode(digest, s->state, MD4dlen);
 	if(s->malloced == 1)
-		free(s);
+		jehanne_free(s);
 	return nil;
 }
 

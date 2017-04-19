@@ -15,7 +15,7 @@
  *  make an address, add the defaults
  */
 char *
-netmkaddr(const char *linear, const char *defnet, const char *defsrv)
+jehanne_netmkaddr(const char *linear, const char *defnet, const char *defsrv)
 {
 	static char addr[256];
 	char *cp;
@@ -23,21 +23,21 @@ netmkaddr(const char *linear, const char *defnet, const char *defsrv)
 	/*
 	 *  dump network name
 	 */
-	cp = strchr(linear, '!');
+	cp = jehanne_strchr(linear, '!');
 	if(cp == 0){
 		if(defnet==0){
 			if(defsrv)
-				snprint(addr, sizeof(addr), "net!%s!%s",
+				jehanne_snprint(addr, sizeof(addr), "net!%s!%s",
 					linear, defsrv);
 			else
-				snprint(addr, sizeof(addr), "net!%s", linear);
+				jehanne_snprint(addr, sizeof(addr), "net!%s", linear);
 		}
 		else {
 			if(defsrv)
-				snprint(addr, sizeof(addr), "%s!%s!%s", defnet,
+				jehanne_snprint(addr, sizeof(addr), "%s!%s!%s", defnet,
 					linear, defsrv);
 			else
-				snprint(addr, sizeof(addr), "%s!%s", defnet,
+				jehanne_snprint(addr, sizeof(addr), "%s!%s", defnet,
 					linear);
 		}
 		return addr;
@@ -46,7 +46,7 @@ netmkaddr(const char *linear, const char *defnet, const char *defsrv)
 	/*
 	 *  if there is already a service, use it
 	 */
-	cp = strchr(cp+1, '!');
+	cp = jehanne_strchr(cp+1, '!');
 	if(cp)
 		return (char *)linear;
 
@@ -55,7 +55,7 @@ netmkaddr(const char *linear, const char *defnet, const char *defsrv)
 	 */
 	if(defsrv == 0)
 		return (char *)linear;
-	snprint(addr, sizeof(addr), "%s!%s", linear, defsrv);
+	jehanne_snprint(addr, sizeof(addr), "%s!%s", linear, defsrv);
 
 	return addr;
 }

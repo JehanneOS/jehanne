@@ -28,7 +28,7 @@
 #define	maxf  10000
 
 double
-exp(double arg)
+jehanne_exp(double arg)
 {
 	double fract, temp1, temp2, xsq;
 	int ent;
@@ -38,12 +38,12 @@ exp(double arg)
 	if(arg < -maxf)
 		return 0;
 	if(arg > maxf)
-		return Inf(1);
+		return jehanne_Inf(1);
 	arg *= log2e;
-	ent = floor(arg);
+	ent = jehanne_floor(arg);
 	fract = (arg-ent) - 0.5;
 	xsq = fract*fract;
 	temp1 = ((p2*xsq+p1)*xsq+p0)*fract;
 	temp2 = ((xsq+q2)*xsq+q1)*xsq + q0;
-	return ldexp(sqrt2*(temp2+temp1)/(temp2-temp1), ent);
+	return jehanne_ldexp(sqrt2*(temp2+temp1)/(temp2-temp1), ent);
 }

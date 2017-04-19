@@ -16,7 +16,7 @@
  * along with Jehanne.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 
 #define MSGTPL "Hello from %d!"
 

@@ -19,7 +19,7 @@
 #include <libc.h>
 
 int
-pipe(int pipes[2])
+jehanne_pipe(int pipes[2])
 {
 	FdPair pset;
 	pset.aslong = remove("#0/pipes");

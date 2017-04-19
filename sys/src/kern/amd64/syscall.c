@@ -84,7 +84,7 @@ noted(Ureg* cur, uintptr_t arg0)
 	nur->flags &= (Of|Df|Sf|Zf|Af|Pf|Cf);
 	nur->flags |= cur->flags & ~(Of|Df|Sf|Zf|Af|Pf|Cf);
 
-	memmove(cur, nur, sizeof(Ureg));
+	jehanne_memmove(cur, nur, sizeof(Ureg));
 
 	switch((int)arg0){
 	case NCONT:
@@ -115,13 +115,13 @@ noted(Ureg* cur, uintptr_t arg0)
 		cur->sp = PTR2UINT(nf);
 		break;
 	default:
-		memmove(&note, &up->lastnote, sizeof(Note));
+		jehanne_memmove(&note, &up->lastnote, sizeof(Note));
 		qunlock(&up->debug);
 		pprint("suicide: bad arg %#p in noted: %s\n", arg0, note.msg);
 		pexit(note.msg, 0);
 		break;
 	case NDFLT:
-		memmove(&note, &up->lastnote, sizeof(Note));
+		jehanne_memmove(&note, &up->lastnote, sizeof(Note));
 		qunlock(&up->debug);
 		if(note.flag == NDebug)
 			pprint("suicide: %s\n", note.msg);
@@ -155,12 +155,12 @@ notify(Ureg* ureg)
 
 	up->notepending = 0;
 	up->notedeferred = 0;
-	memmove(&note, &up->note[0], sizeof(Note));
-	if(strncmp(note.msg, "sys:", 4) == 0){
-		l = strlen(note.msg);
+	jehanne_memmove(&note, &up->note[0], sizeof(Note));
+	if(jehanne_strncmp(note.msg, "sys:", 4) == 0){
+		l = jehanne_strlen(note.msg);
 		if(l > ERRMAX-sizeof(" pc=0x0123456789abcdef"))
 			l = ERRMAX-sizeof(" pc=0x0123456789abcdef");
-		sprint(note.msg+l, " pc=%#p", ureg->ip);
+		jehanne_sprint(note.msg+l, " pc=%#p", ureg->ip);
 	}
 
 	if(note.flag != NUser && (up->notified || up->notify == nil)){
@@ -195,10 +195,10 @@ notify(Ureg* ureg)
 	}
 
 	nf = UINT2PTR(sp);
-	memmove(&nf->ureg, ureg, sizeof(Ureg));
+	jehanne_memmove(&nf->ureg, ureg, sizeof(Ureg));
 	nf->old = up->ureg;
 	up->ureg = nf;
-	memmove(nf->msg, note.msg, ERRMAX);
+	jehanne_memmove(nf->msg, note.msg, ERRMAX);
 	nf->arg1 = nf->msg;
 	nf->arg0 = &nf->ureg;
 	ureg->di = (uintptr_t)nf->arg0;
@@ -210,8 +210,8 @@ notify(Ureg* ureg)
 	ureg->ip = PTR2UINT(up->notify);
 	up->notified = 1;
 	up->nnote--;
-	memmove(&up->lastnote, &note, sizeof(Note));
-	memmove(&up->note[0], &up->note[1], up->nnote*sizeof(Note));
+	jehanne_memmove(&up->lastnote, &note, sizeof(Note));
+	jehanne_memmove(&up->note[0], &up->note[1], up->nnote*sizeof(Note));
 
 	qunlock(&up->debug);
 	splx(s);
@@ -266,27 +266,27 @@ syscall(Syscalls scallnr, Ureg* ureg)
 		if(sp < (USTKTOP-PGSZ) || sp > (USTKTOP-sizeof(up->arg)-BY2SE))
 			validaddr(UINT2PTR(sp), sizeof(up->arg)+BY2SE, 0);
 
-		memmove(up->arg, UINT2PTR(sp+BY2SE), sizeof(up->arg));
+		jehanne_memmove(up->arg, UINT2PTR(sp+BY2SE), sizeof(up->arg));
 		up->psstate = tmp;
 
 		if(printallsyscalls || up->syscallq != nil){
 			str = syscallfmt(scallnr, ureg);
 			if(printallsyscalls){
-				print("%s\n", str);
+				jehanne_print("%s\n", str);
 			}
 			if(up->syscallq != nil){
 				qlock(&up->debug);
 				if(up->syscallq != nil){
 					notedefer();
 					if(!waserror()){
-						qwrite(up->syscallq, str, strlen(str));
+						qwrite(up->syscallq, str, jehanne_strlen(str));
 						poperror();
 					}
 					noteallow();
 				}
 				qunlock(&up->debug);
 			}
-			free(str);
+			jehanne_free(str);
 			startns = todget(nil);
 		}
 		dispatch_syscall(scallnr, ureg, &retv);
@@ -302,9 +302,9 @@ syscall(Syscalls scallnr, Ureg* ureg)
 				up->text, syscall_name(scallnr), up->syserrstr);
 	}
 	if(up->nerrlab){
-		print("bad errstack [%d]: %d extra\n", scallnr, up->nerrlab);
+		jehanne_print("bad errstack [%d]: %d extra\n", scallnr, up->nerrlab);
 		for(i = 0; i < NERR; i++)
-			print("sp=%#p pc=%#p\n",
+			jehanne_print("sp=%#p pc=%#p\n",
 				up->errlab[i].sp, up->errlab[i].pc);
 		panic("error stack");
 	}
@@ -319,21 +319,21 @@ syscall(Syscalls scallnr, Ureg* ureg)
 		stopns = todget(nil);
 		str = sysretfmt(scallnr, ureg, &retv, startns, stopns);
 		if(printallsyscalls){
-			print("%s\n", str);
+			jehanne_print("%s\n", str);
 		}
 		if(up->syscallq != nil){
 			qlock(&up->debug);
 			if(up->syscallq != nil){
 				notedefer();
 				if(!waserror()){
-					qwrite(up->syscallq, str, strlen(str));
+					qwrite(up->syscallq, str, jehanne_strlen(str));
 					poperror();
 				}
 				noteallow();
 			}
 			qunlock(&up->debug);
 		}
-		free(str);
+		jehanne_free(str);
 	}
 
 	if(up->procctl == Proc_tracesyscall){
@@ -382,7 +382,7 @@ sysexecstack(uintptr_t stack, int argc)
 	/* but we need to align the stack to 16 bytes, not 8
 	 */
 	sp -= sp & 8 ? 8 : 0;
-	//print("For %d args, sp is now %p\n", argc, sp);
+	//jehanne_print("For %d args, sp is now %p\n", argc, sp);
 	return sp;
 }
 
@@ -394,7 +394,7 @@ sysexecregs(uintptr_t entry, uint32_t ssize)
 
 	// We made sure it was correctly aligned in sysexecstack, above.
 	if (ssize & 0xf) {
-		print("your stack is wrong: stacksize is not 16-byte aligned: %d\n", ssize);
+		jehanne_print("your stack is wrong: stacksize is not 16-byte aligned: %d\n", ssize);
 		panic("misaligned stack in sysexecregs");
 	}
 	sp = (uintptr_t*)(USTKTOP - ssize);
@@ -436,7 +436,7 @@ sysrforkchild(Proc* child, Proc* parent)
 	child->sched.pc = PTR2UINT(sysrforkret);
 
 	cureg = (Ureg*)(child->sched.sp+STACKPAD*BY2SE);
-	memmove(cureg, parent->dbgreg, sizeof(Ureg));
+	jehanne_memmove(cureg, parent->dbgreg, sizeof(Ureg));
 
 	/* Things from bottom of syscall which were never executed */
 	child->psstate = 0;

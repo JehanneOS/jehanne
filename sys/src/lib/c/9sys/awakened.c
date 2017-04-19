@@ -20,7 +20,7 @@
 #include <libc.h>
 
 int
-awakened(int64_t wakeup)
+jehanne_awakened(int64_t wakeup)
 {
 	/* awake returns the ticks of the scheduled wakeup in negative,
 	 * thus a wakeup is in the past iff (-awake(0)) >= (-wakeup)
@@ -33,12 +33,12 @@ awakened(int64_t wakeup)
 }
 
 int
-forgivewkp(int64_t wakeup)
+jehanne_forgivewkp(int64_t wakeup)
 {
 	/* awake returns the ticks of the scheduled wakeup in negative,
 	 * and is able to remove a wakeup provided such value.
 	 *
-	 * forgivewkp() is just a wrapper to hide awake()'s details that
+	 * jehanne_forgivewkp() is just a wrapper to hide awake()'s details that
 	 * could change in the future and make client code easier to
 	 * read.
 	 *

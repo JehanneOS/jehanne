@@ -137,7 +137,7 @@ tssinit(uintptr_t sp)
 	Tss *tss;
 
 	tss = m->tss;
-	memset(tss, 0, sizeof(Tss));
+	jehanne_memset(tss, 0, sizeof(Tss));
 
 	tssrsp0(sp);
 
@@ -159,7 +159,7 @@ vsvminit(int size)
 		idtinit();
 
 	m->gdt = m->vsvm;
-	memmove(m->gdt, gdt64, sizeof(gdt64));
+	jehanne_memmove(m->gdt, gdt64, sizeof(gdt64));
 	m->tss = &m->vsvm[ROUNDUP(sizeof(gdt64), 16)];
 
 	sd = &((Sd*)m->gdt)[SiTSS];

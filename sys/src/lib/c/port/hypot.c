@@ -8,7 +8,7 @@
  */
 
 /*
- * hypot -- sqrt(p*p+q*q), but overflows only if the result does.
+ * hypot -- jehanne_sqrt(p*p+q*q), but overflows only if the result does.
  * See Cleve Moler and Donald Morrison,
  * ``Replacing Square Roots by Pythagorean Sums,''
  * IBM Journal of Research and Development,
@@ -19,7 +19,7 @@
 #include <libc.h>
 
 double
-hypot(double p, double q)
+jehanne_hypot(double p, double q)
 {
 	double r, s, pfac;
 

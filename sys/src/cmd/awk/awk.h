@@ -11,7 +11,7 @@ typedef double	Awkfloat;
 #define	DEBUG
 #ifdef	DEBUG
 			/* uses have to be doubly parenthesized */
-#	define	dprint(x)	if (dbg) print x
+#	define	dprint(x)	if (dbg) jehanne_print x
 #else
 #	define	dprint(x)
 #endif

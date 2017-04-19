@@ -11,7 +11,7 @@
 #include <libc.h>
 
 int
-abs(int a)
+jehanne_abs(int a)
 {
 	if(a < 0)
 		return -a;
@@ -19,7 +19,7 @@ abs(int a)
 }
 
 int32_t
-labs(int32_t a)
+jehanne_labs(int32_t a)
 {
 	if(a < 0)
 		return -a;

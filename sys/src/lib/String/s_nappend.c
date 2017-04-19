@@ -8,7 +8,7 @@
  */
 
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 #include "String.h"
 
 /* append a char array ( of up to n characters) to a String */

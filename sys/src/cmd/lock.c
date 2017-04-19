@@ -24,8 +24,8 @@ void	notifyf(void *c, char*);
 static void
 usage(void)
 {
-	fprint(2, "usage: %s [-dw] lock [command [file]...]\n", argv0);
-	exits("usage");
+	jehanne_fprint(2, "usage: %s [-dw] lock [command [file]...]\n", argv0);
+	jehanne_exits("usage");
 }
 
 static Waitmsg *
@@ -35,10 +35,10 @@ waitfor(int pid)
 	Waitmsg *w;
 
 	for (;;) {
-		w = wait();
+		w = jehanne_wait();
 		if (w == nil){
 			errstr(err, sizeof err);
-			if(strcmp(err, "interrupted") == 0)
+			if(jehanne_strcmp(err, "interrupted") == 0)
 				continue;
 			return nil;
 		}
@@ -54,24 +54,24 @@ openlock(char *lock)
 	Dir *dir;
 
 	/* first ensure that the lock file has the lock bit set */
-	dir = dirstat(lock);
+	dir = jehanne_dirstat(lock);
 	if (dir == nil)
-		sysfatal("can't stat %s: %r", lock);
+		jehanne_sysfatal("can't stat %s: %r", lock);
 	if (!(dir->mode & DMEXCL)) {
 		dir->mode |= DMEXCL;
 		dir->qid.type |= QTEXCL;
-		if (dirwstat(lock, dir) < 0)
-			sysfatal("can't make %s exclusive access: %r", lock);
+		if (jehanne_dirwstat(lock, dir) < 0)
+			jehanne_sysfatal("can't make %s exclusive access: %r", lock);
 	}
-	free(dir);
+	jehanne_free(dir);
 
 	if (lockwait)
 		while ((lckfd = open(lock, ORDWR)) < 0)
-			sleep(1000);
+			jehanne_sleep(1000);
 	else
 		lckfd = open(lock, ORDWR);
 	if (lckfd < 0)
-		sysfatal("can't open %s read/write: %r", lock);
+		jehanne_sysfatal("can't open %s read/write: %r", lock);
 	return lckfd;
 }
 
@@ -110,16 +110,16 @@ main(int argc, char *argv[])
 	/* set up lock and process to keep it alive */
 	lock = argv[0];
 	lckfd = openlock(lock);
-	lckpid = fork();
+	lckpid = jehanne_fork();
 	switch(lckpid){
 	case -1:
 		error("fork");
 	case 0:
 		/* keep lock alive until killed */
 		for (;;) {
-			sleep(60*1000);
+			jehanne_sleep(60*1000);
 			seek(lckfd, 0, 0);
-			fprint(lckfd, "\n");
+			jehanne_fprint(lckfd, "\n");
 		}
 	}
 
@@ -129,15 +129,15 @@ main(int argc, char *argv[])
 	case -1:
 		error("fork");
 	case 0:
-		fd = ocreate("/env/prompt", OWRITE, 0666);
+		fd = jehanne_ocreate("/env/prompt", OWRITE, 0666);
 		if (fd >= 0) {
-			fprint(fd, "%s%% ", lock);
+			jehanne_fprint(fd, "%s%% ", lock);
 			close(fd);
 		}
 		exec(cmd, args);
-		if(cmd[0] != '/' && strncmp(cmd, "./", 2) != 0 &&
-		   strncmp(cmd, "../", 3) != 0)
-			exec(smprint("/cmd/%s", cmd), args);
+		if(cmd[0] != '/' && jehanne_strncmp(cmd, "./", 2) != 0 &&
+		   jehanne_strncmp(cmd, "../", 3) != 0)
+			exec(jehanne_smprint("/cmd/%s", cmd), args);
 		error(cmd);
 	}
 
@@ -147,33 +147,33 @@ main(int argc, char *argv[])
 	if (w == nil)
 		error("wait");
 
-	postnote(PNPROC, lckpid, "die");
+	jehanne_postnote(PNPROC, lckpid, "die");
 	waitfor(lckpid);
 	if(w->msg[0]){
-		p = utfrune(w->msg, ':');
+		p = jehanne_utfrune(w->msg, ':');
 		if(p && p[1])
 			p++;
 		else
 			p = w->msg;
 		while (isspace(*p))
 			p++;
-		fprint(2, "%s: %s  # status=%s\n", argv0, cmd, p);
+		jehanne_fprint(2, "%s: %s  # status=%s\n", argv0, cmd, p);
 	}
-	exits(w->msg);
+	jehanne_exits(w->msg);
 }
 
 void
 error(char *s)
 {
-	fprint(2, "%s: %s: %r\n", argv0, s);
-	exits(s);
+	jehanne_fprint(2, "%s: %s: %r\n", argv0, s);
+	jehanne_exits(s);
 }
 
 void
 notifyf(void *a, char *s)
 {
 	USED(a);
-	if(strcmp(s, "interrupt") == 0)
+	if(jehanne_strcmp(s, "interrupt") == 0)
 		noted(NCONT);
 	noted(NDFLT);
 }

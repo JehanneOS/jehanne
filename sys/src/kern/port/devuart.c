@@ -195,15 +195,15 @@ uartreset(void)
 	}
 
 	if(uartnuart)
-		uart = malloc(uartnuart*sizeof(Uart*));
+		uart = jehanne_malloc(uartnuart*sizeof(Uart*));
 
 	uartndir = 1 + 3*uartnuart;
-	uartdir = malloc(uartndir * sizeof(Dirtab));
+	uartdir = jehanne_malloc(uartndir * sizeof(Dirtab));
 	if(uartnuart && (uart == nil || uartdir == nil)){
 		panic("uartreset: no memory");
 	}
 	dp = uartdir;
-	strcpy(dp->name, ".");
+	jehanne_strcpy(dp->name, ".");
 	mkqid(&dp->qid, 0, 0, QTDIR);
 	dp->length = 0;
 	dp->perm = DMDIR|0555;
@@ -211,15 +211,15 @@ uartreset(void)
 	p = uartlist;
 	for(i = 0; i < uartnuart; i++){
 		/* 3 directory entries per port */
-		sprint(dp->name, "eia%d", i);
+		jehanne_sprint(dp->name, "eia%d", i);
 		dp->qid.path = UARTQID(i, Qdata);
 		dp->perm = 0660;
 		dp++;
-		sprint(dp->name, "eia%dctl", i);
+		jehanne_sprint(dp->name, "eia%dctl", i);
 		dp->qid.path = UARTQID(i, Qctl);
 		dp->perm = 0660;
 		dp++;
-		sprint(dp->name, "eia%dstatus", i);
+		jehanne_sprint(dp->name, "eia%dstatus", i);
 		dp->qid.path = UARTQID(i, Qstat);
 		dp->perm = 0444;
 		dp++;
@@ -388,14 +388,14 @@ uartctl(Uart *p, char *cmd)
 	char *f[16];
 	int i, n, nf;
 
-	nf = tokenize(cmd, f, nelem(f));
+	nf = jehanne_tokenize(cmd, f, nelem(f));
 	for(i = 0; i < nf; i++){
-		if(strncmp(f[i], "break", 5) == 0){
+		if(jehanne_strncmp(f[i], "break", 5) == 0){
 			(*p->phys->dobreak)(p, 0);
 			continue;
 		}
 
-		n = atoi(f[i]+1);
+		n = jehanne_atoi(f[i]+1);
 		switch(*f[i]){
 		case 'B':
 		case 'b':
@@ -522,13 +522,13 @@ uartwrite(Chan *c, void *buf, long n, int64_t _1)
 		poperror();
 		break;
 	case Qctl:
-		cmd = malloc(n+1);
-		memmove(cmd, buf, n);
+		cmd = jehanne_malloc(n+1);
+		jehanne_memmove(cmd, buf, n);
 		cmd[n] = 0;
 		qlock(&p->ql);
 		if(waserror()){
 			qunlock(&p->ql);
-			free(cmd);
+			jehanne_free(cmd);
 			nexterror();
 		}
 
@@ -538,7 +538,7 @@ uartwrite(Chan *c, void *buf, long n, int64_t _1)
 
 		qunlock(&p->ql);
 		poperror();
-		free(cmd);
+		jehanne_free(cmd);
 		break;
 	}
 
@@ -559,7 +559,7 @@ uartwstat(Chan *c, uint8_t *dp, long n)
 		error(Eperm);
 
 	dt = &uartdir[1 + 3 * UARTID(c->qid.path)];
-	n = convM2D(dp, n, &d, nil);
+	n = jehanne_convM2D(dp, n, &d, nil);
 	if(n == 0)
 		error(Eshortstat);
 	if(d.mode != (uint32_t)~0UL)

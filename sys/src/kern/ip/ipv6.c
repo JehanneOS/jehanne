@@ -76,7 +76,7 @@ ipoput6(Fs *f, Block *bp, int gating, int ttl, int tos, Conv *c)
 
 	r = v6lookup(f, eh->dst, c);
 	if(r == nil){
-//		print("no route for %I, src %I free\n", eh->dst, eh->src);
+//		jehanne_print("no route for %I, src %I free\n", eh->dst, eh->src);
 		ip->stats[OutNoRoutes]++;
 		netlog(f, Logip, "no interface %I\n", eh->dst);
 		rv = -1;
@@ -179,12 +179,12 @@ ipoput6(Fs *f, Block *bp, int gating, int ttl, int tos, Conv *c)
 		}
 
 		hnputs(eh->ploadlen, seglen+IP6FHDR);
-		memmove(nb->wp, eh, uflen);
+		jehanne_memmove(nb->wp, eh, uflen);
 		nb->wp += uflen;
 
 		hnputs(fraghdr.offsetRM, fragoff); /* last 3 bits must be 0 */
 		fraghdr.offsetRM[1] |= morefrags;
-		memmove(nb->wp, &fraghdr, IP6FHDR);
+		jehanne_memmove(nb->wp, &fraghdr, IP6FHDR);
 		nb->wp += IP6FHDR;
 
 		/* Copy data */
@@ -200,7 +200,7 @@ ipoput6(Fs *f, Block *bp, int gating, int ttl, int tos, Conv *c)
 			blklen = chunk;
 			if(BLEN(xp) < chunk)
 				blklen = BLEN(xp);
-			memmove(nb->wp, xp->rp, blklen);
+			jehanne_memmove(nb->wp, xp->rp, blklen);
 
 			nb->wp += blklen;
 			xp->rp += blklen;
@@ -254,12 +254,12 @@ ipiput6(Fs *f, Ipifc *ifc, Block *bp)
 
 	h = (Ip6hdr *)bp->rp;
 
-	memmove(&v6dst[0], &h->dst[0], IPaddrlen);
+	jehanne_memmove(&v6dst[0], &h->dst[0], IPaddrlen);
 	notforme = ipforme(f, v6dst) == 0;
 	tentative = iptentative(f, v6dst);
 
 	if(tentative && h->proto != ICMPv6) {
-		print("tentative addr, drop\n");
+		jehanne_print("tentative addr, drop\n");
 		freeblist(bp);
 		return;
 	}
@@ -349,7 +349,7 @@ ipfragfree6(IP *ip, Fragment6 *frag)
 	if(frag->blist)
 		freeblist(frag->blist);
 
-	memset(frag->src, 0, IPaddrlen);
+	jehanne_memset(frag->src, 0, IPaddrlen);
 	frag->id = 0;
 	frag->blist = nil;
 
@@ -461,8 +461,8 @@ ip6reassemble(IP* ip, int uflen, Block* bp, Ip6hdr* ih)
 	Fragment6 *f, *fnext;
 
 	fraghdr = (Fraghdr6 *)(bp->rp + uflen);
-	memmove(src, ih->src, IPaddrlen);
-	memmove(dst, ih->dst, IPaddrlen);
+	jehanne_memmove(src, ih->src, IPaddrlen);
+	jehanne_memmove(dst, ih->dst, IPaddrlen);
 	id = nhgetl(fraghdr->id);
 	offset = nhgets(fraghdr->offsetRM) & ~7;
 
@@ -515,8 +515,8 @@ ip6reassemble(IP* ip, int uflen, Block* bp, Ip6hdr* ih)
 	if(f == nil) {
 		f = ipfragallo6(ip);
 		f->id = id;
-		memmove(f->src, src, IPaddrlen);
-		memmove(f->dst, dst, IPaddrlen);
+		jehanne_memmove(f->src, src, IPaddrlen);
+		jehanne_memmove(f->dst, dst, IPaddrlen);
 
 		f->blist = bp;
 
@@ -568,7 +568,7 @@ ip6reassemble(IP* ip, int uflen, Block* bp, Ip6hdr* ih)
 				BKFG(*l)->flen -= ovlap;
 				BKFG(*l)->foff += ovlap;
 				/* move up ih hdrs */
-				memmove((*l)->rp + ovlap, (*l)->rp, uflen);
+				jehanne_memmove((*l)->rp + ovlap, (*l)->rp, uflen);
 				(*l)->rp += ovlap;
 				break;
 			}
@@ -590,7 +590,7 @@ ip6reassemble(IP* ip, int uflen, Block* bp, Ip6hdr* ih)
 			bl = f->blist;
 
 			/* get rid of frag header in first fragment */
-			memmove(bl->rp + IP6FHDR, bl->rp, uflen);
+			jehanne_memmove(bl->rp + IP6FHDR, bl->rp, uflen);
 			bl->rp += IP6FHDR;
 			len = nhgets(((Ip6hdr*)bl->rp)->ploadlen) - IP6FHDR;
 			bl->wp = bl->rp + len + IP6HDR;

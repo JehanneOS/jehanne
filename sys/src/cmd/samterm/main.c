@@ -188,7 +188,7 @@ closeup(Flayer *l)
 		work = 0;
 	if(--t->nwin == 0){
 		rclear(&t->rasp);
-		free((uint8_t *)t);
+		jehanne_free((uint8_t *)t);
 		text[m] = 0;
 	}else if(l == &t->l[t->front]){
 		for(m=0; m<NL; m++)	/* find one; any one will do */
@@ -346,7 +346,7 @@ alnum(int c)
 		return 0;
 	if(0x7F<=c && c<=0xA0)
 		return 0;
-	if(utfrune("!\"#$%&'()*+,-./:;<=>?@[\\]^`{|}~", c))
+	if(jehanne_utfrune("!\"#$%&'()*+,-./:;<=>?@[\\]^`{|}~", c))
 		return 0;
 	return 1;
 }
@@ -695,8 +695,8 @@ panic(char *s)
 void
 panic1(Display* d, char *s)
 {
-	fprint(2, "samterm:panic: ");
-	perror(s);
+	jehanne_fprint(2, "samterm:panic: ");
+	jehanne_perror(s);
 	abort();
 }
 
@@ -721,9 +721,9 @@ alloc(uint32_t n)
 {
 	void *p;
 
-	p = malloc(n);
+	p = jehanne_malloc(n);
 	if(p == 0)
 		panic("alloc");
-	memset(p, 0, n);
+	jehanne_memset(p, 0, n);
 	return p;
 }

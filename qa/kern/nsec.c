@@ -1,5 +1,5 @@
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 
 int verbose = 0;
 void

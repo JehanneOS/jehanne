@@ -114,7 +114,7 @@ vmemchr(void *s, int c, int n)
 	while(ROUNDUP(a, PGSZ) != ROUNDUP(a+n-1, PGSZ)){
 		/* spans pages; handle this page */
 		np = PGSZ - (a & (PGSZ-1));
-		t = memchr(UINT2PTR(a), c, np);
+		t = jehanne_memchr(UINT2PTR(a), c, np);
 		if(t)
 			return t;
 		a += np;
@@ -124,5 +124,5 @@ vmemchr(void *s, int c, int n)
 	}
 
 	/* fits in one page */
-	return memchr(UINT2PTR(a), c, n);
+	return jehanne_memchr(UINT2PTR(a), c, n);
 }

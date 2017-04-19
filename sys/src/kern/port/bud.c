@@ -122,7 +122,7 @@ bpoolcreate(uint32_t mink, uint32_t maxk, uintmem base, uintmem top, void* (*all
 	pool->kofb = alloc((pool->maxb+1)*sizeof(*pool->kofb), 1);
 	if(pool->kofb == nil)
 		panic("physinit: can't allocate %ud kofb", pool->maxb+1);
-	print("pool %#p space base %#P top=%#P maxb=%#ux (%d)\n", pool, base, top, pool->maxb, pool->maxb);
+	jehanne_print("pool %#p space base %#P top=%#P maxb=%#ux (%d)\n", pool, base, top, pool->maxb, pool->maxb);
 	return pool;
 }
 
@@ -264,7 +264,7 @@ bpoolinitfree(Bpool *pool, uintmem base, uintmem lim)
 	lim -= pool->base;
 	lim &= ~(pool->minbsize-1);
 	if(BI(lim) > pool->maxb){
-		print("physinitfree: address space too large");
+		jehanne_print("physinitfree: address space too large");
 		lim = IB(pool->maxb);
 	}
 
@@ -283,7 +283,7 @@ bpoolinitfree(Bpool *pool, uintmem base, uintmem lim)
 			if(size < m)
 				break;
 			if(base & (m-1)){
-				print(" ** error: %#P %#P\n", base, m);
+				jehanne_print(" ** error: %#P %#P\n", base, m);
 				return;
 			}
 			ibpoolfree(pool, base, m);
@@ -296,7 +296,7 @@ bpoolinitfree(Bpool *pool, uintmem base, uintmem lim)
 	m = (uintmem)1<<pool->maxk;
 	while(size >= m){
 		if(base & (m-1)){
-			print(" ** error: %#P %#P\n", base, m);
+			jehanne_print(" ** error: %#P %#P\n", base, m);
 			return;
 		}
 		ibpoolfree(pool, base, m);
@@ -309,7 +309,7 @@ bpoolinitfree(Bpool *pool, uintmem base, uintmem lim)
 		if(size & m){
 			DBG("\t%#P %#P\n", base, m);
 			if(base & (m-1)){
-				print(" ** error: %#P %#P\n", base, m);
+				jehanne_print(" ** error: %#P %#P\n", base, m);
 				return;
 			}
 			ibpoolfree(pool, base, m);
@@ -329,7 +329,7 @@ seprintbpoolstats(Bpool *pool, char *s,  char *e)
 	for(i = 0; i < nelem(pool->blist); i++){
 		b = &pool->blist[i];
 		if(b->avail != 0)
-			s = seprint(s, e, "%ud %ulldK blocks avail\n",
+			s = jehanne_seprint(s, e, "%ud %ulldK blocks avail\n",
 				b->avail, (1ull<<i)/KiB);
 	}
 	unlock(&pool->lk);
@@ -347,14 +347,14 @@ bpooldump(Bpool *pool)
 	for(i=0; i<nelem(pool->blist); i++){
 		b = pool->blist[i].h.forw;
 		if(b != &pool->blist[i].h){
-			print("%d	", i);
+			jehanne_print("%d	", i);
 			for(; b != &pool->blist[i].h; b = b->forw){
 				bi = b-pool->blocks;
 				a = IB(bi);
 				k = pool->kofb[bi];
-				print(" [%#llux %d %#ux b=%#llux]", a, k, 1<<k, a^((uintmem)1<<k));
+				jehanne_print(" [%#llux %d %#ux b=%#llux]", a, k, 1<<k, a^((uintmem)1<<k));
 			}
-			print("\n");
+			jehanne_print("\n");
 		}
 	}
 }

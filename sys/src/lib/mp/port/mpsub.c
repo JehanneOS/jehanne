@@ -2,7 +2,7 @@
 #include <mp.h>
 #include "dat.h"
 
-// diff = abs(b1) - abs(b2), i.e., subtract the magnitudes
+// diff = jehanne_abs(b1) - jehanne_abs(b2), i.e., subtract the magnitudes
 void
 mpmagsub(mpint *b1, mpint *b2, mpint *diff)
 {

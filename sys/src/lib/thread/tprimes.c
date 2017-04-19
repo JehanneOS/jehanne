@@ -27,7 +27,7 @@ primethread(void *arg)
 	if(p > goal)
 		threadexitsall(nil);
 	if(!quiet)
-		print("%d\n", p);
+		jehanne_print("%d\n", p);
 	nc = chancreate(sizeof(ulong), buffer);
 	(*fn)(primethread, nc, 1024);
 	for(;;){
@@ -48,7 +48,7 @@ threadmain(int argc, char **argv)
 		quiet = 1;
 		break;
 	case 'b':
-		buffer = atoi(ARGF());
+		buffer = jehanne_atoi(ARGF());
 		break;
 	case 'p':
 		fn=proccreate;
@@ -56,7 +56,7 @@ threadmain(int argc, char **argv)
 	}ARGEND
 
 	if(argc>0)
-		goal = atoi(argv[0]);
+		goal = jehanne_atoi(argv[0]);
 	else
 		goal = 100;
 

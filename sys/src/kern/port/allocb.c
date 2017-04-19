@@ -28,7 +28,7 @@ _allocb(int size, int align)
 	if(align <= 0)
 		align = BLOCKALIGN;
 	n = align + ROUNDUP(size+Hdrspc, align) + sizeof(Block);
-	if((p = malloc(n)) == nil)
+	if((p = jehanne_malloc(n)) == nil)
 		return nil;
 
 	b = (Block*)(p + n - sizeof(Block));	/* block at end of allocated space */
@@ -66,7 +66,7 @@ allocb(int size)
 		mallocsummary();
 		panic("allocb: no memory for %d bytes\n", size);
 	}
-	setmalloctag(b->base, getcallerpc());
+	jehanne_setmalloctag(b->base, getcallerpc());
 
 	return b;
 }
@@ -86,7 +86,7 @@ allocbalign(int size, int align)
 		mallocsummary();
 		panic("allocbalign: no memory for %d bytes\n", size);
 	}
-	setmalloctag(b->base, getcallerpc());
+	jehanne_setmalloctag(b->base, getcallerpc());
 
 	return b;
 }
@@ -127,7 +127,7 @@ iallocb(int size)
 		return nil;
 	}
 	b->flag = BINTR;
-	setmalloctag(b->base, getcallerpc());
+	jehanne_setmalloctag(b->base, getcallerpc());
 
 	ilock(&ialloc);
 	ialloc.bytes += b->lim - b->base;
@@ -168,7 +168,7 @@ freeb(Block *b)
 	b->lim = dead;
 	b->base = dead;
 
-	free(p);
+	jehanne_free(p);
 }
 
 void
@@ -180,9 +180,9 @@ checkb(Block *b, char *msg)
 		panic("checkb b %s %#p", msg, b);
 	if(b->base == dead || b->lim == dead || b->next == dead
 	  || b->rp == dead || b->wp == dead){
-		print("checkb: base %#p lim %#p next %#p\n",
+		jehanne_print("checkb: base %#p lim %#p next %#p\n",
 			b->base, b->lim, b->next);
-		print("checkb: rp %#p wp %#p\n", b->rp, b->wp);
+		jehanne_print("checkb: rp %#p wp %#p\n", b->rp, b->wp);
 		panic("checkb dead: %s\n", msg);
 	}
 
@@ -201,5 +201,5 @@ checkb(Block *b, char *msg)
 void
 iallocsummary(void)
 {
-	print("ialloc %lud/%lud\n", ialloc.bytes, ialloc.limit);
+	jehanne_print("ialloc %lud/%lud\n", ialloc.bytes, ialloc.limit);
 }

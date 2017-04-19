@@ -11,7 +11,7 @@
 #include <libc.h>
 
 int
-dec32(uint8_t *dest, int ndest, const char *src, int nsrc)
+jehanne_dec32(uint8_t *dest, int ndest, const char *src, int nsrc)
 {
 	char *s, *tab;
 	uint8_t *start;
@@ -23,7 +23,7 @@ dec32(uint8_t *dest, int ndest, const char *src, int nsrc)
 	tab = "23456789abcdefghijkmnpqrstuvwxyz";
 	while(nsrc>=8){
 		for(i=0; i<8; i++){
-			s = strchr(tab,(int)src[i]);
+			s = jehanne_strchr(tab,(int)src[i]);
 			u[i] = s ? s-tab : 0;
 		}
 		*dest++ = (u[0]<<3) | (0x7 & (u[1]>>2));
@@ -38,7 +38,7 @@ dec32(uint8_t *dest, int ndest, const char *src, int nsrc)
 		if(nsrc == 1 || nsrc == 3 || nsrc == 6)
 			return -1;
 		for(i=0; i<nsrc; i++){
-			s = strchr(tab,(int)src[i]);
+			s = jehanne_strchr(tab,(int)src[i]);
 			u[i] = s ? s-tab : 0;
 		}
 		*dest++ = (u[0]<<3) | (0x7 & (u[1]>>2));
@@ -57,7 +57,7 @@ out:
 }
 
 int
-enc32(char *dest, int ndest, const uint8_t *src, int nsrc)
+jehanne_enc32(char *dest, int ndest, const uint8_t *src, int nsrc)
 {
 	char *tab, *start;
 	int j;

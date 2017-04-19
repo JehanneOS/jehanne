@@ -19,7 +19,7 @@
  */
 
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 
 #define EQ(a,b)	((tmp=a)==0?0:(strcmp(tmp,b)==0))
 

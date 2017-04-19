@@ -54,27 +54,27 @@ intrenable(int irq, void (*f)(Ureg*, void*), void* a, int tbdf, char *name)
 	Vctl *v;
 
 	if(f == nil){
-		print("intrenable: nil handler for %d, tbdf %#ux for %s\n",
+		jehanne_print("intrenable: nil handler for %d, tbdf %#ux for %s\n",
 			irq, tbdf, name);
 		return nil;
 	}
 
-	v = malloc(sizeof(Vctl));
+	v = jehanne_malloc(sizeof(Vctl));
 	v->isintr = 1;
 	v->irq = irq;
 	v->tbdf = tbdf;
 	v->f = f;
 	v->a = a;
-	strncpy(v->name, name, KNAMELEN-1);
+	jehanne_strncpy(v->name, name, KNAMELEN-1);
 	v->name[KNAMELEN-1] = 0;
 
 	ilock(&vctllock);
 	vno = ioapicintrenable(v);
 	if(vno == -1){
 		iunlock(&vctllock);
-		print("intrenable: couldn't enable irq %d, tbdf %#ux for %s\n",
+		jehanne_print("intrenable: couldn't enable irq %d, tbdf %#ux for %s\n",
 			irq, tbdf, v->name);
-		free(v);
+		jehanne_free(v);
 		return nil;
 	}
 	if(vctl[vno]){
@@ -118,7 +118,7 @@ intrdisable(void* vector)
 	ioapicintrdisable(v->vno);
 	iunlock(&vctllock);
 
-	free(v);
+	jehanne_free(v);
 
 	return 0;
 }
@@ -138,7 +138,7 @@ irqallocread(Chan* _1, void *vbuf, long n, int64_t offset)
 	buf = vbuf;
 	for(vno=0; vno<nelem(vctl); vno++){
 		for(v=vctl[vno]; v; v=v->next){
-			ns = snprint(str, sizeof str, "%11d %11d %.*s\n", vno, v->irq, KNAMELEN, v->name);
+			ns = jehanne_snprint(str, sizeof str, "%11d %11d %.*s\n", vno, v->irq, KNAMELEN, v->name);
 			if(ns <= offset)	/* if do not want this, skip entry */
 				offset -= ns;
 			else{
@@ -150,7 +150,7 @@ irqallocread(Chan* _1, void *vbuf, long n, int64_t offset)
 				/* write at most max(n,ns) bytes */
 				if(ns > n)
 					ns = n;
-				memmove(buf, p, ns);
+				jehanne_memmove(buf, p, ns);
 				n -= ns;
 				buf += ns;
 
@@ -169,11 +169,11 @@ trapenable(int vno, void (*f)(Ureg*, void*), void* a, char *name)
 
 	if(vno < 0 || vno >= 256)
 		panic("trapenable: vno %d\n", vno);
-	v = malloc(sizeof(Vctl));
+	v = jehanne_malloc(sizeof(Vctl));
 	v->tbdf = BUSUNKNOWN;
 	v->f = f;
 	v->a = a;
-	strncpy(v->name, name, KNAMELEN);
+	jehanne_strncpy(v->name, name, KNAMELEN);
 	v->name[KNAMELEN-1] = 0;
 
 	ilock(&vctllock);
@@ -336,7 +336,7 @@ trap(Ureg* ureg)
 		spllo();
 		if(vno == 0xd)	/* General Protection */
 			dumpregs(ureg);
-		snprint(buf, sizeof(buf), "sys: trap: %s", excname[vno]);
+		jehanne_snprint(buf, sizeof(buf), "sys: trap: %s", excname[vno]);
 		postnote(up, 1, buf, NDebug);
 	} else if(vno >= VectorPIC){
 		/*
@@ -487,7 +487,7 @@ void
 callwithureg(void (*fn)(Ureg*))
 {
 	Ureg ureg;
-	memset(&ureg, 0, sizeof(ureg));
+	jehanne_memset(&ureg, 0, sizeof(ureg));
 	ureg.ip = getcallerpc();
 	ureg.sp = PTR2UINT(&fn);
 	fn(&ureg);
@@ -501,7 +501,7 @@ dumpstackwithureg(Ureg* ureg)
 	char *s;
 	int x;
 
-	if((s = getconf("*nodumpstack")) != nil && atoi(s) != 0){
+	if((s = getconf("*nodumpstack")) != nil && jehanne_atoi(s) != 0){
 		iprint("dumpstack disabled\n");
 		return;
 	}
@@ -555,7 +555,7 @@ debugbpt(Ureg* ureg, void* _1)
 		panic("kernel bpt");
 	/* restore pc to instruction that caused the trap */
 	ureg->ip--;
-	sprint(buf, "sys: breakpoint");
+	jehanne_sprint(buf, "sys: breakpoint");
 	postnote(up, 1, buf, NDebug);
 }
 
@@ -609,7 +609,7 @@ faultamd64(Ureg* ureg, void* _1)
 	insyscall = up->insyscall;
 	up->insyscall = 1;
 if(iskaddr(addr)){
-	print("kaddr %#llux pc %#p\n", addr, ureg->ip);
+	jehanne_print("kaddr %#llux pc %#p\n", addr, ureg->ip);
 //	prflush();
 	dumpregs(ureg);
 }
@@ -619,7 +619,7 @@ if(iskaddr(addr)){
 			dumpregs(ureg);
 			panic("fault: %#llux pc %#p\n", addr, ureg->ip);
 		}
-		sprint(buf, "sys: trap: fault %s addr=%#llux",
+		jehanne_sprint(buf, "sys: trap: fault %s addr=%#llux",
 			fault_types[ftype], addr);
 		proc_check_pages();
 		postnote(up, 1, buf, NDebug);
@@ -656,7 +656,7 @@ setregisters(Ureg* ureg, char* pureg, char* uva, int n)
 //	fs = ureg->cs;
 //	es = ureg->cs;
 //	ds = ureg->cs;
-	memmove(pureg, uva, n);
+	jehanne_memmove(pureg, uva, n);
 //	ureg->ds = ds;
 //	ureg->es = es;
 //	ureg->fs = fs;

@@ -1,5 +1,5 @@
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 #include <mp.h>
 #include <libsec.h>
 
@@ -160,11 +160,11 @@ emalloc(int n)
 	void *p;
 	if(n==0)
 		n=1;
-	p = malloc(n);
+	p = jehanne_malloc(n);
 	if(p == nil)
-		sysfatal("out of memory");
-	memset(p, 0, n);
-	setmalloctag(p, getcallerpc());
+		jehanne_sysfatal("out of memory");
+	jehanne_memset(p, 0, n);
+	jehanne_setmalloctag(p, jehanne_getcallerpc());
 	return p;
 }
 
@@ -174,9 +174,9 @@ estrdup(char *s)
 	char *d;
 	int n;
 
-	n = strlen(s)+1;
+	n = jehanne_strlen(s)+1;
 	d = emalloc(n);
-	memmove(d, s, n);
+	jehanne_memmove(d, s, n);
 	return d;
 }
 
@@ -222,7 +222,7 @@ ber_decode(uint8_t** pp, uint8_t* pend, Elem* pelem)
 	Tag tag;
 	Value val;
 
-	memset(pelem, 0, sizeof(*pelem));
+	jehanne_memset(pelem, 0, sizeof(*pelem));
 	err = tag_decode(pp, pend, &tag, &isconstr);
 	if(err == ASN_OK) {
 		err = length_decode(pp, pend, &length);
@@ -511,7 +511,7 @@ value_decode(uint8_t** pp, uint8_t* pend, int length, int kind, int isconstr, Va
 						break;
 					n--;
 					s += 4;
-					d += runetochar(d, &r);
+					d += jehanne_runetochar(d, &r);
 				}
 				*d = 0;
 				break;
@@ -526,7 +526,7 @@ value_decode(uint8_t** pp, uint8_t* pend, int length, int kind, int isconstr, Va
 						break;
 					n--;
 					s += 2;
-					d += runetochar(d, &r);
+					d += jehanne_runetochar(d, &r);
 				}
 				*d = 0;
 				break;
@@ -547,10 +547,10 @@ value_decode(uint8_t** pp, uint8_t* pend, int length, int kind, int isconstr, Va
 			}
 			if(n != 0){
 				err = ASN_EINVAL;
-				free(pval->u.stringval);
+				jehanne_free(pval->u.stringval);
 			} else 
 				pval->tag = VString;
-			free(va);
+			jehanne_free(va);
 		}
 		break;
 
@@ -939,7 +939,7 @@ val_enc(uint8_t** pp, Elem e, int *pconstr, int lenonly)
 		else {
 			if(is_bigint(&e, &bb)) {
 				if(!lenonly)
-					memmove(p, bb->data, bb->len);
+					jehanne_memmove(p, bb->data, bb->len);
 				p += bb->len;
 			}
 			else
@@ -961,7 +961,7 @@ val_enc(uint8_t** pp, Elem e, int *pconstr, int lenonly)
 				else {
 					if(!lenonly) {
 						*p = v;
-						memmove(p+1, bits->data, bits->len);
+						jehanne_memmove(p+1, bits->data, bits->len);
 					}
 					p += 1 + bits->len;
 				}
@@ -990,7 +990,7 @@ val_enc(uint8_t** pp, Elem e, int *pconstr, int lenonly)
 		}
 		if(bb != nil) {
 			if(!lenonly)
-				memmove(p, bb->data, bb->len);
+				jehanne_memmove(p, bb->data, bb->len);
 			p += bb->len;
 		}
 		else
@@ -1051,9 +1051,9 @@ val_enc(uint8_t** pp, Elem e, int *pconstr, int lenonly)
 		if(e.val.tag == VString) {
 			s = e.val.u.stringval;
 			if(s != nil) {
-				v = strlen(s);
+				v = jehanne_strlen(s);
 				if(!lenonly)
-					memmove(p, s, v);
+					jehanne_memmove(p, s, v);
 				p += v;
 			}
 		}
@@ -1311,14 +1311,14 @@ makebytes(uint8_t* buf, int len)
 	Bytes* ans;
 
 	ans = newbytes(len);
-	memmove(ans->data, buf, len);
+	jehanne_memmove(ans->data, buf, len);
 	return ans;
 }
 
 static void
 freebytes(Bytes* b)
 {
-	free(b);
+	jehanne_free(b);
 }
 
 /*
@@ -1344,8 +1344,8 @@ catbytes(Bytes* b1, Bytes* b2)
 		n = b1->len + b2->len;
 		ans = newbytes(n);
 		ans->len = n;
-		memmove(ans->data, b1->data, b1->len);
-		memmove(ans->data+b1->len, b2->data, b2->len);
+		jehanne_memmove(ans->data, b1->data, b1->len);
+		jehanne_memmove(ans->data+b1->len, b2->data, b2->len);
 	}
 	return ans;
 }
@@ -1369,14 +1369,14 @@ makeints(int* buf, int len)
 	Ints* ans;
 
 	ans = newints(len);
-	memmove(ans->data, buf, len*sizeof(int));
+	jehanne_memmove(ans->data, buf, len*sizeof(int));
 	return ans;
 }
 
 static void
 freeints(Ints* b)
 {
-	free(b);
+	jehanne_free(b);
 }
 
 /* len is number of bytes */
@@ -1399,7 +1399,7 @@ makebits(uint8_t* buf, int len, int unusedbits)
 	Bits* ans;
 
 	ans = newbits(len);
-	memmove(ans->data, buf, len);
+	jehanne_memmove(ans->data, buf, len);
 	ans->unusedbits = unusedbits;
 	return ans;
 }
@@ -1407,7 +1407,7 @@ makebits(uint8_t* buf, int len, int unusedbits)
 static void
 freebits(Bits* b)
 {
-	free(b);
+	jehanne_free(b);
 }
 
 static Elist*
@@ -1416,7 +1416,7 @@ mkel(Elem e, Elist* tail)
 	Elist* el;
 
 	el = (Elist*)emalloc(sizeof(Elist));
-	setmalloctag(el, getcallerpc());
+	jehanne_setmalloctag(el, jehanne_getcallerpc());
 	el->hd = e;
 	el->tl = tail;
 	return el;
@@ -1441,7 +1441,7 @@ freeelist(Elist* el)
 
 	while(el != nil) {
 		next = el->tl;
-		free(el);
+		jehanne_free(el);
 		el = next;
 	}
 }
@@ -1475,7 +1475,7 @@ freevalfields(Value* v)
 		break;
 	case VString:
 		if(v->u.stringval)
-			free(v->u.stringval);
+			jehanne_free(v->u.stringval);
 		break;
 	case VSeq:
 		el = v->u.seqval;
@@ -1711,13 +1711,13 @@ freecert(CertX509* c)
 {
 	if(c == nil)
 		return;
-	free(c->issuer);
-	free(c->validity_start);
-	free(c->validity_end);
-	free(c->subject);
+	jehanne_free(c->issuer);
+	jehanne_free(c->validity_start);
+	jehanne_free(c->validity_end);
+	jehanne_free(c->subject);
 	freebytes(c->publickey);
 	freebytes(c->signature);
-	free(c);
+	jehanne_free(c);
 }
 
 /*
@@ -1760,7 +1760,7 @@ parse_name(Elem* e)
 			if(!is_string(&eatl->tl->hd, &s) || i>=MAXPARTS)
 				goto errret;
 			parts[i++] = s;
-			plen += strlen(s) + 2;		/* room for ", " after */
+			plen += jehanne_strlen(s) + 2;		/* room for ", " after */
 			esetl = esetl->tl;
 		}
 		el = el->tl;
@@ -1770,9 +1770,9 @@ parse_name(Elem* e)
 		*ans = '\0';
 		while(--i >= 0) {
 			s = parts[i];
-			strcat(ans, s);
+			jehanne_strcat(ans, s);
 			if(i > 0)
-				strcat(ans, ", ");
+				jehanne_strcat(ans, ", ");
 		}
 	}
 
@@ -2146,9 +2146,9 @@ pkcs1padbuf(uint8_t *buf, int len, mpint *modulus)
 	for(i = 2; i < pm1; i++)
 		p[i] = 0xFF;
 	p[pm1] = 0;
-	memcpy(&p[pm1+1], buf, len);
+	jehanne_memcpy(&p[pm1+1], buf, len);
 	mp = betomp(p, n, nil);
-	free(p);
+	jehanne_free(p);
 	return mp;
 }
 
@@ -2242,10 +2242,10 @@ pkcs1decryptsignature(uint8_t *sig, int siglen, RSApub *pk, uint8_t **pbuf)
 	if(buflen < 1 || buf[0] != 0)
 		goto bad;
 	buf++, buflen--;
-	memmove(*pbuf, buf, buflen);
+	jehanne_memmove(*pbuf, buf, buflen);
 	return buflen;
 bad:
-	free(*pbuf);
+	jehanne_free(*pbuf);
 	*pbuf = nil;
 	return -1;
 }
@@ -2262,11 +2262,11 @@ X509rsaverifydigest(uint8_t *sig, int siglen, uint8_t *edigest, int edigestlen, 
 
 	buflen = pkcs1decryptsignature(sig, siglen, pk, &buf);
 	if(buflen == edigestlen && tsmemcmp(buf, edigest, edigestlen) == 0){
-		free(buf);
+		jehanne_free(buf);
 		return nil;
 	}
 	el = nil;
-	memset(&e, 0, sizeof(e));
+	jehanne_memset(&e, 0, sizeof(e));
 	if(buflen < 0 || decode(buf, buflen, &e) != ASN_OK
 	|| !is_seq(&e, &el) || elistlen(el) != 2 || !is_octetstring(&el->tl->hd, &digest)) {
 		err = "signature parse error";
@@ -2288,7 +2288,7 @@ X509rsaverifydigest(uint8_t *sig, int siglen, uint8_t *edigest, int edigestlen, 
 	err = nil;
 end:
 	freevalfields(&e.val);
-	free(buf);
+	jehanne_free(buf);
 	return err;
 }
 
@@ -2380,7 +2380,7 @@ X509toRSApub(uint8_t *cert, int ncert, char *name, int nname)
 	RSApub *pub;
 
 	if(name != nil)
-		memset(name, 0, nname);
+		jehanne_memset(name, 0, nname);
 
 	b = makebytes(cert, ncert);
 	c = decode_cert(b);
@@ -2388,10 +2388,10 @@ X509toRSApub(uint8_t *cert, int ncert, char *name, int nname)
 	if(c == nil)
 		return nil;
 	if(name != nil && c->subject != nil){
-		e = strchr(c->subject, ',');
+		e = jehanne_strchr(c->subject, ',');
 		if(e != nil)
 			*e = 0;	/* take just CN part of Distinguished Name */
-		strncpy(name, c->subject, nname);
+		jehanne_strncpy(name, c->subject, nname);
 	}
 	pub = nil;
 	if(c->publickey_alg == ALG_rsaEncryption)
@@ -2462,7 +2462,7 @@ mkbigint(mpint *p)
 	e.val.tag = VBigInt;
 	buflen = mptobe(p, nil, 0, &buf);
 	e.val.u.bigintval = makebytes(buf, buflen);
-	free(buf);
+	jehanne_free(buf);
 	return e;
 }
 
@@ -2475,7 +2475,7 @@ printable(char *s)
 		if((c >= 'a' && c <= 'z')
 		|| (c >= 'A' && c <= 'Z')
 		|| (c >= '0' && c <= '9')
-		|| strchr("'=()+,-./:? ", c) != nil)
+		|| jehanne_strchr("'=()+,-./:? ", c) != nil)
 			continue;
 		return 0;
 	}
@@ -2527,12 +2527,12 @@ mkutc(int32_t t)
 {
 	Elem e;
 	char utc[50];
-	Tm *tm = gmtime(t);
+	Tm *tm = jehanne_gmtime(t);
 
 	e.tag.class = Universal;
 	e.tag.num = UTCTime;
 	e.val.tag = VString;
-	snprint(utc, sizeof(utc), "%.2d%.2d%.2d%.2d%.2d%.2dZ",
+	jehanne_snprint(utc, sizeof(utc), "%.2d%.2d%.2d%.2d%.2d%.2dZ",
 		tm->year % 100, tm->mon+1, tm->mday, tm->hour, tm->min, tm->sec);
 	e.val.u.stringval = estrdup(utc);
 	return e;
@@ -2610,17 +2610,17 @@ mkDN(char *dn)
 	char *f[20], *prefix, *d2 = estrdup(dn);
 	Elist* el = nil;
 
-	nf = tokenize(d2, f, nelem(f));
+	nf = jehanne_tokenize(d2, f, nelem(f));
 	for(i=nf-1; i>=0; i--){
 		for(j=0; j<nelem(DN_oid); j++){
 			prefix = DN_oid[j].prefix;
-			if(strncmp(f[i],prefix,strlen(prefix))==0){
-				el = mkel(mkname(&DN_oid[j],f[i]+strlen(prefix)), el);
+			if(jehanne_strncmp(f[i],prefix,jehanne_strlen(prefix))==0){
+				el = mkel(mkname(&DN_oid[j],f[i]+jehanne_strlen(prefix)), el);
 				break;
 			}
 		}
 	}
-	free(d2);
+	jehanne_free(d2);
 	return mkseq(el);
 }
 
@@ -2665,7 +2665,7 @@ asn1encodedigest(DigestState* (*fun)(uint8_t*, uint32_t, uint8_t*, DigestState*)
 			break;
 		}
 		len = bytes->len;
-		memmove(buf, bytes->data, len);
+		jehanne_memmove(buf, bytes->data, len);
 		freebytes(bytes);
 		return len;
 	}
@@ -2688,12 +2688,12 @@ mkaltname(char *s)
 	int i;
 
 	for(i=0; i<nelem(DN_oid); i++){
-		if(strstr(s, DN_oid[i].prefix) != nil)
+		if(jehanne_strstr(s, DN_oid[i].prefix) != nil)
 			return mkcont(mkDN(s), 4); /* DN */
 	}
 	e = mkstring(s, IA5String);
 	e.tag.class = Context;
-	e.tag.num = strchr(s, '@') != nil ? 1 : 2; /* email : DNS */
+	e.tag.num = jehanne_strchr(s, '@') != nil ? 1 : 2; /* email : DNS */
 	return e;
 }
 
@@ -2713,11 +2713,11 @@ mkaltnames(char *alts)
 			s++;
 		if(*s == '\0')
 			break;
-		if((p = strchr(s, ',')) != nil)
+		if((p = jehanne_strchr(s, ',')) != nil)
 			*p++ = 0;
 		el = mkel(mkaltname(s), el);
 	}
-	free(alts);
+	jehanne_free(alts);
 	return el;
 }
 
@@ -2828,18 +2828,18 @@ X509rsagen(RSApriv *priv, char *subj, uint32_t valid[2], int *certlen)
 		mkel(mkalg(sigalg),
 		mkel(mkbits(buf, buflen),
 		nil))));
-	free(buf);
+	jehanne_free(buf);
 	if(encode(e, &certbytes) != ASN_OK)
 		goto errret;
 	if(certlen)
 		*certlen = certbytes->len;
-	cert = malloc(certbytes->len);
+	cert = jehanne_malloc(certbytes->len);
 	if(cert != nil)
-		memmove(cert, certbytes->data, certbytes->len);
+		jehanne_memmove(cert, certbytes->data, certbytes->len);
 	freebytes(certbytes);
 errret:
 	freevalfields(&e.val);
-	free(subj);
+	jehanne_free(subj);
 	return cert;
 }
 
@@ -2895,18 +2895,18 @@ X509rsareq(RSApriv *priv, char *subj, int *certlen)
 		mkel(mkalg(sigalg),
 		mkel(mkbits(buf, buflen),
 		nil))));
-	free(buf);
+	jehanne_free(buf);
 	if(encode(e, &certbytes) != ASN_OK)
 		goto errret;
 	if(certlen)
 		*certlen = certbytes->len;
-	cert = malloc(certbytes->len);
+	cert = jehanne_malloc(certbytes->len);
 	if(cert != nil)
-		memmove(cert, certbytes->data, certbytes->len);
+		jehanne_memmove(cert, certbytes->data, certbytes->len);
 	freebytes(certbytes);
 errret:
 	freevalfields(&e.val);
-	free(subj);
+	jehanne_free(subj);
 	return cert;
 }
 
@@ -2916,7 +2916,7 @@ tagdump(Tag tag)
 	static char buf[32];
 
 	if(tag.class != Universal){
-		snprint(buf, sizeof(buf), "class%d,num%d", tag.class, tag.num);
+		jehanne_snprint(buf, sizeof(buf), "class%d,num%d", tag.class, tag.num);
 		return buf;
 	}
 	switch(tag.num){
@@ -2947,7 +2947,7 @@ tagdump(Tag tag)
 	case UniversalString: return "UniversalString";
 	case BMPString: return "BMPString";
 	default:
-		snprint(buf, sizeof(buf), "Universal,num%d", tag.num);
+		jehanne_snprint(buf, sizeof(buf), "Universal,num%d", tag.num);
 		return buf;
 	}
 }
@@ -2959,33 +2959,33 @@ edump(Elem e)
 	Elist *el;
 	int i;
 
-	print("%s{", tagdump(e.tag));
+	jehanne_print("%s{", tagdump(e.tag));
 	v = e.val;
 	switch(v.tag){
-	case VBool: print("Bool %d",v.u.boolval); break;
-	case VInt: print("Int %d",v.u.intval); break;
-	case VOctets: print("Octets[%d] %.2x%.2x...",v.u.octetsval->len,v.u.octetsval->data[0],v.u.octetsval->data[1]); break;
-	case VBigInt: print("BigInt[%d] %.2x%.2x...",v.u.bigintval->len,v.u.bigintval->data[0],v.u.bigintval->data[1]); break;
-	case VReal: print("Real..."); break;
-	case VOther: print("Other..."); break;
-	case VBitString: print("BitString[%d]...", v.u.bitstringval->len*8 - v.u.bitstringval->unusedbits); break;
-	case VNull: print("Null"); break;
-	case VEOC: print("EOC..."); break;
-	case VObjId: print("ObjId");
+	case VBool: jehanne_print("Bool %d",v.u.boolval); break;
+	case VInt: jehanne_print("Int %d",v.u.intval); break;
+	case VOctets: jehanne_print("Octets[%d] %.2x%.2x...",v.u.octetsval->len,v.u.octetsval->data[0],v.u.octetsval->data[1]); break;
+	case VBigInt: jehanne_print("BigInt[%d] %.2x%.2x...",v.u.bigintval->len,v.u.bigintval->data[0],v.u.bigintval->data[1]); break;
+	case VReal: jehanne_print("Real..."); break;
+	case VOther: jehanne_print("Other..."); break;
+	case VBitString: jehanne_print("BitString[%d]...", v.u.bitstringval->len*8 - v.u.bitstringval->unusedbits); break;
+	case VNull: jehanne_print("Null"); break;
+	case VEOC: jehanne_print("EOC..."); break;
+	case VObjId: jehanne_print("ObjId");
 		for(i = 0; i<v.u.objidval->len; i++)
-			print(" %d", v.u.objidval->data[i]);
+			jehanne_print(" %d", v.u.objidval->data[i]);
 		break;
-	case VString: print("String \"%s\"",v.u.stringval); break;
-	case VSeq: print("Seq\n");
+	case VString: jehanne_print("String \"%s\"",v.u.stringval); break;
+	case VSeq: jehanne_print("Seq\n");
 		for(el = v.u.seqval; el!=nil; el = el->tl)
 			edump(el->hd);
 		break;
-	case VSet: print("Set\n");
+	case VSet: jehanne_print("Set\n");
 		for(el = v.u.setval; el!=nil; el = el->tl)
 			edump(el->hd);
 		break;
 	}
-	print("}\n");
+	jehanne_print("}\n");
 }
 
 void
@@ -2994,8 +2994,8 @@ asn1dump(uint8_t *der, int len)
 	Elem e;
 
 	if(decode(der, len, &e) != ASN_OK){
-		print("didn't parse\n");
-		exits("didn't parse");
+		jehanne_print("didn't parse\n");
+		jehanne_exits("didn't parse");
 	}
 	edump(e);
 }
@@ -3012,39 +3012,39 @@ X509dump(uint8_t *cert, int ncert)
 	int digestlen;
 	uint8_t digest[MAXdlen];
 
-	print("begin X509dump\n");
+	jehanne_print("begin X509dump\n");
 	b = makebytes(cert, ncert);
 	c = decode_cert(b);
 	if(c == nil){
 		freebytes(b);
-		print("cannot decode cert\n");
+		jehanne_print("cannot decode cert\n");
 		return;
 	}
 	digestlen = digest_certinfo(b, digestalg[c->signature_alg], digest);
 	freebytes(b);
 	if(digestlen <= 0){
 		freecert(c);
-		print("cannot decode certinfo\n");
+		jehanne_print("cannot decode certinfo\n");
 		return;
 	}
 
-	print("serial %d\n", c->serial);
-	print("issuer %s\n", c->issuer);
-	print("validity %s %s\n", c->validity_start, c->validity_end);
-	print("subject %s\n", c->subject);
-	print("sigalg=%d digest=%.*H\n", c->signature_alg, digestlen, digest);
-	print("publickey_alg=%d pubkey[%d] %.*H\n", c->publickey_alg, c->publickey->len,
+	jehanne_print("serial %d\n", c->serial);
+	jehanne_print("issuer %s\n", c->issuer);
+	jehanne_print("validity %s %s\n", c->validity_start, c->validity_end);
+	jehanne_print("subject %s\n", c->subject);
+	jehanne_print("sigalg=%d digest=%.*H\n", c->signature_alg, digestlen, digest);
+	jehanne_print("publickey_alg=%d pubkey[%d] %.*H\n", c->publickey_alg, c->publickey->len,
 		c->publickey->len, c->publickey->data);
 
 	switch(c->publickey_alg){
 	case ALG_rsaEncryption:
 		rsapub = decode_rsapubkey(c->publickey);
 		if(rsapub != nil){
-			print("rsa pubkey e=%B n(%d)=%B\n", rsapub->ek, mpsignif(rsapub->n), rsapub->n);
+			jehanne_print("rsa pubkey e=%B n(%d)=%B\n", rsapub->ek, mpsignif(rsapub->n), rsapub->n);
 			e = X509rsaverifydigest(c->signature->data, c->signature->len, digest, digestlen, rsapub);
 			if(e==nil)
 				e = "nil (meaning ok)";
-			print("self-signed X509rsaverifydigest returns: %s\n", e);
+			jehanne_print("self-signed X509rsaverifydigest returns: %s\n", e);
 			rsapubfree(rsapub);
 		}
 		break;
@@ -3055,12 +3055,12 @@ X509dump(uint8_t *cert, int ncert)
 			e = X509ecdsaverifydigest(c->signature->data, c->signature->len, digest, digestlen, &ecdom, ecpub);
 			if(e==nil)
 				e = "nil (meaning ok)";
-			print("self-signed X509ecdsaverifydigest returns: %s\n", e);
+			jehanne_print("self-signed X509ecdsaverifydigest returns: %s\n", e);
 			ecpubfree(ecpub);
 		}
 		ecdomfree(&ecdom);
 		break;
 	}
 	freecert(c);
-	print("end X509dump\n");
+	jehanne_print("end X509dump\n");
 }

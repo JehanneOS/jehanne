@@ -1,5 +1,5 @@
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 #include <mp.h>
 
 char *sfactors[] =
@@ -22,11 +22,11 @@ printmp(mpint *b, char *tag)
 	int n;
 	char *p;
 
-	print("%s (%d) ", tag, b->top);
+	jehanne_print("%s (%d) ", tag, b->top);
 	p = mptoa(b, 10, nil, 0);
-	write(1, p, strlen(p));
-	free(p);
-	print("\n");
+	write(1, p, jehanne_strlen(p));
+	jehanne_free(p);
+	jehanne_print("\n");
 }
 
 int
@@ -34,7 +34,7 @@ timing(void)
 {
 	int32_t now, span;
 
-	now = time(0);
+	now = jehanne_time(0);
 	span = now-start;
 	start = now;
 
@@ -50,8 +50,8 @@ main(int argc, char **argv)
 	mpint *p, *k, *d, *b, *e, *x, *r;
 	int i;
 
-	start = time(0);
-	fmtinstall('B', mpfmt);
+	start = jehanne_time(0);
+	jehanne_fmtinstall('B', mpfmt);
 	mpsetminbits(2*Dbits);
 
 	x = mpnew(0);
@@ -75,10 +75,10 @@ main(int argc, char **argv)
 	mpadd(k, mpone, p);
 
 //	if(!probably_prime(p, 18)){
-//		print("not a prime\n");
-//		exits(0);
+//		jehanne_print("not a prime\n");
+//		jehanne_exits(0);
 //	}
-//	print("probably prime\n");
+//	jehanne_print("probably prime\n");
 
 	mpright(k, 10, k);
 	printmp(k, "k =");
@@ -86,7 +86,7 @@ main(int argc, char **argv)
 expdebug = 1;
 	mpexp(b, k, p, x);
 	printmp(x, "x =");
-	print("timing %d\n", timing());
+	jehanne_print("timing %d\n", timing());
 
 	for(i = 0; i < nelem(sfactors); i++){
 		d = strtomp(sfactors[i], nil, 10, nil);
@@ -97,6 +97,6 @@ expdebug = 1;
 		// x = b^e mod p
 		mpexp(b, e, p, x);
 		printmp(x, "x =");
-		print("timing %d\n", timing());
+		jehanne_print("timing %d\n", timing());
 	}
 }

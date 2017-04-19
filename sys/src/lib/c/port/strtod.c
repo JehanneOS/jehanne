@@ -65,7 +65,7 @@ struct	Tab
 };
 
 double
-strtod(const char *as, const char **aas)
+jehanne_strtod(const char *as, const char **aas)
 {
 	int na, ona, ex, dp, bp, c, i, flag, state;
 	uint32_t low[Prec], hig[Prec], mid[Prec], num, den;
@@ -200,7 +200,7 @@ strtod(const char *as, const char **aas)
 	if(flag & Fesign)
 		ex = -ex;
 	dp += ex;
-	if(dp < -Maxe-Nmant/3)	/* actually -Nmant*log(2)/log(10), but Nmant/3 close enough */
+	if(dp < -Maxe-Nmant/3)	/* actually -Nmant*jehanne_log(2)/jehanne_log(10), but Nmant/3 close enough */
 		goto ret0;	// underflow by exp
 	else
 	if(dp > +Maxe)
@@ -225,8 +225,8 @@ strtod(const char *as, const char **aas)
 		ona = na;
 		divby(a, &na, -bp-Bias+1);
 		if(na < ona){
-			memmove(a+ona-na, a, na);
-			memset(a, '0', ona-na);
+			jehanne_memmove(a+ona-na, a, na);
+			jehanne_memset(a, '0', ona-na);
 			na = ona;
 		}
 		a[na] = 0;
@@ -240,8 +240,8 @@ strtod(const char *as, const char **aas)
 		num = num*10 + (c-'0');
 		den *= 10;
 	}
-	low[0] = umuldiv(num, One, den);
-	hig[0] = umuldiv(num+1, One, den);
+	low[0] = jehanne_umuldiv(num, One, den);
+	hig[0] = jehanne_umuldiv(num+1, One, den);
 	for(i=1; i<Prec; i++) {
 		low[i] = 0;
 		hig[i] = One-1;
@@ -298,19 +298,19 @@ strtod(const char *as, const char **aas)
 		d = d*One + mid[i];
 	if(flag & Fsign)
 		d = -d;
-	d = ldexp(d, bp - Prec*Nbits);
+	d = jehanne_ldexp(d, bp - Prec*Nbits);
 	return d;
 
 ret0:
 	return 0;
 
 retnan:
-	return NaN();
+	return jehanne_NaN();
 
 retinf:
 	if(flag & Fsign)
-		return Inf(-1);
-	return Inf(+1);
+		return jehanne_Inf(-1);
+	return jehanne_Inf(+1);
 }
 
 static void
@@ -445,7 +445,7 @@ divascii(char *a, int *na, int *dp, int *bp)
 		d = nelem(tab1)-1;
 	t = tab1 + d;
 	b = t->bp;
-	if(memcmp(a, t->cmp, t->siz) > 0)
+	if(jehanne_memcmp(a, t->cmp, t->siz) > 0)
 		d--;
 	*dp -= d;
 	*bp += b;
@@ -505,7 +505,7 @@ mulascii(char *a, int *na, int *dp, int *bp)
 		d = nelem(tab2)-1;
 	t = tab2 + d;
 	b = t->bp;
-	if(memcmp(a, t->cmp, t->siz) < 0)
+	if(jehanne_memcmp(a, t->cmp, t->siz) < 0)
 		d--;
 	p = a + *na;
 	*bp -= b;
@@ -522,7 +522,7 @@ xcmp(const char *a, char *b)
 	while(c1 = *b++) {
 		c2 = *a++;
 		if(isupper(c2))
-			c2 = tolower(c2);
+			c2 = jehanne_tolower(c2);
 		if(c1 != c2)
 			return 1;
 	}

@@ -49,21 +49,21 @@ setupBFstate(BFstate *s, uint8_t key[], int keybytes, uint8_t *ivec)
 	int i, j;
 	uint32_t n, buf[2];
 
-	memset(s, 0, sizeof(*s));
-	memset(buf, 0, sizeof buf);
+	jehanne_memset(s, 0, sizeof(*s));
+	jehanne_memset(buf, 0, sizeof buf);
 
 	if (keybytes > sizeof(s->key))
 		keybytes = sizeof(s->key);
 
-	memmove(s->key, key, keybytes);
+	jehanne_memmove(s->key, key, keybytes);
 
 	if (ivec != nil)
-		memmove(s->ivec, ivec, sizeof(s->ivec));
+		jehanne_memmove(s->ivec, ivec, sizeof(s->ivec));
 	else
-		memset(s->ivec, 0, sizeof(s->ivec));
+		jehanne_memset(s->ivec, 0, sizeof(s->ivec));
 
-	memmove(s->pbox, pbox, sizeof(pbox));
-	memmove(s->sbox, sbox, sizeof(sbox));
+	jehanne_memmove(s->pbox, pbox, sizeof(pbox));
+	jehanne_memmove(s->sbox, sbox, sizeof(sbox));
 
 	if (keybytes > 4*(BFrounds + 2))
 		keybytes = 4*(BFrounds + 2);

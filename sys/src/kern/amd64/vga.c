@@ -174,13 +174,13 @@ vgascreenputs(char* s, int n)
 	flushr = Rect(10000, 10000, -10000, -10000);
 
 	while(n > 0){
-		i = chartorune(&r, s);
+		i = jehanne_chartorune(&r, s);
 		if(i == 0){
 			s++;
 			--n;
 			continue;
 		}
-		memmove(buf, s, i);
+		jehanne_memmove(buf, s, i);
 		buf[i] = 0;
 		n -= i;
 		s += i;
@@ -210,14 +210,14 @@ vgascreenwin(VGAscr* scr)
 	h = scr->memdefont->height;
 
 	if (h == 0){
-		print("vgascreenwin: height is 0");
+		jehanne_print("vgascreenwin: height is 0");
 		error("vgascreenwin: height is 0");
 	}
 
 	w = scr->memdefont->info[' '].width;
 	if (w == 0){
 		error("vgascreenwin: width is 0");
-		print("vgascreenwin: width is 0");
+		jehanne_print("vgascreenwin: width is 0");
 	}
 
 	window = insetrect(scr->gscreen->r, 48);

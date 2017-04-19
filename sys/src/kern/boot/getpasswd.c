@@ -22,7 +22,7 @@ getpasswd(char *p, int len)
 		fatal("can't open consctl; please reboot");
 	write(fd, "rawon", 5);
  Prompt:
-	print("password: ");
+	jehanne_print("password: ");
 	n = 0;
 	for(;;){
 		do{
@@ -34,14 +34,14 @@ getpasswd(char *p, int len)
 		case '\n':
 			p[n] = '\0';
 			close(fd);
-			print("\n");
+			jehanne_print("\n");
 			return;
 		case '\b':
 			if(n > 0)
 				n--;
 			break;
 		case 'u' - 'a' + 1:		/* cntrl-u */
-			print("\n");
+			jehanne_print("\n");
 			goto Prompt;
 		default:
 			if(n < len - 1)

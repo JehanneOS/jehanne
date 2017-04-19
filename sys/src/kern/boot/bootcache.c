@@ -19,7 +19,7 @@ cache(int fd)
 	int argc, i, p[2];
 	char *argv[5], bd[32], buf[256], partition[64], *pp;
 
-	if(stat("/boot/cfs", statbuf, sizeof statbuf) < 0)
+	if(jehanne_stat("/boot/cfs", statbuf, sizeof statbuf) < 0)
 		return fd;
 
 	*partition = 0;
@@ -27,12 +27,12 @@ cache(int fd)
 	bind("#S", "/dev", MAFTER);
 	readfile("#e/cfs", buf, sizeof(buf));
 	if(*buf){
-		argc = tokenize(buf, argv, 4);
+		argc = jehanne_tokenize(buf, argv, 4);
 		for(i = 0; i < argc; i++){
-			if(strcmp(argv[i], "off") == 0)
+			if(jehanne_strcmp(argv[i], "off") == 0)
 				return fd;
-			else if(stat(argv[i], statbuf, sizeof statbuf) >= 0){
-				strncpy(partition, argv[i], sizeof(partition)-1);
+			else if(jehanne_stat(argv[i], statbuf, sizeof statbuf) >= 0){
+				jehanne_strncpy(partition, argv[i], sizeof(partition)-1);
 				partition[sizeof(partition)-1] = 0;
 			}
 		}
@@ -41,45 +41,45 @@ cache(int fd)
 	if(*partition == 0){
 		readfile("#e/bootdisk", bd, sizeof(bd));
 		if(*bd){
-			if(pp = strchr(bd, ':'))
+			if(pp = jehanne_strchr(bd, ':'))
 				*pp = 0;
 			/* damned artificial intelligence */
-			i = strlen(bd);
-			if(strcmp("disk", &bd[i-4]) == 0)
+			i = jehanne_strlen(bd);
+			if(jehanne_strcmp("disk", &bd[i-4]) == 0)
 				bd[i-4] = 0;
-			else if(strcmp("fs", &bd[i-2]) == 0)
+			else if(jehanne_strcmp("fs", &bd[i-2]) == 0)
 				bd[i-2] = 0;
-			else if(strcmp("fossil", &bd[i-6]) == 0)
+			else if(jehanne_strcmp("fossil", &bd[i-6]) == 0)
 				bd[i-6] = 0;
-			sprint(partition, "%scache", bd);
-			if(stat(partition, statbuf, sizeof statbuf) < 0)
+			jehanne_sprint(partition, "%scache", bd);
+			if(jehanne_stat(partition, statbuf, sizeof statbuf) < 0)
 				*bd = 0;
 		}
 		if(*bd == 0){
-			sprint(partition, "%scache", bootdisk);
-			if(stat(partition, statbuf, sizeof statbuf) < 0)
+			jehanne_sprint(partition, "%scache", bootdisk);
+			if(jehanne_stat(partition, statbuf, sizeof statbuf) < 0)
 				return fd;
 		}
 	}
 
-	print("cfs...");
-	if(pipe(p)<0)
+	jehanne_print("cfs...");
+	if(jehanne_pipe(p)<0)
 		fatal("pipe");
-	switch(fork()){
+	switch(jehanne_fork()){
 	case -1:
 		fatal("fork");
 	case 0:
 		close(p[1]);
-		if(dup(fd, 0) != 0)
-			fatal("dup(fd, 0)");
+		if(jehanne_dup(fd, 0) != 0)
+			fatal("jehanne_dup(fd, 0)");
 		close(fd);
-		if(dup(p[0], 1) != 1)
-			fatal("dup(p[0], 1)");
+		if(jehanne_dup(p[0], 1) != 1)
+			fatal("jehanne_dup(p[0], 1)");
 		close(p[0]);
 		if(fflag)
-			execl("/boot/cfs", "bootcfs", "-rs", "-f", partition, 0);
+			jehanne_execl("/boot/cfs", "bootcfs", "-rs", "-f", partition, 0);
 		else
-			execl("/boot/cfs", "bootcfs", "-s", "-f", partition, 0);
+			jehanne_execl("/boot/cfs", "bootcfs", "-s", "-f", partition, 0);
 		break;
 	default:
 		close(p[0]);

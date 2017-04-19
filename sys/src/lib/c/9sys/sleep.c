@@ -20,13 +20,13 @@
 #include <libc.h>
 
 void
-sleep(int32_t millisecs)
+jehanne_sleep(int32_t millisecs)
 {
 	int64_t wakeup;
 
 	wakeup = awake(millisecs);	// give up the processor, in any case
 	if(millisecs > 0)
 		while(rendezvous(&wakeup, (void*)1) == (void*)~0)
-			if(awakened(wakeup))
+			if(jehanne_awakened(wakeup))
 				return;
 }

@@ -1,5 +1,5 @@
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 
 void
 main(int argc, char *argv[])

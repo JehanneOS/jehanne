@@ -22,7 +22,7 @@
 #define EXIT_SUCCESS 0
 #define EXIT_FAILURE 1	// POSIX
 
-#define __POSIX_EXIT_PREFIX "posix exit: "
+#include <posix.h>	// to get __POSIX_EXIT_PREFIX
 
 typedef	struct {
 	int	quot;

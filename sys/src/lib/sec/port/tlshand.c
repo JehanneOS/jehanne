@@ -1,5 +1,5 @@
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 #include <auth.h>
 #include <mp.h>
 #include <libsec.h>
@@ -482,21 +482,21 @@ tlsServer(int fd, TLSconn *conn)
 		return -1;
 	}
 	buf[n] = 0;
-	snprint(conn->dir, sizeof(conn->dir), "#a/tls/%s", buf);
-	snprint(dname, sizeof(dname), "#a/tls/%s/hand", buf);
+	jehanne_snprint(conn->dir, sizeof(conn->dir), "#a/tls/%s", buf);
+	jehanne_snprint(dname, sizeof(dname), "#a/tls/%s/hand", buf);
 	hand = open(dname, ORDWR);
 	if(hand < 0){
 		close(ctl);
 		return -1;
 	}
 	data = -1;
-	fprint(ctl, "fd %d 0x%x", fd, ProtocolVersion);
+	jehanne_fprint(ctl, "fd %d 0x%x", fd, ProtocolVersion);
 	tls = tlsServer2(ctl, hand,
 		conn->cert, conn->certlen,
 		conn->pskID, conn->psk, conn->psklen,
 		conn->trace, conn->chain);
 	if(tls != nil){
-		snprint(dname, sizeof(dname), "#a/tls/%s/data", buf);
+		jehanne_snprint(dname, sizeof(dname), "#a/tls/%s/data", buf);
 		data = open(dname, ORDWR);
 	}
 	close(hand);
@@ -505,14 +505,14 @@ tlsServer(int fd, TLSconn *conn)
 		tlsConnectionFree(tls);
 		return -1;
 	}
-	free(conn->cert);
+	jehanne_free(conn->cert);
 	conn->cert = nil;  // client certificates are not yet implemented
 	conn->certlen = 0;
 	conn->sessionIDlen = 0;
 	conn->sessionID = nil;
 	if(conn->sessionKey != nil
 	&& conn->sessionType != nil
-	&& strcmp(conn->sessionType, "ttls") == 0)
+	&& jehanne_strcmp(conn->sessionType, "ttls") == 0)
 		tls->sec->prf(
 			conn->sessionKey, conn->sessionKeylen,
 			tls->sec->sec, MasterSecretSize,
@@ -534,7 +534,7 @@ tlsClientExtensions(TLSconn *conn, int *plen)
 
 	// RFC6066 - Server Name Identification
 	if(conn->serverName != nil){
-		n = strlen(conn->serverName);
+		n = jehanne_strlen(conn->serverName);
 
 		m = p - b;
 		b = erealloc(b, m + 2+2+2+1+2+n);
@@ -545,7 +545,7 @@ tlsClientExtensions(TLSconn *conn, int *plen)
 		put16(p, 1+2+n), p += 2;	/* Server Name list length */
 		*p++ = 0;			/* Server Name Type: host_name */
 		put16(p, n), p += 2;		/* Server Name length */
-		memmove(p, conn->serverName, n);
+		jehanne_memmove(p, conn->serverName, n);
 		p += n;
 	}
 
@@ -615,38 +615,38 @@ tlsClient(int fd, TLSconn *conn)
 		return -1;
 	}
 	buf[n] = 0;
-	snprint(conn->dir, sizeof(conn->dir), "#a/tls/%s", buf);
-	snprint(dname, sizeof(dname), "#a/tls/%s/hand", buf);
+	jehanne_snprint(conn->dir, sizeof(conn->dir), "#a/tls/%s", buf);
+	jehanne_snprint(dname, sizeof(dname), "#a/tls/%s/hand", buf);
 	hand = open(dname, ORDWR);
 	if(hand < 0){
 		close(ctl);
 		return -1;
 	}
-	snprint(dname, sizeof(dname), "#a/tls/%s/data", buf);
+	jehanne_snprint(dname, sizeof(dname), "#a/tls/%s/data", buf);
 	data = open(dname, ORDWR);
 	if(data < 0){
 		close(hand);
 		close(ctl);
 		return -1;
 	}
-	fprint(ctl, "fd %d 0x%x", fd, ProtocolVersion);
+	jehanne_fprint(ctl, "fd %d 0x%x", fd, ProtocolVersion);
 	ext = tlsClientExtensions(conn, &n);
 	tls = tlsClient2(ctl, hand,
 		conn->cert, conn->certlen,
 		conn->pskID, conn->psk, conn->psklen,
 		ext, n, conn->trace);
-	free(ext);
+	jehanne_free(ext);
 	close(hand);
 	close(ctl);
 	if(tls == nil){
 		close(data);
 		return -1;
 	}
-	free(conn->cert);
+	jehanne_free(conn->cert);
 	if(tls->cert != nil){
 		conn->certlen = tls->cert->len;
 		conn->cert = emalloc(conn->certlen);
-		memcpy(conn->cert, tls->cert->data, conn->certlen);
+		jehanne_memcpy(conn->cert, tls->cert->data, conn->certlen);
 	} else {
 		conn->certlen = 0;
 		conn->cert = nil;
@@ -655,7 +655,7 @@ tlsClient(int fd, TLSconn *conn)
 	conn->sessionID = nil;
 	if(conn->sessionKey != nil
 	&& conn->sessionType != nil
-	&& strcmp(conn->sessionType, "ttls") == 0)
+	&& jehanne_strcmp(conn->sessionType, "ttls") == 0)
 		tls->sec->prf(
 			conn->sessionKey, conn->sessionKeylen,
 			tls->sec->sec, MasterSecretSize,
@@ -700,7 +700,7 @@ tlsServer2(int ctl, int hand,
 	c->trace = trace;
 	c->version = ProtocolVersion;
 
-	memset(&m, 0, sizeof(m));
+	jehanne_memset(&m, 0, sizeof(m));
 	if(!msgRecv(c, &m)){
 		if(trace)
 			trace("initial msgRecv failed\n");
@@ -757,7 +757,7 @@ tlsServer2(int ctl, int hand,
 
 	m.tag = HServerHello;
 	m.u.serverHello.version = c->version;
-	memmove(m.u.serverHello.random, c->sec->srandom, RandomSize);
+	jehanne_memmove(m.u.serverHello.random, c->sec->srandom, RandomSize);
 	m.u.serverHello.cipher = cipher;
 	m.u.serverHello.compressor = compressor;
 	m.u.serverHello.sid = makebytes(nil, 0);
@@ -818,8 +818,8 @@ tlsServer2(int ctl, int hand,
 	}
 	if(pskid != nil){
 		if(m.u.clientKeyExchange.pskid == nil
-		|| m.u.clientKeyExchange.pskid->len != strlen(pskid)
-		|| memcmp(pskid, m.u.clientKeyExchange.pskid->data, m.u.clientKeyExchange.pskid->len) != 0){
+		|| m.u.clientKeyExchange.pskid->len != jehanne_strlen(pskid)
+		|| jehanne_memcmp(pskid, m.u.clientKeyExchange.pskid->data, m.u.clientKeyExchange.pskid->len) != 0){
 			tlsError(c, EUnknownPSKidentity, "unknown or missing pskid");
 			goto Err;
 		}
@@ -866,7 +866,7 @@ tlsServer2(int ctl, int hand,
 	msgClear(&m);
 
 	/* change cipher spec */
-	if(fprint(c->ctl, "changecipher") < 0){
+	if(jehanne_fprint(c->ctl, "changecipher") < 0){
 		tlsError(c, EInternalError, "can't enable cipher: %r");
 		goto Err;
 	}
@@ -882,7 +882,7 @@ tlsServer2(int ctl, int hand,
 	if(trace)
 		trace("tls finished\n");
 
-	if(fprint(c->ctl, "opened") < 0)
+	if(jehanne_fprint(c->ctl, "opened") < 0)
 		goto Err;
 	return c;
 
@@ -951,12 +951,12 @@ Found:
 	if(pub == nil)
 		return nil;
 
-	memset(Q, 0, sizeof(*Q));
+	jehanne_memset(Q, 0, sizeof(*Q));
 	Q->x = mpnew(0);
 	Q->y = mpnew(0);
 	Q->d = mpnew(0);
 
-	memset(&K, 0, sizeof(K));
+	jehanne_memset(&K, 0, sizeof(K));
 	K.x = mpnew(0);
 	K.y = mpnew(0);
 
@@ -990,7 +990,7 @@ tlsClient2(int ctl, int hand,
 		return nil;
 
 	epm = nil;
-	memset(&m, 0, sizeof(m));
+	jehanne_memset(&m, 0, sizeof(m));
 	c = emalloc(sizeof(TlsConnection));
 
 	c->ctl = ctl;
@@ -1021,7 +1021,7 @@ tlsClient2(int ctl, int hand,
 	/* client hello */
 	m.tag = HClientHello;
 	m.u.clientHello.version = c->version;
-	memmove(m.u.clientHello.random, c->sec->crandom, RandomSize);
+	jehanne_memmove(m.u.clientHello.random, c->sec->crandom, RandomSize);
 	m.u.clientHello.sid = makebytes(nil, 0);
 	m.u.clientHello.ciphers = makeciphers(psklen > 0);
 	m.u.clientHello.compressors = makebytes(compressors,sizeof(compressors));
@@ -1041,7 +1041,7 @@ tlsClient2(int ctl, int hand,
 		goto Err;
 	}
 	tlsSecVers(c->sec, c->version);
-	memmove(c->sec->srandom, m.u.serverHello.random, RandomSize);
+	jehanne_memmove(c->sec->srandom, m.u.serverHello.random, RandomSize);
 
 	cipher = m.u.serverHello.cipher;
 	if((psklen > 0) != isPSK(cipher) || !setAlgs(c, cipher)) {
@@ -1155,7 +1155,7 @@ tlsClient2(int ctl, int hand,
 	if(psklen > 0){
 		if(pskid == nil)
 			pskid = "";
-		m.u.clientKeyExchange.pskid = makebytes((uint8_t*)pskid, strlen(pskid));
+		m.u.clientKeyExchange.pskid = makebytes((uint8_t*)pskid, jehanne_strlen(pskid));
 	}
 	m.u.clientKeyExchange.key = epm;
 	epm = nil;
@@ -1194,7 +1194,7 @@ tlsClient2(int ctl, int hand,
 	}
 
 	/* change cipher spec */
-	if(fprint(c->ctl, "changecipher") < 0){
+	if(jehanne_fprint(c->ctl, "changecipher") < 0){
 		tlsError(c, EInternalError, "can't enable cipher: %r");
 		goto Err;
 	}
@@ -1231,7 +1231,7 @@ tlsClient2(int ctl, int hand,
 	}
 	msgClear(&m);
 
-	if(fprint(c->ctl, "opened") < 0){
+	if(jehanne_fprint(c->ctl, "opened") < 0){
 		if(trace)
 			trace("unable to do final open: %r\n");
 		goto Err;
@@ -1239,7 +1239,7 @@ tlsClient2(int ctl, int hand,
 	return c;
 
 Err:
-	free(epm);
+	jehanne_free(epm);
 	msgClear(&m);
 	tlsConnectionFree(c);
 	return nil;
@@ -1282,13 +1282,13 @@ msgSend(TlsConnection *c, Msg *m, int act)
 		p += 2;
 
 		// random
-		memmove(p, m->u.clientHello.random, RandomSize);
+		jehanne_memmove(p, m->u.clientHello.random, RandomSize);
 		p += RandomSize;
 
 		// sid
 		n = m->u.clientHello.sid->len;
 		p[0] = n;
-		memmove(p+1, m->u.clientHello.sid->data, n);
+		jehanne_memmove(p+1, m->u.clientHello.sid->data, n);
 		p += n+1;
 
 		n = m->u.clientHello.ciphers->len;
@@ -1301,7 +1301,7 @@ msgSend(TlsConnection *c, Msg *m, int act)
 
 		n = m->u.clientHello.compressors->len;
 		p[0] = n;
-		memmove(p+1, m->u.clientHello.compressors->data, n);
+		jehanne_memmove(p+1, m->u.clientHello.compressors->data, n);
 		p += n+1;
 
 		if(m->u.clientHello.extensions == nil)
@@ -1310,7 +1310,7 @@ msgSend(TlsConnection *c, Msg *m, int act)
 		if(n == 0)
 			break;
 		put16(p, n);
-		memmove(p+2, m->u.clientHello.extensions->data, n);
+		jehanne_memmove(p+2, m->u.clientHello.extensions->data, n);
 		p += n+2;
 		break;
 	case HServerHello:
@@ -1318,13 +1318,13 @@ msgSend(TlsConnection *c, Msg *m, int act)
 		p += 2;
 
 		// random
-		memmove(p, m->u.serverHello.random, RandomSize);
+		jehanne_memmove(p, m->u.serverHello.random, RandomSize);
 		p += RandomSize;
 
 		// sid
 		n = m->u.serverHello.sid->len;
 		p[0] = n;
-		memmove(p+1, m->u.serverHello.sid->data, n);
+		jehanne_memmove(p+1, m->u.serverHello.sid->data, n);
 		p += n+1;
 
 		put16(p, m->u.serverHello.cipher);
@@ -1338,7 +1338,7 @@ msgSend(TlsConnection *c, Msg *m, int act)
 		if(n == 0)
 			break;
 		put16(p, n);
-		memmove(p+2, m->u.serverHello.extensions->data, n);
+		jehanne_memmove(p+2, m->u.serverHello.extensions->data, n);
 		p += n+2;
 		break;
 	case HServerHelloDone:
@@ -1356,7 +1356,7 @@ msgSend(TlsConnection *c, Msg *m, int act)
 		for(i = 0; i < m->u.certificate.ncert; i++){
 			put24(p, m->u.certificate.certs[i]->len);
 			p += 3;
-			memmove(p, m->u.certificate.certs[i]->data, m->u.certificate.certs[i]->len);
+			jehanne_memmove(p, m->u.certificate.certs[i]->data, m->u.certificate.certs[i]->len);
 			p += m->u.certificate.certs[i]->len;
 		}
 		break;
@@ -1367,7 +1367,7 @@ msgSend(TlsConnection *c, Msg *m, int act)
 		}
 		put16(p, m->u.certificateVerify.signature->len);
 		p += 2;
-		memmove(p, m->u.certificateVerify.signature->data, m->u.certificateVerify.signature->len);
+		jehanne_memmove(p, m->u.certificateVerify.signature->data, m->u.certificateVerify.signature->len);
 		p += m->u.certificateVerify.signature->len;
 		break;
 	case HServerKeyExchange:
@@ -1375,13 +1375,13 @@ msgSend(TlsConnection *c, Msg *m, int act)
 			n = m->u.serverKeyExchange.pskid->len;
 			put16(p, n);
 			p += 2;
-			memmove(p, m->u.serverKeyExchange.pskid->data, n);
+			jehanne_memmove(p, m->u.serverKeyExchange.pskid->data, n);
 			p += n;
 		}
 		if(m->u.serverKeyExchange.dh_parameters == nil)
 			break;
 		n = m->u.serverKeyExchange.dh_parameters->len;
-		memmove(p, m->u.serverKeyExchange.dh_parameters->data, n);
+		jehanne_memmove(p, m->u.serverKeyExchange.dh_parameters->data, n);
 		p += n;
 		if(m->u.serverKeyExchange.dh_signature == nil)
 			break;
@@ -1391,7 +1391,7 @@ msgSend(TlsConnection *c, Msg *m, int act)
 		}
 		n = m->u.serverKeyExchange.dh_signature->len;
 		put16(p, n), p += 2;
-		memmove(p, m->u.serverKeyExchange.dh_signature->data, n);
+		jehanne_memmove(p, m->u.serverKeyExchange.dh_signature->data, n);
 		p += n;
 		break;
 	case HClientKeyExchange:
@@ -1399,7 +1399,7 @@ msgSend(TlsConnection *c, Msg *m, int act)
 			n = m->u.clientKeyExchange.pskid->len;
 			put16(p, n);
 			p += 2;
-			memmove(p, m->u.clientKeyExchange.pskid->data, n);
+			jehanne_memmove(p, m->u.clientKeyExchange.pskid->data, n);
 			p += n;
 		}
 		if(m->u.clientKeyExchange.key == nil)
@@ -1411,11 +1411,11 @@ msgSend(TlsConnection *c, Msg *m, int act)
 			else
 				put16(p, n), p += 2;
 		}
-		memmove(p, m->u.clientKeyExchange.key->data, n);
+		jehanne_memmove(p, m->u.clientKeyExchange.key->data, n);
 		p += n;
 		break;
 	case HFinished:
-		memmove(p, m->u.finished.verify, m->u.finished.n);
+		jehanne_memmove(p, m->u.finished.verify, m->u.finished.n);
 		p += m->u.finished.n;
 		break;
 	}
@@ -1433,7 +1433,7 @@ msgSend(TlsConnection *c, Msg *m, int act)
 	if(act == AFlush){
 		c->sendp = c->sendbuf;
 		if(write(c->hand, c->sendbuf, p - c->sendbuf) < 0){
-			fprint(2, "write error: %r\n");
+			jehanne_fprint(2, "write error: %r\n");
 			goto Err;
 		}
 	}
@@ -1453,7 +1453,7 @@ tlsReadN(TlsConnection *c, int n)
 	nn = c->ep - c->rp;
 	if(nn < n){
 		if(c->rp != c->recvbuf){
-			memmove(c->recvbuf, c->rp, nn);
+			jehanne_memmove(c->recvbuf, c->rp, nn);
 			c->rp = c->recvbuf;
 			c->ep = &c->recvbuf[nn];
 		}
@@ -1536,8 +1536,8 @@ msgRecv(TlsConnection *c, Msg *m)
 		m->u.clientHello.sid = makebytes(nil, 0);
 		if(nrandom > RandomSize)
 			nrandom = RandomSize;
-		memset(m->u.clientHello.random, 0, RandomSize - nrandom);
-		memmove(&m->u.clientHello.random[RandomSize - nrandom], p, nrandom);
+		jehanne_memset(m->u.clientHello.random, 0, RandomSize - nrandom);
+		jehanne_memmove(&m->u.clientHello.random[RandomSize - nrandom], p, nrandom);
 		m->u.clientHello.compressors = newbytes(1);
 		m->u.clientHello.compressors->data[0] = CompressionNull;
 		goto Ok;
@@ -1564,7 +1564,7 @@ msgRecv(TlsConnection *c, Msg *m)
 
 		if(n < RandomSize)
 			goto Short;
-		memmove(m->u.clientHello.random, p, RandomSize);
+		jehanne_memmove(m->u.clientHello.random, p, RandomSize);
 		p += RandomSize, n -= RandomSize;
 		if(n < 1 || n < p[0]+1)
 			goto Short;
@@ -1606,7 +1606,7 @@ msgRecv(TlsConnection *c, Msg *m)
 
 		if(n < RandomSize)
 			goto Short;
-		memmove(m->u.serverHello.random, p, RandomSize);
+		jehanne_memmove(m->u.serverHello.random, p, RandomSize);
 		p += RandomSize, n -= RandomSize;
 
 		if(n < 1 || n < p[0]+1)
@@ -1813,7 +1813,7 @@ msgRecv(TlsConnection *c, Msg *m)
 		case SSL3FinishedLen:
 			if(n < m->u.finished.n)
 				goto Short;
-			memmove(m->u.finished.verify, p, m->u.finished.n);
+			jehanne_memmove(m->u.finished.verify, p, m->u.finished.n);
 			n -= m->u.finished.n;
 			break;
 		case BeforeSetVersion:
@@ -1831,7 +1831,7 @@ Ok:
 		char *buf;
 		buf = emalloc(8000);
 		c->trace("recv %s", msgPrint(buf, 8000, m));
-		free(buf);
+		jehanne_free(buf);
 	}
 	return 1;
 Short:
@@ -1862,14 +1862,14 @@ msgClear(Msg *m)
 	case HCertificate:
 		for(i=0; i<m->u.certificate.ncert; i++)
 			freebytes(m->u.certificate.certs[i]);
-		free(m->u.certificate.certs);
+		jehanne_free(m->u.certificate.certs);
 		break;
 	case HCertificateRequest:
 		freebytes(m->u.certificateRequest.types);
 		freeints(m->u.certificateRequest.sigalgs);
 		for(i=0; i<m->u.certificateRequest.nca; i++)
 			freebytes(m->u.certificateRequest.cas[i]);
-		free(m->u.certificateRequest.cas);
+		jehanne_free(m->u.certificateRequest.cas);
 		break;
 	case HCertificateVerify:
 		freebytes(m->u.certificateVerify.signature);
@@ -1891,7 +1891,7 @@ msgClear(Msg *m)
 	case HFinished:
 		break;
 	}
-	memset(m, 0, sizeof(Msg));
+	jehanne_memset(m, 0, sizeof(Msg));
 }
 
 static char *
@@ -1900,17 +1900,17 @@ bytesPrint(char *bs, char *be, char *s0, Bytes *b, char *s1)
 	int i;
 
 	if(s0)
-		bs = seprint(bs, be, "%s", s0);
+		bs = jehanne_seprint(bs, be, "%s", s0);
 	if(b == nil)
-		bs = seprint(bs, be, "nil");
+		bs = jehanne_seprint(bs, be, "nil");
 	else {
-		bs = seprint(bs, be, "<%d> [ ", b->len);
+		bs = jehanne_seprint(bs, be, "<%d> [ ", b->len);
 		for(i=0; i<b->len; i++)
-			bs = seprint(bs, be, "%.2x ", b->data[i]);
-		bs = seprint(bs, be, "]");
+			bs = jehanne_seprint(bs, be, "%.2x ", b->data[i]);
+		bs = jehanne_seprint(bs, be, "]");
 	}
 	if(s1)
-		bs = seprint(bs, be, "%s", s1);
+		bs = jehanne_seprint(bs, be, "%s", s1);
 	return bs;
 }
 
@@ -1920,17 +1920,17 @@ intsPrint(char *bs, char *be, char *s0, Ints *b, char *s1)
 	int i;
 
 	if(s0)
-		bs = seprint(bs, be, "%s", s0);
+		bs = jehanne_seprint(bs, be, "%s", s0);
 	if(b == nil)
-		bs = seprint(bs, be, "nil");
+		bs = jehanne_seprint(bs, be, "nil");
 	else {
-		bs = seprint(bs, be, "[ ");
+		bs = jehanne_seprint(bs, be, "[ ");
 		for(i=0; i<b->len; i++)
-			bs = seprint(bs, be, "%x ", b->data[i]);
-		bs = seprint(bs, be, "]");
+			bs = jehanne_seprint(bs, be, "%x ", b->data[i]);
+		bs = jehanne_seprint(bs, be, "]");
 	}
 	if(s1)
-		bs = seprint(bs, be, "%s", s1);
+		bs = jehanne_seprint(bs, be, "%s", s1);
 	return bs;
 }
 
@@ -1942,15 +1942,15 @@ msgPrint(char *buf, int n, Msg *m)
 
 	switch(m->tag) {
 	default:
-		bs = seprint(bs, be, "unknown %d\n", m->tag);
+		bs = jehanne_seprint(bs, be, "unknown %d\n", m->tag);
 		break;
 	case HClientHello:
-		bs = seprint(bs, be, "ClientHello\n");
-		bs = seprint(bs, be, "\tversion: %.4x\n", m->u.clientHello.version);
-		bs = seprint(bs, be, "\trandom: ");
+		bs = jehanne_seprint(bs, be, "ClientHello\n");
+		bs = jehanne_seprint(bs, be, "\tversion: %.4x\n", m->u.clientHello.version);
+		bs = jehanne_seprint(bs, be, "\trandom: ");
 		for(i=0; i<RandomSize; i++)
-			bs = seprint(bs, be, "%.2x", m->u.clientHello.random[i]);
-		bs = seprint(bs, be, "\n");
+			bs = jehanne_seprint(bs, be, "%.2x", m->u.clientHello.random[i]);
+		bs = jehanne_seprint(bs, be, "\n");
 		bs = bytesPrint(bs, be, "\tsid: ", m->u.clientHello.sid, "\n");
 		bs = intsPrint(bs, be, "\tciphers: ", m->u.clientHello.ciphers, "\n");
 		bs = bytesPrint(bs, be, "\tcompressors: ", m->u.clientHello.compressors, "\n");
@@ -1958,71 +1958,71 @@ msgPrint(char *buf, int n, Msg *m)
 			bs = bytesPrint(bs, be, "\textensions: ", m->u.clientHello.extensions, "\n");
 		break;
 	case HServerHello:
-		bs = seprint(bs, be, "ServerHello\n");
-		bs = seprint(bs, be, "\tversion: %.4x\n", m->u.serverHello.version);
-		bs = seprint(bs, be, "\trandom: ");
+		bs = jehanne_seprint(bs, be, "ServerHello\n");
+		bs = jehanne_seprint(bs, be, "\tversion: %.4x\n", m->u.serverHello.version);
+		bs = jehanne_seprint(bs, be, "\trandom: ");
 		for(i=0; i<RandomSize; i++)
-			bs = seprint(bs, be, "%.2x", m->u.serverHello.random[i]);
-		bs = seprint(bs, be, "\n");
+			bs = jehanne_seprint(bs, be, "%.2x", m->u.serverHello.random[i]);
+		bs = jehanne_seprint(bs, be, "\n");
 		bs = bytesPrint(bs, be, "\tsid: ", m->u.serverHello.sid, "\n");
-		bs = seprint(bs, be, "\tcipher: %.4x\n", m->u.serverHello.cipher);
-		bs = seprint(bs, be, "\tcompressor: %.2x\n", m->u.serverHello.compressor);
+		bs = jehanne_seprint(bs, be, "\tcipher: %.4x\n", m->u.serverHello.cipher);
+		bs = jehanne_seprint(bs, be, "\tcompressor: %.2x\n", m->u.serverHello.compressor);
 		if(m->u.serverHello.extensions != nil)
 			bs = bytesPrint(bs, be, "\textensions: ", m->u.serverHello.extensions, "\n");
 		break;
 	case HCertificate:
-		bs = seprint(bs, be, "Certificate\n");
+		bs = jehanne_seprint(bs, be, "Certificate\n");
 		for(i=0; i<m->u.certificate.ncert; i++)
 			bs = bytesPrint(bs, be, "\t", m->u.certificate.certs[i], "\n");
 		break;
 	case HCertificateRequest:
-		bs = seprint(bs, be, "CertificateRequest\n");
+		bs = jehanne_seprint(bs, be, "CertificateRequest\n");
 		bs = bytesPrint(bs, be, "\ttypes: ", m->u.certificateRequest.types, "\n");
 		if(m->u.certificateRequest.sigalgs != nil)
 			bs = intsPrint(bs, be, "\tsigalgs: ", m->u.certificateRequest.sigalgs, "\n");
-		bs = seprint(bs, be, "\tcertificateauthorities\n");
+		bs = jehanne_seprint(bs, be, "\tcertificateauthorities\n");
 		for(i=0; i<m->u.certificateRequest.nca; i++)
 			bs = bytesPrint(bs, be, "\t\t", m->u.certificateRequest.cas[i], "\n");
 		break;
 	case HCertificateVerify:
-		bs = seprint(bs, be, "HCertificateVerify\n");
+		bs = jehanne_seprint(bs, be, "HCertificateVerify\n");
 		if(m->u.certificateVerify.sigalg != 0)
-			bs = seprint(bs, be, "\tsigalg: %.4x\n", m->u.certificateVerify.sigalg);
+			bs = jehanne_seprint(bs, be, "\tsigalg: %.4x\n", m->u.certificateVerify.sigalg);
 		bs = bytesPrint(bs, be, "\tsignature: ", m->u.certificateVerify.signature,"\n");
 		break;
 	case HServerHelloDone:
-		bs = seprint(bs, be, "ServerHelloDone\n");
+		bs = jehanne_seprint(bs, be, "ServerHelloDone\n");
 		break;
 	case HServerKeyExchange:
-		bs = seprint(bs, be, "HServerKeyExchange\n");
+		bs = jehanne_seprint(bs, be, "HServerKeyExchange\n");
 		if(m->u.serverKeyExchange.pskid != nil)
 			bs = bytesPrint(bs, be, "\tpskid: ", m->u.serverKeyExchange.pskid, "\n");
 		if(m->u.serverKeyExchange.dh_parameters == nil)
 			break;
 		if(m->u.serverKeyExchange.curve != 0){
-			bs = seprint(bs, be, "\tcurve: %.4x\n", m->u.serverKeyExchange.curve);
+			bs = jehanne_seprint(bs, be, "\tcurve: %.4x\n", m->u.serverKeyExchange.curve);
 		} else {
 			bs = bytesPrint(bs, be, "\tdh_p: ", m->u.serverKeyExchange.dh_p, "\n");
 			bs = bytesPrint(bs, be, "\tdh_g: ", m->u.serverKeyExchange.dh_g, "\n");
 		}
 		bs = bytesPrint(bs, be, "\tdh_Ys: ", m->u.serverKeyExchange.dh_Ys, "\n");
 		if(m->u.serverKeyExchange.sigalg != 0)
-			bs = seprint(bs, be, "\tsigalg: %.4x\n", m->u.serverKeyExchange.sigalg);
+			bs = jehanne_seprint(bs, be, "\tsigalg: %.4x\n", m->u.serverKeyExchange.sigalg);
 		bs = bytesPrint(bs, be, "\tdh_parameters: ", m->u.serverKeyExchange.dh_parameters, "\n");
 		bs = bytesPrint(bs, be, "\tdh_signature: ", m->u.serverKeyExchange.dh_signature, "\n");
 		break;
 	case HClientKeyExchange:
-		bs = seprint(bs, be, "HClientKeyExchange\n");
+		bs = jehanne_seprint(bs, be, "HClientKeyExchange\n");
 		if(m->u.clientKeyExchange.pskid != nil)
 			bs = bytesPrint(bs, be, "\tpskid: ", m->u.clientKeyExchange.pskid, "\n");
 		if(m->u.clientKeyExchange.key != nil)
 			bs = bytesPrint(bs, be, "\tkey: ", m->u.clientKeyExchange.key, "\n");
 		break;
 	case HFinished:
-		bs = seprint(bs, be, "HFinished\n");
+		bs = jehanne_seprint(bs, be, "HFinished\n");
 		for(i=0; i<m->u.finished.n; i++)
-			bs = seprint(bs, be, "%.2x", m->u.finished.verify[i]);
-		bs = seprint(bs, be, "\n");
+			bs = jehanne_seprint(bs, be, "%.2x", m->u.finished.verify[i]);
+		bs = jehanne_seprint(bs, be, "\n");
 		break;
 	}
 	USED(bs);
@@ -2036,16 +2036,16 @@ tlsError(TlsConnection *c, int err, char *fmt, ...)
 	va_list arg;
 
 	va_start(arg, fmt);
-	vseprint(msg, msg+sizeof(msg), fmt, arg);
+	jehanne_vseprint(msg, msg+sizeof(msg), fmt, arg);
 	va_end(arg);
 	if(c->trace)
 		c->trace("tlsError: %s\n", msg);
 	if(c->erred)
-		fprint(2, "double error: %r, %s", msg);
+		jehanne_fprint(2, "double error: %r, %s", msg);
 	else
 		errstr(msg, sizeof(msg));
 	c->erred = 1;
-	fprint(c->ctl, "alert %d", err);
+	jehanne_fprint(c->ctl, "alert %d", err);
 }
 
 // commit to specific version number
@@ -2063,7 +2063,7 @@ setVersion(TlsConnection *c, int version)
 		c->version = version;
 		c->finished.n = TLSFinishedLen;
 	}
-	return fprint(c->ctl, "version 0x%x", version);
+	return jehanne_fprint(c->ctl, "version 0x%x", version);
 }
 
 // confirm that received Finished message matches the expected value
@@ -2092,8 +2092,8 @@ tlsConnectionFree(TlsConnection *c)
 	rsapubfree(c->sec->rsapub);
 	freebytes(c->cert);
 
-	memset(c, 0, sizeof(*c));
-	free(c);
+	jehanne_memset(c, 0, sizeof(*c));
+	jehanne_free(c);
 }
 
 
@@ -2203,7 +2203,7 @@ okCompression(Bytes *cv)
 
 	for(i = 0; i < nelem(compressors); i++) {
 		c = compressors[i];
-		if(memchr(cv->data, c, cv->len) != nil)
+		if(jehanne_memchr(cv->data, c, cv->len) != nil)
 			return c;
 	}
 	return -1;
@@ -2219,28 +2219,28 @@ initCiphers(void)
 	char s[MaxAlgF], *flds[MaxAlgs];
 	int i, j, n, ok;
 
-	lock(&ciphLock);
+	jehanne_lock(&ciphLock);
 	if(nciphers){
-		unlock(&ciphLock);
+		jehanne_unlock(&ciphLock);
 		return nciphers;
 	}
 	j = open("#a/tls/encalgs", OREAD);
 	if(j < 0){
-		werrstr("can't open #a/tls/encalgs: %r");
+		jehanne_werrstr("can't open #a/tls/encalgs: %r");
 		goto out;
 	}
 	n = read(j, s, MaxAlgF-1);
 	close(j);
 	if(n <= 0){
-		werrstr("nothing in #a/tls/encalgs: %r");
+		jehanne_werrstr("nothing in #a/tls/encalgs: %r");
 		goto out;
 	}
 	s[n] = 0;
-	n = getfields(s, flds, MaxAlgs, 1, " \t\r\n");
+	n = jehanne_getfields(s, flds, MaxAlgs, 1, " \t\r\n");
 	for(i = 0; i < nelem(cipherAlgs); i++){
 		ok = 0;
 		for(j = 0; j < n; j++){
-			if(strcmp(cipherAlgs[i].enc, flds[j]) == 0){
+			if(jehanne_strcmp(cipherAlgs[i].enc, flds[j]) == 0){
 				ok = 1;
 				break;
 			}
@@ -2250,21 +2250,21 @@ initCiphers(void)
 
 	j = open("#a/tls/hashalgs", OREAD);
 	if(j < 0){
-		werrstr("can't open #a/tls/hashalgs: %r");
+		jehanne_werrstr("can't open #a/tls/hashalgs: %r");
 		goto out;
 	}
 	n = read(j, s, MaxAlgF-1);
 	close(j);
 	if(n <= 0){
-		werrstr("nothing in #a/tls/hashalgs: %r");
+		jehanne_werrstr("nothing in #a/tls/hashalgs: %r");
 		goto out;
 	}
 	s[n] = 0;
-	n = getfields(s, flds, MaxAlgs, 1, " \t\r\n");
+	n = jehanne_getfields(s, flds, MaxAlgs, 1, " \t\r\n");
 	for(i = 0; i < nelem(cipherAlgs); i++){
 		ok = 0;
 		for(j = 0; j < n; j++){
-			if(strcmp(cipherAlgs[i].digest, flds[j]) == 0){
+			if(jehanne_strcmp(cipherAlgs[i].digest, flds[j]) == 0){
 				ok = 1;
 				break;
 			}
@@ -2274,7 +2274,7 @@ initCiphers(void)
 			nciphers++;
 	}
 out:
-	unlock(&ciphLock);
+	jehanne_unlock(&ciphLock);
 	return nciphers;
 }
 
@@ -2314,7 +2314,7 @@ factotum_rsa_open(RSApub *rsapub)
 		return nil;
 	}
 	s = "proto=rsa service=tls role=client";
-	if(auth_rpc(rpc, "start", s, strlen(s)) == ARok){
+	if(auth_rpc(rpc, "start", s, jehanne_strlen(s)) == ARok){
 		// roll factotum keyring around to match public key
 		n = mpnew(0);
 		while(auth_rpc(rpc, "read", nil, 0) == ARok){
@@ -2340,8 +2340,8 @@ factotum_rsa_decrypt(AuthRpc *rpc, mpint *cipher)
 	mpfree(cipher);
 	if(p == nil)
 		return nil;
-	rv = auth_rpc(rpc, "write", p, strlen(p));
-	free(p);
+	rv = auth_rpc(rpc, "write", p, jehanne_strlen(p));
+	jehanne_free(p);
 	if(rv != ARok || auth_rpc(rpc, "read", nil, 0) != ARok)
 		return nil;
 	return strtomp(rpc->arg, nil, 16, nil);
@@ -2381,7 +2381,7 @@ tlsPmd5(uint8_t *buf, int nbuf, uint8_t *key, int nkey, uint8_t *label, int nlab
 		buf += n;
 		nbuf -= n;
 		hmac_md5(ai, MD5dlen, key, nkey, tmp, nil);
-		memmove(ai, tmp, MD5dlen);
+		jehanne_memmove(ai, tmp, MD5dlen);
 	}
 }
 
@@ -2410,7 +2410,7 @@ tlsPsha1(uint8_t *buf, int nbuf, uint8_t *key, int nkey, uint8_t *label, int nla
 		buf += n;
 		nbuf -= n;
 		hmac_sha1(ai, SHA1dlen, key, nkey, tmp, nil);
-		memmove(ai, tmp, SHA1dlen);
+		jehanne_memmove(ai, tmp, SHA1dlen);
 	}
 }
 
@@ -2432,11 +2432,11 @@ p_sha256(uint8_t *buf, int nbuf, uint8_t *key, int nkey, uint8_t *label, int nla
 		n = SHA2_256dlen;
 		if(n > nbuf)
 			n = nbuf;
-		memmove(buf, tmp, n);
+		jehanne_memmove(buf, tmp, n);
 		buf += n;
 		nbuf -= n;
 		hmac_sha2_256(ai, SHA2_256dlen, key, nkey, tmp, nil);
-		memmove(ai, tmp, SHA2_256dlen);
+		jehanne_memmove(ai, tmp, SHA2_256dlen);
 	}
 }
 
@@ -2444,10 +2444,10 @@ p_sha256(uint8_t *buf, int nbuf, uint8_t *key, int nkey, uint8_t *label, int nla
 static void
 tls10PRF(uint8_t *buf, int nbuf, uint8_t *key, int nkey, char *label, uint8_t *seed0, int nseed0, uint8_t *seed1, int nseed1)
 {
-	int nlabel = strlen(label);
+	int nlabel = jehanne_strlen(label);
 	int n = (nkey + 1) >> 1;
 
-	memset(buf, 0, nbuf);
+	jehanne_memset(buf, 0, nbuf);
 	tlsPmd5(buf, nbuf, key, n, (uint8_t*)label, nlabel, seed0, nseed0, seed1, nseed1);
 	tlsPsha1(buf, nbuf, key+nkey-n, n, (uint8_t*)label, nlabel, seed0, nseed0, seed1, nseed1);
 }
@@ -2458,9 +2458,9 @@ tls12PRF(uint8_t *buf, int nbuf, uint8_t *key, int nkey, char *label, uint8_t *s
 	uint8_t seed[2*RandomSize];
 
 	assert(nseed0+nseed1 <= sizeof(seed));
-	memmove(seed, seed0, nseed0);
-	memmove(seed+nseed0, seed1, nseed1);
-	p_sha256(buf, nbuf, key, nkey, (uint8_t*)label, strlen(label), seed, nseed0+nseed1);
+	jehanne_memmove(seed, seed0, nseed0);
+	jehanne_memmove(seed+nseed0, seed1, nseed1);
+	p_sha256(buf, nbuf, key, nkey, (uint8_t*)label, jehanne_strlen(label), seed, nseed0+nseed1);
 }
 
 static void
@@ -2486,7 +2486,7 @@ sslPRF(uint8_t *buf, int nbuf, uint8_t *key, int nkey, char *label, uint8_t *see
 		n = MD5dlen;
 		if(n > nbuf)
 			n = nbuf;
-		memmove(buf, md5dig, n);
+		jehanne_memmove(buf, md5dig, n);
 		buf += n;
 		nbuf -= n;
 		len++;
@@ -2507,20 +2507,20 @@ sslSetFinished(TlsSec *sec, HandshakeHash hsh, uint8_t *finished, int isclient)
 
 	md5((uint8_t*)label, 4, nil, &hsh.md5);
 	md5(sec->sec, MasterSecretSize, nil, &hsh.md5);
-	memset(pad, 0x36, 48);
+	jehanne_memset(pad, 0x36, 48);
 	md5(pad, 48, nil, &hsh.md5);
 	md5(nil, 0, h0, &hsh.md5);
-	memset(pad, 0x5C, 48);
+	jehanne_memset(pad, 0x5C, 48);
 	s = md5(sec->sec, MasterSecretSize, nil, nil);
 	s = md5(pad, 48, nil, s);
 	md5(h0, MD5dlen, finished, s);
 
 	sha1((uint8_t*)label, 4, nil, &hsh.sha1);
 	sha1(sec->sec, MasterSecretSize, nil, &hsh.sha1);
-	memset(pad, 0x36, 40);
+	jehanne_memset(pad, 0x36, 40);
 	sha1(pad, 40, nil, &hsh.sha1);
 	sha1(nil, 0, h1, &hsh.sha1);
-	memset(pad, 0x5C, 40);
+	jehanne_memset(pad, 0x5C, 40);
 	s = sha1(sec->sec, MasterSecretSize, nil, nil);
 	s = sha1(pad, 40, nil, s);
 	sha1(h1, SHA1dlen, finished + MD5dlen, s);
@@ -2557,17 +2557,17 @@ tls12SetFinished(TlsSec *sec, HandshakeHash hsh, uint8_t *finished, int isclient
 		label = "client finished";
 	else
 		label = "server finished";
-	p_sha256(finished, TLSFinishedLen, sec->sec, MasterSecretSize, (uint8_t*)label, strlen(label), seed, SHA2_256dlen);
+	p_sha256(finished, TLSFinishedLen, sec->sec, MasterSecretSize, (uint8_t*)label, jehanne_strlen(label), seed, SHA2_256dlen);
 }
 
 static void
 tlsSecInits(TlsSec *sec, int cvers, uint8_t *crandom)
 {
-	memset(sec, 0, sizeof(*sec));
+	jehanne_memset(sec, 0, sizeof(*sec));
 	sec->clientVers = cvers;
-	memmove(sec->crandom, crandom, RandomSize);
+	jehanne_memmove(sec->crandom, crandom, RandomSize);
 
-	put32(sec->srandom, time(nil));
+	put32(sec->srandom, jehanne_time(nil));
 	genrandom(sec->srandom+4, RandomSize-4);
 }
 
@@ -2577,7 +2577,7 @@ tlsSecRSAs(TlsSec *sec, Bytes *epm)
 	Bytes *pm;
 
 	if(epm == nil){
-		werrstr("no encrypted premaster secret");
+		jehanne_werrstr("no encrypted premaster secret");
 		return -1;
 	}
 	// if the client messed up, just continue as if everything is ok,
@@ -2601,7 +2601,7 @@ tlsSecECDHEs1(TlsSec *sec, Namedcurve *nc)
 	int n;
 
 	ecdominit(dom, nc->init);
-	memset(Q, 0, sizeof(*Q));
+	jehanne_memset(Q, 0, sizeof(*Q));
 	Q->x = mpnew(0);
 	Q->y = mpnew(0);
 	Q->d = mpnew(0);
@@ -2626,16 +2626,16 @@ tlsSecECDHEs2(TlsSec *sec, Bytes *Yc)
 	ECpub *Y;
 
 	if(Yc == nil){
-		werrstr("no public key");
+		jehanne_werrstr("no public key");
 		return -1;
 	}
 
 	if((Y = ecdecodepub(dom, Yc->data, Yc->len)) == nil){
-		werrstr("bad public key");
+		jehanne_werrstr("bad public key");
 		return -1;
 	}
 
-	memset(&K, 0, sizeof(K));
+	jehanne_memset(&K, 0, sizeof(K));
 	K.x = mpnew(0);
 	K.y = mpnew(0);
 
@@ -2653,9 +2653,9 @@ tlsSecECDHEs2(TlsSec *sec, Bytes *Yc)
 static void
 tlsSecInitc(TlsSec *sec, int cvers)
 {
-	memset(sec, 0, sizeof(*sec));
+	jehanne_memset(sec, 0, sizeof(*sec));
 	sec->clientVers = cvers;
-	put32(sec->crandom, time(nil));
+	put32(sec->crandom, jehanne_time(nil));
 	genrandom(sec->crandom+4, RandomSize-4);
 }
 
@@ -2667,7 +2667,7 @@ tlsSecRSAc(TlsSec *sec, uint8_t *cert, int ncert)
 
 	pub = X509toRSApub(cert, ncert, nil, 0);
 	if(pub == nil){
-		werrstr("invalid x509/rsa certificate");
+		jehanne_werrstr("invalid x509/rsa certificate");
 		return nil;
 	}
 	pm = newbytes(MasterSecretSize);
@@ -2683,7 +2683,7 @@ static int
 tlsSecFinished(TlsSec *sec, HandshakeHash hsh, uint8_t *fin, int nfin, int isclient)
 {
 	if(sec->nfin != nfin){
-		werrstr("invalid finished exchange");
+		jehanne_werrstr("invalid finished exchange");
 		return -1;
 	}
 	hsh.md5.malloced = 0;
@@ -2731,12 +2731,12 @@ setSecrets(TlsConnection *c, int isclient)
 	(*c->sec->prf)(kd, c->nsecret, c->sec->sec, MasterSecretSize, "key expansion",
 			c->sec->srandom, RandomSize, c->sec->crandom, RandomSize);
 
-	enc64(secrets, 2*c->nsecret, kd, c->nsecret);
-	memset(kd, 0, c->nsecret);
+	jehanne_enc64(secrets, 2*c->nsecret, kd, c->nsecret);
+	jehanne_memset(kd, 0, c->nsecret);
 
-	rv = fprint(c->ctl, "secret %s %s %d %s", c->digest, c->enc, isclient, secrets);
-	memset(secrets, 0, 2*c->nsecret);
-	free(secrets);
+	rv = jehanne_fprint(c->ctl, "secret %s %s %d %s", c->digest, c->enc, isclient, secrets);
+	jehanne_memset(secrets, 0, 2*c->nsecret);
+	jehanne_free(secrets);
 
 	return rv;
 }
@@ -2756,18 +2756,18 @@ setMasterSecret(TlsSec *sec, Bytes *pm)
 		pm = newbytes(4 + opm->len + sec->psklen);
 		p = pm->data;
 		put16(p, opm->len), p += 2;
-		memmove(p, opm->data, opm->len), p += opm->len;
+		jehanne_memmove(p, opm->data, opm->len), p += opm->len;
 		put16(p, sec->psklen), p += 2;
-		memmove(p, sec->psk, sec->psklen);
+		jehanne_memmove(p, sec->psk, sec->psklen);
 
-		memset(opm->data, 0, opm->len);
+		jehanne_memset(opm->data, 0, opm->len);
 		freebytes(opm);
 	}
 
 	(*sec->prf)(sec->sec, MasterSecretSize, pm->data, pm->len, "master secret",
 			sec->crandom, RandomSize, sec->srandom, RandomSize);
 
-	memset(pm->data, 0, pm->len);
+	jehanne_memset(pm->data, 0, pm->len);
 	freebytes(pm);
 }
 
@@ -2779,9 +2779,9 @@ digestDHparams(TlsSec *sec, Bytes *par, uint8_t digest[MAXdlen], int sigalg)
 	Bytes *blob;
 
 	blob = newbytes(2*RandomSize + par->len);
-	memmove(blob->data+0*RandomSize, sec->crandom, RandomSize);
-	memmove(blob->data+1*RandomSize, sec->srandom, RandomSize);
-	memmove(blob->data+2*RandomSize, par->data, par->len);
+	jehanne_memmove(blob->data+0*RandomSize, sec->crandom, RandomSize);
+	jehanne_memmove(blob->data+1*RandomSize, sec->srandom, RandomSize);
+	jehanne_memmove(blob->data+2*RandomSize, par->data, par->len);
 	if(hashalg == 0){
 		digestlen = MD5dlen+SHA1dlen;
 		md5(blob->data, blob->len, digest, nil);
@@ -2865,15 +2865,15 @@ rsacomp(Bytes* block, RSApub* key, int modlen)
 
 	if(ylen < modlen) {
 		a = newbytes(modlen);
-		memset(a->data, 0, modlen-ylen);
-		memmove(a->data+modlen-ylen, ybytes->data, ylen);
+		jehanne_memset(a->data, 0, modlen-ylen);
+		jehanne_memmove(a->data+modlen-ylen, ybytes->data, ylen);
 		freebytes(ybytes);
 		ybytes = a;
 	}
 	else if(ylen > modlen) {
 		// assume it has leading zeros (mod should make it so)
 		a = newbytes(modlen);
-		memmove(a->data, ybytes->data, modlen);
+		jehanne_memmove(a->data, ybytes->data, modlen);
 		freebytes(ybytes);
 		ybytes = a;
 	}
@@ -2905,9 +2905,9 @@ pkcs1_encrypt(Bytes* data, RSApub* key, int blocktype)
 	eb = newbytes(modlen);
 	eb->data[0] = 0;
 	eb->data[1] = blocktype;
-	memmove(eb->data+2, pad->data, padlen);
+	jehanne_memmove(eb->data+2, pad->data, padlen);
 	eb->data[padlen+2] = 0;
-	memmove(eb->data+padlen+3, data->data, dlen);
+	jehanne_memmove(eb->data+padlen+3, data->data, dlen);
 	ans = rsacomp(eb, key, modlen);
 	freebytes(eb);
 	freebytes(pad);
@@ -2939,7 +2939,7 @@ pkcs1_decrypt(TlsSec *sec, Bytes *cipher)
 				break;
 		if(++i < eb->len){
 			eb->len -= i;
-			memmove(eb->data, eb->data+i, eb->len);
+			jehanne_memmove(eb->data, eb->data+i, eb->len);
 			return eb;
 		}
 	}
@@ -2958,11 +2958,11 @@ pkcs1_sign(TlsSec *sec, uint8_t *digest, int digestlen, int sigalg)
 	if(hashalg > 0 && hashalg < nelem(hashfun) && hashfun[hashalg].len == digestlen)
 		digestlen = asn1encodedigest(hashfun[hashalg].fun, digest, buf, sizeof(buf));
 	else if(digestlen == MD5dlen+SHA1dlen)
-		memmove(buf, digest, digestlen);
+		jehanne_memmove(buf, digest, digestlen);
 	else
 		digestlen = -1;
 	if(digestlen <= 0){
-		werrstr("bad digest algorithm");
+		jehanne_werrstr("bad digest algorithm");
 		return nil;
 	}
 	signedMP = factotum_rsa_decrypt(sec->rpc, pkcs1padbuf(buf, digestlen, sec->rsapub->n));
@@ -2982,11 +2982,11 @@ emalloc(int n)
 	void *p;
 	if(n==0)
 		n=1;
-	p = malloc(n);
+	p = jehanne_malloc(n);
 	if(p == nil)
-		sysfatal("out of memory");
-	memset(p, 0, n);
-	setmalloctag(p, getcallerpc());
+		jehanne_sysfatal("out of memory");
+	jehanne_memset(p, 0, n);
+	jehanne_setmalloctag(p, jehanne_getcallerpc());
 	return p;
 }
 
@@ -2997,9 +2997,9 @@ erealloc(void *ReallocP, int ReallocN)
 		ReallocN = 1;
 	if(ReallocP == nil)
 		ReallocP = emalloc(ReallocN);
-	else if((ReallocP = realloc(ReallocP, ReallocN)) == nil)
-		sysfatal("out of memory");
-	setrealloctag(ReallocP, getcallerpc());
+	else if((ReallocP = jehanne_realloc(ReallocP, ReallocN)) == nil)
+		jehanne_sysfatal("out of memory");
+	jehanne_setrealloctag(ReallocP, jehanne_getcallerpc());
 	return(ReallocP);
 }
 
@@ -3068,14 +3068,14 @@ makebytes(uint8_t* buf, int len)
 	Bytes* ans;
 
 	ans = newbytes(len);
-	memmove(ans->data, buf, len);
+	jehanne_memmove(ans->data, buf, len);
 	return ans;
 }
 
 static void
 freebytes(Bytes* b)
 {
-	free(b);
+	jehanne_free(b);
 }
 
 static mpint*
@@ -3116,7 +3116,7 @@ newints(int len)
 static void
 freeints(Ints* b)
 {
-	free(b);
+	jehanne_free(b);
 }
 
 static int

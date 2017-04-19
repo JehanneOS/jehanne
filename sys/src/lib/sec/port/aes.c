@@ -70,14 +70,14 @@ void	aes_decrypt(const uint32_t rk[], int Nr, const uint8_t ct[16], uint8_t pt[1
 void
 setupAESstate(AESstate *s, uint8_t key[], int keybytes, uint8_t *ivec)
 {
-	memset(s, 0, sizeof(*s));
+	jehanne_memset(s, 0, sizeof(*s));
 	if(keybytes > AESmaxkey)
 		keybytes = AESmaxkey;
-	memmove(s->key, key, keybytes);
+	jehanne_memmove(s->key, key, keybytes);
 	s->keybytes = keybytes;
 	s->rounds = aes_setup(s->ekey, s->dkey, s->key, keybytes * 8);
 	if(ivec != nil)
-		memmove(s->ivec, ivec, AESbsize);
+		jehanne_memmove(s->ivec, ivec, AESbsize);
 	if(keybytes==16 || keybytes==24 || keybytes==32)
 		s->setup = 0xcafebabe;
 	/* else aes_setup was invalid */
@@ -100,7 +100,7 @@ setupAESXCBCstate(AESstate *s)		/* was setupmac96 */
 			s->mackey + AESbsize*i);
 
 	p = s->mackey;
-	memset(q, 0, AESbsize);
+	jehanne_memset(q, 0, AESbsize);
 
 	/*
 	 * put the in the right endian.  once figured, probably better
@@ -114,7 +114,7 @@ setupAESXCBCstate(AESstate *s)		/* was setupmac96 */
 			q[i] |= p[sizeof(uint32_t)-j-1] << 8*j;
 		p += sizeof(uint32_t);
 	}
-	memmove(s->mackey, q, 16);
+	jehanne_memmove(s->mackey, q, 16);
 }
 
 /*
@@ -129,10 +129,10 @@ aesXCBCmac(uint8_t *p, int len, AESstate *s)
 
 	assert(s->keybytes == 16);	/* more complicated for bigger */
 	assert(s->rounds <= sizeof(s->mackey)/sizeof(uint32_t));
-	memset(s->ivec, 0, AESbsize);	/* E[0] is 0+ */
+	jehanne_memset(s->ivec, 0, AESbsize);	/* E[0] is 0+ */
 
 	for(; len > AESbsize; len -= AESbsize){
-		memmove(q, p, AESbsize);
+		jehanne_memmove(q, p, AESbsize);
 		p2 = q;
 		ip = s->ivec;
 		for(eip = ip + AESbsize; ip < eip; )
@@ -142,7 +142,7 @@ aesXCBCmac(uint8_t *p, int len, AESstate *s)
 	}
 	/* the last one */
 
-	memmove(q, p, len);
+	jehanne_memmove(q, p, len);
 	if(len == AESbsize)
 		mackey = s->mackey + AESbsize;	/* k2 */
 	else{
@@ -150,7 +150,7 @@ aesXCBCmac(uint8_t *p, int len, AESstate *s)
 		p2 = q+len;			/* padding */
 		*p2++ = 1 << 7;
 		len = AESbsize - len - 1;
-		memset(p2, 0, len);
+		jehanne_memset(p2, 0, len);
 	}
 
 	ip = s->ivec;
@@ -178,15 +178,15 @@ aesCBCencrypt(uint8_t *p, int len, AESstate *s)
 		for(eip = ip+AESbsize; ip < eip; )
 			*p2++ ^= *ip++;
 		aes_encrypt(s->ekey, s->rounds, p, q);
-		memmove(s->ivec, q, AESbsize);
-		memmove(p, q, AESbsize);
+		jehanne_memmove(s->ivec, q, AESbsize);
+		jehanne_memmove(p, q, AESbsize);
 		p += AESbsize;
 	}
 
 	if(len > 0){
 		ip = s->ivec;
 		aes_encrypt(s->ekey, s->rounds, ip, q);
-		memmove(s->ivec, q, AESbsize);
+		jehanne_memmove(s->ivec, q, AESbsize);
 		for(eip = ip+len; ip < eip; )
 			*p++ ^= *ip++;
 	}
@@ -199,9 +199,9 @@ aesCBCdecrypt(uint8_t *p, int len, AESstate *s)
 	uint8_t tmp[AESbsize], q[AESbsize];
 
 	for(; len >= AESbsize; len -= AESbsize){
-		memmove(tmp, p, AESbsize);
+		jehanne_memmove(tmp, p, AESbsize);
 		aes_decrypt(s->dkey, s->rounds, p, q);
-		memmove(p, q, AESbsize);
+		jehanne_memmove(p, q, AESbsize);
 		tp = tmp;
 		ip = s->ivec;
 		for(eip = ip+AESbsize; ip < eip; ){
@@ -213,7 +213,7 @@ aesCBCdecrypt(uint8_t *p, int len, AESstate *s)
 	if(len > 0){
 		ip = s->ivec;
 		aes_encrypt(s->ekey, s->rounds, ip, q);
-		memmove(s->ivec, q, AESbsize);
+		jehanne_memmove(s->ivec, q, AESbsize);
 		for(eip = ip+len; ip < eip; )
 			*p++ ^= *ip++;
 	}

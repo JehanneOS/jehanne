@@ -197,7 +197,7 @@ void
 ipv62smcast(uint8_t *smcast, uint8_t *a)
 {
 	assert(IPaddrlen == 16);
-	memmove(smcast, v6solicitednode, IPaddrlen);
+	jehanne_memmove(smcast, v6solicitednode, IPaddrlen);
 	smcast[13] = a[13];
 	smcast[14] = a[14];
 	smcast[15] = a[15];
@@ -215,7 +215,7 @@ parsemac(uint8_t *to, char *from, int len)
 	int i;
 
 	p = from;
-	memset(to, 0, len);
+	jehanne_memset(to, 0, len);
 	for(i = 0; i < len; i++){
 		if(p[0] == '\0' || p[1] == '\0')
 			break;
@@ -225,7 +225,7 @@ parsemac(uint8_t *to, char *from, int len)
 		nip[2] = '\0';
 		p += 2;
 
-		to[i] = strtoul(nip, 0, 16);
+		to[i] = jehanne_strtoul(nip, 0, 16);
 		if(*p == ':')
 			p++;
 	}
@@ -284,7 +284,7 @@ iphtrem(Ipht *ht, Conv *c)
 		if((*l)->c == c){
 			h = *l;
 			(*l) = h->next;
-			free(h);
+			jehanne_free(h);
 			break;
 		}
 	unlock(ht);

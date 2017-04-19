@@ -1,5 +1,5 @@
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 #include <draw.h>
 #include <thread.h>
 #include <cursor.h>
@@ -328,7 +328,7 @@ shutdown(void * _, char *msg)
 	killprocs();
 	for(i=0; oknotes[i]; i++)
 		if(strncmp(oknotes[i], msg, strlen(oknotes[i])) == 0){
-			lock(&shutdownlk);	/* only one can threadexitsall */
+			jehanne_lock(&shutdownlk);	/* only one can threadexitsall */
 			threadexitsall(msg);
 		}
 	fprint(2, "rio %d: abort: %s\n", getpid(), msg);

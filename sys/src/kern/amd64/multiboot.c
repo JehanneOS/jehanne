@@ -66,19 +66,19 @@ multiboot(uint32_t magic, uint32_t pmbi, int vflag)
 	uint64_t addr, len;
 
 	if(vflag)
-		print("magic %#ux pmbi %#ux\n", magic, pmbi);
+		jehanne_print("magic %#ux pmbi %#ux\n", magic, pmbi);
 	if(magic != 0x2badb002){
 		//return -1;
-		print("wrong magic in multiboot\n");
+		jehanne_print("wrong magic in multiboot\n");
 	}
 
 	mbi = KADDR(pmbi);
 	if(vflag)
-		print("flags %#ux\n", mbi->flags);
+		jehanne_print("flags %#ux\n", mbi->flags);
 	if(mbi->flags & Fcmdline){
 		p = KADDR(mbi->cmdline);
 		if(vflag)
-			print("cmdline <%s>\n", p);
+			jehanne_print("cmdline <%s>\n", p);
 		else
 			optionsinit(p);
 	}
@@ -90,11 +90,11 @@ multiboot(uint32_t magic, uint32_t pmbi, int vflag)
 			else
 				p = "";
 			if(vflag)
-				print("mod %#ux %#ux <%s>\n",
+				jehanne_print("mod %#ux %#ux <%s>\n",
 					mod->modstart, mod->modend, p);
 			else {
 				asmmodinit(mod->modstart, mod->modend, p);
-				modname = strrchr(p, '/');
+				modname = jehanne_strrchr(p, '/');
 				if(modname == nil)
 					modname = p;
 				if(*modname == '/')
@@ -112,35 +112,35 @@ multiboot(uint32_t magic, uint32_t pmbi, int vflag)
 			switch(mmap->type){
 			default:
 				if(vflag)
-					print("type %ud", mmap->type);
+					jehanne_print("type %ud", mmap->type);
 				break;
 			case 1:
 				if(vflag)
-					print("Memory");
+					jehanne_print("Memory");
 				else
 					asmmapinit(addr, len, mmap->type);
 				break;
 			case 2:
 				if(vflag)
-					print("reserved");
+					jehanne_print("reserved");
 				else
 					asmmapinit(addr, len, mmap->type);
 				break;
 			case 3:
 				if(vflag)
-					print("ACPI Reclaim Memory");
+					jehanne_print("ACPI Reclaim Memory");
 				else
 					asmmapinit(addr, len, mmap->type);
 				break;
 			case 4:
 				if(vflag)
-					print("ACPI NVS Memory");
+					jehanne_print("ACPI NVS Memory");
 				else
 					asmmapinit(addr, len, mmap->type);
 				break;
 			}
 			if(vflag)
-				print("\n\t%#16.16llux %#16.16llux (%llud)\n",
+				jehanne_print("\n\t%#16.16llux %#16.16llux (%llud)\n",
 					addr, addr+len, len);
 
 			n += mmap->size+sizeof(mmap->size);
@@ -149,7 +149,7 @@ multiboot(uint32_t magic, uint32_t pmbi, int vflag)
 	}
 	if(vflag && (mbi->flags & Fbootloadername)){
 		p = KADDR(mbi->bootloadername);
-		print("bootloadername <%s>\n", p);
+		jehanne_print("bootloadername <%s>\n", p);
 	}
 
 	return 0;

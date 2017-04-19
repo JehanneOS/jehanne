@@ -8,7 +8,7 @@
  */
 
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 #include <bio.h>
 	/* Macros for Rune support of ctype.h-like functions */
 
@@ -24,6 +24,7 @@
 #define	isspace(r)	((r) == L' ' || (r) == L'\t' \
 			|| (0x0A <= (r) && (r) <= 0x0D))
 
+#undef tolower
 #define	tolower(r)	((r)-'A'+'a')
 
 #define	sgn(v)		((v) < 0 ? -1 : ((v) > 0 ? 1 : 0))

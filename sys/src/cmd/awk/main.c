@@ -50,12 +50,18 @@ int	curpfile = 0;	/* current filename */
 
 int	safe	= 0;	/* 1 => "safe" mode */
 
+void*
+memcpy(void* a, const void* b, size_t c)
+{
+	return jehanne_memcpy(a,b,c);
+}
+
 void main(int argc, char *argv[])
 {
 	char *fs = nil, *marg;
 	int temp;
 
-	setfcr(getfcr() & ~FPINVAL);
+	jehanne_setfcr(jehanne_getfcr() & ~FPINVAL);
 
 	Binit(&stdin, 0, OREAD);
 	Binit(&stdout, 1, OWRITE);
@@ -64,21 +70,21 @@ void main(int argc, char *argv[])
 	cmdname = argv[0];
 	if (argc == 1) {
 		Bprint(&stderr, "Usage: %s [-F fieldsep] [-mf n] [-mr n] [-v var=value] [-f programfile | 'program'] [file ...]\n", cmdname);
-		exits("usage");
+		jehanne_exits("usage");
 	}
 
-	atnotify(handler, 1);
+	jehanne_atnotify(handler, 1);
 	yyin = nil;
 	symtab = makesymtab(NSYMTAB);
 	while (argc > 1 && argv[1][0] == '-' && argv[1][1] != '\0') {
-		if (strcmp(argv[1], "--") == 0) {	/* explicit end of args */
+		if (jehanne_strcmp(argv[1], "--") == 0) {	/* explicit end of args */
 			argc--;
 			argv++;
 			break;
 		}
 		switch (argv[1][1]) {
 		case 's':
-			if (strcmp(argv[1], "-safe") == 0)
+			if (jehanne_strcmp(argv[1], "-safe") == 0)
 				safe = 1;
 			break;
 		case 'f':	/* next argument is program filename */
@@ -112,10 +118,10 @@ void main(int argc, char *argv[])
 				/* no longer needed */
 			marg = argv[1];
 			if (argv[1][3])
-				temp = atoi(&argv[1][3]);
+				temp = jehanne_atoi(&argv[1][3]);
 			else {
 				argv++; argc--;
-				temp = atoi(&argv[1][0]);
+				temp = jehanne_atoi(&argv[1][0]);
 			}
 			switch (marg[2]) {
 			case 'r':	recsize = temp; break;
@@ -124,14 +130,14 @@ void main(int argc, char *argv[])
 			}
 			break;
 		case 'd':
-			dbg = atoi(&argv[1][2]);
+			dbg = jehanne_atoi(&argv[1][2]);
 			if (dbg == 0)
 				dbg = 1;
-			print("awk %s\n", version);
+			jehanne_print("awk %s\n", version);
 			break;
 		case 'V':	/* added for exptools "standard" */
-			print("awk %s\n", version);
-			exits(0);
+			jehanne_print("awk %s\n", version);
+			jehanne_exits(0);
 			break;
 		default:
 			WARNING("unknown option %s ignored", argv[1]);
@@ -144,7 +150,7 @@ void main(int argc, char *argv[])
 	if (npfile == 0) {	/* no -f; first argument is program */
 		if (argc <= 1) {
 			if (dbg)
-				exits(0);
+				jehanne_exits(0);
 			FATAL("no program given");
 		}
 		   dprint( ("program = |%s|\n", argv[1]) );
@@ -168,8 +174,8 @@ void main(int argc, char *argv[])
 	} else
 		bracecheck();
 	if(errorflag)
-		exits("error");
-	exits(0);
+		jehanne_exits("error");
+	jehanne_exits(0);
 }
 
 int pgetc(void)		/* get 1 character from awk program */
@@ -180,7 +186,7 @@ int pgetc(void)		/* get 1 character from awk program */
 		if (yyin == nil) {
 			if (curpfile >= npfile)
 				return Beof;
-			if (strcmp(pfile[curpfile], "-") == 0)
+			if (jehanne_strcmp(pfile[curpfile], "-") == 0)
 				yyin = &stdin;
 			else if ((yyin = Bopen(pfile[curpfile], OREAD)) == nil)
 				FATAL("can't open file %s", pfile[curpfile]);

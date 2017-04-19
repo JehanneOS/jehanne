@@ -45,10 +45,10 @@ _quotesetup(char *s, Rune *r, int nin, int nout, Quoteinfo *q,
 	}
 	for(; nin!=0; nin--){
 		if(s)
-			w = chartorune(&c, s);
+			w = jehanne_chartorune(&c, s);
 		else{
 			c = *r;
-			w = runelen(c);
+			w = jehanne_runelen(c);
 		}
 
 		if(c == '\0')
@@ -137,8 +137,8 @@ qstrfmt(char *sin, Rune *rin, Quoteinfo *q, Fmt *f)
 			r = *(uint8_t*)m;
 			if(r < Runeself)
 				m++;
-			else if((me - m) >= UTFmax || fullrune(m, me-m))
-				m += chartorune(&r, m);
+			else if((me - m) >= UTFmax || jehanne_fullrune(m, me-m))
+				m += jehanne_chartorune(&r, m);
 			else
 				break;
 		}else{
@@ -204,7 +204,7 @@ _quotestrfmt(int runesin, Fmt *f)
 		outlen = (char*)f->stop - (char*)f->to;
 
 	_quotesetup(s, r, nin, outlen, &q, f->flags&FmtSharp, f->runes);
-//print("bytes in %d bytes out %d runes in %d runesout %d\n", q.nbytesin, q.nbytesout, q.nrunesin, q.nrunesout);
+//jehanne_print("bytes in %d bytes out %d runes in %d runesout %d\n", q.nbytesin, q.nbytesout, q.nrunesin, q.nrunesout);
 
 	if(runesin){
 		if(!q.quoted)
@@ -218,22 +218,22 @@ _quotestrfmt(int runesin, Fmt *f)
 }
 
 int
-quotestrfmt(Fmt *f)
+jehanne_quotestrfmt(Fmt *f)
 {
 	return _quotestrfmt(0, f);
 }
 
 int
-quoterunestrfmt(Fmt *f)
+jehanne_quoterunestrfmt(Fmt *f)
 {
 	return _quotestrfmt(1, f);
 }
 
 void
-quotefmtinstall(void)
+jehanne_quotefmtinstall(void)
 {
-	fmtinstall('q', quotestrfmt);
-	fmtinstall('Q', quoterunestrfmt);
+	jehanne_fmtinstall('q', jehanne_quotestrfmt);
+	jehanne_fmtinstall('Q', jehanne_quoterunestrfmt);
 }
 
 int

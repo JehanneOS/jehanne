@@ -20,7 +20,7 @@
 #include <libc.h>
 
 int
-access(const char *name, int mode)
+jehanne_access(const char *name, int mode)
 {
 	int fd;
 

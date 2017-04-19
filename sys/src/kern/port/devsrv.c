@@ -27,7 +27,7 @@ srvlookup(char *name, uint32_t qidpath)
 	Srv *sp;
 
 	for(sp = srv; sp != nil; sp = sp->link) {
-		if(sp->path == qidpath || (name != nil && strcmp(sp->name, name) == 0))
+		if(sp->path == qidpath || (name != nil && jehanne_strcmp(sp->name, name) == 0))
 			return sp;
 	}
 	return nil;
@@ -53,7 +53,7 @@ srvgen(Chan *c, char* name, Dirtab* _, int __, int s, Dir *dp)
 	}
 	if(sp == nil
 	|| sp->chan == nil
-	|| (name != nil && (strlen(sp->name) >= sizeof(up->genbuf)))) {
+	|| (name != nil && (jehanne_strlen(sp->name) >= sizeof(up->genbuf)))) {
 		qunlock(&srvlk);
 		return -1;
 	}
@@ -100,9 +100,9 @@ srvname(Chan *c)
 	qlock(&srvlk);
 	for(sp = srv; sp != nil; sp = sp->link) {
 		if(sp->chan == c){
-			s = malloc(3+strlen(sp->name)+1);
+			s = jehanne_malloc(3+jehanne_strlen(sp->name)+1);
 			if(s != nil)
-				sprint(s, "#s/%s", sp->name);
+				jehanne_sprint(s, "#s/%s", sp->name);
 			break;
 		}
 	}
@@ -162,7 +162,7 @@ srvcreate(Chan *c, char *name, unsigned long omode, unsigned long perm)
 		//error(Eperm);
 	}
 
-	if(strlen(name) >= sizeof(up->genbuf))
+	if(jehanne_strlen(name) >= sizeof(up->genbuf))
 		error(Etoolong);
 
 	sp = smalloc(sizeof *sp);
@@ -172,9 +172,9 @@ srvcreate(Chan *c, char *name, unsigned long omode, unsigned long perm)
 	qlock(&srvlk);
 	if(waserror()){
 		qunlock(&srvlk);
-		free(sp->owner);
-		free(sp->name);
-		free(sp);
+		jehanne_free(sp->owner);
+		jehanne_free(sp->name);
+		jehanne_free(sp);
 		nexterror();
 	}
 	if(srvlookup(name, -1) != nil)
@@ -224,15 +224,15 @@ srvremove(Chan *c)
 	 * Only eve can remove system services.
 	 * No one can remove #s/boot.
 	 */
-	if(strcmp(sp->owner, eve) == 0 && !iseve())
+	if(jehanne_strcmp(sp->owner, eve) == 0 && !iseve())
 		error(Eperm);
-	if(strcmp(sp->name, "boot") == 0)
+	if(jehanne_strcmp(sp->name, "boot") == 0)
 		error(Eperm);
 
 	/*
 	 * No removing personal services.
 	 */
-	if((sp->perm&7) != 7 && strcmp(sp->owner, up->user) && !iseve())
+	if((sp->perm&7) != 7 && jehanne_strcmp(sp->owner, up->user) && !iseve())
 		error(Eperm);
 
 	*l = sp->link;
@@ -243,9 +243,9 @@ srvremove(Chan *c)
 
 	if(sp->chan != nil)
 		cclose(sp->chan);
-	free(sp->owner);
-	free(sp->name);
-	free(sp);
+	jehanne_free(sp->owner);
+	jehanne_free(sp->name);
+	jehanne_free(sp);
 }
 
 static long
@@ -260,10 +260,10 @@ srvwstat(Chan *c, uint8_t *dp, long n)
 
 	strs = smalloc(n);
 	if(waserror()){
-		free(strs);
+		jehanne_free(strs);
 		nexterror();
 	}
-	n = convM2D(dp, n, &d, strs);
+	n = jehanne_convM2D(dp, n, &d, strs);
 	if(n == 0)
 		error(Eshortstat);
 
@@ -277,13 +277,13 @@ srvwstat(Chan *c, uint8_t *dp, long n)
 	if(sp == nil)
 		error(Enonexist);
 
-	if(strcmp(sp->owner, up->user) != 0 && !iseve())
+	if(jehanne_strcmp(sp->owner, up->user) != 0 && !iseve())
 		error(Eperm);
 
-	if(d.name != nil && *d.name && strcmp(sp->name, d.name) != 0) {
-		if(strchr(d.name, '/') != nil)
+	if(d.name != nil && *d.name && jehanne_strcmp(sp->name, d.name) != 0) {
+		if(jehanne_strchr(d.name, '/') != nil)
 			error(Ebadchar);
-		if(strlen(d.name) >= sizeof(up->genbuf))
+		if(jehanne_strlen(d.name) >= sizeof(up->genbuf))
 			error(Etoolong);
 		kstrdup(&sp->name, d.name);
 	}
@@ -295,7 +295,7 @@ srvwstat(Chan *c, uint8_t *dp, long n)
 	qunlock(&srvlk);
 	poperror();
 
-	free(strs);
+	jehanne_free(strs);
 	poperror();
 
 	return n;
@@ -334,9 +334,9 @@ srvwrite(Chan *c, void *va, long n, int64_t _1)
 
 	if(n >= sizeof buf)
 		error(Egreg);
-	memmove(buf, va, n);	/* so we can NUL-terminate */
+	jehanne_memmove(buf, va, n);	/* so we can NUL-terminate */
 	buf[n] = 0;
-	fd = strtoul(buf, 0, 0);
+	fd = jehanne_strtoul(buf, 0, 0);
 
 	c1 = fdtochan(fd, -1, 0, 1);	/* error check and inc ref */
 
@@ -392,7 +392,7 @@ srvrenameuser(char *old, char *new)
 
 	qlock(&srvlk);
 	for(sp = srv; sp != nil; sp = sp->link) {
-		if(sp->owner != nil && strcmp(old, sp->owner) == 0)
+		if(sp->owner != nil && jehanne_strcmp(old, sp->owner) == 0)
 			kstrdup(&sp->owner, new);
 	}
 	qunlock(&srvlk);

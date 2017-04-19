@@ -7,9 +7,9 @@ egpuballoc(void)
 {
 	EGpub *eg;
 
-	eg = mallocz(sizeof(*eg), 1);
+	eg = jehanne_mallocz(sizeof(*eg), 1);
 	if(eg == nil)
-		sysfatal("egpuballoc");
+		jehanne_sysfatal("egpuballoc");
 	return eg;
 }
 
@@ -21,7 +21,7 @@ egpubfree(EGpub *eg)
 	mpfree(eg->p);
 	mpfree(eg->alpha);
 	mpfree(eg->key);
-	free(eg);
+	jehanne_free(eg);
 }
 
 
@@ -30,9 +30,9 @@ egprivalloc(void)
 {
 	EGpriv *eg;
 
-	eg = mallocz(sizeof(*eg), 1);
+	eg = jehanne_mallocz(sizeof(*eg), 1);
 	if(eg == nil)
-		sysfatal("egprivalloc");
+		jehanne_sysfatal("egprivalloc");
 	return eg;
 }
 
@@ -45,7 +45,7 @@ egprivfree(EGpriv *eg)
 	mpfree(eg->pub.alpha);
 	mpfree(eg->pub.key);
 	mpfree(eg->secret);
-	free(eg);
+	jehanne_free(eg);
 }
 
 EGsig*
@@ -53,9 +53,9 @@ egsigalloc(void)
 {
 	EGsig *eg;
 
-	eg = mallocz(sizeof(*eg), 1);
+	eg = jehanne_mallocz(sizeof(*eg), 1);
 	if(eg == nil)
-		sysfatal("egsigalloc");
+		jehanne_sysfatal("egsigalloc");
 	return eg;
 }
 
@@ -66,5 +66,5 @@ egsigfree(EGsig *eg)
 		return;
 	mpfree(eg->r);
 	mpfree(eg->s);
-	free(eg);
+	jehanne_free(eg);
 }

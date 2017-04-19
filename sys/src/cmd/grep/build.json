@@ -12,6 +12,7 @@
 		],
 		"Program": "grep",
 		"SourceFiles": [
+			"/sys/src/lib/c/lib9.c",
 			"comp.c",
 			"main.c",
 			"sub.c",

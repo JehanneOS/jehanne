@@ -210,7 +210,7 @@ mousectl(Cmdbuf *cb)
 	ct = lookupcmd(cb, mousectlmsg, nelem(mousectlmsg));
 	switch(ct->index){
 	case CMaccelerated:
-		setaccelerated(cb->nf == 1 ? 1 : atoi(cb->f[1]));
+		setaccelerated(cb->nf == 1 ? 1 : jehanne_atoi(cb->f[1]));
 		break;
 	case CMintellimouse:
 		setintellimouse();
@@ -228,7 +228,7 @@ mousectl(Cmdbuf *cb)
 		break;
 	case CMres:
 		if(cb->nf >= 2)
-			setres(atoi(cb->f[1]));
+			setres(jehanne_atoi(cb->f[1]));
 		else
 			setres(1);
 		break;
@@ -242,9 +242,9 @@ mousectl(Cmdbuf *cb)
 			setintellimouse();
 		break;
 	case CMhwaccel:
-		if(strcmp(cb->f[1], "on")==0)
+		if(jehanne_strcmp(cb->f[1], "on")==0)
 			mousehwaccel = 1;
-		else if(strcmp(cb->f[1], "off")==0)
+		else if(jehanne_strcmp(cb->f[1], "off")==0)
 			mousehwaccel = 0;
 		else
 			cmderror(cb, "bad mouse control message");

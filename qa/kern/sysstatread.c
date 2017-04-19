@@ -1,5 +1,5 @@
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 
 // Change-Id: I1cfd642d29a3955499b3507f56f0449d1710700e
 // sys/src/nxm/port/devcons.c:

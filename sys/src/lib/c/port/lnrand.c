@@ -13,7 +13,7 @@
 #define	MASK	0x7fffffffL
 
 int32_t
-lnrand(int32_t n)
+jehanne_lnrand(int32_t n)
 {
 	int32_t slop, v;
 
@@ -21,7 +21,7 @@ lnrand(int32_t n)
 		return n;
 	slop = MASK % n;
 	do
-		v = lrand();
+		v = jehanne_lrand();
 	while(v <= slop);
 	return v % n;
 }

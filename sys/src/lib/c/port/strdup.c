@@ -11,14 +11,14 @@
 #include <libc.h>
 
 char*
-strdup(const char *s)
+jehanne_strdup(const char *s)
 {  
 	char *ns;
 
-	ns = malloc(strlen(s) + 1);
+	ns = jehanne_malloc(jehanne_strlen(s) + 1);
 	if(ns == 0)
 		return 0;
-	setmalloctag(ns, getcallerpc());
+	jehanne_setmalloctag(ns, jehanne_getcallerpc());
 
-	return strcpy(ns, s);
+	return jehanne_strcpy(ns, s);
 }

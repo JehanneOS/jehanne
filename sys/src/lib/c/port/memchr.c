@@ -11,7 +11,7 @@
 #include	<libc.h>
 
 void*
-memchr(const void *ap, int c, uint32_t n)
+jehanne_memchr(const void *ap, int c, uint32_t n)
 {
 	const char *sp;
 

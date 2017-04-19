@@ -16,7 +16,7 @@
  * along with Jehanne.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 
 /* Test rune assignment: should not produce any warning
  * see https://gcc.gnu.org/bugzilla/show_bug.cgi?id=67132

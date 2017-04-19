@@ -35,12 +35,12 @@ mouseproc(void *arg)
 
 	mc = arg;
 	if((mfd = open("/dev/mouse", OREAD)) < 0)
-		sysfatal("open /dev/mouse: %r");
+		jehanne_sysfatal("open /dev/mouse: %r");
 	for(;;){
 		if(read(mfd, m, sizeof m) != sizeof m)
-			sysfatal("eof");
-		if(atoi(m+1+2*12)&4)
-			sysfatal("button 3");
+			jehanne_sysfatal("eof");
+		if(jehanne_atoi(m+1+2*12)&4)
+			jehanne_sysfatal("button 3");
 		send(mc, m);
 	}
 }
@@ -53,7 +53,7 @@ clockproc(void *arg)
 
 	c = arg;
 	for(t=0;; t++){
-		sleep(1000);
+		jehanne_sleep(1000);
 		sendul(c, t);
 	}
 }
@@ -82,13 +82,13 @@ threadmain(int argc, char *argv[])
 	for(;;){
 		switch(alt(a)){
 		case 0:	/*mouse event */
-			fprint(2, "click ");
+			jehanne_fprint(2, "click ");
 			break;
 		case 1:	/* clock event */
-			fprint(2, "tic ");
+			jehanne_fprint(2, "tic ");
 			break;
 		default:
-			sysfatal("can't happen");
+			jehanne_sysfatal("can't happen");
 		}
 	}
 }

@@ -16,15 +16,15 @@ mptobe(mpint *b, uint8_t *p, uint32_t n, uint8_t **pp)
 		m++;
 	if(p == nil){
 		n = m;
-		p = malloc(n);
+		p = jehanne_malloc(n);
 		if(p == nil)
-			sysfatal("mptobe: %r");
-		setmalloctag(p, getcallerpc());
+			jehanne_sysfatal("mptobe: %r");
+		jehanne_setmalloctag(p, jehanne_getcallerpc());
 	} else {
 		if(n < m)
 			return -1;
 		if(n > m)
-			memset(p+m, 0, n-m);
+			jehanne_memset(p+m, 0, n-m);
 	}
 	if(pp != nil)
 		*pp = p;

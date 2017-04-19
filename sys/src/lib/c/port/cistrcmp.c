@@ -11,7 +11,7 @@
 #include <libc.h>
 
 int
-cistrcmp(const char *s1, const char *s2)
+jehanne_cistrcmp(const char *s1, const char *s2)
 {
 	int c1, c2;
 

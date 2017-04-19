@@ -20,19 +20,19 @@
 #include <libc.h>
 
 int
-chdir(const char *dirname)
+jehanne_chdir(const char *dirname)
 {
 	char buf[32];
 	int tmp, fd;
 
-	tmp = getpid();
-	snprint(buf, sizeof(buf), "/proc/%d/wdir", tmp);
+	tmp = jehanne_getpid();
+	jehanne_snprint(buf, sizeof(buf), "/proc/%d/wdir", tmp);
 	fd = open(buf, OWRITE);
 	if(fd < 0)
 		fd = open("#0/wdir", OWRITE);
 	if(fd < 0)
 		return fd;
-	tmp = write(fd, dirname, 1+strlen(dirname));
+	tmp = write(fd, dirname, 1+jehanne_strlen(dirname));
 	close(fd);
 	return tmp;
 }

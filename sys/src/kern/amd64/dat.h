@@ -373,4 +373,4 @@ register Proc* up asm("r14");
 
 extern char dbgflg[256];
 
-#define dbgprint	print		/* for now */
+#define dbgprint	jehanne_print		/* for now */

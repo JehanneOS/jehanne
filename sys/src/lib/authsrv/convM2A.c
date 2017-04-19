@@ -1,5 +1,5 @@
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 #include <authsrv.h>
 
 extern int form1M2B(char *ap, int n, uint8_t key[32]);

@@ -407,20 +407,20 @@ ifstat(Ether *e, void *a, long n, usize offset)
 	uint32_t i, *t;
 
 	c = e->ctlr;
-	p = s = malloc(READSTR);
+	p = s = jehanne_malloc(READSTR);
 	q = p+READSTR;
 
 	readstats(c);
 	for(i = 0; i<nelem(stattab); i++)
 		if(c->stats[i]>0)
-			p = seprint(p, q, "%.10s  %llud\n", stattab[i].name, c->stats[i]);
+			p = jehanne_seprint(p, q, "%.10s  %llud\n", stattab[i].name, c->stats[i]);
 	t = c->speeds;
-	p = seprint(p, q, "type: %s\n", cttab[c->type].name);
-	p = seprint(p, q, "speeds: 0:%d 100:%d 1000:%d 10000:%d\n", t[0], t[1], t[2], t[3]);
-	p = seprint(p, q, "rdfree: %d rdh %d rdt %d\n", c->rdfree, c->reg[Rdt], c->reg[Rdh]);
-	seprint(p, q, "nobufs: %ud\n", c->nobufs);
+	p = jehanne_seprint(p, q, "type: %s\n", cttab[c->type].name);
+	p = jehanne_seprint(p, q, "speeds: 0:%d 100:%d 1000:%d 10000:%d\n", t[0], t[1], t[2], t[3]);
+	p = jehanne_seprint(p, q, "rdfree: %d rdh %d rdt %d\n", c->rdfree, c->reg[Rdt], c->reg[Rdh]);
+	jehanne_seprint(p, q, "nobufs: %ud\n", c->nobufs);
 	n = readstr(offset, a, n, s);
-	free(s);
+	jehanne_free(s);
 
 	return n;
 }
@@ -734,7 +734,7 @@ replenish(Ether *e, Ctlr *c, uint32_t rdh, int maysleep)
 				for(int j = 0; j < Ntypes; j++){
 					if(e->f[j] == nil)
 						continue;
-					print("  %.4ux %d\n", e->f[j]->type, qlen(e->f[j]->iq));
+					jehanne_print("  %.4ux %d\n", e->f[j]->type, qlen(e->f[j]->iq));
 				}
 			}
 			sleep(p, icansleep, p);
@@ -926,11 +926,11 @@ reset(Ctlr *c)
 	int i;
 
 	if(detach(c)){
-		print("%s: reset timeout\n", cname(c));
+		jehanne_print("%s: reset timeout\n", cname(c));
 		return -1;
 	}
 	if(eeload(c)){
-		print("%s: eeprom failure\n", cname(c));
+		jehanne_print("%s: eeprom failure\n", cname(c));
 		return -1;
 	}
 	p = c->ra;
@@ -975,7 +975,7 @@ txinit(Ctlr *c)
 		if(b)
 			freeb(b);
 	}
-	memset(c->tdba, 0, c->ntd*sizeof(Td));
+	jehanne_memset(c->tdba, 0, c->ntd*sizeof(Td));
 	c->reg[Tdbal] = PCIWADDRL(c->tdba);
 	c->reg[Tdbah] = PCIWADDRH(c->tdba);
 	c->reg[Tdlen] = c->ntd*sizeof(Td);
@@ -1008,7 +1008,7 @@ attach(Ether *e)
 	t = c->nrd*sizeof *c->rdba+255;
 	t += c->ntd*sizeof *c->tdba+255;
 	t += (c->ntd+c->nrd)*sizeof(Block*);
-	c->alloc = malloc(t);
+	c->alloc = jehanne_malloc(t);
 	qunlock(&c->alock);
 	if(c->alloc == 0)
 		error(Enomem);
@@ -1023,7 +1023,7 @@ attach(Ether *e)
 			b->free = nil;
 			freeb(b);
 		}
-		free(c->alloc);
+		jehanne_free(c->alloc);
 		c->alloc = 0;
 		nexterror();
 	}
@@ -1038,11 +1038,11 @@ attach(Ether *e)
 	rxinit(c);
 	txinit(c);
 
-	sprint(buf, "#l%dl", e->ctlrno);
+	jehanne_sprint(buf, "#l%dl", e->ctlrno);
 	kproc(buf, lproc, e);
-	sprint(buf, "#l%dr", e->ctlrno);
+	jehanne_sprint(buf, "#l%dr", e->ctlrno);
 	kproc(buf, rproc, e);
-	sprint(buf, "#l%dt", e->ctlrno);
+	jehanne_sprint(buf, "#l%dt", e->ctlrno);
 	kproc(buf, tproc, e);
 }
 
@@ -1126,24 +1126,24 @@ scan(void)
 		}
 		name = cttab[type].name;
 		if(nctlr == nelem(ctlrtab)){
-			print("%s: %T: too many controllers\n", name, p->tbdf);
+			jehanne_print("%s: %T: too many controllers\n", name, p->tbdf);
 			return;
 		}
 		io = p->mem[0].bar&~(uintmem)0xf;
 		mem = vmap(io, p->mem[0].size);
 		if(mem == 0){
-			print("%s: %T: cant map bar\n", name, p->tbdf);
+			jehanne_print("%s: %T: cant map bar\n", name, p->tbdf);
 			continue;
 		}
-		c = malloc(sizeof *c);
+		c = jehanne_malloc(sizeof *c);
 		c->p = p;
 		c->port = io;
 		c->reg = (uint32_t*)mem;
 		c->rbsz = cttab[type].mtu;
 		c->type = type;
 		if(reset(c)){
-			print("%s: %T: cant reset\n", name, p->tbdf);
-			free(c);
+			jehanne_print("%s: %T: cant reset\n", name, p->tbdf);
+			jehanne_free(c);
 			vunmap(mem, p->mem[0].size);
 			continue;
 		}
@@ -1178,7 +1178,7 @@ found:
 	e->tbdf = c->p->tbdf;
 	e->netif.mbps = 10000;
 	e->maxmtu = c->rbsz;
-	memmove(e->ea, c->ra, Eaddrlen);
+	jehanne_memmove(e->ea, c->ra, Eaddrlen);
 	e->netif.arg = e;
 	e->attach = attach;
 	e->ctl = ctl;

@@ -11,7 +11,7 @@
  * exportfs - Export a plan 9 name space across a network
  */
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 #include <auth.h>
 #include <9P2000.h>
 #include <libsec.h>

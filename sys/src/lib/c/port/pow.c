@@ -11,7 +11,7 @@
 #include <libc.h>
 
 double
-pow(double x, double y) /* return x ^ y (exponentiation) */
+jehanne_pow(double x, double y) /* return x ^ y (exponentiation) */
 {
 	double xy, y1, ye;
 	int32_t i;
@@ -25,7 +25,7 @@ pow(double x, double y) /* return x ^ y (exponentiation) */
 		y = -y;
 		flip = 1;
 	}
-	y1 = modf(y, &ye);
+	y1 = jehanne_modf(y, &ye);
 	if(y1 != 0.0){
 		if(x <= 0.)
 			goto zreturn;
@@ -33,7 +33,7 @@ pow(double x, double y) /* return x ^ y (exponentiation) */
 			y1 -= 1.;
 			ye += 1.;
 		}
-		xy = exp(y1 * log(x));
+		xy = jehanne_exp(y1 * jehanne_log(x));
 	}else
 		xy = 1.0;
 	if(ye > 0x7FFFFFFF){	/* should be ~0UL but compiler can't convert double to ulong */
@@ -41,17 +41,17 @@ pow(double x, double y) /* return x ^ y (exponentiation) */
  zreturn:
 			if(x==0. && !flip)
 				return 0.;
-			return NaN();
+			return jehanne_NaN();
 		}
 		if(flip){
 			if(y == .5)
-				return 1./sqrt(x);
+				return 1./jehanne_sqrt(x);
 			y = -y;
 		}else if(y == .5)
-			return sqrt(x);
-		return exp(y * log(x));
+			return jehanne_sqrt(x);
+		return jehanne_exp(y * jehanne_log(x));
 	}
-	x = frexp(x, &ex);
+	x = jehanne_frexp(x, &ex);
 	ey = 0;
 	i = ye;
 	if(i)
@@ -74,5 +74,5 @@ pow(double x, double y) /* return x ^ y (exponentiation) */
 		xy = 1. / xy;
 		ey = -ey;
 	}
-	return ldexp(xy, ey);
+	return jehanne_ldexp(xy, ey);
 }

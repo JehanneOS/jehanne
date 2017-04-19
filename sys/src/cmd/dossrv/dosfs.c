@@ -62,7 +62,7 @@ rattach(void)
 	root->qid.path = 0;
 	root->qid.vers = 0;
 	root->xf->rootqid = root->qid;
-	dp = malloc(sizeof(Dosptr));
+	dp = jehanne_malloc(sizeof(Dosptr));
 	if(dp == nil){
 		errno = Enomem;
 		goto error;
@@ -87,7 +87,7 @@ doclone(Xfile *of, int newfid)
 		errno = Enomem;
 		return nil;
 	}
-	dp = malloc(sizeof(Dosptr));
+	dp = jehanne_malloc(sizeof(Dosptr));
 	if(dp == nil){
 		errno = Enomem;
 		return nil;
@@ -98,7 +98,7 @@ doclone(Xfile *of, int newfid)
 	nf->fid = req->newfid;
 	nf->ptr = dp;
 	refxfs(nf->xf, 1);
-	memmove(dp, of->ptr, sizeof(Dosptr));
+	jehanne_memmove(dp, of->ptr, sizeof(Dosptr));
 	dp->p = nil;
 	dp->d = nil;
 	return nf;
@@ -129,21 +129,21 @@ rwalk(void)
 	}
 
 	saveqid = f->qid;
-	memmove(savedp, f->ptr, sizeof(Dosptr));
+	jehanne_memmove(savedp, f->ptr, sizeof(Dosptr));
 	for(; rep->nwqid < req->nwname && rep->nwqid < MAXWELEM; rep->nwqid++){
 		chat("\twalking %s\n", req->wname[rep->nwqid]);
 		if(!(f->qid.type & QTDIR)){
 			chat("\tnot dir: type=%#x\n", f->qid.type);
 			goto error;
 		}
-		if(strcmp(req->wname[rep->nwqid], ".") == 0){
+		if(jehanne_strcmp(req->wname[rep->nwqid], ".") == 0){
 			;
-		}else if(strcmp(req->wname[rep->nwqid], "..") == 0){
+		}else if(jehanne_strcmp(req->wname[rep->nwqid], "..") == 0){
 			if(f->qid.path != f->xf->rootqid.path){
 				r = walkup(f, dp);
 				if(r < 0)
 					goto error;
-				memmove(f->ptr, dp, sizeof(Dosptr));
+				jehanne_memmove(f->ptr, dp, sizeof(Dosptr));
 				if(isroot(dp->addr))
 					f->qid.path = f->xf->rootqid.path;
 				else
@@ -163,7 +163,7 @@ rwalk(void)
 			putfile(f);
 			if(r < 0)
 				goto error;
-			memmove(f->ptr, dp, sizeof(Dosptr));
+			jehanne_memmove(f->ptr, dp, sizeof(Dosptr));
 			f->qid.path = QIDPATH(dp);
 			f->qid.type = QTFILE;
 			if(isroot(dp->addr))
@@ -183,7 +183,7 @@ rwalk(void)
 	return;
 error:
 	f->qid = saveqid;
-	memmove(f->ptr, savedp, sizeof(Dosptr));
+	jehanne_memmove(f->ptr, savedp, sizeof(Dosptr));
 	if(nf != nil)
 		xfile(req->newfid, Clunk);
 error2:
@@ -274,7 +274,7 @@ mk8dot3name(Xfile *f, Dosptr *ndp, char *name, char *sname)
 	Dosptr tmpdp;
 	int i, longtype;
 
-	if(strcmp(name, ".") == 0 || strcmp(name, "..") == 0)
+	if(jehanne_strcmp(name, ".") == 0 || jehanne_strcmp(name, "..") == 0)
 		return Invalid;
 
 	/*
@@ -294,7 +294,7 @@ mk8dot3name(Xfile *f, Dosptr *ndp, char *name, char *sname)
 		 * alias is the upper-case version, which we
 		 * already know does not exist.
 		 */
-		strcpy(sname, name);
+		jehanne_strcpy(sname, name);
 		for(i=0; sname[i]; i++)
 			if('a' <= sname[i] && sname[i] <= 'z')
 				sname[i] += 'A'-'a';
@@ -334,7 +334,7 @@ mkdentry(Xfs *xf, Dosptr *ndp, char *name, char *sname, int longtype,
 
 	ndp->d = (Dosdir *)&ndp->p->iobuf[ndp->offset];
 	nd = ndp->d;
-	memset(nd, 0, DOSDIRSIZE);
+	jehanne_memset(nd, 0, DOSDIRSIZE);
 
 	if(longtype!=Short)
 		name = sname;
@@ -408,7 +408,7 @@ badperm:
 	 * check the name, find the slot for the dentry,
 	 * and find a good alias for a long name
 	 */
-	ndp = malloc(sizeof(Dosptr));
+	ndp = jehanne_malloc(sizeof(Dosptr));
 	if(ndp == nil){
 		putfile(f);
 		errno = Enomem;
@@ -417,7 +417,7 @@ badperm:
 	longtype = mk8dot3name(f, ndp, req->name, sname);
 	chat("rcreate %s longtype %d...\n", req->name, longtype);
 	if(longtype == Invalid){
-		free(ndp);
+		jehanne_free(ndp);
 		goto badperm;
 	}
 
@@ -432,7 +432,7 @@ badperm:
 		start = falloc(f->xf);
 		unmlock(bp);
 		if(start <= 0){
-			free(ndp);
+			jehanne_free(ndp);
 			putfile(f);
 			errno = Eio;
 			return;
@@ -451,7 +451,7 @@ badperm:
 	if(mkdentry(f->xf, ndp, req->name, sname, longtype, nattr, start, 0) < 0){
 		if(ndp->p != nil)
 			putsect(ndp->p);
-		free(ndp);
+		jehanne_free(ndp);
 		if(start > 0)
 			ffree(f->xf, start);
 		putfile(f);
@@ -479,18 +479,18 @@ badperm:
 			goto badio;
 		}
 		xd = (Dosdir *)&xp->iobuf[0];
-		memmove(xd, ndp->d, DOSDIRSIZE);
-		memset(xd->name, ' ', sizeof xd->name+sizeof xd->ext);
+		jehanne_memmove(xd, ndp->d, DOSDIRSIZE);
+		jehanne_memset(xd->name, ' ', sizeof xd->name+sizeof xd->ext);
 		xd->name[0] = '.';
 		xd = (Dosdir *)&xp->iobuf[DOSDIRSIZE];
 		if(pd)
-			memmove(xd, pd, DOSDIRSIZE);
+			jehanne_memmove(xd, pd, DOSDIRSIZE);
 		else{
-			memset(xd, 0, DOSDIRSIZE);
+			jehanne_memset(xd, 0, DOSDIRSIZE);
 			puttime(xd, 0);
 			xd->attr = DDIR;
 		}
-		memset(xd->name, ' ', sizeof xd->name+sizeof xd->ext);
+		jehanne_memset(xd->name, ' ', sizeof xd->name+sizeof xd->ext);
 		xd->name[0] = '.';
 		xd->name[1] = '.';
 		xp->flags |= BMOD;
@@ -504,7 +504,7 @@ badperm:
 badio:
 	putfile(f);
 	putsect(pdp->p);
-	free(pdp);
+	jehanne_free(pdp);
 }
 
 void
@@ -657,7 +657,7 @@ dostat(Xfile *f, Dir *d)
 
 	dp = f->ptr;
 	if(isroot(dp->addr)){
-		memset(d, 0, sizeof(Dir));
+		jehanne_memset(d, 0, sizeof(Dir));
 		d->name = "/";
 		d->qid.type = QTDIR;
 		d->qid.path = f->xf->rootqid.path;
@@ -688,7 +688,7 @@ dostat(Xfile *f, Dir *d)
 		}
 		getdir(f->xf, d, dp->d, dp->addr, dp->offset);
 		if(islong && sum == -1 && nameok(namebuf))
-			strcpy(d->name, namebuf);
+			jehanne_strcpy(d->name, namebuf);
 	}
 }
 
@@ -707,7 +707,7 @@ rstat(void)
 	dir.name = repdata;
 	dostat(f, &dir);
 
-	rep->nstat = convD2M(&dir, statbuf, sizeof statbuf);
+	rep->nstat = jehanne_convD2M(&dir, statbuf, sizeof statbuf);
 	rep->stat = statbuf;
 	putfile(f);
 }
@@ -740,7 +740,7 @@ rwstat(void)
 	changes = 0;
 	dir.name = repdata;
 	dostat(f, &dir);
-	if(convM2D(req->stat, req->nstat, &wdir, (char*)statbuf) != req->nstat){
+	if(jehanne_convM2D(req->stat, req->nstat, &wdir, (char*)statbuf) != req->nstat){
 		errno = Ebadstat;
 		goto out;
 	}
@@ -759,8 +759,8 @@ rwstat(void)
 	/*
 	 * no chown or chgrp
 	 */
-	if(wdir.uid[0] != '\0' && strcmp(dir.uid, wdir.uid) != 0
-	|| wdir.gid[0] != '\0' && strcmp(dir.gid, wdir.gid) != 0){
+	if(wdir.uid[0] != '\0' && jehanne_strcmp(dir.uid, wdir.uid) != 0
+	|| wdir.gid[0] != '\0' && jehanne_strcmp(dir.gid, wdir.gid) != 0){
 		errno = Eperm;
 		goto out;
 	}
@@ -806,8 +806,8 @@ rwstat(void)
 	 * we need to remove the old entry before creating the new one
 	 * to avoid a lock loop.
 	 */
-	if(wdir.name[0] != '\0' && strcmp(dir.name, wdir.name) != 0){
-		if(utflen(wdir.name) >= DOSNAMELEN){
+	if(wdir.name[0] != '\0' && jehanne_strcmp(dir.name, wdir.name) != 0){
+		if(jehanne_utflen(wdir.name) >= DOSNAMELEN){
 			errno = Etoolong;
 			goto out;
 		}
@@ -847,7 +847,7 @@ rwstat(void)
 		 */
 		putfile(f);
 		pf = *f;
-		memset(&pdp, 0, sizeof(Dosptr));
+		jehanne_memset(&pdp, 0, sizeof(Dosptr));
 		pdp.prevaddr = -1;
 		pdp.naddr = -1;
 		pdp.addr = dp->paddr;

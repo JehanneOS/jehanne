@@ -9,7 +9,7 @@ main(void)
 	mpint *m, *gamma, *delta, *in, *out;
 	int plen, shift;
 
-	fmtinstall('B', mpfmt);
+	jehanne_fmtinstall('B', mpfmt);
 
 	sk = egprivalloc();
 	sk->pub.p = uitomp(2357, nil);
@@ -30,5 +30,5 @@ main(void)
 	egdecrypt(sk, in, out);
 
 	if(mpcmp(m, out) != 0)
-		print("decrypt failed to recover message\n");
+		jehanne_print("decrypt failed to recover message\n");
 }

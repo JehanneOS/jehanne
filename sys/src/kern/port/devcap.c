@@ -112,7 +112,7 @@ hashstr(uint8_t *hash)
 	int i;
 
 	for(i = 0; i < Hashlen; i++)
-		sprint(buf+2*i, "%2.2ux", hash[i]);
+		jehanne_sprint(buf+2*i, "%2.2ux", hash[i]);
 	buf[2*Hashlen] = 0;
 	return buf;
 }
@@ -128,7 +128,7 @@ remcap(uint8_t *hash)
 	/* find the matching capability */
 	for(l = &capalloc.first; *l != nil;){
 		t = *l;
-		if(memcmp(hash, t->hash, Hashlen) == 0)
+		if(jehanne_memcmp(hash, t->hash, Hashlen) == 0)
 			break;
 		l = &t->next;
 	}
@@ -149,7 +149,7 @@ addcap(uint8_t *hash)
 	Caphash *p, *t, **l;
 
 	p = smalloc(sizeof *p);
-	memmove(p->hash, hash, Hashlen);
+	jehanne_memmove(p->hash, hash, Hashlen);
 	p->next = nil;
 	p->ticks = m->ticks;
 
@@ -161,7 +161,7 @@ addcap(uint8_t *hash)
 		if(t == nil)
 			panic("addcap");
 		capalloc.first = t->next;
-		free(t);
+		jehanne_free(t);
 		capalloc.nhash--;
 	}
 
@@ -208,7 +208,7 @@ capwrite(Chan *c, void *va, long n, int64_t _1)
 			error(Eperm);
 		if(n < Hashlen)
 			error(Eshort);
-		memmove(hash, va, Hashlen);
+		jehanne_memmove(hash, va, Hashlen);
 		addcap(hash);
 		break;
 
@@ -216,34 +216,34 @@ capwrite(Chan *c, void *va, long n, int64_t _1)
 		/* copy key to avoid a fault in hmac_xx */
 		cp = nil;
 		if(waserror()){
-			free(cp);
+			jehanne_free(cp);
 			nexterror();
 		}
 		cp = smalloc(n+1);
-		memmove(cp, va, n);
+		jehanne_memmove(cp, va, n);
 		cp[n] = 0;
 
 		from = cp;
-		key = strrchr(cp, '@');
+		key = jehanne_strrchr(cp, '@');
 		if(key == nil)
 			error(Eshort);
 		*key++ = 0;
 
-		hmac_sha1((uint8_t*)from, strlen(from), (uint8_t*)key, strlen(key), hash, nil);
+		hmac_sha1((uint8_t*)from, jehanne_strlen(from), (uint8_t*)key, jehanne_strlen(key), hash, nil);
 
 		p = remcap(hash);
 		if(p == nil){
-			snprint(err, sizeof err, "invalid capability %s@%s", from, key);
+			jehanne_snprint(err, sizeof err, "invalid capability %s@%s", from, key);
 			error(err);
 		}
 
 		/* if a from user is supplied, make sure it matches */
-		to = strchr(from, '@');
+		to = jehanne_strchr(from, '@');
 		if(to == nil){
 			to = from;
 		} else {
 			*to++ = 0;
-			if(strcmp(from, up->user) != 0)
+			if(jehanne_strcmp(from, up->user) != 0)
 				error("capability must match user");
 		}
 
@@ -251,8 +251,8 @@ capwrite(Chan *c, void *va, long n, int64_t _1)
 		kstrdup(&up->user, to);
 		up->basepri = PriNormal;
 
-		free(p);
-		free(cp);
+		jehanne_free(p);
+		jehanne_free(cp);
 		poperror();
 		break;
 

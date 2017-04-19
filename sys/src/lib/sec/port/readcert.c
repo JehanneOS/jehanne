@@ -11,20 +11,20 @@ readfile(char *name)
 	fd = open(name, OREAD);
 	if(fd < 0)
 		return nil;
-	if((d = dirfstat(fd)) == nil) {
+	if((d = jehanne_dirfstat(fd)) == nil) {
 		close(fd);
 		return nil;
 	}
-	s = malloc(d->length + 1);
-	if(s == nil || readn(fd, s, d->length) != d->length){
-		free(s);
-		free(d);
+	s = jehanne_malloc(d->length + 1);
+	if(s == nil || jehanne_readn(fd, s, d->length) != d->length){
+		jehanne_free(s);
+		jehanne_free(d);
 		close(fd);
 		return nil;
 	}
 	close(fd);
 	s[d->length] = '\0';
-	free(d);
+	jehanne_free(d);
 	return s;
 }
 
@@ -36,13 +36,13 @@ readcert(char *filename, int *pcertlen)
 
 	pem = readfile(filename);
 	if(pem == nil){
-		werrstr("can't read %s: %r", filename);
+		jehanne_werrstr("can't read %s: %r", filename);
 		return nil;
 	}
 	binary = decodePEM(pem, "CERTIFICATE", pcertlen, nil);
-	free(pem);
+	jehanne_free(pem);
 	if(binary == nil){
-		werrstr("can't parse %s", filename);
+		jehanne_werrstr("can't parse %s", filename);
 		return nil;
 	}
 	return binary;
@@ -55,7 +55,7 @@ readcertchain(char *filename)
 
 	chfile = readfile(filename);
 	if (chfile == nil) {
-		werrstr("can't read %s: %r", filename);
+		jehanne_werrstr("can't read %s: %r", filename);
 		return nil;
 	}
 	return decodepemchain(chfile, "CERTIFICATE");

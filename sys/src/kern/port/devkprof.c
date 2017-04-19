@@ -69,7 +69,7 @@ kprofattach(Chan *c, Chan *ac, char *spec, int flags)
 	kprof.nbuf = (kprof.maxpc-kprof.minpc) >> LRES;
 	n = kprof.nbuf*SZ;
 	if(kprof.buf == 0) {
-		kprof.buf = malloc(n);
+		kprof.buf = jehanne_malloc(n);
 		if(kprof.buf == 0)
 			error(Enomem);
 	}
@@ -154,12 +154,12 @@ kprofwrite(Chan *c, void *a, long n, int64_t _1)
 {
 	switch((int)(c->qid.path)){
 	case Kprofctlqid:
-		if(strncmp(a, "startclr", 8) == 0){
-			memset((char *)kprof.buf, 0, kprof.nbuf*SZ);
+		if(jehanne_strncmp(a, "startclr", 8) == 0){
+			jehanne_memset((char *)kprof.buf, 0, kprof.nbuf*SZ);
 			kprof.time = 1;
-		}else if(strncmp(a, "start", 5) == 0)
+		}else if(jehanne_strncmp(a, "start", 5) == 0)
 			kprof.time = 1;
-		else if(strncmp(a, "stop", 4) == 0)
+		else if(jehanne_strncmp(a, "stop", 4) == 0)
 			kprof.time = 0;
 		break;
 	default:

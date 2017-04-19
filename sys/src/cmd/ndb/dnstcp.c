@@ -2,7 +2,7 @@
  * dnstcp - serve dns via tcp
  */
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 #include <ip.h>
 #include "dns.h"
 

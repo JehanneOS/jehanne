@@ -63,8 +63,8 @@ _threaddial(const char *dest, const char *local, char *dir, int *cfdp)
 		return rv;
 	err[0] = '\0';
 	errstr(err, sizeof err);
-	if(strstr(err, "refused") != 0){
-		werrstr("%s", err);
+	if(jehanne_strstr(err, "refused") != 0){
+		jehanne_werrstr("%s", err);
 		return rv;
 	}
 	ds.netdir = "/net.alt";
@@ -74,10 +74,10 @@ _threaddial(const char *dest, const char *local, char *dir, int *cfdp)
 
 	alterr[0] = 0;
 	errstr(alterr, sizeof alterr);
-	if(strstr(alterr, "translate") || strstr(alterr, "does not exist"))
-		werrstr("%s", err);
+	if(jehanne_strstr(alterr, "translate") || jehanne_strstr(alterr, "does not exist"))
+		jehanne_werrstr("%s", err);
 	else
-		werrstr("%s", alterr);
+		jehanne_werrstr("%s", alterr);
 	return rv;
 }
 
@@ -90,19 +90,19 @@ csdial(DS *ds)
 	/*
 	 *  open connection server
 	 */
-	snprint(buf, sizeof(buf), "%s/cs", ds->netdir);
+	jehanne_snprint(buf, sizeof(buf), "%s/cs", ds->netdir);
 	fd = open(buf, ORDWR);
 	if(fd < 0){
 		/* no connection server, don't translate */
-		snprint(clone, sizeof(clone), "%s/%s/clone", ds->netdir, ds->proto);
+		jehanne_snprint(clone, sizeof(clone), "%s/%s/clone", ds->netdir, ds->proto);
 		return call(clone, ds->rem, ds);
 	}
 
 	/*
 	 *  ask connection server to translate
 	 */
-	snprint(buf, sizeof(buf), "%s!%s", ds->proto, ds->rem);
-	if(write(fd, buf, strlen(buf)) < 0){
+	jehanne_snprint(buf, sizeof(buf), "%s!%s", ds->proto, ds->rem);
+	if(write(fd, buf, jehanne_strlen(buf)) < 0){
 		close(fd);
 		return -1;
 	}
@@ -116,7 +116,7 @@ csdial(DS *ds)
 	seek(fd, 0, 0);
 	while((n = read(fd, buf, sizeof(buf) - 1)) > 0){
 		buf[n] = 0;
-		p = strchr(buf, ' ');
+		p = jehanne_strchr(buf, ' ');
 		if(p == 0)
 			continue;
 		*p++ = 0;
@@ -125,15 +125,15 @@ csdial(DS *ds)
 			break;
 		err[0] = '\0';
 		errstr(err, sizeof err);
-		if(strstr(err, "does not exist") == 0)
-			strcpy(besterr, err);
+		if(jehanne_strstr(err, "does not exist") == 0)
+			jehanne_strcpy(besterr, err);
 	}
 	close(fd);
 
 	if(rv < 0 && *besterr)
-		werrstr("%s", besterr);
+		jehanne_werrstr("%s", besterr);
 	else
-		werrstr("%s", err);
+		jehanne_werrstr("%s", err);
 	return rv;
 }
 
@@ -145,14 +145,14 @@ call(char *clone, char *dest, DS *ds)
 
 	/* because cs is in a different name space, replace the mount point */
 	if(*clone == '/'){
-		p = strchr(clone+1, '/');
+		p = jehanne_strchr(clone+1, '/');
 		if(p == nil)
 			p = clone;
 		else 
 			p++;
 	} else
 		p = clone;
-	snprint(cname, sizeof cname, "%s/%s", ds->netdir, p);
+	jehanne_snprint(cname, sizeof cname, "%s/%s", ds->netdir, p);
 
 	cfd = open(cname, ORDWR);
 	if(cfd < 0)
@@ -167,19 +167,19 @@ call(char *clone, char *dest, DS *ds)
 	name[n] = 0;
 	for(p = name; *p == ' '; p++)
 		;
-	snprint(name, sizeof(name), "%ld", strtoul(p, 0, 0));
-	p = strrchr(cname, '/');
+	jehanne_snprint(name, sizeof(name), "%ld", jehanne_strtoul(p, 0, 0));
+	p = jehanne_strrchr(cname, '/');
 	*p = 0;
 	if(ds->dir)
-		snprint(ds->dir, NETPATHLEN, "%s/%s", cname, name);
-	snprint(data, sizeof(data), "%s/%s/data", cname, name);
+		jehanne_snprint(ds->dir, NETPATHLEN, "%s/%s", cname, name);
+	jehanne_snprint(data, sizeof(data), "%s/%s/data", cname, name);
 
 	/* connect */
 	if(ds->local)
-		snprint(name, sizeof(name), "connect %s %s", dest, ds->local);
+		jehanne_snprint(name, sizeof(name), "connect %s %s", dest, ds->local);
 	else
-		snprint(name, sizeof(name), "connect %s", dest);
-	if(write(cfd, name, strlen(name)) < 0){
+		jehanne_snprint(name, sizeof(name), "connect %s", dest);
+	if(write(cfd, name, jehanne_strlen(name)) < 0){
 		close(cfd);
 		return -1;
 	}
@@ -205,10 +205,10 @@ _dial_string_parse(const char *str, DS *ds)
 {
 	char *p, *p2;
 
-	strncpy(ds->buf, str, Maxstring);
+	jehanne_strncpy(ds->buf, str, Maxstring);
 	ds->buf[Maxstring-1] = 0;
 
-	p = strchr(ds->buf, '!');
+	p = jehanne_strchr(ds->buf, '!');
 	if(p == 0) {
 		ds->netdir = 0;
 		ds->proto = "net";

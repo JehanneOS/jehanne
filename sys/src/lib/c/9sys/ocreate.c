@@ -36,7 +36,7 @@
  * For more info see http://marc.info/?t=146412533100003&r=1&w=2
  */
 int
-ocreate(const char *path, unsigned int omode, unsigned int perm)
+jehanne_ocreate(const char *path, unsigned int omode, unsigned int perm)
 {
 	int fd;
 	Dir *s;
@@ -53,16 +53,16 @@ ocreate(const char *path, unsigned int omode, unsigned int perm)
 		}
 	}
 
-	s = dirfstat(fd);
+	s = jehanne_dirfstat(fd);
 	if(s == nil){
 		close(fd);
 		return -1;
 	}
 	if(s->mode != perm){
 		s->mode = perm;
-		dirfwstat(fd, s); /* we ignore the return value, the device/server is allowed to ignore us */
+		jehanne_dirfwstat(fd, s); /* we ignore the return value, the device/server is allowed to ignore us */
 	}
-	free(s);
+	jehanne_free(s);
 
 Done:
 	return fd;

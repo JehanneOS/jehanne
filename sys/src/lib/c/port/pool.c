@@ -558,7 +558,7 @@ poolnewarena(Pool *p, uint32_t asize)
 		if(poolcompactl(p) == 0){
 			LOG(p, "pool too big: %llud+%lud > %llud\n",
 				(uint64_t)p->cursize, asize, (uint64_t)p->maxsize);
-			werrstr("memory pool too large");
+			jehanne_werrstr("memory pool too large");
 		}
 		return;
 	}
@@ -828,7 +828,7 @@ arenacompact(Pool *p, Arena *a)
 			break;
 		case ALLOC_MAGIC:
 			if(wb != b) {
-				memmove(wb, b, b->size);
+				jehanne_memmove(wb, b, b->size);
 				p->move(_B2D(b), _B2D(wb));
 				compacted = 1;
 			}
@@ -935,7 +935,7 @@ poolallocl(Pool *p, uint32_t dsize)
 	Alloc *ab;
 
 	if(dsize >= 0x80000000UL){	/* for sanity, overflow */
-		werrstr("invalid allocation size");
+		jehanne_werrstr("invalid allocation size");
 		return nil;
 	}
 
@@ -953,7 +953,7 @@ poolallocl(Pool *p, uint32_t dsize)
 	ab = trim(p, pooldel(p, fb), dsize);
 	p->curalloc += ab->size;
 	antagonism {
-		memset(B2D(p, ab), 0xDF, dsize);
+		jehanne_memset(B2D(p, ab), 0xDF, dsize);
 	}
 	return B2D(p, ab);
 }
@@ -986,7 +986,7 @@ poolreallocl(Pool *p, void *v, uint32_t ndsize)
 	if(nbsize <= a->size) {
 	Returnblock:
 		if(v != _B2D(a))
-			memmove(_B2D(a), v, odsize);
+			jehanne_memmove(_B2D(a), v, odsize);
 		a = trim(p, a, ndsize);
 		p->curalloc -= obsize;
 		p->curalloc += a->size;
@@ -1031,9 +1031,9 @@ poolreallocl(Pool *p, void *v, uint32_t ndsize)
 	}
 
 	/* enough cleverness */
-	memmove(nv, v, odsize);
+	jehanne_memmove(nv, v, odsize);
 	antagonism { 
-		memset((char*)nv+odsize, 0xDE, ndsize-odsize);
+		jehanne_memset((char*)nv+odsize, 0xDE, ndsize-odsize);
 	}
 	poolfreel(p, v);
 	return nv;
@@ -1109,7 +1109,7 @@ poolallocalignl(Pool *p, uint32_t dsize, uint32_t align, long offset, uint32_t s
 		c = alignptr(c, align, offset);
 		if((uintptr_t)c/span != (uintptr_t)(c+dsize-1)/span){
 			poolfreel(p, v);
-			werrstr("cannot satisfy dsize %lud span %lud with align %lud+%ld", dsize, span, align, offset);
+			jehanne_werrstr("cannot satisfy dsize %lud span %lud with align %lud+%ld", dsize, span, align, offset);
 			return nil;
 		}
 	}
@@ -1133,7 +1133,7 @@ poolallocalignl(Pool *p, uint32_t dsize, uint32_t align, long offset, uint32_t s
 	p->curalloc += b->size;
 	assert(D2B(p, c) == b);
 	antagonism { 
-		memset(c, 0xDD, dsize);
+		jehanne_memset(c, 0xDD, dsize);
 	}
 	return c;
 }
@@ -1157,7 +1157,7 @@ poolfreel(Pool *p, void *v)
 		ab->magic = DEAD_MAGIC;
 		n = getdsize(ab)-8;
 		if(n > 0)
-			memset((uint8_t*)v+8, 0xDA, n);
+			jehanne_memset((uint8_t*)v+8, 0xDA, n);
 		return;	
 	}
 

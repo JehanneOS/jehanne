@@ -17,7 +17,7 @@ enum
 };
 
 Dir*
-dirstat(const char *name)
+jehanne_dirstat(const char *name)
 {
 	Dir *d;
 	uint8_t *buf;
@@ -25,22 +25,22 @@ dirstat(const char *name)
 
 	nd = DIRSIZE;
 	for(i=0; i<2; i++){	/* should work by the second try */
-		d = malloc(sizeof(Dir) + BIT16SZ + nd);
+		d = jehanne_malloc(sizeof(Dir) + BIT16SZ + nd);
 		if(d == nil)
 			return nil;
 		buf = (uint8_t*)&d[1];
-		n = stat(name, buf, BIT16SZ+nd);
+		n = jehanne_stat(name, buf, BIT16SZ+nd);
 		if(n < BIT16SZ){
-			free(d);
+			jehanne_free(d);
 			return nil;
 		}
 		nd = GBIT16((uint8_t*)buf);	/* upper bound on size of Dir + strings */
 		if(nd <= n){
-			convM2D(buf, n, d, (char*)&d[1]);
+			jehanne_convM2D(buf, n, d, (char*)&d[1]);
 			return d;
 		}
 		/* else sizeof(Dir)+BIT16SZ+nd is plenty */
-		free(d);
+		jehanne_free(d);
 	}
 	return nil;
 }

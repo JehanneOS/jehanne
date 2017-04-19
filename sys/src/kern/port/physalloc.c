@@ -25,7 +25,7 @@ alloc0(usize nb, int clr)
 
 	p = basealloc(nb, 0, nil);
 	if(clr && p != nil)
-		memset(p, 0, nb);
+		jehanne_memset(p, 0, nb);
 	return p;
 }
 
@@ -136,10 +136,10 @@ physallocinit(void)
 void
 physdump(void)
 {
-	print("bpooldump phys: ");
+	jehanne_print("bpooldump phys: ");
 	bpooldump(phys);
 	if(physgig != nil){
-		print("bpooldump physgig: ");
+		jehanne_print("bpooldump physgig: ");
 		bpooldump(physgig);
 	}
 }

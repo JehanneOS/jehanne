@@ -2,7 +2,7 @@
 #include "../port/lib.h"
 
 /*
- * The code makes two assumptions: strlen(ld) is 1 or 2; latintab[i].ld can be a
+ * The code makes two assumptions: jehanne_strlen(ld) is 1 or 2; latintab[i].ld can be a
  * prefix of latintab[j].ld only when j<i.
  */
 struct cvlist

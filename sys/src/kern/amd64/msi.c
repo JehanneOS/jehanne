@@ -93,7 +93,7 @@ pcimsienable(Pcidev *p, uint64_t vec)
 		pcicfgw32(p, c + datao + 4, 0);
 
 	/* leave vectors configured but disabled for debugging */
-	if((s = getconf("*nomsi")) != nil && atoi(s) != 0)
+	if((s = getconf("*nomsi")) != nil && jehanne_atoi(s) != 0)
 		return -1;
 
 	pcicfgw16(p, c + 2, f);

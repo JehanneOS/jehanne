@@ -1,6 +1,6 @@
 /* password.c */
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 #include <bio.h>
 #include <mp.h>
 #include <libsec.h>

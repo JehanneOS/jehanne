@@ -67,7 +67,7 @@ setfissig(Sfis *x, uint32_t sig)
 void
 skelfis(uint8_t *c)
 {
-	memset(c, 0, Fissize);
+	jehanne_memset(c, 0, Fissize);
 	c[Ftype] = H2dev;
 	c[Fflags] = Fiscmd;
 	c[Fdev] = Ataobs;
@@ -357,7 +357,7 @@ idmove(char *p, uint16_t *u, int n)
 	p = op;
 	while(*p == ' ')
 		p++;
-	memmove(op, p, n - (e - p));
+	jehanne_memmove(op, p, n - (e - p));
 }
 
 char*
@@ -368,8 +368,8 @@ pflag(char *s, char *e, Sfis *f)
 	u = f->feat;
 	for(i = 0; i < Dnflag; i++)
 		if(u & (1 << i))
-			s = seprint(s, e, "%s ", flagname[i]);
-	return seprint(s, e, "\n");
+			s = jehanne_seprint(s, e, "%s ", flagname[i]);
+	return jehanne_seprint(s, e, "\n");
 }
 
 int
@@ -380,8 +380,8 @@ atapirwfis(Sfis *f, uint8_t *c, uint8_t *cdb, int cdblen, int ndata)
 	fill = f->feat&Datapi16? 16: 12;
 	if((len = cdblen) > fill)
 		len = fill;
-	memmove(c + 0x40, cdb, len);
-	memset(c + 0x40 + len, 0, fill - len);
+	jehanne_memmove(c + 0x40, cdb, len);
+	jehanne_memset(c + 0x40 + len, 0, fill - len);
 
 	c[Ftype] = H2dev;
 	c[Fflags] = Fiscmd;
@@ -394,7 +394,7 @@ atapirwfis(Sfis *f, uint8_t *c, uint8_t *cdb, int cdblen, int ndata)
 	c[Flba8] = ndata;
 	c[Flba16] = ndata >> 8;
 	c[Fdev] = Ataobs;
-	memset(c + 8, 0, Fissize - 8);
+	jehanne_memset(c + 8, 0, Fissize - 8);
 	return P28|Ppkt;
 }
 
@@ -439,7 +439,7 @@ rwfis(Sfis *f, uint8_t *c, int rw, int nsect, uint64_t lba)
 	c[Ficc] = 0;
 	c[Fcontrol] = 0;
 
-	memset(c + 16, 0, Fissize - 16);
+	jehanne_memset(c + 16, 0, Fissize - 16);
 	return ptab[udma][rw][llba];
 }
 
@@ -469,7 +469,7 @@ sigtofis(Sfis *f, uint8_t *c)
 	uint32_t u;
 
 	u = f->sig;
-	memset(c, 0, Fissize);
+	jehanne_memset(c, 0, Fissize);
 	c[Ftype] = 0x34;
 	c[Fflags] = 0x00;
 	c[Fcmd] = 0x50;
@@ -492,7 +492,7 @@ fistosig(uint8_t *u)
 void
 smpskelframe(Cfis *f, uint8_t *c, int m)
 {
-	memset(c, 0, Fissize);
+	jehanne_memset(c, 0, Fissize);
 	c[Ftype] = 0x40;
 	c[Fflags] = m;
 	if(f->phyid)

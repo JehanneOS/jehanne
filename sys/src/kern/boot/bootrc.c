@@ -20,31 +20,31 @@ configrc(Method* m)
 	configloopback();
 	bind("#S", "/dev", MAFTER);
 	char *argv[] = {"rc", "-m", rcmainPath, "-i", 0,};
-	print("Step 1. Run an rc. Set things up.\n");
-	switch(fork()){
+	jehanne_print("Step 1. Run an rc. Set things up.\n");
+	switch(jehanne_fork()){
 	case -1:
-		print("configrc: fork failed: %r\n");
+		jehanne_print("configrc: fork failed: %r\n");
 	case 0:
 		exec(rcPath, (const char**)argv);
 		fatal("can't exec rc");
 	default:
 		break;
 	}
-	while(waitpid() != -1)
+	while(jehanne_waitpid() != -1)
 		;
-	print("Step 2. Run an rc. Verify that things are as you want them.\n");
-	switch(fork()){
+	jehanne_print("Step 2. Run an rc. Verify that things are as you want them.\n");
+	switch(jehanne_fork()){
 	case -1:
-		print("configrc: fork failed: %r\n");
+		jehanne_print("configrc: fork failed: %r\n");
 	case 0:
 		exec(rcPath, (const char**)argv);
 		fatal("can't exec rc");
 	default:
 		break;
 	}
-	while(waitpid() != -1)
+	while(jehanne_waitpid() != -1)
 		;
-	print("rc is done, continuing...\n");
+	jehanne_print("rc is done, continuing...\n");
 }
 
 int
@@ -54,9 +54,9 @@ connectrc(void)
 	char buf[64];
 
 	// Later, make this anything.
-	snprint(buf, sizeof buf, "/srv/fossil");
+	jehanne_snprint(buf, sizeof buf, "/srv/fossil");
 	fd = open("#s/fossil", 2);
 	if (fd < 0)
-		werrstr("dial %s: %r", buf);
+		jehanne_werrstr("dial %s: %r", buf);
 	return fd;
 }

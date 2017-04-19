@@ -10,7 +10,7 @@
 #include	<ctype.h>
 
 int
-toupper(int c)
+jehanne_toupper(int c)
 {
 
 	if(c < 'a' || c > 'z')
@@ -19,7 +19,7 @@ toupper(int c)
 }
 
 int
-tolower(int c)
+jehanne_tolower(int c)
 {
 
 	if(c < 'A' || c > 'Z')

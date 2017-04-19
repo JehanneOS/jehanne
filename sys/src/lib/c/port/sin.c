@@ -41,9 +41,9 @@ sinus(double arg, int quad)
 	}
 	x *= 1/PIO2;	/* underflow? */
 	if(x > 32764) {
-		y = modf(x, &e);
+		y = jehanne_modf(x, &e);
 		e += quad;
-		modf(0.25*e, &f);
+		jehanne_modf(0.25*e, &f);
 		quad = e - 4*f;
 	} else {
 		k = x;
@@ -63,7 +63,7 @@ sinus(double arg, int quad)
 }
 
 double
-cos(double arg)
+jehanne_cos(double arg)
 {
 	if(arg < 0)
 		arg = -arg;
@@ -71,7 +71,7 @@ cos(double arg)
 }
 
 double
-sin(double arg)
+jehanne_sin(double arg)
 {
 	return sinus(arg, 0);
 }

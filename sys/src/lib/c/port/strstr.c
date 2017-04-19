@@ -15,7 +15,7 @@
  * 0 if none
  */
 char*
-strstr(const char *s1, const char *s2)
+jehanne_strstr(const char *s1, const char *s2)
 {
 	const char *p, *pa, *pb;
 	int c0, c;
@@ -24,7 +24,7 @@ strstr(const char *s1, const char *s2)
 	if(c0 == 0)
 		return (char*)s1;
 	s2++;
-	for(p=strchr(s1, c0); p; p=strchr(p+1, c0)) {
+	for(p=jehanne_strchr(s1, c0); p; p=jehanne_strchr(p+1, c0)) {
 		pa = p;
 		for(pb=s2;; pb++) {
 			c = *pb;

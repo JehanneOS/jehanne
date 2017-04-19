@@ -11,7 +11,7 @@
 #include <libc.h>
 
 int
-utfnlen(const char *s, int32_t m)
+jehanne_utfnlen(const char *s, int32_t m)
 {
 	int c;
 	int32_t n;
@@ -27,9 +27,9 @@ utfnlen(const char *s, int32_t m)
 			s++;
 			continue;
 		}
-		if(!fullrune(s, es-s))
+		if(!jehanne_fullrune(s, es-s))
 			break;
-		s += chartorune(&rune, s);
+		s += jehanne_chartorune(&rune, s);
 	}
 	return n;
 }

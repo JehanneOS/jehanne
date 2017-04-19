@@ -45,14 +45,14 @@ threadnotify(int (*f)(void*, char*), int in)
 		to = nil;
 		topid = 0;
 	}
-	lock(&onnotelock);
+	jehanne_lock(&onnotelock);
 	for(i=0; i<NFN; i++)
 		if(onnote[i]==from){
 			onnote[i] = to;
 			onnotepid[i] = topid;
 			break;
 		}
-	unlock(&onnotelock);
+	jehanne_unlock(&onnotelock);
 	return i<NFN;
 }
 
@@ -79,12 +79,12 @@ delayednotes(Proc *p, void *v)
 				_threaddebug(DBGNOTE, "Unhandled note %s, proc %p\n", n->s, p);
 				if(v != nil)
 					noted(NDFLT);
-				else if(strncmp(n->s, "sys:", 4)==0)
+				else if(jehanne_strncmp(n->s, "sys:", 4)==0)
 					abort();
 				threadexitsall(n->s);
 			}
 			n->proc = nil;
-			unlock(&n->inuse);
+			jehanne_unlock(&n->inuse);
 		}
 	}
 }
@@ -96,7 +96,7 @@ _threadnote(void *v, char *s)
 	Note *n;
 
 	_threaddebug(DBGNOTE, "Got note %s", s);
-	if(strncmp(s, "sys:", 4) == 0)
+	if(jehanne_strncmp(s, "sys:", 4) == 0)
 		noted(NDFLT);
 
 	if(_threadexitsallstatus){
@@ -104,7 +104,7 @@ _threadnote(void *v, char *s)
 		_exits(_threadexitsallstatus);
 	}
 
-	if(strcmp(s, "threadint")==0)
+	if(jehanne_strcmp(s, "threadint")==0)
 		noted(NCONT);
 
 	p = _threadgetproc();
@@ -112,11 +112,11 @@ _threadnote(void *v, char *s)
 		noted(NDFLT);
 
 	for(n=notes; n<enotes; n++)
-		if(canlock(&n->inuse))
+		if(jehanne_canlock(&n->inuse))
 			break;
 	if(n==enotes)
-		sysfatal("libthread: too many delayed notes");
-	utfecpy(n->s, n->s+ERRMAX, s);
+		jehanne_sysfatal("libthread: too many delayed notes");
+	jehanne_utfecpy(n->s, n->s+ERRMAX, s);
 	n->proc = p;
 	p->pending = 1;
 	if(!p->splhi)

@@ -26,7 +26,7 @@ procexec(Channel *pidc, char *prog, char *args[])
 	p = _threadgetproc();
 	t = p->thread;
 	if(p->threads.head != t || p->threads.head->nextt != nil){
-		werrstr("not only thread in proc");
+		jehanne_werrstr("not only thread in proc");
 	Bad:
 		if(pidc)
 			sendul(pidc, ~0);
@@ -95,7 +95,7 @@ procexecl(Channel *pidc, char *f, ...)
 	while((arg = va_arg(va, char *)) != nil)
 		n++;
 
-	char **args = malloc(sizeof(char*)*(n+1));
+	char **args = jehanne_malloc(sizeof(char*)*(n+1));
 
 	n = 0;
 	while((arg = va_arg(va2, char *)) != nil)

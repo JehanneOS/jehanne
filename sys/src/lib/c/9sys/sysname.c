@@ -11,7 +11,7 @@
 #include	<libc.h>
 
 char*
-sysname(void)
+jehanne_sysname(void)
 {
 	int f, n;
 	static char b[128];

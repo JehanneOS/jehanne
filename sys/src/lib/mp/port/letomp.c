@@ -11,7 +11,7 @@ letomp(uint8_t *s, uint32_t n, mpint *b)
 
 	if(b == nil){
 		b = mpnew(0);
-		setmalloctag(b, getcallerpc());
+		jehanne_setmalloctag(b, jehanne_getcallerpc());
 	}
 	mpbits(b, 8*n);
 	for(; n > 0; n--){

@@ -2,7 +2,7 @@
 #include <mp.h>
 #include "dat.h"
 
-// sum = abs(b1) + abs(b2), i.e., add the magnitudes
+// sum = jehanne_abs(b1) + jehanne_abs(b2), i.e., add the magnitudes
 void
 mpmagadd(mpint *b1, mpint *b2, mpint *sum)
 {

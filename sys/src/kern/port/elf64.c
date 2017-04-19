@@ -308,9 +308,9 @@ elf64ldseg(Chan *c, uintptr_t *entryp, Ldseg **rp, char *mach, uint32_t minpgsz)
 
 	if(waserror()){
 		if(ldseg != nil)
-			free(ldseg);
+			jehanne_free(ldseg);
 		if(phbuf != nil)
-			free(phbuf);
+			jehanne_free(phbuf);
 		nexterror();
 	}
 
@@ -342,7 +342,7 @@ elf64ldseg(Chan *c, uintptr_t *entryp, Ldseg **rp, char *mach, uint32_t minpgsz)
 			e_machine = get16(ehdr.e_machine);
 			if(mach != nil){
 				for(i = 0; i < nelem(elfmachs); i++)
-					if(elfmachs[i].e_machine == e_machine && !strcmp(mach, elfmachs[i].mach))
+					if(elfmachs[i].e_machine == e_machine && !jehanne_strcmp(mach, elfmachs[i].mach))
 						break;
 				if(i == nelem(elfmachs)){
 					pprint("elf64ldseg: e_machine %d incorrect for host %s\n", e_machine, mach);
@@ -359,7 +359,7 @@ elf64ldseg(Chan *c, uintptr_t *entryp, Ldseg **rp, char *mach, uint32_t minpgsz)
 				error(Ebadexec);
 			}
 
-			phbuf = malloc(phentsize*phnum);
+			phbuf = jehanne_malloc(phentsize*phnum);
 			if(phbuf == nil){
 				pprint("elf64ldseg: malloc fail\n");
 				error(Ebadexec);
@@ -378,7 +378,7 @@ elf64ldseg(Chan *c, uintptr_t *entryp, Ldseg **rp, char *mach, uint32_t minpgsz)
 				if(get32(phdr->p_type) == PT_LOAD)
 					si++;
 			}
-			ldseg = malloc(si * sizeof ldseg[0]);
+			ldseg = jehanne_malloc(si * sizeof ldseg[0]);
 			if(ldseg == nil){
 				pprint("elf64ldseg: malloc fail\n");
 				error(Ebadexec);
@@ -469,11 +469,11 @@ elf64ldseg(Chan *c, uintptr_t *entryp, Ldseg **rp, char *mach, uint32_t minpgsz)
 
 done:
 	if(phbuf != nil)
-		free(phbuf);
+		jehanne_free(phbuf);
 	if(rp != nil){
 		*rp = ldseg;
 	} else if(ldseg != nil){
-		free(ldseg);
+		jehanne_free(ldseg);
 	}
 	if(entryp != nil)
 		*entryp = entry;

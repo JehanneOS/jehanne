@@ -8,7 +8,7 @@
  */
 
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 #include <draw.h>
 
 typedef struct Memimage Memimage;

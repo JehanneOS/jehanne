@@ -214,8 +214,8 @@ sweeptext(int new, int tag)
 	Rectangle r;
 	Text *t;
 
-	if(getr(&r) && (t = malloc(sizeof(Text)))){
-		memset((void*)t, 0, sizeof(Text));
+	if(getr(&r) && (t = jehanne_malloc(sizeof(Text)))){
+		jehanne_memset((void*)t, 0, sizeof(Text));
 		current((Flayer *)0);
 		flnew(&t->l[0], gettext, 0, (char *)t);
 		flinit(&t->l[0], r, font, maincols);	/*bnl*/
@@ -254,9 +254,9 @@ menuins(int n, uint8_t *s, Text *t, int m, int tg)
 			mname = 32;
 		else
 			mname *= 2;
-		name = realloc(name, sizeof(name[0])*mname);
-		text = realloc(text, sizeof(text[0])*mname);
-		tag = realloc(tag, sizeof(tag[0])*mname);
+		name = jehanne_realloc(name, sizeof(name[0])*mname);
+		text = jehanne_realloc(text, sizeof(text[0])*mname);
+		tag = jehanne_realloc(tag, sizeof(tag[0])*mname);
 		if(name==nil || text==nil || tag==nil)
 			panic("realloc");
 	}
@@ -264,9 +264,9 @@ menuins(int n, uint8_t *s, Text *t, int m, int tg)
 		name[i]=name[i-1], text[i]=text[i-1], tag[i]=tag[i-1];
 	text[n] = t;
 	tag[n] = tg;
-	name[n] = alloc(strlen((char*)s)+2);
+	name[n] = alloc(jehanne_strlen((char*)s)+2);
 	name[n][0] = m;
-	strcpy((char*)name[n]+1, (char*)s);
+	jehanne_strcpy((char*)name[n]+1, (char*)s);
 	nname++;
 	menu3.lasthit = n+NMENU3;
 }
@@ -278,7 +278,7 @@ menudel(int n)
 
 	if(nname==0 || n>=nname || text[n])
 		panic("menudel");
-	free(name[n]);
+	jehanne_free(name[n]);
 	--nname;
 	for(i = n; i<nname; i++)
 		name[i]=name[i+1], text[i]=text[i+1], tag[i]=tag[i+1];
@@ -290,7 +290,7 @@ setpat(char *s)
 	static char pat[17];
 
 	pat[0] = '/';
-	strncpy(pat+1, s, 15);
+	jehanne_strncpy(pat+1, s, 15);
 	menu2str[Search] = pat;
 }
 
@@ -355,9 +355,9 @@ genmenu3(int n)
 	if(n == 0)	/* unless we've been fooled, this is cmd */
 		return (char *)&name[n][1];
 	if(mw == -1){
-		mw = 7;	/* strlen("~~sam~~"); */
+		mw = 7;	/* jehanne_strlen("~~sam~~"); */
 		for(i=1; i<nname; i++){
-			w = utflen((char*)name[i]+1)+4;	/* include "'+. " */
+			w = jehanne_utflen((char*)name[i]+1)+4;	/* include "'+. " */
 			if(w > mw)
 				mw = w;
 		}
@@ -380,28 +380,28 @@ genmenu3(int n)
 				buf[0] = '\'';
 		}
 	}
-	l = utflen((char*)name[n]+1);
+	l = jehanne_utflen((char*)name[n]+1);
 	if(l > NBUF-4-2){
 		i = 4;
 		k = 1;
 		while(i < NBUF/2){
-			k += chartorune(&r, (char*)name[n]+k);
+			k += jehanne_chartorune(&r, (char*)name[n]+k);
 			i++;
 		}
 		c = name[n][k];
 		name[n][k] = 0;
-		strcpy((char*)buf+4, (char*)name[n]+1);
+		jehanne_strcpy((char*)buf+4, (char*)name[n]+1);
 		name[n][k] = c;
-		strcat((char*)buf, "...");
+		jehanne_strcat((char*)buf, "...");
 		while((l-i) >= NBUF/2-4){
-			k += chartorune(&r, (char*)name[n]+k);
+			k += jehanne_chartorune(&r, (char*)name[n]+k);
 			i++;
 		}
-		strcat((char*)buf, (char*)name[n]+k);
+		jehanne_strcat((char*)buf, (char*)name[n]+k);
 	}else
-		strcpy((char*)buf+4, (char*)name[n]+1);
-	i = utflen((char*)buf);
-	k = strlen((char*)buf);
+		jehanne_strcpy((char*)buf+4, (char*)name[n]+1);
+	i = jehanne_utflen((char*)buf);
+	k = jehanne_strlen((char*)buf);
 	while(i<mw && k<sizeof buf-1){
 		buf[k++] = ' ';
 		i++;

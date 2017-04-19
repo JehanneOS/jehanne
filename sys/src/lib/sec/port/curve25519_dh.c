@@ -29,6 +29,6 @@ curve25519_dh_finish(uint8_t x[32], uint8_t y[32], uint8_t z[32])
 	/* calculate dhx key */
 	curve25519(z, x, y);
 
-	memset(x, 0, 32);
-	memset(y, 0, 32);
+	jehanne_memset(x, 0, 32);
+	jehanne_memset(y, 0, 32);
 }

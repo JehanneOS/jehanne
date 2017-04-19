@@ -19,13 +19,13 @@ uartpci(int ctlrno, Pcidev* p, int barno, int n, int freq, char* name)
 	Uart *head, *uart;
 
 	io = p->mem[barno].bar & ~0x01;
-	snprint(buf, sizeof(buf), "%s%d", pciphysuart.name, ctlrno);
+	jehanne_snprint(buf, sizeof(buf), "%s%d", pciphysuart.name, ctlrno);
 	if(ioalloc(io, p->mem[barno].size, 0, buf) < 0){
-		print("uartpci: I/O %#ux in use\n", io);
+		jehanne_print("uartpci: I/O %#ux in use\n", io);
 		return nil;
 	}
 
-	head = uart = mallocz(sizeof(Uart)*n, 1);
+	head = uart = jehanne_mallocz(sizeof(Uart)*n, 1);
 
 	for(i = 0; i < n; i++){
 		ctlr = i8250alloc(io, p->intl, p->tbdf);
@@ -34,7 +34,7 @@ uartpci(int ctlrno, Pcidev* p, int barno, int n, int freq, char* name)
 			continue;
 
 		uart->regs = ctlr;
-		snprint(buf, sizeof(buf), "%s.%8.8ux", name, p->tbdf);
+		jehanne_snprint(buf, sizeof(buf), "%s.%8.8ux", name, p->tbdf);
 		kstrdup(&uart->name, buf);
 		uart->freq = freq;
 		uart->phys = &i8250physuart;

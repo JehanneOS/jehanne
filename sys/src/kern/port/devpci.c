@@ -43,11 +43,11 @@ pcigen2(Chan *c, int t, int tbdf, Dir *dp)
 	q = (Qid){BUSBDF(tbdf)|t, 0, 0};
 	switch(t) {
 	case Qpcictl:
-		snprint(up->genbuf, sizeof(up->genbuf), "%d.%d.%dctl", BUSBNO(tbdf), BUSDNO(tbdf), BUSFNO(tbdf));
+		jehanne_snprint(up->genbuf, sizeof(up->genbuf), "%d.%d.%dctl", BUSBNO(tbdf), BUSDNO(tbdf), BUSFNO(tbdf));
 		devdir(c, q, up->genbuf, 0, eve, 0444, dp);
 		return 1;
 	case Qpciraw:
-		snprint(up->genbuf, sizeof(up->genbuf), "%d.%d.%draw", BUSBNO(tbdf), BUSDNO(tbdf), BUSFNO(tbdf));
+		jehanne_snprint(up->genbuf, sizeof(up->genbuf), "%d.%d.%draw", BUSBNO(tbdf), BUSDNO(tbdf), BUSFNO(tbdf));
 		devdir(c, q, up->genbuf, 128, eve, 0444, dp);
 		return 1;
 	}
@@ -65,7 +65,7 @@ pcigen(Chan *c, char * _1, Dirtab* _2, int _3, int s, Dir *dp)
 	case Qtopdir:
 		if(s == DEVDOTDOT){
 			q = (Qid){QID(0, Qtopdir), 0, QTDIR};
-			snprint(up->genbuf, sizeof(up->genbuf), "#%C", pcidevtab.dc);
+			jehanne_snprint(up->genbuf, sizeof(up->genbuf), "#%C", pcidevtab.dc);
 			devdir(c, q, up->genbuf, 0, eve, 0555, dp);
 			return 1;
 		}
@@ -73,7 +73,7 @@ pcigen(Chan *c, char * _1, Dirtab* _2, int _3, int s, Dir *dp)
 	case Qpcidir:
 		if(s == DEVDOTDOT){
 			q = (Qid){QID(0, Qtopdir), 0, QTDIR};
-			snprint(up->genbuf, sizeof(up->genbuf), "#%C", pcidevtab.dc);
+			jehanne_snprint(up->genbuf, sizeof(up->genbuf), "#%C", pcidevtab.dc);
 			devdir(c, q, up->genbuf, 0, eve, 0555, dp);
 			return 1;
 		}
@@ -146,12 +146,12 @@ pciread(Chan *c, void *va, long n, int64_t offset)
 		if(p == nil)
 			error(Egreg);
 		ebuf = buf+sizeof buf-1;	/* -1 for newline */
-		w = seprint(buf, ebuf, "%.2x.%.2x.%.2x %.4x/%.4x %3d",
+		w = jehanne_seprint(buf, ebuf, "%.2x.%.2x.%.2x %.4x/%.4x %3d",
 			p->ccrb, p->ccru, p->ccrp, p->vid, p->did, p->intl);
 		for(i=0; i<nelem(p->mem); i++){
 			if(p->mem[i].size == 0)
 				continue;
-			w = seprint(w, ebuf, " %d:%.8lux %d", i, p->mem[i].bar, p->mem[i].size);
+			w = jehanne_seprint(w, ebuf, " %d:%.8lux %d", i, p->mem[i].bar, p->mem[i].size);
 		}
 		*w++ = '\n';
 		*w = '\0';
@@ -200,7 +200,7 @@ pciwrite(Chan *c, void *va, long n, int64_t offset)
 
 	if(n >= sizeof(buf))
 		n = sizeof(buf)-1;
-	strncpy(buf, va, n);
+	jehanne_strncpy(buf, va, n);
 	buf[n] = 0;
 
 	switch(TYPE(c->qid)){

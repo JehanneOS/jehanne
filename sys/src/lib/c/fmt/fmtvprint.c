@@ -17,7 +17,7 @@
  * designed for formats which themselves call fmt
  */
 int
-fmtvprint(Fmt *f, const char *fmt, va_list args)
+jehanne_fmtvprint(Fmt *f, const char *fmt, va_list args)
 {
 	va_list va;
 	int n;
@@ -27,7 +27,7 @@ fmtvprint(Fmt *f, const char *fmt, va_list args)
 	va_copy(va,f->args);
         va_end(f->args);
         va_copy(f->args,args);
-	n = dofmt(f, fmt);
+	n = jehanne_dofmt(f, fmt);
 	va_end(f->args);
         va_copy(f->args,va);
         va_end(va);

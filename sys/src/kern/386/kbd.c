@@ -272,7 +272,7 @@ i8042auxcmd(int cmd)
 	iunlock(&i8042lock);
 
 	if(c != 0xFA){
-		print("i8042: %2.2ux returned to the %2.2ux command\n", c, cmd);
+		jehanne_print("i8042: %2.2ux returned to the %2.2ux command\n", c, cmd);
 		return -1;
 	}
 	return 0;
@@ -362,7 +362,7 @@ i8042intr(Ureg*, void*)
 	if(c > sizeof kbtab){
 		c |= keyup;
 		if(c != 0xFF)	/* these come fairly often: CAPSLOCK U Y */
-			print("unknown key %ux\n", c);
+			jehanne_print("unknown key %ux\n", c);
 		return;
 	}
 
@@ -498,13 +498,13 @@ i8042auxenable(void (*putc)(int, int))
 
 	ilock(&i8042lock);
 	if(outready() < 0)
-		print(err);
+		jehanne_print(err);
 	outb(Cmd, 0x60);			/* write control register */
 	if(outready() < 0)
-		print(err);
+		jehanne_print(err);
 	outb(Data, ccc);
 	if(outready() < 0)
-		print(err);
+		jehanne_print(err);
 	outb(Cmd, 0xA8);			/* auxilliary device enable */
 	if(outready() < 0){
 		iunlock(&i8042lock);
@@ -522,7 +522,7 @@ outbyte(int port, int c)
 {
 	outb(port, c);
 	if(outready() < 0) {
-		print(initfailed);
+		jehanne_print(initfailed);
 		return -1;
 	}
 	return 0;
@@ -541,14 +541,14 @@ kbdinit(void)
 		delay(1);
 	}
 	if (try <= 0) {
-		print(initfailed);
+		jehanne_print(initfailed);
 		return;
 	}
 
 	/* get current controller command byte */
 	outb(Cmd, 0x20);
 	if(inready() < 0){
-		print("i8042: kbdinit can't read ccc\n");
+		jehanne_print("i8042: kbdinit can't read ccc\n");
 		ccc = 0;
 	} else
 		ccc = inb(Data);
@@ -557,7 +557,7 @@ kbdinit(void)
 	ccc &= ~Ckbddis;
 	ccc |= Csf | Ckbdint | Cscs1;
 	if(outready() < 0) {
-		print(initfailed);
+		jehanne_print(initfailed);
 		return;
 	}
 
@@ -565,7 +565,7 @@ kbdinit(void)
 
 	/* disable mouse */
 	if (outbyte(Cmd, 0x60) < 0 || outbyte(Data, ccc) < 0)
-		print("i8042: kbdinit mouse disable failed\n");
+		jehanne_print("i8042: kbdinit mouse disable failed\n");
 }
 
 void

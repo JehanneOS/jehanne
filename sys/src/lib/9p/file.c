@@ -32,7 +32,7 @@ allocfile(void)
 	File *f;
 	enum { N = 16 };
 
-	qlock(&filelk);
+	jehanne_qlock(&filelk);
 	if(freefilelist == nil){
 		f = emalloc9p(N*sizeof(*f));
 		for(i=0; i<N-1; i++)
@@ -44,10 +44,10 @@ allocfile(void)
 
 	f = freefilelist;
 	freefilelist = f->aux;
-	qunlock(&filelk);
+	jehanne_qunlock(&filelk);
 
 	a = f->allocd;
-	memset(f, 0, sizeof *f);
+	jehanne_memset(f, 0, sizeof *f);
 	f->allocd = a;
 	return f;
 }
@@ -60,18 +60,18 @@ freefile(File *f)
 	for(fl=f->filelist; fl; fl=flnext){
 		flnext = fl->link;
 		assert(fl->f == nil);
-		free(fl);
+		jehanne_free(fl);
 	}
 
-	free(f->name);
-	free(f->uid);
-	free(f->gid);
-	free(f->muid);
-	qlock(&filelk);
+	jehanne_free(f->name);
+	jehanne_free(f->uid);
+	jehanne_free(f->gid);
+	jehanne_free(f->muid);
+	jehanne_qlock(&filelk);
 	assert(f->ref.ref == 0);
 	f->aux = freefilelist;
 	freefilelist = f;
-	qunlock(&filelk);
+	jehanne_qunlock(&filelk);
 }
 
 static void
@@ -100,7 +100,7 @@ cleanfilelist(File *f)
 	for(l=&f->filelist; fl=*l; ){
 		if(fl->f == nil){
 			*l = (*l)->link;
-			free(fl);
+			jehanne_free(fl);
 		}else
 			l = &(*l)->link;
 	}
@@ -129,31 +129,31 @@ removefile(File *f)
 	
 	fp = f->parent;
 	if(fp == nil){
-		werrstr("no parent");
+		jehanne_werrstr("no parent");
 		closefile(f);
 		return -1;
 	}
 
 	if(fp == f){
-		werrstr("cannot remove root");
+		jehanne_werrstr("cannot remove root");
 		closefile(f);
 		return -1;
 	}
 
-	wlock(&f->rwl);
-	wlock(&fp->rwl);
+	jehanne_wlock(&f->rwl);
+	jehanne_wlock(&fp->rwl);
 	if(f->nchild != 0){
-		werrstr("has children");
-		wunlock(&fp->rwl);
-		wunlock(&f->rwl);
+		jehanne_werrstr("has children");
+		jehanne_wunlock(&fp->rwl);
+		jehanne_wunlock(&f->rwl);
 		closefile(f);
 		return -1;
 	}
 
 	if(f->parent != fp){
-		werrstr("parent changed underfoot");
-		wunlock(&fp->rwl);
-		wunlock(&f->rwl);
+		jehanne_werrstr("parent changed underfoot");
+		jehanne_wunlock(&fp->rwl);
+		jehanne_wunlock(&f->rwl);
 		closefile(f);
 		return -1;
 	}
@@ -167,10 +167,10 @@ removefile(File *f)
 	fp->nchild--;
 	fp->nxchild++;
 	f->parent = nil;
-	wunlock(&f->rwl);
+	jehanne_wunlock(&f->rwl);
 
 	cleanfilelist(fp);
-	wunlock(&fp->rwl);
+	jehanne_wunlock(&fp->rwl);
 
 	closefile(fp);	/* reference from child */
 	closefile(f);	/* reference from tree */
@@ -186,14 +186,14 @@ createfile(File *fp, char *name, char *uid, uint32_t perm, void *aux)
 	Tree *t;
 
 	if((fp->qid.type&QTDIR) == 0){
-		werrstr("create in non-directory");
+		jehanne_werrstr("create in non-directory");
 		return nil;
 	}
 
-	wlock(&fp->rwl);
+	jehanne_wlock(&fp->rwl);
 	if(fp->parent == nil){
-		wunlock(&fp->rwl);
-		werrstr("create in deleted directory");
+		jehanne_wunlock(&fp->rwl);
+		jehanne_werrstr("create in deleted directory");
 		return nil;
 	}
 
@@ -206,9 +206,9 @@ createfile(File *fp, char *name, char *uid, uint32_t perm, void *aux)
 	 * Always create at the end of the list.
 	 */
 	for(l=&fp->filelist; fl=*l; l=&fl->link){
-		if(fl->f && strcmp(fl->f->name, name) == 0){
-			wunlock(&fp->rwl);
-			werrstr("file already exists");
+		if(fl->f && jehanne_strcmp(fl->f->name, name) == 0){
+			jehanne_wunlock(&fp->rwl);
+			jehanne_werrstr("file already exists");
 			return nil;
 		}
 	}
@@ -225,9 +225,9 @@ createfile(File *fp, char *name, char *uid, uint32_t perm, void *aux)
 	f->mode = perm;
 
 	t = fp->tree;
-	lock(&t->genlock);
+	jehanne_lock(&t->genlock);
 	f->qid.path = t->qidgen++;
-	unlock(&t->genlock);
+	jehanne_unlock(&t->genlock);
 	if(perm & DMDIR)
 		f->qid.type |= QTDIR;
 	if(perm & DMAPPEND)
@@ -235,7 +235,7 @@ createfile(File *fp, char *name, char *uid, uint32_t perm, void *aux)
 	if(perm & DMEXCL)
 		f->qid.type |= QTEXCL;
 
-	f->atime = f->mtime = time(0);
+	f->atime = f->mtime = jehanne_time(0);
 	f->length = 0;
 	f->parent = fp;
 	incref(&fp->ref);
@@ -245,7 +245,7 @@ createfile(File *fp, char *name, char *uid, uint32_t perm, void *aux)
 	incref(&f->ref);	/* for the tree */
 	fl->f = f;
 	fp->nchild++;
-	wunlock(&fp->rwl);
+	jehanne_wunlock(&fp->rwl);
 
 	return f;
 }
@@ -256,25 +256,25 @@ walkfile1(File *dir, char *elem)
 	File *fp;
 	Filelist *fl;
 
-	rlock(&dir->rwl);
-	if(strcmp(elem, "..") == 0){
+	jehanne_rlock(&dir->rwl);
+	if(jehanne_strcmp(elem, "..") == 0){
 		fp = dir->parent;
 		if(fp != nil)
 			incref(&fp->ref);
-		runlock(&dir->rwl);
+		jehanne_runlock(&dir->rwl);
 		closefile(dir);
 		return fp;
 	}
 
 	fp = nil;
 	for(fl=dir->filelist; fl; fl=fl->link)
-		if(fl->f && strcmp(fl->f->name, elem)==0){
+		if(fl->f && jehanne_strcmp(fl->f->name, elem)==0){
 			fp = fl->f;
 			incref(&fp->ref);
 			break;
 		}
 
-	runlock(&dir->rwl);
+	jehanne_runlock(&dir->rwl);
 	closefile(dir);
 	return fp;
 }
@@ -284,20 +284,20 @@ walkfile(File *f, char *path)
 {
 	char *os, *s, *nexts;
 
-	if(strchr(path, '/') == nil)
+	if(jehanne_strchr(path, '/') == nil)
 		return walkfile1(f, path);	/* avoid malloc */
 
 	os = s = estrdup9p(path);
 	for(; *s; s=nexts){
-		if(nexts = strchr(s, '/'))
+		if(nexts = jehanne_strchr(s, '/'))
 			*nexts++ = '\0';
 		else
-			nexts = s+strlen(s);
+			nexts = s+jehanne_strlen(s);
 		f = walkfile1(f, s);
 		if(f == nil)
 			break;
 	}
-	free(os);
+	jehanne_free(os);
 	return f;
 }
 			
@@ -312,7 +312,7 @@ alloctree(char *uid, char *gid, uint32_t mode, void (*destroy)(File*))
 	f = allocfile();
 	f->name = estrdup9p("/");
 	if(uid == nil){
-		uid = getuser();
+		uid = jehanne_getuser();
 		if(uid == nil)
 			uid = "none";
 	}
@@ -327,7 +327,7 @@ alloctree(char *uid, char *gid, uint32_t mode, void (*destroy)(File*))
 
 	f->qid = (Qid){0, 0, QTDIR};
 	f->length = 0;
-	f->atime = f->mtime = time(0);
+	f->atime = f->mtime = jehanne_time(0);
 	f->mode = DMDIR | mode;
 	f->tree = t;
 	f->parent = f;
@@ -354,7 +354,7 @@ _freefiles(File *f)
 	for(fl=f->filelist; fl; fl=flnext){
 		flnext = fl->link;
 		_freefiles(fl->f);
-		free(fl);
+		jehanne_free(fl);
 	}
 
 	f->tree->destroy(f);
@@ -365,7 +365,7 @@ void
 freetree(Tree *t)
 {
 	_freefiles(t->root);
-	free(t);
+	jehanne_free(t);
 }
 
 Readdir*
@@ -373,9 +373,9 @@ opendirfile(File *dir)
 {
 	Readdir *r;
 
-	rlock(&dir->rwl);
+	jehanne_rlock(&dir->rwl);
 	if((dir->mode & DMDIR)==0){
-		runlock(&dir->rwl);
+		jehanne_runlock(&dir->rwl);
 		return nil;
 	}
 	r = emalloc9p(sizeof(*r));
@@ -389,7 +389,7 @@ opendirfile(File *dir)
 	r->fl = dir->filelist;
 	r->dir = dir;
 	incref(&dir->readers);
-	runlock(&dir->rwl);
+	jehanne_runlock(&dir->rwl);
 	return r;
 }
 
@@ -402,7 +402,7 @@ readdirfile(Readdir *r, uint8_t *buf, int32_t n)
 	for(fl=r->fl, m=0; fl && m+2<=n; fl=fl->link, m+=x){
 		if(fl->f == nil)
 			x = 0;
-		else if((x=convD2M(fl->f, buf+m, n-m)) <= BIT16SZ)
+		else if((x=jehanne_convD2M(fl->f, buf+m, n-m)) <= BIT16SZ)
 			break;
 	}
 	r->fl = fl;
@@ -413,9 +413,9 @@ void
 closedirfile(Readdir *r)
 {
 	if(decref(&r->dir->readers) == 0){
-		wlock(&r->dir->rwl);
+		jehanne_wlock(&r->dir->rwl);
 		cleanfilelist(r->dir);
-		wunlock(&r->dir->rwl);
+		jehanne_wunlock(&r->dir->rwl);
 	}
-	free(r);
+	jehanne_free(r);
 }

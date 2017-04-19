@@ -123,7 +123,7 @@ newarp6(Arp *arp, uint8_t *ip, Ipifc *ifc, int addrxt)
 	a->hash = *l;
 	*l = a;
 
-	memmove(a->ip, ip, sizeof(a->ip));
+	jehanne_memmove(a->ip, ip, sizeof(a->ip));
 	a->utime = NOW;
 	a->ctime = 0;
 	a->type = ifc->medium;
@@ -219,7 +219,7 @@ arpget(Arp *arp, Block *bp, int version, Ipifc *ifc, uint8_t *ip, uint8_t *mac)
 	hash = haship(ip);
 	type = ifc->medium;
 	for(a = arp->hash[hash]; a; a = a->hash){
-		if(memcmp(ip, a->ip, sizeof(a->ip)) == 0)
+		if(jehanne_memcmp(ip, a->ip, sizeof(a->ip)) == 0)
 		if(type == a->type)
 			break;
 	}
@@ -241,7 +241,7 @@ arpget(Arp *arp, Block *bp, int version, Ipifc *ifc, uint8_t *ip, uint8_t *mac)
 		return a;		/* return with arp qlocked */
 	}
 
-	memmove(mac, a->mac, a->type->maclen);
+	jehanne_memmove(mac, a->mac, a->type->maclen);
 
 	/* remove old entries */
 	if(NOW - a->ctime > 15*60*1000)
@@ -283,7 +283,7 @@ arpresolve(Arp *arp, Arpent *a, Medium *type, uint8_t *mac)
 		}
 	}
 
-	memmove(a->mac, mac, type->maclen);
+	jehanne_memmove(a->mac, mac, type->maclen);
 	a->type = type;
 	a->state = AOK;
 	a->utime = NOW;
@@ -308,7 +308,7 @@ arpenter(Fs *fs, int version, uint8_t *ip, uint8_t *mac, int n, int refresh)
 	arp = fs->arp;
 
 	if(n != 6){
-//		print("arp: len = %d\n", n);
+//		jehanne_print("arp: len = %d\n", n);
 		return;
 	}
 
@@ -327,7 +327,7 @@ arpenter(Fs *fs, int version, uint8_t *ip, uint8_t *mac, int n, int refresh)
 	}
 
 	if(r == nil){
-//		print("arp: no route for entry\n");
+//		jehanne_print("arp: no route for entry\n");
 		return;
 	}
 
@@ -341,7 +341,7 @@ arpenter(Fs *fs, int version, uint8_t *ip, uint8_t *mac, int n, int refresh)
 
 		if(ipcmp(a->ip, ip) == 0){
 			a->state = AOK;
-			memmove(a->mac, mac, type->maclen);
+			jehanne_memmove(a->mac, mac, type->maclen);
 
 			if(version == V6){
 				/* take out of re-transmit chain */
@@ -392,7 +392,7 @@ arpenter(Fs *fs, int version, uint8_t *ip, uint8_t *mac, int n, int refresh)
 		a->state = AOK;
 		a->type = type;
 		a->ctime = NOW;
-		memmove(a->mac, mac, type->maclen);
+		jehanne_memmove(a->mac, mac, type->maclen);
 	}
 
 	qunlock(arp);
@@ -416,17 +416,17 @@ arpwrite(Fs *fs, char *s, int len)
 		error(Ebadarp);
 	if(len >= sizeof(buf))
 		len = sizeof(buf)-1;
-	strncpy(buf, s, len);
+	jehanne_strncpy(buf, s, len);
 	buf[len] = 0;
 	if(len > 0 && buf[len-1] == '\n')
 		buf[len-1] = 0;
 
-	n = getfields(buf, f, 4, 1, " ");
-	if(strcmp(f[0], "flush") == 0){
+	n = jehanne_getfields(buf, f, 4, 1, " ");
+	if(jehanne_strcmp(f[0], "flush") == 0){
 		qlock(arp);
 		for(a = arp->cache; a < &arp->cache[NCACHE]; a++){
-			memset(a->ip, 0, sizeof(a->ip));
-			memset(a->mac, 0, sizeof(a->mac));
+			jehanne_memset(a->ip, 0, sizeof(a->ip));
+			jehanne_memset(a->mac, 0, sizeof(a->mac));
 			a->hash = nil;
 			a->state = 0;
 			a->utime = 0;
@@ -436,13 +436,13 @@ arpwrite(Fs *fs, char *s, int len)
 				a->hold = bp;
 			}
 		}
-		memset(arp->hash, 0, sizeof(arp->hash));
+		jehanne_memset(arp->hash, 0, sizeof(arp->hash));
 		/* clear all pkts on these lists (rxmt, dropf/l) */
 		arp->rxmt = nil;
 		arp->dropf = nil;
 		arp->dropl = nil;
 		qunlock(arp);
-	} else if(strcmp(f[0], "add") == 0){
+	} else if(jehanne_strcmp(f[0], "add") == 0){
 		switch(n){
 		default:
 			error(Ebadarg);
@@ -472,7 +472,7 @@ arpwrite(Fs *fs, char *s, int len)
 			error(Ebadarp);
 
 		type->ares(fs, V6, ip, mac, n, 0);
-	} else if(strcmp(f[0], "del") == 0){
+	} else if(jehanne_strcmp(f[0], "del") == 0){
 		if(n != 2)
 			error(Ebadarg);
 
@@ -482,7 +482,7 @@ arpwrite(Fs *fs, char *s, int len)
 
 		l = &arp->hash[haship(ip)];
 		for(a = *l; a; a = a->hash){
-			if(memcmp(ip, a->ip, sizeof(a->ip)) == 0){
+			if(jehanne_memcmp(ip, a->ip, sizeof(a->ip)) == 0){
 				*l = a->hash;
 				break;
 			}
@@ -505,8 +505,8 @@ arpwrite(Fs *fs, char *s, int len)
 			a->hold = nil;
 			a->last = nil;
 			a->ifc = nil;
-			memset(a->ip, 0, sizeof(a->ip));
-			memset(a->mac, 0, sizeof(a->mac));
+			jehanne_memset(a->ip, 0, sizeof(a->ip));
+			jehanne_memset(a->mac, 0, sizeof(a->mac));
 		}
 		qunlock(arp);
 	} else
@@ -526,7 +526,7 @@ static void
 convmac(char *p, uint8_t *mac, int n)
 {
 	while(n-- > 0)
-		p += sprint(p, "%2.2ux", *mac++);
+		p += jehanne_sprint(p, "%2.2ux", *mac++);
 }
 
 int
@@ -553,7 +553,7 @@ arpread(Arp *arp, char *p, uint32_t offset, int len)
 		len--;
 		qlock(arp);
 		convmac(mac, a->mac, a->type->maclen);
-		n += sprint(p+n, aformat, a->type->name, arpstate[a->state], a->ip, mac);
+		n += jehanne_sprint(p+n, aformat, a->type->name, arpstate[a->state], a->ip, mac);
 		qunlock(arp);
 	}
 
@@ -669,7 +669,7 @@ rxmitproc(void *v)
 	long wakeupat;
 
 	arp->rxmitp = up;
-	//print("arp rxmitproc started\n");
+	//jehanne_print("arp rxmitproc started\n");
 	if(waserror()){
 		arp->rxmitp = 0;
 		pexit("hangup", 1);

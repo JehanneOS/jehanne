@@ -9,7 +9,7 @@
  */
 
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 void
 testvseprint(char *buf, int n, char *fmt, ...)
 {

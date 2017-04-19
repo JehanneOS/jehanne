@@ -12,6 +12,7 @@
 		],
 		"Program": "prep",
 		"SourceFiles": [
+			"/sys/src/lib/c/lib9.c",
 			"prep.c",
 			"edit.c",
 			"y.tab.c"

@@ -91,7 +91,7 @@ selfgen(Chan *c, char *name, Dirtab *tab, int ntab, int i, Dir *dp)
 
 	if(name){
 		for(i=1; i<ntab; i++)
-			if(strcmp(tab[i].name, name) == 0)
+			if(jehanne_strcmp(tab[i].name, name) == 0)
 				break;
 		if(i==ntab)
 			return -1;
@@ -107,7 +107,7 @@ selfgen(Chan *c, char *name, Dirtab *tab, int ntab, int i, Dir *dp)
 		/* file length might be relevant to the caller to
 		 * malloc enough space in the buffer
 		 */
-		length = 1 + strlen(up->dot->path->s);
+		length = 1 + jehanne_strlen(up->dot->path->s);
 	} else {
 		length = tab->length;
 	}
@@ -197,7 +197,7 @@ selfcreate(Chan* c, char* name, unsigned long omode, unsigned long perm)
 	default:
 		error(Eperm);
 	case Qbrk:
-		if(strcmp(name, "set") != 0)
+		if(jehanne_strcmp(name, "set") != 0)
 			error(Eperm);
 		e = (long)grow_bss(perm);
 		errorl(nil, ~e);
@@ -233,7 +233,7 @@ read_working_dir(Proc* p, void *va, long n, int64_t off)
 
 	dot = up->dot;
 	path = dot->path->s;
-	i = 1 + strlen(path);
+	i = 1 + jehanne_strlen(path);
 	if(va == nil){
 		/* the user is actually asking for the space */
 		if(off != 0 && off != ~0) {
@@ -247,7 +247,7 @@ read_working_dir(Proc* p, void *va, long n, int64_t off)
 	j = i - off;
 	if(n < j)
 		j = n;
-	memmove(va, path, j);
+	jehanne_memmove(va, path, j);
 
 	return j;
 }
@@ -301,7 +301,7 @@ selfread(Chan *c, void *va, long n, int64_t offset)
 			sg = up->seg[i];
 			if(sg == 0)
 				continue;
-			j += sprint(statbuf+j, "%-6s %c%c %p %p %4d\n",
+			j += jehanne_sprint(statbuf+j, "%-6s %c%c %p %p %4d\n",
 				segment_name(sg),
 				!(sg->type&SgWrite) ? 'R' : ' ',
 				(sg->type&SgExecute) ? 'x' : ' ',
@@ -315,7 +315,7 @@ selfread(Chan *c, void *va, long n, int64_t offset)
 			n = j-offset;
 		if(n == 0 && offset == 0)
 			exhausted("segments");
-		memmove(va, &statbuf[offset], n);
+		jehanne_memmove(va, &statbuf[offset], n);
 		return n;
 	case Qwdir:
 		return read_working_dir(up, va, n, offset);
@@ -330,7 +330,7 @@ selfread(Chan *c, void *va, long n, int64_t offset)
 	case Qnull:
 		return 0;
 	case Qzero:
-		memset(va, 0, n);
+		jehanne_memset(va, 0, n);
 		return n;
 
 	default:
@@ -440,7 +440,7 @@ procsegctl(Proc *p, char *va, int n)
 
 	cb = parsecmd(va, n);
 	if(waserror()){
-		free(cb);
+		jehanne_free(cb);
 		nexterror();
 	}
 
@@ -450,19 +450,19 @@ procsegctl(Proc *p, char *va, int n)
 		error(Ebadctl);
 		return -1;
 	case CMsegattach:
-		attr = strtoul(cb->f[1], 0, 0);
-		vareq = strtoull(cb->f[2], 0, 0);
-		len = strtoull(cb->f[3], 0, 0);
+		attr = jehanne_strtoul(cb->f[1], 0, 0);
+		vareq = jehanne_strtoull(cb->f[2], 0, 0);
+		len = jehanne_strtoull(cb->f[3], 0, 0);
 		class = cb->f[4];
 		result = segattach(p, attr, class, vareq, len);
 		break;
 	case CMsegdetach:
-		vareq = strtoull(cb->f[1], 0, 0);
+		vareq = jehanne_strtoull(cb->f[1], 0, 0);
 		result = segdetach(p, vareq);
 		break;
 	case CMsegfree:
-		vareq = strtoull(cb->f[1], 0, 0);
-		len = strtoull(cb->f[2], 0, 0);
+		vareq = jehanne_strtoull(cb->f[1], 0, 0);
+		len = jehanne_strtoull(cb->f[2], 0, 0);
 		result = segfree(p, vareq, len);
 		break;
 	}

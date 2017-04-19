@@ -15,7 +15,7 @@
 #ifndef Unix
 /* plan 9 */
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 
 #define	NSIG	32
 #define	SIGINT	2

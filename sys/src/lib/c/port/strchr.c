@@ -11,7 +11,7 @@
 #include <libc.h>
 
 char*
-strchr(const char *s, int c)
+jehanne_strchr(const char *s, int c)
 {
 	char c0 = c;
 	char c1;

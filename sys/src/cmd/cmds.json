@@ -82,7 +82,9 @@
 			"-DYYSIZE_T=size_t"
 		],
 		"Install": "/arch/$ARCH/cmd/",
-		"SourceFilesCmd": [
+		"Program": "mpc",
+		"SourceFiles": [
+			"/sys/src/lib/c/lib9.c",
 			"mpc.c"
 		]
 	},

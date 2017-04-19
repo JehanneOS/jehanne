@@ -12,13 +12,13 @@
 #include "fmtdef.h"
 
 int
-errfmt(Fmt *f)
+jehanne_errfmt(Fmt *f)
 {
 #if __STDC_HOSTED__
 	char buf[ERRMAX+1];
 
-	rerrstr(buf, ERRMAX);
-	return _fmtcpy(f, buf, utflen(buf), strlen(buf));
+	jehanne_rerrstr(buf, ERRMAX);
+	return _fmtcpy(f, buf, jehanne_utflen(buf), jehanne_strlen(buf));
 #else
 	extern void panic(char *fmt, ...) __attribute__ ((noreturn));
 	panic("No errfmt in kernel");

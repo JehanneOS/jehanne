@@ -40,9 +40,9 @@ mpkaratsuba(mpdigit *a, int alen, mpdigit *b, int blen, mpdigit *p)
 	v1 = b + v0len;
 
 	// room for the partial products
-	t = mallocz(Dbytes*5*(2*n+1), 1);
+	t = jehanne_mallocz(Dbytes*5*(2*n+1), 1);
 	if(t == nil)
-		sysfatal("mpkaratsuba: %r");
+		jehanne_sysfatal("mpkaratsuba: %r");
 	u0v0 = t;
 	u1v1 = t + (2*n+1);
 	diffprod = t + 2*(2*n+1);
@@ -68,7 +68,7 @@ mpkaratsuba(mpdigit *a, int alen, mpdigit *b, int blen, mpdigit *p)
 	mpvecmul(u0v0, u0len, u1v1, v0len, diffprod);
 
 	// t[0:1] = u1*v1
-	memset(t, 0, 2*(2*n+1)*Dbytes);
+	jehanne_memset(t, 0, 2*(2*n+1)*Dbytes);
 	if(v1len > 0)
 		mpvecmul(u1, u1len, v1, v1len, u1v1);
 
@@ -90,9 +90,9 @@ mpkaratsuba(mpdigit *a, int alen, mpdigit *b, int blen, mpdigit *p)
 		mpvecsub(res+n, reslen-n, diffprod, u0len+v0len, res+n);
 	else
 		mpvecadd(res+n, reslen-n, diffprod, u0len+v0len, res+n);
-	memmove(p, res, (alen+blen)*Dbytes);
+	jehanne_memmove(p, res, (alen+blen)*Dbytes);
 
-	free(t);
+	jehanne_free(t);
 }
 
 #define KARATSUBAMIN 32

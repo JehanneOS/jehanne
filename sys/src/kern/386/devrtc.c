@@ -161,7 +161,7 @@ rtctime(void)
 	}
 	iunlock(&nvrtlock);
 
-	if(i == 100) print("we are boofheads\n");
+	if(i == 100) jehanne_print("we are boofheads\n");
 
 	return t;
 }
@@ -198,13 +198,13 @@ rtcread(Chan* c, void* buf, long n, int64_t off)
 		iunlock(&nvrtlock);
 
 		if(waserror()){
-			free(start);
+			jehanne_free(start);
 			nexterror();
 		}
-		memmove(buf, start, t - offset);
+		jehanne_memmove(buf, start, t - offset);
 		poperror();
 
-		free(start);
+		jehanne_free(start);
 		return t - offset;
 	}
 	error(Ebadarg);
@@ -240,7 +240,7 @@ rtcwrite(Chan* c, void* buf, long n, int64_t off)
 				break;
 			cp++;
 		}
-		secs = strtoul(cp, 0, 0);
+		secs = jehanne_strtoul(cp, 0, 0);
 
 		/*
 		 *  convert to bcd
@@ -273,10 +273,10 @@ rtcwrite(Chan* c, void* buf, long n, int64_t off)
 
 		start = a = smalloc(n);
 		if(waserror()){
-			free(start);
+			jehanne_free(start);
 			nexterror();
 		}
-		memmove(a, buf, n);
+		jehanne_memmove(a, buf, n);
 		poperror();
 
 		ilock(&nvrtlock);
@@ -288,7 +288,7 @@ rtcwrite(Chan* c, void* buf, long n, int64_t off)
 		}
 		iunlock(&nvrtlock);
 
-		free(start);
+		jehanne_free(start);
 		return t - offset;
 	}
 	error(Ebadarg);

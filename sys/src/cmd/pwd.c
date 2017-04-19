@@ -17,7 +17,7 @@
  */
 
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 /*
  * Print working (current) directory
  */

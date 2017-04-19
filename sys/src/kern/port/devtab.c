@@ -68,7 +68,7 @@ devbyname(char *name)
 	int i;
 
 	for(i = 0; devtab[i] != nil; i++)
-		if(strcmp(devtab[i]->name, name) == 0)
+		if(jehanne_strcmp(devtab[i]->name, name) == 0)
 			return devtab[i];
 	return nil;
 }
@@ -80,7 +80,7 @@ devtabread(Chan* _1, void* buf, long n, int64_t off)
 	Dev *dev;
 	char *alloc, *e, *p;
 
-	alloc = malloc(READSTR);
+	alloc = jehanne_malloc(READSTR);
 	if(alloc == nil)
 		error(Enomem);
 
@@ -88,15 +88,15 @@ devtabread(Chan* _1, void* buf, long n, int64_t off)
 	e = p + READSTR;
 	for(i = 0; devtab[i] != nil; i++){
 		dev = devtab[i];
-		p = seprint(p, e, "#%C %s\n", dev->dc, dev->name);
+		p = jehanne_seprint(p, e, "#%C %s\n", dev->dc, dev->name);
 	}
 
 	if(waserror()){
-		free(alloc);
+		jehanne_free(alloc);
 		nexterror();
 	}
 	n = readstr(off, buf, n, alloc);
-	free(alloc);
+	jehanne_free(alloc);
 	poperror();
 
 	return n;

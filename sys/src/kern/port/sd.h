@@ -142,8 +142,8 @@ enum {
  * page-aligned (xen) for DMA.
  */
 #ifndef sdmalloc
-#define sdmalloc(n)	malloc(n)
-#define sdfree(p)	free(p)
+#define sdmalloc(n)	jehanne_malloc(n)
+#define sdfree(p)	jehanne_free(p)
 #endif
 
 /*

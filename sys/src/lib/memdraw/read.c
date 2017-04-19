@@ -26,14 +26,14 @@ readmemimage(int fd)
 	int ldepth, chunk;
 	Memimage *i;
 
-	if(readn(fd, hdr, 11) != 11){
-		werrstr("readimage: short header");
+	if(jehanne_readn(fd, hdr, 11) != 11){
+		jehanne_werrstr("readimage: short header");
 		return nil;
 	}
-	if(memcmp(hdr, "compressed\n", 11) == 0)
+	if(jehanne_memcmp(hdr, "compressed\n", 11) == 0)
 		return creadmemimage(fd);
-	if(readn(fd, hdr+11, 5*12-11) != 5*12-11){
-		werrstr("readimage: short header (2)");
+	if(jehanne_readn(fd, hdr+11, 5*12-11) != 5*12-11){
+		jehanne_werrstr("readimage: short header (2)");
 		return nil;
 	}
 
@@ -50,30 +50,30 @@ readmemimage(int fd)
 		}
 	}
 	if(hdr[11] != ' '){
-		werrstr("readimage: bad format");
+		jehanne_werrstr("readimage: bad format");
 		return nil;
 	}
 	if(new){
 		hdr[11] = '\0';
 		if((chan = strtochan(hdr)) == 0){
-			werrstr("readimage: bad channel string %s", hdr);
+			jehanne_werrstr("readimage: bad channel string %s", hdr);
 			return nil;
 		}
 	}else{
 		ldepth = ((int)hdr[10])-'0';
 		if(ldepth<0 || ldepth>3){
-			werrstr("readimage: bad ldepth %d", ldepth);
+			jehanne_werrstr("readimage: bad ldepth %d", ldepth);
 			return nil;
 		}
 		chan = drawld2chan[ldepth];
 	}
 
-	r.min.x = atoi(hdr+1*12);
-	r.min.y = atoi(hdr+2*12);
-	r.max.x = atoi(hdr+3*12);
-	r.max.y = atoi(hdr+4*12);
+	r.min.x = jehanne_atoi(hdr+1*12);
+	r.min.y = jehanne_atoi(hdr+2*12);
+	r.max.x = jehanne_atoi(hdr+3*12);
+	r.max.y = jehanne_atoi(hdr+4*12);
 	if(r.min.x>r.max.x || r.min.y>r.max.y){
-		werrstr("readimage: bad rectangle");
+		jehanne_werrstr("readimage: bad rectangle");
 		return nil;
 	}
 
@@ -87,7 +87,7 @@ readmemimage(int fd)
 	chunk = 32*1024;
 	if(chunk < l)
 		chunk = l;
-	tmp = malloc(chunk);
+	tmp = jehanne_malloc(chunk);
 	if(tmp == nil)
 		goto Err;
 	while(maxy > miny){
@@ -95,16 +95,16 @@ readmemimage(int fd)
 		if(dy*l > chunk)
 			dy = chunk/l;
 		if(dy <= 0){
-			werrstr("readmemimage: image too wide for buffer");
+			jehanne_werrstr("readmemimage: image too wide for buffer");
 			goto Err;
 		}
 		n = dy*l;
-		m = readn(fd, tmp, n);
+		m = jehanne_readn(fd, tmp, n);
 		if(m != n){
-			werrstr("readmemimage: read count %d not %d: %r", m, n);
+			jehanne_werrstr("readmemimage: read count %d not %d: %r", m, n);
    Err:
  			freememimage(i);
-			free(tmp);
+			jehanne_free(tmp);
 			return nil;
 		}
 		if(!new)	/* an old image: must flip all the bits */
@@ -115,6 +115,6 @@ readmemimage(int fd)
 			goto Err;
 		miny += dy;
 	}
-	free(tmp);
+	jehanne_free(tmp);
 	return i;
 }

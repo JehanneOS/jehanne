@@ -25,18 +25,18 @@ main(int argc, char *argv[])
 	char err[ERRMAX];
 
 	if(argc <= 1){
-		fprint(2, "usage: time command\n");
-		exits("usage");
+		jehanne_fprint(2, "usage: time command\n");
+		jehanne_exits("usage");
 	}
 
-	switch(fork()){
+	switch(jehanne_fork()){
 	case -1:
 		error("fork");
 	case 0:
 		exec(argv[1], &argv[1]);
-		if(argv[1][0] != '/' && strncmp(argv[1], "./", 2) &&
-		   strncmp(argv[1], "../", 3)){
-			sprint(output, "/cmd/%s", argv[1]);
+		if(argv[1][0] != '/' && jehanne_strncmp(argv[1], "./", 2) &&
+		   jehanne_strncmp(argv[1], "../", 3)){
+			jehanne_sprint(output, "/cmd/%s", argv[1]);
 			exec(output, &argv[1]);
 		}
 		error(argv[1]);
@@ -45,10 +45,10 @@ main(int argc, char *argv[])
 	notify(notifyf);
 
     loop:
-	w = wait();
+	w = jehanne_wait();
 	if(w == nil){
 		errstr(err, sizeof err);
-		if(strcmp(err, "interrupted") == 0)
+		if(jehanne_strcmp(err, "interrupted") == 0)
 			goto loop;
 		error("wait");
 	}
@@ -67,15 +67,15 @@ main(int argc, char *argv[])
 		}
 	}
 	if(w->msg[0]){
-		p = utfrune(w->msg, ':');
+		p = jehanne_utfrune(w->msg, ':');
 		if(p && p[1])
 			p++;
 		else
 			p = w->msg;
 		add(" # status=%s", p);
 	}
-	fprint(2, "%s\n", output);
-	exits(w->msg);
+	jehanne_fprint(2, "%s\n", output);
+	jehanne_exits(w->msg);
 }
 
 void
@@ -85,9 +85,9 @@ add(char *a, ...)
 	va_list arg;
 
 	if(beenhere)
-		strcat(output, " ");
+		jehanne_strcat(output, " ");
 	va_start(arg, a);
-	vseprint(output+strlen(output), output+sizeof(output), a, arg);
+	jehanne_vseprint(output+jehanne_strlen(output), output+sizeof(output), a, arg);
 	va_end(arg);
 	beenhere++;
 }
@@ -96,15 +96,15 @@ void
 error(char *s)
 {
 
-	fprint(2, "time: %s: %r\n", s);
-	exits(s);
+	jehanne_fprint(2, "time: %s: %r\n", s);
+	jehanne_exits(s);
 }
 
 void
 notifyf(void *a, char *s)
 {
 	USED(a);
-	if(strcmp(s, "interrupt") == 0)
+	if(jehanne_strcmp(s, "interrupt") == 0)
 		noted(NCONT);
 	noted(NDFLT);
 }

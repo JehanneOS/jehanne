@@ -13,7 +13,7 @@
 #define	MASK	0x7fffffffL
 
 int
-nrand(int n)
+jehanne_nrand(int n)
 {
 	int32_t slop, v;
 
@@ -24,7 +24,7 @@ nrand(int n)
 	/* and if n == 0, you deserve what you get */
 	slop = MASK % n;
 	do
-		v = lrand();
+		v = jehanne_lrand();
 	while(v <= slop);
 	return v % n;
 }

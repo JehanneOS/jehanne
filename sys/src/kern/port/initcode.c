@@ -1,7 +1,7 @@
 /*
  * This file is part of Jehanne.
  *
- * Copyright (C) 2016 Giacomo Tesio <giacomo@tesio.it>
+ * Copyright (C) 2016-2017 Giacomo Tesio <giacomo@tesio.it>
  *
  * Jehanne is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,6 +17,9 @@
  */
 #include <u.h>
 #include <libc.h>
+
+extern void	**_privates;
+extern int	_nprivates;
 
 char boot[] = "/boot/boot";
 char bootdir[] = "/boot";
@@ -52,11 +55,11 @@ initboot(void)
 		0
 	};
 
-	if (access(boot, AEXEC) == 0)
+	if (jehanne_access(boot, AEXEC) == 0)
 		return 0;
-	if (access(rofs, AEXEC) < 0)
+	if (jehanne_access(rofs, AEXEC) < 0)
 		return -1;
-	if (access(initrd, AREAD) < 0)
+	if (jehanne_access(initrd, AREAD) < 0)
 		return -1;
 
 	switch(pid = rfork(RFFDG|RFREND|RFPROC)){
@@ -64,12 +67,12 @@ initboot(void)
 		return -1;
 	case 0:
 		exec(rofs, (const char**)args);
-		exits("initcode: exec: rofs");
+		jehanne_exits("initcode: exec: rofs");
 	default:
 		/* wait for agent to really be there */
 		i = 0;
-		while(access(bootfs, AREAD) < 0){
-			sleep(250);
+		while(jehanne_access(bootfs, AREAD) < 0){
+			jehanne_sleep(250);
 			i += 250;
 			if(i > 30000)	// 30 seconds are enough
 				return -1;
@@ -81,18 +84,29 @@ initboot(void)
 	if(mount(i, -1, bootdir, MREPL, "", '9') < 0)
 		return -1;
 	remove(bootfs);
-	return access(boot, AEXEC);
+	return jehanne_access(boot, AEXEC);
 }
 
 void
 startboot(char *argv0, char **argv)
 {
+	/* Initialize per process structures on the stack */
 	int i;
 	char buf[200];
 	char * const args[2] = {
 		bootname,
 		nil
 	};
+
+	void *privates[NPRIVATES];
+	NativeTypes sysargs[6];
+
+	_nprivates = NPRIVATES;
+	for(_nprivates = 0; _nprivates < NPRIVATES; ++_nprivates)
+		privates[_nprivates] = nil;
+	_privates = privates;
+	_sysargs = &sysargs[0];
+
 	for(i = 0; i < sizeof buf; ++i)
 		buf[i] = '\0';
 

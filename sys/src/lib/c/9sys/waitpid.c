@@ -12,7 +12,7 @@
 #include <9P2000.h>
 
 int
-waitpid(void)
+jehanne_waitpid(void)
 {
 	int n;
 	char buf[512], *fld[5];
@@ -21,10 +21,10 @@ waitpid(void)
 	if(n <= 0)
 		return -1;
 	buf[n] = '\0';
-	if(tokenize(buf, fld, nelem(fld)) != nelem(fld)){
-		werrstr("couldn't parse wait message");
+	if(jehanne_tokenize(buf, fld, nelem(fld)) != nelem(fld)){
+		jehanne_werrstr("couldn't parse wait message");
 		return -1;
 	}
-	return atoi(fld[0]);
+	return jehanne_atoi(fld[0]);
 }
 

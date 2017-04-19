@@ -29,27 +29,27 @@ configip(int bargc, char **bargv, int needfs)
 	int argc, pid;
 	char **arg, **argv, buf[32], *p;
 
-	fmtinstall('I', eipfmt);
-	fmtinstall('M', eipfmt);
-	fmtinstall('E', eipfmt);
+	jehanne_fmtinstall('I', eipfmt);
+	jehanne_fmtinstall('M', eipfmt);
+	jehanne_fmtinstall('E', eipfmt);
 
-	arg = malloc((bargc+1) * sizeof(char*));
+	arg = jehanne_malloc((bargc+1) * sizeof(char*));
 	if(arg == nil)
 		fatal("malloc");
-	memmove(arg, bargv, bargc * sizeof(char*));
+	jehanne_memmove(arg, bargv, bargc * sizeof(char*));
 	arg[bargc] = 0;
 
 	buf[0] = 0; /* no default for outin */
 
-print("ipconfig...");
+jehanne_print("ipconfig...");
 	argc = bargc;
 	argv = arg;
-	strcpy(mpoint, "/net");
+	jehanne_strcpy(mpoint, "/net");
 	ARGBEGIN {
 	case 'x':
 		p = ARGF();
 		if(p != nil)
-			snprint(mpoint, sizeof(mpoint), "/net%s", p);
+			jehanne_snprint(mpoint, sizeof(mpoint), "/net%s", p);
 		break;
 	case 'g':
 	case 'b':
@@ -63,21 +63,21 @@ print("ipconfig...");
 	/* bind in an ip interface */
 	if(bind("#I", mpoint, MAFTER) < 0)
 		fatal("bind #I\n");
-	if(access(ipconfigPath, AEXEC) < 0)
+	if(jehanne_access(ipconfigPath, AEXEC) < 0)
 		fatal("cannot access ipconfig");
 
-	if(access("#l0", AEXIST) == 0 && bind("#l0", mpoint, MAFTER) < 0)
-		print("bind #l0: %r\n");
-	if(access("#l1", AEXIST) == 0 && bind("#l1", mpoint, MAFTER) < 0)
-		print("bind #l1: %r\n");
-	if(access("#l2", AEXIST) == 0 && bind("#l2", mpoint, MAFTER) < 0)
-		print("bind #l2: %r\n");
-	if(access("#l3", AEXIST) == 0 && bind("#l3", mpoint, MAFTER) < 0)
-		print("bind #l3: %r\n");
-	werrstr("");
+	if(jehanne_access("#l0", AEXIST) == 0 && bind("#l0", mpoint, MAFTER) < 0)
+		jehanne_print("bind #l0: %r\n");
+	if(jehanne_access("#l1", AEXIST) == 0 && bind("#l1", mpoint, MAFTER) < 0)
+		jehanne_print("bind #l1: %r\n");
+	if(jehanne_access("#l2", AEXIST) == 0 && bind("#l2", mpoint, MAFTER) < 0)
+		jehanne_print("bind #l2: %r\n");
+	if(jehanne_access("#l3", AEXIST) == 0 && bind("#l3", mpoint, MAFTER) < 0)
+		jehanne_print("bind #l3: %r\n");
+	jehanne_werrstr("");
 
 	/* let ipconfig configure the ip interface */
-	switch(pid = fork()){
+	switch(pid = jehanne_fork()){
 	case -1:
 		fatal("fork configuring ip");
 	case 0:
@@ -89,15 +89,15 @@ print("ipconfig...");
 
 	/* wait for ipconfig to finish */
 	for(;;){
-		w = wait();
+		w = jehanne_wait();
 		if(w != nil && w->pid == pid){
 			if(w->msg[0] != 0)
 				fatal(w->msg);
-			free(w);
+			jehanne_free(w);
 			break;
 		} else if(w == nil)
 			fatal("configuring ip");
-		free(w);
+		jehanne_free(w);
 	}
 
 	if(!needfs)
@@ -110,7 +110,7 @@ print("ipconfig...");
 	while(!isvalidip(fsip)){
 		outin("filesystem IP address", buf, sizeof(buf));
 		if (parseip(fsip, buf) == -1)
-			fprint(2, "configip: can't parse fs ip %s\n", buf);
+			jehanne_fprint(2, "configip: can't parse fs ip %s\n", buf);
 	}
 
 	netndb("auth", auip);
@@ -119,9 +119,9 @@ print("ipconfig...");
 	while(!isvalidip(auip)){
 		outin("authentication server IP address", buf, sizeof(buf));
 		if (parseip(auip, buf) == -1)
-			fprint(2, "configip: can't parse auth ip %s\n", buf);
+			jehanne_fprint(2, "configip: can't parse auth ip %s\n", buf);
 	}
-	free(arg);
+	jehanne_free(arg);
 }
 
 static void
@@ -129,8 +129,8 @@ setauthaddr(char *proto, int port)
 {
 	char buf[128];
 
-	snprint(buf, sizeof buf, "%s!%I!%d", proto, auip, port);
-	authaddr = strdup(buf);
+	jehanne_snprint(buf, sizeof buf, "%s!%I!%d", proto, auip, port);
+	authaddr = jehanne_strdup(buf);
 }
 
 void
@@ -146,10 +146,10 @@ connecttcp(void)
 	int fd;
 	char buf[64];
 
-	snprint(buf, sizeof buf, "tcp!%I!5640", fsip);
-	fd = dial(buf, 0, 0, 0);
+	jehanne_snprint(buf, sizeof buf, "tcp!%I!5640", fsip);
+	fd = jehanne_dial(buf, 0, 0, 0);
 	if (fd < 0)
-		werrstr("dial %s: %r", buf);
+		jehanne_werrstr("dial %s: %r", buf);
 	return fd;
 }
 
@@ -170,7 +170,7 @@ netenv(char *attr, uint8_t *ip)
 	char buf[128];
 
 	ipmove(ip, IPnoaddr);
-	snprint(buf, sizeof(buf), "#ec/%s", attr);
+	jehanne_snprint(buf, sizeof(buf), "#ec/%s", attr);
 	fd = open(buf, OREAD);
 	if(fd < 0)
 		return;
@@ -179,7 +179,7 @@ netenv(char *attr, uint8_t *ip)
 	if(n > 0){
 		buf[n] = 0;
 		if (parseip(ip, buf) == -1)
-			fprint(2, "netenv: can't parse ip %s\n", buf);
+			jehanne_fprint(2, "netenv: can't parse ip %s\n", buf);
 	}
 	close(fd);
 }
@@ -192,7 +192,7 @@ netndb(char *attr, uint8_t *ip)
 	char *p;
 
 	ipmove(ip, IPnoaddr);
-	snprint(buf, sizeof(buf), "%s/ndb", mpoint);
+	jehanne_snprint(buf, sizeof(buf), "%s/ndb", mpoint);
 	fd = open(buf, OREAD);
 	if(fd < 0)
 		return;
@@ -201,16 +201,16 @@ netndb(char *attr, uint8_t *ip)
 	if(n <= 0)
 		return;
 	buf[n] = 0;
-	n = strlen(attr);
+	n = jehanne_strlen(attr);
 	for(p = buf; ; p++){
-		p = strstr(p, attr);
+		p = jehanne_strstr(p, attr);
 		if(p == nil)
 			break;
 		c = *(p-1);
 		if(*(p + n) == '=' && (p == buf || c == '\n' || c == ' ' || c == '\t')){
 			p += n+1;
 			if (parseip(ip, p) == -1)
-				fprint(2, "netndb: can't parse ip %s\n", p);
+				jehanne_fprint(2, "netndb: can't parse ip %s\n", p);
 			return;
 		}
 	}

@@ -8,7 +8,7 @@
  */
 #define PORTABLE_SYSCALLS
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 //#include <sys.h>
 #include <9P2000.h>
 

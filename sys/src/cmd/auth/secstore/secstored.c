@@ -1,7 +1,7 @@
 /* secstored - secure store daemon */
 #define PORTABLE_SYSCALLS
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 #include <bio.h>
 #include <ndb.h>
 #include <mp.h>

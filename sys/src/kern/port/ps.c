@@ -90,7 +90,7 @@ psalloc(void)
 			break;
 
 		unlock(&procalloc.l);
-		snprint(msg, sizeof msg, "no procs; %s forking",
+		jehanne_snprint(msg, sizeof msg, "no procs; %s forking",
 			up? up->text: "kernel");
 		resrcwait(msg, "Noprocs");
 		lock(&procalloc.l);
@@ -111,7 +111,7 @@ psinit(int nproc)
 	int i;
 
 	procalloc.nproc = nproc;
-	procalloc.free = malloc(nproc*sizeof(Proc));
+	procalloc.free = jehanne_malloc(nproc*sizeof(Proc));
 	if(procalloc.free == nil)
 		panic("cannot allocate %ud procs (%udMB)\n", nproc, nproc*sizeof(Proc)/(1024*1024));
 	procalloc.arena = procalloc.free;

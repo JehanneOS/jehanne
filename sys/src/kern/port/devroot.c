@@ -63,7 +63,7 @@ addlist(Dirlist *l, char *name, uint8_t *contents, uint32_t len, int perm)
 		panic("too many root files");
 	l->data[l->ndir] = contents;
 	d = &l->dir[l->ndir];
-	strcpy(d->name, name);
+	jehanne_strcpy(d->name, name);
 	d->length = len;
 	d->perm = perm;
 	d->qid.type = 0;
@@ -154,7 +154,7 @@ rootgen(Chan *c, char *name, Dirtab* _1, int _2, int s, Dir *dp)
 		if(t >= l->ndir)
 			return -1;
 if(t < 0){
-print("rootgen %#llux %d %d\n", c->qid.path, s, t);
+jehanne_print("rootgen %#llux %d %d\n", c->qid.path, s, t);
 panic("whoops");
 }
 		d = &l->dir[t];
@@ -222,7 +222,7 @@ rootread(Chan *c, void *buf, long n, int64_t off)
 		return 0;
 	if(offset+n > d->length)
 		n = d->length - offset;
-	memmove(buf, data+offset, n);
+	jehanne_memmove(buf, data+offset, n);
 	return n;
 }
 

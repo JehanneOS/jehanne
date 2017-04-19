@@ -12,7 +12,7 @@
  * CH9294 Dual Enhanced Graphics Clock Generator.
  */
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 #include <bio.h>
 
 #include "pci.h"

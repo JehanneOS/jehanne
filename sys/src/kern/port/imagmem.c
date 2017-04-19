@@ -58,7 +58,7 @@ poolprint(Pool *p, char *fmt, ...)
 
 	pv = p->private;
 	va_start(v, fmt);
-	pv->end = vseprint(pv->end, &pv->msg[sizeof pv->msg], fmt, v);
+	pv->end = jehanne_vseprint(pv->end, &pv->msg[sizeof pv->msg], fmt, v);
 	va_end(v);
 }
 
@@ -71,9 +71,9 @@ ppanic(Pool *p, char *fmt, ...)
 
 	pv = p->private;
 	va_start(v, fmt);
-	vseprint(pv->end, &pv->msg[sizeof pv->msg], fmt, v);
+	jehanne_vseprint(pv->end, &pv->msg[sizeof pv->msg], fmt, v);
 	va_end(v);
-	memmove(msg, pv->msg, sizeof msg);
+	jehanne_memmove(msg, pv->msg, sizeof msg);
 	iunlock(&pv->lk);
 	panic("%s", msg);
 }
@@ -101,7 +101,7 @@ punlock(Pool *p)
 		return;
 	}
 
-	memmove(msg, pv->msg, sizeof msg);
+	jehanne_memmove(msg, pv->msg, sizeof msg);
 	pv->end = pv->msg;
 	iunlock(&pv->lk);
 	iprint("%.*s", sizeof pv->msg, msg);

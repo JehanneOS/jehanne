@@ -8,7 +8,7 @@
  */
 
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 #include <auth.h>
 
 #define	NAMELEN	64	/* reasonable upper limit for name elements */

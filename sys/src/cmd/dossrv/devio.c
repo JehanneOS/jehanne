@@ -25,7 +25,7 @@ deverror(char *name, Xfs *xf, int32_t addr, int32_t n, int32_t nret)
 		xf->dev = -1;
 		return -1;
 	}
-	fprint(2, "dev %d sector %ld, %s: %ld, should be %ld\n", xf->dev, addr, name, nret, n);
+	jehanne_fprint(2, "dev %d sector %ld, %s: %ld, should be %ld\n", xf->dev, addr, name, nret, n);
 	return -1;
 }
 

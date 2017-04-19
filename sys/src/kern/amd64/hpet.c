@@ -65,7 +65,7 @@ hpetinit(uint32_t id, uint32_t seqno, uintmem pa, int minticks)
 	int i, n;
 	Hpet *hpet;
 
-	print("hpet: id %#ux seqno %d pa %#P minticks %d\n", id, seqno, pa, minticks);
+	jehanne_print("hpet: id %#ux seqno %d pa %#P minticks %d\n", id, seqno, pa, minticks);
 	if(seqno >= nelem(etb))
 		return;
 	if((hpet = vmap(pa, 1024)) == nil)		/* HPET §3.2.4 */
@@ -73,9 +73,9 @@ hpetinit(uint32_t id, uint32_t seqno, uintmem pa, int minticks)
 	memreserve(pa, 1024);
 	etb[seqno] = hpet;
 
-	print("HPET: cap %#8.8ux period %#8.8ux\n", hpet->cap, hpet->period);
-	print("HPET: cnf %#8.8ux sts %#8.8ux\n",hpet->cnf, hpet->sts);
-	print("HPET: counter %#.16llux\n", hpet->counter);
+	jehanne_print("HPET: cap %#8.8ux period %#8.8ux\n", hpet->cap, hpet->period);
+	jehanne_print("HPET: cnf %#8.8ux sts %#8.8ux\n",hpet->cnf, hpet->sts);
+	jehanne_print("HPET: counter %#.16llux\n", hpet->counter);
 
 	n = ((hpet->cap>>8) & 0x0F) + 1;
 	for(i = 0; i < n; i++){

@@ -13,7 +13,7 @@
 
 /* format the output into f->to and return the number of characters fmted  */
 int
-dofmt(Fmt *f, const char *fmt)
+jehanne_dofmt(Fmt *f, const char *fmt)
 {
 	Rune rune, *rt, *rs;
 	int r;
@@ -29,7 +29,7 @@ dofmt(Fmt *f, const char *fmt)
 				if(r < Runeself)
 					fmt++;
 				else{
-					fmt += chartorune(&rune, fmt);
+					fmt += jehanne_chartorune(&rune, fmt);
 					r = rune;
 				}
 				FMTRCHAR(f, rt, rs, r);
@@ -48,7 +48,7 @@ dofmt(Fmt *f, const char *fmt)
 					FMTCHAR(f, t, s, r);
 					fmt++;
 				}else{
-					n = chartorune(&rune, fmt);
+					n = jehanne_chartorune(&rune, fmt);
 					if(t + n > s){
 						t = _fmtflush(f, t, n);
 						if(t != nil)
@@ -147,8 +147,8 @@ _fmtcpy(Fmt *f, const void *vm, int n, int sz)
 			r = *(uint8_t*)m;
 			if(r < Runeself)
 				m++;
-			else if((me - m) >= UTFmax || fullrune(m, me-m))
-				m += chartorune(&r, m);
+			else if((me - m) >= UTFmax || jehanne_fullrune(m, me-m))
+				m += jehanne_chartorune(&r, m);
 			else
 				break;
 			FMTRCHAR(f, rt, rs, r);
@@ -166,8 +166,8 @@ _fmtcpy(Fmt *f, const void *vm, int n, int sz)
 			r = *(uint8_t*)m;
 			if(r < Runeself)
 				m++;
-			else if((me - m) >= UTFmax || fullrune(m, me-m))
-				m += chartorune(&r, m);
+			else if((me - m) >= UTFmax || jehanne_fullrune(m, me-m))
+				m += jehanne_chartorune(&r, m);
 			else
 				break;
 			FMTRUNE(f, t, s, r);
@@ -245,7 +245,7 @@ _runefmt(Fmt *f)
 
 /* public helper routine: fmt out a null terminated string already in hand */
 int
-fmtstrcpy(Fmt *f, const char *s)
+jehanne_fmtstrcpy(Fmt *f, const char *s)
 {
 	int i, j;
 	Rune r;
@@ -256,10 +256,10 @@ fmtstrcpy(Fmt *f, const char *s)
 	if(f->flags & FmtPrec){
 		i = 0;
 		for(j=0; j<f->prec && s[i]; j++)
-			i += chartorune(&r, s+i);
+			i += jehanne_chartorune(&r, s+i);
 		return _fmtcpy(f, s, j, i);
 	}
-	return _fmtcpy(f, s, utflen(s), strlen(s));
+	return _fmtcpy(f, s, jehanne_utflen(s), jehanne_strlen(s));
 }
 
 /* fmt out a null terminated utf string */
@@ -269,12 +269,12 @@ _strfmt(Fmt *f)
 	char *s;
 
 	s = va_arg(f->args, char *);
-	return fmtstrcpy(f, s);
+	return jehanne_fmtstrcpy(f, s);
 }
 
 /* public helper routine: fmt out a null terminated rune string already in hand */
 int
-fmtrunestrcpy(Fmt *f, const Rune *s)
+jehanne_fmtrunestrcpy(Fmt *f, const Rune *s)
 {
 	const Rune *e;
 	int n, p;
@@ -302,7 +302,7 @@ _runesfmt(Fmt *f)
 	Rune *s;
 
 	s = va_arg(f->args, Rune *);
-	return fmtrunestrcpy(f, s);
+	return jehanne_fmtrunestrcpy(f, s);
 }
 
 /* fmt a % */

@@ -126,7 +126,7 @@ getbanked(int ra, int rb, int sz)
 			r |= inl(rb);
 		break;
 	default:
-		print("getbanked: wrong size\n");
+		jehanne_print("getbanked: wrong size\n");
 	}
 	return r;
 }
@@ -157,7 +157,7 @@ setbanked(int ra, int rb, int sz, int v)
 			outl(rb, v);
 		break;
 	default:
-		print("setbanked: wrong size\n");
+		jehanne_print("setbanked: wrong size\n");
 	}
 	return r;
 }
@@ -294,7 +294,7 @@ acpiintr(Ureg* _1, void* _2)
 			setgpeen(i, 0);
 			clrgpests(i);
 			if(en != 0)
-				print("acpinitr: calling gpe %d\n", i);
+				jehanne_print("acpinitr: calling gpe %d\n", i);
 			/* queue gpe.  reenable after done */
 		}
 	sts = getpm1sts();		/* § 4.8.3.3.1 */
@@ -319,7 +319,7 @@ initgpes(void)
 	n0 = fadt.gpe0blklen/2;
 	n1 = fadt.gpe1blklen/2;
 	ngpe = n0 + n1;
-	gpes = mallocz(sizeof(Gpe) * ngpe, 1);
+	gpes = jehanne_mallocz(sizeof(Gpe) * ngpe, 1);
 	for(i = 0; i < n0; i++){
 		gpes[i].nb = i;
 		gpes[i].stsbit = i&7;
@@ -346,7 +346,7 @@ acpiioalloc(uint32_t addr, int len, char *name)
 	char buf[32];
 
 	if(addr != 0){
-		snprint(buf, sizeof buf, "acpi %s", name);
+		jehanne_snprint(buf, sizeof buf, "acpi %s", name);
 		ioalloc(addr, len, 0, buf);
 	}
 }
@@ -381,7 +381,7 @@ init(void)
 		outb(fadt.smicmd, fadt.acpienable);
 		for(i = 0;; i++){
 			if(i == 10){
-				print("acpi: failed to enable\n");
+				jehanne_print("acpi: failed to enable\n");
 				outb(fadt.smicmd, fadt.acpidisable);
 				return;
 			}
@@ -391,7 +391,7 @@ init(void)
 	}
 
 	if(0){
-		print("acpi: enable interrupt\n");
+		jehanne_print("acpi: enable interrupt\n");
 		setpm1sts(getpm1sts());
 		setpm1en(Epowerbtn);
 		intrenable(fadt.sciint, acpiintr, 0, BUSUNKNOWN, "acpi");
@@ -476,8 +476,8 @@ acpiread(Chan *c, void *a, long n, int64_t off)
 			s = "??";
 		else
 			s = pwrbuttab[i].name;
-		p = seprint(p, e, "powerbutton %s\n", s);
-		p = seprint(p, e, "ngpe %d\n", ngpe);
+		p = jehanne_seprint(p, e, "powerbutton %s\n", s);
+		p = jehanne_seprint(p, e, "ngpe %d\n", ngpe);
 		USED(p);
 		return readstr(off, a, n, buf);
 
@@ -500,13 +500,13 @@ acpiwrite(Chan *c, void *a, long n, int64_t _1)
 
 	cb = parsecmd(a, n);
 	if(waserror()){
-		free(cb);
+		jehanne_free(cb);
 		nexterror();
 	}
 	ct = lookupcmd(cb, ctls, nelem(ctls));
 	switch(ct->index){
 	case CMgpe:
-		i = strtoul(cb->f[1], nil, 0);
+		i = jehanne_strtoul(cb->f[1], nil, 0);
 		if(i >= ngpe)
 			error("gpe out of range");
 		kstrdup(&gpes[i].obj, cb->f[2]);
@@ -515,7 +515,7 @@ acpiwrite(Chan *c, void *a, long n, int64_t _1)
 		break;
 	case CMpowerbut:
 		for(i = 0; i < nelem(pwrbuttab); i++)
-			if(strcmp(cb->f[1], pwrbuttab[i].name) == 0){
+			if(jehanne_strcmp(cb->f[1], pwrbuttab[i].name) == 0){
 				ilock(&aconf);
 				aconf.powerbutton = pwrbuttab[i].f;
 				iunlock(&aconf);
@@ -525,14 +525,14 @@ acpiwrite(Chan *c, void *a, long n, int64_t _1)
 			error("unknown power button action");
 		break;
 	case CMpower:
-		if(strcmp(cb->f[1], "off") == 0)
+		if(jehanne_strcmp(cb->f[1], "off") == 0)
 			aconf.powerbutton();
 		else
 			error("unknown power button command");
 		break;
 	}
 	poperror();
-	free(cb);
+	jehanne_free(cb);
 	return n;
 }
 

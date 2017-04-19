@@ -51,7 +51,7 @@ loopbackunbind(Ipifc *ifc)
 
 	/* clean up */
 	qfree(lb->q);
-	free(lb);
+	jehanne_free(lb);
 }
 
 static void

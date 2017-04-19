@@ -84,8 +84,8 @@ mntreset(void)
 	mntalloc.id = 1;
 	mntalloc.tagmask[0] = 1;			/* don't allow 0 as a tag */
 	mntalloc.tagmask[NMASK-1] = 0x80000000UL;	/* don't allow NOTAG */
-	fmtinstall('F', fcallfmt);
-	fmtinstall('D', dirfmt);
+	jehanne_fmtinstall('F', fcallfmt);
+	jehanne_fmtinstall('D', dirfmt);
 /* We can't install %M since eipfmt does and is used in the kernel [sape] */
 
 	cinit();
@@ -124,7 +124,7 @@ mntversion(Chan *c, uint32_t msize, char *version, usize returnlen)
 	/* validity */
 //	if(msize < 0)		// msize is unsigned, this is always false
 //		error("bad iounit in version call");
-	if(strncmp(v, VERSION9P, strlen(VERSION9P)) != 0)
+	if(jehanne_strncmp(v, VERSION9P, jehanne_strlen(VERSION9P)) != 0)
 		error("bad 9P version specification");
 
 	mnt = c->mux;
@@ -133,16 +133,16 @@ mntversion(Chan *c, uint32_t msize, char *version, usize returnlen)
 		qunlock(&c->umqlock);
 		poperror();
 
-		strecpy(buf, buf+sizeof buf, mnt->version);
-		k = strlen(buf);
-		if(strncmp(buf, v, k) != 0){
-			snprint(buf, sizeof buf, "incompatible 9P versions %s %s", mnt->version, v);
+		jehanne_strecpy(buf, buf+sizeof buf, mnt->version);
+		k = jehanne_strlen(buf);
+		if(jehanne_strncmp(buf, v, k) != 0){
+			jehanne_snprint(buf, sizeof buf, "incompatible 9P versions %s %s", mnt->version, v);
 			error(buf);
 		}
 		if(returnlen != 0){
 			if(returnlen < k)
 				error(Eshort);
-			memmove(version, buf, k);
+			jehanne_memmove(version, buf, k);
 		}
 		return k;
 	}
@@ -151,11 +151,11 @@ mntversion(Chan *c, uint32_t msize, char *version, usize returnlen)
 	f.tag = NOTAG;
 	f.msize = msize;
 	f.version = v;
-	msg = malloc(MAXRPC);
+	msg = jehanne_malloc(MAXRPC);
 	if(msg == nil)
 		exhausted("version memory");
 	if(waserror()){
-		free(msg);
+		jehanne_free(msg);
 		nexterror();
 	}
 	k = convS2M(&f, msg, MAXRPC);
@@ -197,8 +197,8 @@ mntversion(Chan *c, uint32_t msize, char *version, usize returnlen)
 		error("server tries to increase msize in fversion");
 	if(f.msize<256 || f.msize>1024*1024)
 		error("nonsense value of msize in fversion");
-	k = strlen(f.version);
-	if(strncmp(f.version, v, k) != 0)
+	k = jehanne_strlen(f.version);
+	if(jehanne_strncmp(f.version, v, k) != 0)
 		error("bad 9P version returned from server");
 
 	/* now build Mnt associated with this connection */
@@ -207,7 +207,7 @@ mntversion(Chan *c, uint32_t msize, char *version, usize returnlen)
 	if(mnt != nil)
 		mntalloc.mntfree = mnt->list;
 	else {
-		mnt = malloc(sizeof(Mnt));
+		mnt = jehanne_malloc(sizeof(Mnt));
 		if(mnt == nil) {
 			unlock(&mntalloc);
 			exhausted("mount devices");
@@ -225,11 +225,11 @@ mntversion(Chan *c, uint32_t msize, char *version, usize returnlen)
 	if(returnlen != 0){
 		if(returnlen < k)
 			error(Eshort);
-		memmove(version, f.version, k);
+		jehanne_memmove(version, f.version, k);
 	}
 
 	poperror();	/* msg */
-	free(msg);
+	jehanne_free(msg);
 
 	lock(&mnt->l);
 	mnt->queue = 0;
@@ -378,7 +378,7 @@ mntwalk(Chan *c, Chan *nc, char **name, int nname)
 	Walkqid *wq;
 
 	if(nc != nil)
-		print("mntwalk: nc != nil\n");
+		jehanne_print("mntwalk: nc != nil\n");
 	if(nname > MAXWELEM)
 		error("devmnt: too many name elements");
 	alloc = 0;
@@ -386,7 +386,7 @@ mntwalk(Chan *c, Chan *nc, char **name, int nname)
 	if(waserror()){
 		if(alloc && wq->clone!=nil)
 			cclose(wq->clone);
-		free(wq);
+		jehanne_free(wq);
 		return nil;
 	}
 
@@ -412,7 +412,7 @@ mntwalk(Chan *c, Chan *nc, char **name, int nname)
 	r->request.fid = c->fid;
 	r->request.newfid = nc->fid;
 	r->request.nwname = nname;
-	memmove(r->request.wname, name, nname*sizeof(char*));
+	jehanne_memmove(r->request.wname, name, nname*sizeof(char*));
 
 	mountrpc(mnt, r);
 
@@ -423,7 +423,7 @@ mntwalk(Chan *c, Chan *nc, char **name, int nname)
 			cclose(nc);
 		wq->clone = nil;
 		if(r->reply.nwqid == 0){
-			free(wq);
+			jehanne_free(wq);
 			wq = nil;
 			goto Return;
 		}
@@ -476,7 +476,7 @@ mntstat(Chan *c, uint8_t *dp, long n)
 		PBIT16(dp, r->reply.nstat-2);
 	}else{
 		nstat = r->reply.nstat;
-		memmove(dp, r->reply.stat, nstat);
+		jehanne_memmove(dp, r->reply.stat, nstat);
 		validstat(dp, nstat);
 		mntdirfix(dp, c);
 	}
@@ -636,7 +636,7 @@ muxclose(Mnt *mnt)
 		mntfree(q);
 	}
 	mnt->id = 0;
-	free(mnt->version);
+	jehanne_free(mnt->version);
 	mnt->version = nil;
 	mntpntfree(mnt);
 }
@@ -826,7 +826,7 @@ mountrpc(Mnt *mnt, Mntrpc *r)
 		cn = "?";
 		if(r->c != nil && r->c->path != nil)
 			cn = r->c->path->s;
-		print("mnt: proc %s %d: mismatch from %s %s rep %#p tag %d fid %d T%d R%d rp %d\n",
+		jehanne_print("mnt: proc %s %d: mismatch from %s %s rep %#p tag %d fid %d T%d R%d rp %d\n",
 			up->text, up->pid, sn, cn,
 			r, r->request.tag, r->request.fid, r->request.type,
 			r->reply.type, r->reply.tag);
@@ -842,7 +842,7 @@ mountio(Mnt *mnt, Mntrpc *r)
 	while(waserror()) {
 		if(mnt->rip == up)
 			mntgate(mnt);
-		if(strcmp(up->errstr, Eintr) != 0){
+		if(jehanne_strcmp(up->errstr, Eintr) != 0){
 			mntflushfree(mnt, r);
 			nexterror();
 		}
@@ -946,7 +946,7 @@ mntrpcread(Mnt *mnt, Mntrpc *r)
 
 	if(convM2S(nb->rp, len, &r->reply) <= 0){
 		/* bad message, dump it */
-		print("mntrpcread: convM2S failed\n");
+		jehanne_print("mntrpcread: convM2S failed\n");
 		qdiscard(mnt->q, len);
 		return -1;
 	}
@@ -969,7 +969,7 @@ mntrpcread(Mnt *mnt, Mntrpc *r)
 		} else {
 			/* split block and put unused bit back */
 			nb = allocb(i-len);
-			memmove(nb->wp, b->rp+len, i-len);
+			jehanne_memmove(nb->wp, b->rp+len, i-len);
 			b->wp = b->rp+len;
 			nb->wp += i-len;
 			qputback(mnt->q, nb);
@@ -1029,7 +1029,7 @@ mountmux(Mnt *mnt, Mntrpc *r)
 		l = &q->list;
 	}
 	unlock(&mnt->l);
-	print("unexpected reply tag %ud; type %d\n", r->reply.tag, r->reply.type);
+	jehanne_print("unexpected reply tag %ud; type %d\n", r->reply.tag, r->reply.type);
 }
 
 /*
@@ -1111,7 +1111,7 @@ mntralloc(Chan *c, uint32_t msize)
 	lock(&mntalloc);
 	new = mntalloc.rpcfree;
 	if(new == nil){
-		new = malloc(sizeof(Mntrpc));
+		new = jehanne_malloc(sizeof(Mntrpc));
 		if(new == nil) {
 			unlock(&mntalloc);
 			exhausted("mount rpc header");
@@ -1120,9 +1120,9 @@ mntralloc(Chan *c, uint32_t msize)
 		 * The header is split from the data buffer as
 		 * mountmux may swap the buffer with another header.
 		 */
-		new->rpc = mallocz(msize, 0);
+		new->rpc = jehanne_mallocz(msize, 0);
 		if(new->rpc == nil){
-			free(new);
+			jehanne_free(new);
 			unlock(&mntalloc);
 			exhausted("mount rpc buffer");
 		}
@@ -1133,10 +1133,10 @@ mntralloc(Chan *c, uint32_t msize)
 		mntalloc.rpcfree = new->list;
 		mntalloc.nrpcfree--;
 		if(new->rpclen < msize){
-			free(new->rpc);
-			new->rpc = mallocz(msize, 0);
+			jehanne_free(new->rpc);
+			new->rpc = jehanne_mallocz(msize, 0);
 			if(new->rpc == nil){
-				free(new);
+				jehanne_free(new);
 				mntalloc.nrpcused--;
 				unlock(&mntalloc);
 				exhausted("mount rpc buffer");
@@ -1160,9 +1160,9 @@ mntfree(Mntrpc *r)
 		freeblist(r->b);
 	lock(&mntalloc);
 	if(mntalloc.nrpcfree >= 10){
-		free(r->rpc);
+		jehanne_free(r->rpc);
 		freetag(r->request.tag);
-		free(r);
+		jehanne_free(r);
 	}
 	else{
 		r->list = mntalloc.rpcfree;
@@ -1205,7 +1205,7 @@ mntchk(Chan *c)
 	mnt = c->mchan->mux;
 
 	if(mnt == nil)
-		print("mntchk 2: nil mux c %s c->mchan %s \n", chanpath(c), chanpath(c->mchan));
+		jehanne_print("mntchk 2: nil mux c %s c->mchan %s \n", chanpath(c), chanpath(c->mchan));
 
 	/*
 	 * Was it closed and reused (was error(Eshutdown); now, it cannot happen)

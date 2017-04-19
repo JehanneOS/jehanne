@@ -16,18 +16,18 @@ _sysfatalimpl(const char *fmt, va_list arg)
 {
 	char buf[1024];
 
-	vseprint(buf, buf+sizeof(buf), fmt, arg);
+	jehanne_vseprint(buf, buf+sizeof(buf), fmt, arg);
 	if(argv0)
-		fprint(2, "%s: %s\n", argv0, buf);
+		jehanne_fprint(2, "%s: %s\n", argv0, buf);
 	else
-		fprint(2, "%s\n", buf);
-	exits(buf);
+		jehanne_fprint(2, "%s\n", buf);
+	jehanne_exits(buf);
 }
 
 void (*_sysfatal)(const char *fmt, va_list arg) = _sysfatalimpl;
 
 void
-sysfatal(const char *fmt, ...)
+jehanne_sysfatal(const char *fmt, ...)
 {
 	va_list arg;
 

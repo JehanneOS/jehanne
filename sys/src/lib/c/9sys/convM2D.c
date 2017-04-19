@@ -39,7 +39,7 @@ statcheck(uint8_t *buf, uint32_t nbuf)
 static char nullstring[] = "";
 
 uint32_t
-convM2D(uint8_t *buf, uint32_t nbuf, Dir *d, char *strs)
+jehanne_convM2D(uint8_t *buf, uint32_t nbuf, Dir *d, char *strs)
 {
 	uint8_t *p, *ebuf;
 	char *sv[4];
@@ -82,7 +82,7 @@ convM2D(uint8_t *buf, uint32_t nbuf, Dir *d, char *strs)
 			return 0;
 		if(strs){
 			sv[i] = strs;
-			memmove(strs, p, ns);
+			jehanne_memmove(strs, p, ns);
 			strs += ns;
 			*strs++ = '\0';
 		}

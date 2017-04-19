@@ -21,9 +21,9 @@ nextID(void)
 	static int id;
 	int i;
 
-	lock(&l);
+	jehanne_lock(&l);
 	i = ++id;
-	unlock(&l);
+	jehanne_unlock(&l);
 	return i;
 }
 	
@@ -38,21 +38,21 @@ newthread(Proc *p, void (*f)(void *arg), void *arg, uint32_t stacksize,
 	Thread *t;
 
 	if(stacksize < 32)
-		sysfatal("bad stacksize %d", stacksize);
+		jehanne_sysfatal("bad stacksize %d", stacksize);
 	t = _threadmalloc(sizeof(Thread), 1);
 	t->stksize = stacksize;
 	t->stk = _threadmalloc(stacksize, 0);
-	memset(t->stk, 0xFE, stacksize);
+	jehanne_memset(t->stk, 0xFE, stacksize);
 	_threadinitstack(t, f, arg);
 	t->grp = grp;
 	if(name)
-		t->cmdname = strdup(name);
+		t->cmdname = jehanne_strdup(name);
 	t->id = nextID();
 	id = t->id;
 	t->next = (Thread*)~0;
 	t->proc = p;
 	_threaddebug(DBGSCHED, "create thread %d.%d name %s", p->pid, t->id, name);
-	lock(&p->lock);
+	jehanne_lock(&p->lock);
 	p->nthreads++;
 	if(p->threads.head == nil)
 		p->threads.head = t;
@@ -62,7 +62,7 @@ newthread(Proc *p, void (*f)(void *arg), void *arg, uint32_t stacksize,
 	t->nextt = nil;
 	t->state = Ready;
 	_threadready(t);
-	unlock(&p->lock);
+	jehanne_unlock(&p->lock);
 	return id;
 }
 
@@ -91,13 +91,13 @@ _newproc(void (*f)(void *arg), void *arg, uint32_t stacksize, char *name,
 	p->rforkflag = rforkflag;
 	newthread(p, f, arg, stacksize, name, grp);
 
-	lock(&_threadpq.lock);
+	jehanne_lock(&_threadpq.lock);
 	if(_threadpq.head == nil)
 		_threadpq.head = p;
 	else
 		*_threadpq.tail = p;
 	_threadpq.tail = &p->next;
-	unlock(&_threadpq.lock);
+	jehanne_unlock(&_threadpq.lock);
 	return p;
 }
 
@@ -128,13 +128,13 @@ _freeproc(Proc *p)
 
 	for(t = p->threads.head; t; t = nextt){
 		if(t->cmdname)
-			free(t->cmdname);
+			jehanne_free(t->cmdname);
 		assert(t->stk != nil);
-		free(t->stk);
+		jehanne_free(t->stk);
 		nextt = t->nextt;
-		free(t);
+		jehanne_free(t);
 	}
-	free(p);
+	jehanne_free(p);
 }
 
 void
@@ -144,7 +144,7 @@ _freethread(Thread *t)
 	Thread **l;
 
 	p = t->proc;
-	lock(&p->lock);
+	jehanne_lock(&p->lock);
 	for(l=&p->threads.head; *l; l=&(*l)->nextt){
 		if(*l == t){
 			*l = t->nextt;
@@ -153,11 +153,11 @@ _freethread(Thread *t)
 			break;
 		}
 	}
-	unlock(&p->lock);
+	jehanne_unlock(&p->lock);
 	if (t->cmdname)
-		free(t->cmdname);
+		jehanne_free(t->cmdname);
 	assert(t->stk != nil);
-	free(t->stk);
-	free(t);
+	jehanne_free(t->stk);
+	jehanne_free(t);
 }
 

@@ -15,7 +15,7 @@
 */
 
 double
-atan2(double arg1, double arg2)
+jehanne_atan2(double arg1, double arg2)
 {
 
 	if(arg1+arg2 == arg1) {
@@ -23,7 +23,7 @@ atan2(double arg1, double arg2)
 			return PIO2;
 		return -PIO2;
 	}
-	arg1 = atan(arg1/arg2);
+	arg1 = jehanne_atan(arg1/arg2);
 	if(arg2 < 0) {
 		if(arg1 <= 0)
 			return arg1 + PI;

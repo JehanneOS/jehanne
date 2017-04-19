@@ -8,7 +8,7 @@
  */
 
 /*
- * asin(arg) and acos(arg) return the arcsin, arccos,
+ * jehanne_asin(arg) and jehanne_acos(arg) return the arcsin, arccos,
  * respectively of their arguments.
  *
  * Arctan is called after appropriate range reduction.
@@ -18,7 +18,7 @@
 #include <libc.h>
 
 double
-asin(double arg)
+jehanne_asin(double arg)
 {
 	double temp;
 	int sign;
@@ -29,21 +29,21 @@ asin(double arg)
 		sign++;
 	}
 	if(arg > 1)
-		return NaN();
-	temp = sqrt(1 - arg*arg);
+		return jehanne_NaN();
+	temp = jehanne_sqrt(1 - arg*arg);
 	if(arg > 0.7)
-		temp = PIO2 - atan(temp/arg);
+		temp = PIO2 - jehanne_atan(temp/arg);
 	else
-		temp = atan(arg/temp);
+		temp = jehanne_atan(arg/temp);
 	if(sign)
 		temp = -temp;
 	return temp;
 }
 
 double
-acos(double arg)
+jehanne_acos(double arg)
 {
 	if(arg > 1 || arg < -1)
-		return NaN();
-	return PIO2 - asin(arg);
+		return jehanne_NaN();
+	return PIO2 - jehanne_asin(arg);
 }

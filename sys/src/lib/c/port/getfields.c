@@ -11,7 +11,7 @@
 #include <libc.h>
 
 int
-getfields(char *str, char **args, int max, int mflag, const char *set)
+jehanne_getfields(char *str, char **args, int max, int mflag, const char *set)
 {
 	Rune r;
 	int nr, intok, narg;
@@ -25,10 +25,10 @@ getfields(char *str, char **args, int max, int mflag, const char *set)
 		narg++;
 	intok = 0;
 	for(;; str += nr) {
-		nr = chartorune(&r, str);
+		nr = jehanne_chartorune(&r, str);
 		if(r == 0)
 			break;
-		if(utfrune(set, r)) {
+		if(jehanne_utfrune(set, r)) {
 			if(narg >= max)
 				break;
 			*str = 0;

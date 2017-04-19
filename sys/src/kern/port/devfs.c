@@ -96,7 +96,7 @@ struct Tree
 	uint32_t	nadevs;		/* number of allocated devices in devs */
 };
 
-#define dprint if(debug)print
+#define dprint if(debug)jehanne_print
 
 extern Dev fsdevtab;		/* forward */
 
@@ -144,25 +144,25 @@ seprintdev(char *s, char *e, Fsdev *mp)
 	int i;
 
 	if(mp == nil)
-		return seprint(s, e, "<null Fsdev>");
+		return jehanne_seprint(s, e, "<null Fsdev>");
 	if(mp->type < 0 || mp->type >= nelem(tnames) || tnames[mp->type] == nil)
-		return seprint(s, e, "bad device type %d\n", mp->type);
+		return jehanne_seprint(s, e, "bad device type %d\n", mp->type);
 
-	s = strecpy(s, e, tnames[mp->type]);
+	s = jehanne_strecpy(s, e, tnames[mp->type]);
 	if(mp->tree != &fstree)
-		s = seprint(s, e, " %s/%s", mp->tree->name, mp->name);
+		s = jehanne_seprint(s, e, " %s/%s", mp->tree->name, mp->name);
 	else
-		s = seprint(s, e, " %s", mp->name);
+		s = jehanne_seprint(s, e, " %s", mp->name);
 	for(i = 0; i < mp->ndevs; i++)
-		s = seprint(s, e, " %s", mp->inner[i]->iname);
+		s = jehanne_seprint(s, e, " %s", mp->inner[i]->iname);
 	switch(mp->type){
 	case Fmirror:
 	case Fcat:
 	case Finter:
-		s = strecpy(s, e, "\n");
+		s = jehanne_strecpy(s, e, "\n");
 		break;
 	case Fpart:
-		s = seprint(s, e, " %ulld %ulld\n", mp->start, mp->size);
+		s = jehanne_seprint(s, e, " %ulld %ulld\n", mp->start, mp->size);
 		break;
 	default:
 		panic("#k: seprintdev bug");
@@ -238,7 +238,7 @@ treealloc(char *name)
 			break;
 	if(i == nelem(trees))
 		return nil;
-	t = trees[i] = mallocz(sizeof(Tree), 1);
+	t = trees[i] = jehanne_mallocz(sizeof(Tree), 1);
 	if(t == nil)
 		return nil;
 	if(i == ntrees)
@@ -254,7 +254,7 @@ lookuptree(char *name)
 
 	dprint("lookuptree %s\n", name);
 	for(i = 0; i < ntrees; i++)
-		if(trees[i] != nil && strcmp(trees[i]->name, name) == 0)
+		if(trees[i] != nil && jehanne_strcmp(trees[i]->name, name) == 0)
 			return trees[i];
 	return nil;
 }
@@ -266,7 +266,7 @@ devalloc(Tree *t, char *name)
 	Fsdev	*mp, **devs;
 
 	dprint("devalloc %s %s\n", t->name, name);
-	mp = mallocz(sizeof(Fsdev), 1);
+	mp = jehanne_mallocz(sizeof(Fsdev), 1);
 	if(mp == nil)
 		return nil;
 	for(i = 0; i < t->nadevs; i++)
@@ -275,9 +275,9 @@ devalloc(Tree *t, char *name)
 	if(i >= t->nadevs){
 		if(t->nadevs % Incr == 0){
 			ndevs = t->nadevs + Incr;
-			devs = realloc(t->devs, ndevs * sizeof(Fsdev*));
+			devs = jehanne_realloc(t->devs, ndevs * sizeof(Fsdev*));
 			if(devs == nil){
-				free(mp);
+				jehanne_free(mp);
 				return nil;
 			}
 			t->devs = devs;
@@ -302,9 +302,9 @@ deltree(Tree *t)
 	for(i = 0; i < ntrees; i++)
 		if(trees[i] == t){
 			if(i > 0){		/* "fs" never goes away */
-				free(t->name);
-				free(t->devs);
-				free(t);
+				jehanne_free(t->name);
+				jehanne_free(t->devs);
+				jehanne_free(t);
 				trees[i] = nil;
 			}
 			return;
@@ -341,17 +341,17 @@ mdeldev(Fsdev *mp)
 		}
 	wunlock(&lck);
 
-	free(mp->name);
+	jehanne_free(mp->name);
 	for(i = 0; i < mp->ndevs; i++){
 		in = mp->inner[i];
 		if(in->idev != nil)
 			cclose(in->idev);
-		free(in->iname);
-		free(in);
+		jehanne_free(in->iname);
+		jehanne_free(in);
 	}
 	if(debug)
-		memset(mp, 9, sizeof *mp);	/* poison */
-	free(mp);
+		jehanne_memset(mp, 9, sizeof *mp);	/* poison */
+	jehanne_free(mp);
 }
 
 /*
@@ -365,8 +365,8 @@ mdelctl(char *tname, char *dname)
 	Tree *t;
 
 	dprint("delctl %s\n", dname);
-	alldevs = strcmp(dname, "*") == 0;
-	alltrees = strcmp(tname, "*") == 0;
+	alldevs = jehanne_strcmp(dname, "*") == 0;
+	alltrees = jehanne_strcmp(tname, "*") == 0;
 	some = 0;
 Again:
 	wlock(&lck);
@@ -374,13 +374,13 @@ Again:
 		t = trees[i];
 		if(t == nil)
 			continue;
-		if(alltrees == 0 && strcmp(t->name, tname) != 0)
+		if(alltrees == 0 && jehanne_strcmp(t->name, tname) != 0)
 			continue;
 		for(i = 0; i < t->nadevs; i++){
 			mp = t->devs[i];
 			if(t->devs[i] == nil)
 				continue;
-			if(alldevs == 0 && strcmp(mp->name, dname) != 0)
+			if(alldevs == 0 && jehanne_strcmp(mp->name, dname) != 0)
 				continue;
 			/*
 			 * Careful: must close outside locks and that
@@ -431,7 +431,7 @@ setdsize(Fsdev* mp, int64_t *ilen)
 			if(mp->start > inlen)
 				error("partition starts after device end");
 			if(inlen < mp->start + mp->size){
-				print("#k: %s: partition truncated from "
+				jehanne_print("#k: %s: partition truncated from "
 					"%lld to %lld bytes\n", mp->name,
 					mp->size, inlen - mp->start);
 				mp->size = inlen - mp->start;
@@ -449,7 +449,7 @@ validdevname(Tree *t, char *dname)
 	int i;
 
 	for(i = 0; i < t->nadevs; i++)
-		if(t->devs[i] != nil && strcmp(t->devs[i]->name, dname) == 0)
+		if(t->devs[i] != nil && jehanne_strcmp(t->devs[i]->name, dname) == 0)
 			error(Eexist);
 }
 
@@ -489,7 +489,7 @@ parsename(char *name, char *disk, char **tree, char **dev)
 {
 	char *slash;
 
-	slash = strchr(name, '/');
+	slash = jehanne_strchr(name, '/');
 	if(slash == nil){
 		if(disk != nil)
 			*tree = disk;
@@ -515,7 +515,7 @@ getattrs(Chan *c, int64_t *lenp, int *permp)
 	*lenp = 0;
 	*permp = 0;
 	l = c->dev->stat(c, buf, sizeof buf);
-	if (l >= 0 && convM2D(buf, l, &d, nil) > 0) {
+	if (l >= 0 && jehanne_convM2D(buf, l, &d, nil) > 0) {
 		*lenp = d.length;
 		*permp = d.mode & 0777;
 	}
@@ -559,7 +559,7 @@ mconfig(char* a, long n)
 	iperm = nil;
 
 	if(waserror()){
-		free(cb);
+		jehanne_free(cb);
 		nexterror();
 	}
 
@@ -568,21 +568,21 @@ mconfig(char* a, long n)
 	case Fdisk:
 		kstrdup(&disk, cb->f[0]);
 		if(cb->nf >= 2)
-			sectorsz = strtoul(cb->f[1], 0, 0);
+			sectorsz = jehanne_strtoul(cb->f[1], 0, 0);
 		else
 			sectorsz = Sectorsz;
 		if(cb->nf == 3)
 			kstrdup(&source, cb->f[2]);
 		else{
-			free(source);
+			jehanne_free(source);
 			source = nil;
 		}
 		poperror();
-		free(cb);
+		jehanne_free(cb);
 		return;
 	case Fclear:
 		poperror();
-		free(cb);
+		jehanne_free(cb);
 		mdelctl("*", "*");		/* del everything */
 		return;
 	case Fpart:
@@ -599,8 +599,8 @@ mconfig(char* a, long n)
 			cb->f = fakef;
 			cb->nf = 4;
 		}
-		start = strtoll(cb->f[2], nil, 10);
-		size =  strtoll(cb->f[3], nil, 10);
+		start = jehanne_strtoll(cb->f[2], nil, 10);
+		size =  jehanne_strtoll(cb->f[3], nil, 10);
 		if(cb->f == fakef)
 			size -= start;		/* it was end */
 		cb->nf -= 2;
@@ -613,7 +613,7 @@ mconfig(char* a, long n)
 	if(ct->index == Fdel){
 		mdelctl(tname, dname);
 		poperror();
-		free(cb);
+		jehanne_free(cb);
 		return;
 	}
 
@@ -630,10 +630,10 @@ Fail:
 				cclose(idev[i-1]);
 		if(mp != nil)
 			mdeldev(mp);
-		free(idev);
-		free(ilen);
-		free(iperm);
-		free(cb);
+		jehanne_free(idev);
+		jehanne_free(ilen);
+		jehanne_free(iperm);
+		jehanne_free(cb);
 		nexterror();
 	}
 	/* record names, lengths and perms of all named files */
@@ -678,7 +678,7 @@ Fail:
 	}
 	mp->perm = 0666;
 	for(i = 1; i < cb->nf; i++){
-		inprv = mp->inner[i-1] = mallocz(sizeof(Inner), 1);
+		inprv = mp->inner[i-1] = jehanne_mallocz(sizeof(Inner), 1);
 		if(inprv == nil)
 			error(Enomem);
 		mp->ndevs++;
@@ -692,10 +692,10 @@ Fail:
 
 	poperror();
 	wunlock(&lck);
-	free(idev);
-	free(ilen);
-	free(iperm);
-	free(cb);
+	jehanne_free(idev);
+	jehanne_free(ilen);
+	jehanne_free(iperm);
+	jehanne_free(cb);
 }
 
 static void
@@ -732,7 +732,7 @@ rdconf(void)
 		if (cc != nil)
 			cclose(cc);
 		if (c)
-			free(c);
+			jehanne_free(c);
 		if (!mustrd)
 			return;
 		nexterror();
@@ -743,16 +743,16 @@ rdconf(void)
 	cc = nil;
 
 	/* validate, copy and erase config; mconfig will repopulate confstr */
-	if (strncmp(confstr, cfgstr, sizeof cfgstr - 1) != 0)
+	if (jehanne_strncmp(confstr, cfgstr, sizeof cfgstr - 1) != 0)
 		error("bad #k config, first line must be: 'fsdev:\\n'");
 	kstrdup(&c, confstr + sizeof cfgstr - 1);
-	memset(confstr, 0, sizeof confstr);
+	jehanne_memset(confstr, 0, sizeof confstr);
 
 	/* process config copy one line at a time */
 	for (p = c; p != nil && *p != '\0'; p = e){
-		e = strchr(p, '\n');
+		e = jehanne_strchr(p, '\n');
 		if (e == nil)
-			e = p + strlen(p);
+			e = p + jehanne_strlen(p);
 		else
 			e++;
 		mconfig(p, e - p);
@@ -869,7 +869,7 @@ mstat(Chan *c, uint8_t *db, long n)
 		nexterror();
 	}
 	p = c->qid.path;
-	memset(&d, 0, sizeof d);
+	jehanne_memset(&d, 0, sizeof d);
 	switch(p){
 	case Qtop:
 		devdir(c, tqid, "#k", 0, eve, DMDIR|0775, &d);
@@ -888,7 +888,7 @@ mstat(Chan *c, uint8_t *db, long n)
 			devdir(c, q, mp->name, mp->size, eve, mp->perm, &d);
 		}
 	}
-	n = convD2M(&d, db, n);
+	n = jehanne_convD2M(&d, db, n);
 	if (n == 0)
 		error(Ebadarg);
 	poperror();
@@ -948,9 +948,9 @@ mclose(Chan *c)
 	mp = nil;
 	q = c->qid.path;
 	if(q == Qctl){
-		free(disk);
+		jehanne_free(disk);
 		disk = nil;	/* restore defaults */
-		free(source);
+		jehanne_free(source);
 		source = nil;
 		sectorsz = Sectorsz;
 	}else{
@@ -976,7 +976,7 @@ io(Fsdev *mp, Inner *in, int isread, void *a, long l, int64_t off)
 	if(mc == nil)
 		error(Egone);
 	if (waserror()) {
-		print("#k: %s: byte %,lld count %ld (of #k/%s): %s error: %s\n",
+		jehanne_print("#k: %s: byte %,lld count %ld (of #k/%s): %s error: %s\n",
 			in->iname, off, l, mp->name, (isread? "read": "write"),
 			(up && up->errstr? up->errstr: ""));
 		nexterror();
@@ -998,7 +998,7 @@ catio(Fsdev *mp, int isread, void *a, long n, int64_t off)
 	Inner	*in;
 
 	if(debug)
-		print("catio %d %p %ld %lld\n", isread, a, n, off);
+		jehanne_print("catio %d %p %ld %lld\n", isread, a, n, off);
 	res = n;
 	for (i = 0; n > 0 && i < mp->ndevs; i++){
 		in = mp->inner[i];
@@ -1011,7 +1011,7 @@ catio(Fsdev *mp, int isread, void *a, long n, int64_t off)
 		else
 			l = n;
 		if(debug)
-			print("\tdev %d %p %ld %lld\n", i, a, l, off);
+			jehanne_print("\tdev %d %p %ld %lld\n", i, a, l, off);
 
 		if (io(mp, in, isread, a, l, off) != l)
 			error(Eio);
@@ -1021,7 +1021,7 @@ catio(Fsdev *mp, int isread, void *a, long n, int64_t off)
 		n -= l;
 	}
 	if(debug)
-		print("\tres %ld\n", res - n);
+		jehanne_print("\tres %ld\n", res - n);
 	return res - n;
 }
 
@@ -1128,7 +1128,7 @@ mread(Chan *c, void *a, long n, int64_t off)
 		retry = 0;
 		do {
 			if (retry > 0) {
-				print("#k/%s: retry %d read for byte %,lld "
+				jehanne_print("#k/%s: retry %d read for byte %,lld "
 					"count %ld: %s\n", mp->name, retry, off,
 					n, (up && up->errstr? up->errstr: ""));
 				/*
@@ -1150,12 +1150,12 @@ mread(Chan *c, void *a, long n, int64_t off)
 		} while (i == mp->ndevs && ++retry <= Maxretries);
 		if (retry > Maxretries) {
 			/* no mirror had a good copy of the block */
-			print("#k/%s: byte %,lld count %ld: CAN'T READ "
+			jehanne_print("#k/%s: byte %,lld count %ld: CAN'T READ "
 				"from mirror: %s\n", mp->name, off, n,
 				(up && up->errstr? up->errstr: ""));
 			error(Eio);
 		} else if (retry > 0)
-			print("#k/%s: byte %,lld count %ld: retry read OK "
+			jehanne_print("#k/%s: byte %,lld count %ld: retry read OK "
 				"from mirror: %s\n", mp->name, off, n,
 				(up && up->errstr? up->errstr: ""));
 		break;
@@ -1218,7 +1218,7 @@ mwrite(Chan *c, void *a, long n, int64_t off)
 		retry = 0;
 		do {
 			if (retry > 0) {
-				print("#k/%s: retry %d write for byte %,lld "
+				jehanne_print("#k/%s: retry %d write for byte %,lld "
 					"count %ld: %s\n", mp->name, retry, off,
 					n, (up && up->errstr? up->errstr: ""));
 				/*
@@ -1244,12 +1244,12 @@ mwrite(Chan *c, void *a, long n, int64_t off)
 		} while (anybad && ++retry <= Maxretries);
 		if (allbad) {
 			/* no mirror took a good copy of the block */
-			print("#k/%s: byte %,lld count %ld: CAN'T WRITE "
+			jehanne_print("#k/%s: byte %,lld count %ld: CAN'T WRITE "
 				"to mirror: %s\n", mp->name, off, n,
 				(up && up->errstr? up->errstr: ""));
 			error(Eio);
 		} else if (retry > 0)
-			print("#k/%s: byte %,lld count %ld: retry wrote OK "
+			jehanne_print("#k/%s: byte %,lld count %ld: retry wrote OK "
 				"to mirror: %s\n", mp->name, off, n,
 				(up && up->errstr? up->errstr: ""));
 

@@ -8,7 +8,7 @@
  */
 
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 
 /*
 	sqrtC returns the square root of its floating

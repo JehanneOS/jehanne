@@ -62,25 +62,25 @@ kstrcpy(char *s, char *t, int ns)
 {
 	int nt;
 
-	nt = strlen(t);
+	nt = jehanne_strlen(t);
 	if(nt+1 <= ns){
-		memmove(s, t, nt+1);
+		jehanne_memmove(s, t, nt+1);
 		return;
 	}
 	/* too long */
 	if(ns < 4){
 		/* but very short! */
-		strncpy(s, t, ns);
+		jehanne_strncpy(s, t, ns);
 		return;
 	}
 	/* truncate with ... at character boundary (very rare case) */
-	memmove(s, t, ns-4);
+	jehanne_memmove(s, t, ns-4);
 	ns -= 4;
 	s[ns] = '\0';
 	/* look for first byte of UTF-8 sequence by skipping continuation bytes */
 	while(ns>0 && (s[--ns]&0xC0)==0x80)
 		;
-	strcpy(s+ns, "...");
+	jehanne_strcpy(s+ns, "...");
 }
 
 int
@@ -102,21 +102,21 @@ kstrdup(char **p, char *s)
 	int n;
 	char *t, *prev;
 
-	n = strlen(s);
+	n = jehanne_strlen(s);
 	/* if it's a user, we can wait for memory; if not, something's very wrong */
 	if(up){
 		t = smalloc(n+1);
 	}else{
-		t = malloc(n+1);
+		t = jehanne_malloc(n+1);
 		if(t == nil)
 			panic("kstrdup: no memory");
 	}
-	setmalloctag(t, getcallerpc());
-	memmove(t, s, n);
+	jehanne_setmalloctag(t, getcallerpc());
+	jehanne_memmove(t, s, n);
 	t[n] = '\0';
 	prev = *p;
 	*p = t;
-	free(prev);
+	jehanne_free(prev);
 }
 
 Chan*
@@ -153,7 +153,7 @@ newchan(void)
 	c->mchan = 0;
 	c->mc = 0;
 	c->mux = 0;
-	memset(&c->mqid, 0, sizeof(c->mqid));
+	jehanne_memset(&c->mqid, 0, sizeof(c->mqid));
 	c->path = 0;
 	c->ismtpt = 0;
 
@@ -169,11 +169,11 @@ newpath(char *s)
 	Path *p;
 
 	p = smalloc(sizeof(Path));
-	i = strlen(s);
+	i = jehanne_strlen(s);
 	p->len = i;
 	p->alen = i+PATHSLOP;
 	p->s = smalloc(p->alen);
-	memmove(p->s, s, i+1);
+	jehanne_memmove(p->s, s, i+1);
 	p->r.ref = 1;
 	incref(&npath);
 
@@ -182,8 +182,8 @@ newpath(char *s)
 	 * array will not be populated correctly.  The names #/ and / are
 	 * allowed, but other names with / in them draw warnings.
 	 */
-	if(strchr(s, '/') && strcmp(s, "#/") != 0 && strcmp(s, "/") != 0)
-		print("newpath: %s from %#p\n", s, getcallerpc());
+	if(jehanne_strchr(s, '/') && jehanne_strcmp(s, "#/") != 0 && jehanne_strcmp(s, "/") != 0)
+		jehanne_print("newpath: %s from %#p\n", s, getcallerpc());
 
 	p->mlen = 1;
 	p->malen = PATHMSLOP;
@@ -205,7 +205,7 @@ copypath(Path *p)
 	pp->len = p->len;
 	pp->alen = p->alen;
 	pp->s = smalloc(p->alen);
-	memmove(pp->s, p->s, p->len+1);
+	jehanne_memmove(pp->s, p->s, p->len+1);
 
 	pp->mlen = p->mlen;
 	pp->malen = p->malen;
@@ -235,12 +235,12 @@ pathclose(Path *p)
 	if(decref(&p->r))
 		return;
 	decref(&npath);
-	free(p->s);
+	jehanne_free(p->s);
 	for(i=0; i<p->mlen; i++)
 		if(p->mtpt[i])
 			cclose(p->mtpt[i]);
-	free(p->mtpt);
-	free(p);
+	jehanne_free(p->mtpt);
+	jehanne_free(p);
 }
 
 /*
@@ -254,20 +254,20 @@ fixdotdotname(Path *p)
 	char *r;
 
 	if(p->s[0] == '#'){
-		r = strchr(p->s, '/');
+		r = jehanne_strchr(p->s, '/');
 		if(r == nil)
 			return;
-		cleanname(r);
+		jehanne_cleanname(r);
 
 		/*
 		 * The correct name is #i rather than #i/,
 		 * but the correct name of #/ is #/.
 		 */
-		if(strcmp(r, "/")==0 && p->s[1] != '/')
+		if(jehanne_strcmp(r, "/")==0 && p->s[1] != '/')
 			*r = '\0';
 	}else
-		cleanname(p->s);
-	p->len = strlen(p->s);
+		jehanne_cleanname(p->s);
+	p->len = jehanne_strlen(p->s);
 }
 
 static Path*
@@ -296,19 +296,19 @@ addelem(Path *p, char *s, Chan *from)
 
 	p = uniquepath(p);
 
-	i = strlen(s);
+	i = jehanne_strlen(s);
 	if(p->len+1+i+1 > p->alen){
 		a = p->len+1+i+1 + PATHSLOP;
 		t = smalloc(a);
-		memmove(t, p->s, p->len+1);
-		free(p->s);
+		jehanne_memmove(t, p->s, p->len+1);
+		jehanne_free(p->s);
 		p->s = t;
 		p->alen = a;
 	}
 	/* don't insert extra slash if one is present */
 	if(p->len>0 && p->s[p->len-1]!='/' && s[0]!='/')
 		p->s[p->len++] = '/';
-	memmove(p->s+p->len, s, i+1);
+	jehanne_memmove(p->s+p->len, s, i+1);
 	p->len += i;
 	if(isdotdot(s)){
 		fixdotdotname(p);
@@ -321,8 +321,8 @@ addelem(Path *p, char *s, Chan *from)
 		if(p->mlen >= p->malen){
 			p->malen = p->mlen+1+PATHMSLOP;
 			tt = smalloc(p->malen*sizeof tt[0]);
-			memmove(tt, p->mtpt, p->mlen*sizeof tt[0]);
-			free(p->mtpt);
+			jehanne_memmove(tt, p->mtpt, p->mlen*sizeof tt[0]);
+			jehanne_free(p->mtpt);
 			p->mtpt = tt;
 		}
 		DBG("addelem %s %s => add %#p\n", p->s, s, from);
@@ -339,7 +339,7 @@ chanfree(Chan *c)
 	c->flag = CFREE;
 
 	if(c->dirrock != nil){
-		free(c->dirrock);
+		jehanne_free(c->dirrock);
 		c->dirrock = 0;
 		c->nrock = 0;
 		c->mrock = 0;
@@ -557,7 +557,7 @@ cmount(Chan **newp, Chan *old, int flag, char *spec)
 		error(Emount);
 
 	if(old->umh)
-		print("cmount: unexpected umh, caller %#p\n", getcallerpc());
+		jehanne_print("cmount: unexpected umh, caller %#p\n", getcallerpc());
 
 	if(!(old->qid.type & QTDIR) && order != MREPL)
 		error(Emount);
@@ -668,7 +668,7 @@ cunmount(Chan *mnt, Chan *mounted)
 	Mount *f, **p;
 
 	if(mnt->umh)	/* should not happen */
-		print("cunmount newp extra umh %#p has %#p\n", mnt, mnt->umh);
+		jehanne_print("cunmount newp extra umh %#p has %#p\n", mnt, mnt->umh);
 
 	/*
 	 * It _can_ happen that mounted->umh is non-nil,
@@ -745,7 +745,7 @@ cclone(Chan *c)
 	if(wq == nil)
 		error("clone failed");
 	nc = wq->clone;
-	free(wq);
+	jehanne_free(wq);
 	nc->path = c->path;
 	if(c->path)
 		incref(&c->path->r);
@@ -764,7 +764,7 @@ findmount(Chan **cp, Mhead **mp, int dc, uint32_t devno, Qid qid)
 	for(mh = MOUNTH(pg, qid); mh; mh = mh->hash){
 		rlock(&mh->lock);
 		if(mh->from == nil){
-			print("mh %#p: mh->from nil\n", mh);
+			jehanne_print("mh %#p: mh->from nil\n", mh);
 			runlock(&mh->lock);
 			continue;
 		}
@@ -806,7 +806,7 @@ domount(Chan **cp, Mhead **mp, Path **path)
 		p = *path;
 		p = uniquepath(p);
 		if(p->mlen <= 0)
-			print("domount: path %s has mlen==%d\n", p->s, p->mlen);
+			jehanne_print("domount: path %s has mlen==%d\n", p->s, p->mlen);
 		else{
 			lc = &p->mtpt[p->mlen-1];
 			DBG("domount %#p %s => add %#p (was %#p)\n",
@@ -832,7 +832,7 @@ undomount(Chan *c, Path *path)
 	Chan *nc;
 
 	if(path->r.ref != 1 || path->mlen == 0)
-		print("undomount: path %s ref %d mlen %d caller %#p\n",
+		jehanne_print("undomount: path %s ref %d mlen %d caller %#p\n",
 			path->s, path->r.ref, path->mlen, getcallerpc());
 
 	if(path->mlen>0 && (nc=path->mtpt[path->mlen-1]) != nil){
@@ -900,7 +900,7 @@ walk(Chan **cp, char **names, int nnames, int nomount, int *nerror)
 				*nerror = nhave;
 			pathclose(path);
 			cclose(c);
-			strcpy(up->errstr, Enotdir);
+			jehanne_strcpy(up->errstr, Enotdir);
 			putmhead(mh);
 			return -1;
 		}
@@ -979,13 +979,13 @@ walk(Chan **cp, char **names, int nnames, int nomount, int *nerror)
 					if(wq->nqid==0 || (wq->qid[wq->nqid-1].type & QTDIR)){
 						if(nerror)
 							*nerror = nhave+wq->nqid+1;
-						strcpy(up->errstr, Edoesnotexist);
+						jehanne_strcpy(up->errstr, Edoesnotexist);
 					}else{
 						if(nerror)
 							*nerror = nhave+wq->nqid;
-						strcpy(up->errstr, Enotdir);
+						jehanne_strcpy(up->errstr, Enotdir);
 					}
-					free(wq);
+					jehanne_free(wq);
 					putmhead(mh);
 					return -1;
 				}
@@ -1010,7 +1010,7 @@ walk(Chan **cp, char **names, int nnames, int nomount, int *nerror)
 		c = nc;
 		putmhead(mh);
 		mh = nmh;
-		free(wq);
+		jehanne_free(wq);
 	}
 
 	putmhead(mh);
@@ -1018,7 +1018,7 @@ walk(Chan **cp, char **names, int nnames, int nomount, int *nerror)
 	c = cunique(c);
 
 	if(c->umh != nil){	//BUG
-		print("walk umh\n");
+		jehanne_print("walk umh\n");
 		putmhead(c->umh);
 		c->umh = nil;
 	}
@@ -1074,12 +1074,12 @@ growparse(Elemlist *e)
 
 	if(e->nelems % Delta == 0){
 		new = smalloc((e->nelems+Delta) * sizeof(char*));
-		memmove(new, e->elems, e->nelems*sizeof(char*));
-		free(e->elems);
+		jehanne_memmove(new, e->elems, e->nelems*sizeof(char*));
+		jehanne_free(e->elems);
 		e->elems = new;
 		inew = smalloc((e->nelems+Delta+1) * sizeof(int));
-		memmove(inew, e->off, (e->nelems+1)*sizeof(int));
-		free(e->off);
+		jehanne_memmove(inew, e->off, (e->nelems+1)*sizeof(int));
+		jehanne_free(e->off);
 		e->off = inew;
 	}
 }
@@ -1107,15 +1107,15 @@ parsename(char *aname, Elemlist *e)
 	for(;;){
 		name = skipslash(name);
 		if(*name == '\0'){
-			e->off[e->nelems] = name+strlen(name) - e->name;
+			e->off[e->nelems] = name+jehanne_strlen(name) - e->name;
 			e->mustbedir = 1;
 			break;
 		}
 		growparse(e);
 		e->elems[e->nelems++] = name;
-		slash = utfrune(name, '/');
+		slash = jehanne_utfrune(name, '/');
 		if(slash == nil){
-			e->off[e->nelems] = name+strlen(name) - e->name;
+			e->off[e->nelems] = name+jehanne_strlen(name) - e->name;
 			e->mustbedir = 0;
 			break;
 		}
@@ -1155,10 +1155,10 @@ namelenerror(char *aname, int len, char *err)
 	/*
 	 * If the name is short enough, just use the whole thing.
 	 */
-	errlen = strlen(err);
+	errlen = jehanne_strlen(err);
 	if(len < ERRMAX/3 || len+errlen < 2*ERRMAX/3)
-		snprint(up->genbuf, sizeof up->genbuf, "%.*s",
-			utfnlen(aname, len), aname);
+		jehanne_snprint(up->genbuf, sizeof up->genbuf, "%.*s",
+			jehanne_utfnlen(aname, len), aname);
 	else{
 		/*
 		 * Print a suffix of the name, but try to get a little info.
@@ -1184,17 +1184,17 @@ namelenerror(char *aname, int len, char *err)
 			for(i=0; (*name&0xC0)==0x80 && i<UTFmax; i++)
 				name++;
 		}
-		snprint(up->genbuf, sizeof up->genbuf, "...%.*s",
-			utfnlen(name, ename-name), name);
+		jehanne_snprint(up->genbuf, sizeof up->genbuf, "...%.*s",
+			jehanne_utfnlen(name, ename-name), name);
 	}
-	snprint(up->errstr, ERRMAX, "%#q %s", up->genbuf, err);
+	jehanne_snprint(up->errstr, ERRMAX, "%#q %s", up->genbuf, err);
 	nexterror();
 }
 
 void
 nameerror(char *name, char *err)
 {
-	namelenerror(name, strlen(name), err);
+	namelenerror(name, jehanne_strlen(name), err);
 }
 
 /*
@@ -1230,7 +1230,7 @@ namec(char *aname, int amode, long omode, long perm)
 		error("empty file name");
 	aname = validnamedup(aname, 1);
 	if(waserror()){
-		free(aname);
+		jehanne_free(aname);
 		nexterror();
 	}
 	DBG("namec %s %d %d\n", aname, amode, omode);
@@ -1264,7 +1264,7 @@ namec(char *aname, int amode, long omode, long perm)
 				error(Ebadsharp);
 			r = dev->dc;
 			up->genbuf[0] = '#';
-			n = 1+runetochar(up->genbuf+1, &r);
+			n = 1+jehanne_runetochar(up->genbuf+1, &r);
 			if(*name == '!'){
 				name++;
 				while(*name != '\0' && *name != '/'){
@@ -1282,10 +1282,10 @@ namec(char *aname, int amode, long omode, long perm)
 				up->genbuf[n++] = *name++;
 			}
 			up->genbuf[n] = '\0';
-			n = chartorune(&r, up->genbuf+1)+1;
+			n = jehanne_chartorune(&r, up->genbuf+1)+1;
 		}
 		/* actually / is caught by parsing earlier */
-		if(utfrune("9", r))
+		if(jehanne_utfrune("9", r))
 			error(Enoattach);
 		/*
 		 * noattach is sandboxing.
@@ -1304,7 +1304,7 @@ namec(char *aname, int amode, long omode, long perm)
 		 * Who actually need them can bind #c and #p somewhere
 		 * before rfork(RFNOMNT)
 		 */
-		if(up->pgrp->noattach && utfrune("|0de", r)==nil)
+		if(up->pgrp->noattach && jehanne_utfrune("|0de", r)==nil)
 			error(Enoattach);
 		dev = devtabget(r, 1);			//XDYNX
 		if(dev == nil)
@@ -1327,16 +1327,16 @@ namec(char *aname, int amode, long omode, long perm)
 	e.nerror = 0;
 	if(waserror()){
 		cclose(c);
-		free(e.name);
-		free(e.elems);
+		jehanne_free(e.name);
+		jehanne_free(e.elems);
 		/*
 		 * Prepare nice error, showing first e.nerror elements of name.
 		 */
 		if(e.nerror == 0)
 			nexterror();
-		strcpy(tmperrbuf, up->errstr);
+		jehanne_strcpy(tmperrbuf, up->errstr);
 		if(e.off[e.nerror]==0)
-			print("nerror=%d but off=%d\n",
+			jehanne_print("nerror=%d but off=%d\n",
 				e.nerror, e.off[e.nerror]);
 		if(DBGFLG > 0){
 			DBG("showing %d+%d/%d (of %d) of %s (%d %d)\n",
@@ -1344,7 +1344,7 @@ namec(char *aname, int amode, long omode, long perm)
 				e.nelems, aname, e.off[0], e.off[1]);
 		}
 		len = e.prefix+e.off[e.nerror];
-		free(e.off);
+		jehanne_free(e.off);
 		namelenerror(aname, len, tmperrbuf);
 	}
 
@@ -1371,7 +1371,7 @@ namec(char *aname, int amode, long omode, long perm)
 
 	if(walk(&c, e.elems, e.nelems, nomount, &e.nerror) < 0){
 		if(e.nerror < 0 || e.nerror > e.nelems){
-			print("namec %s walk error nerror=%d\n", aname, e.nerror);
+			jehanne_print("namec %s walk error nerror=%d\n", aname, e.nerror);
 			e.nerror = 0;
 		}
 		nexterror();
@@ -1429,7 +1429,7 @@ namec(char *aname, int amode, long omode, long perm)
 		case Aopen:
 		case Acreate:
 			if(c->umh != nil){
-				print("cunique umh Open\n");
+				jehanne_print("cunique umh Open\n");
 				putmhead(c->umh);
 				c->umh = nil;
 			}
@@ -1530,11 +1530,11 @@ namec(char *aname, int amode, long omode, long perm)
 		kstrcpy(up->genbuf, e.elems[e.nelems-1], sizeof up->genbuf);
 	else
 		kstrcpy(up->genbuf, ".", sizeof up->genbuf);
-	free(e.name);
-	free(e.elems);
-	free(e.off);
+	jehanne_free(e.name);
+	jehanne_free(e.elems);
+	jehanne_free(e.off);
 	poperror();	/* e c */
-	free(aname);
+	jehanne_free(aname);
 	poperror();	/* aname */
 
 	return c;
@@ -1585,10 +1585,10 @@ validname0(char *aname, int slashok, int dup, uintptr_t pc)
 	name = aname;
 	if(!iskaddr(name)){
 		if(!dup)
-			print("warning: validname* called from %#p with user pointer", pc);
+			jehanne_print("warning: validname* called from %#p with user pointer", pc);
 		ename = vmemchr(name, 0, (1<<16));
 	}else
-		ename = memchr(name, 0, (1<<16));
+		ename = jehanne_memchr(name, 0, (1<<16));
 
 	if(ename==nil || ename-name>=(1<<16))
 		error("name too long");
@@ -1597,23 +1597,23 @@ validname0(char *aname, int slashok, int dup, uintptr_t pc)
 	if(dup){
 		n = ename-name;
 		s = smalloc(n+1);
-		memmove(s, name, n);
+		jehanne_memmove(s, name, n);
 		s[n] = 0;
 		aname = s;
 		name = s;
-		setmalloctag(s, pc);
+		jehanne_setmalloctag(s, pc);
 	}
 
 	while(*name){
 		/* all characters above '~' are ok */
 		c = *(uint8_t*)name;
 		if(c >= Runeself)
-			name += chartorune(&r, name);
+			name += jehanne_chartorune(&r, name);
 		else{
 			if(isfrog[c])
 				if(!slashok || c!='/'){
-					snprint(up->genbuf, sizeof(up->genbuf), "%s: %q", Ebadchar, aname);
-					free(s);
+					jehanne_snprint(up->genbuf, sizeof(up->genbuf), "%s: %q", Ebadchar, aname);
+					jehanne_free(s);
 					error(up->genbuf);
 			}
 			name++;
@@ -1666,7 +1666,7 @@ putmhead(Mhead *mh)
 {
 	if(mh && decref(&mh->r) == 0){
 		mh->mount = (Mount*)0xCafeBeef;
-		free(mh);
+		jehanne_free(mh);
 	}
 }
 

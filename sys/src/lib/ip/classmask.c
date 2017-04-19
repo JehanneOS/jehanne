@@ -8,7 +8,7 @@
  */
 
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 #include <ip.h>
 
 static uint8_t classmask[4][16] = {

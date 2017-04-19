@@ -78,7 +78,7 @@ void	_fmtunlock(void);
 	do{\
 	Rune _rune;\
 	int _runelen;\
-	if(t + UTFmax > (char*)s && t + (_runelen = runelen(r)) > (char*)s){\
+	if(t + UTFmax > (char*)s && t + (_runelen = jehanne_runelen(r)) > (char*)s){\
 		t = _fmtflush(f, t, _runelen);\
 		if(t != nil)\
 			s = f->stop;\
@@ -89,6 +89,6 @@ void	_fmtunlock(void);
 		*t++ = r;\
 	else{\
 		_rune = r;\
-		t += runetochar(t, &_rune);\
+		t += jehanne_runetochar(t, &_rune);\
 	}\
 	}while(0)

@@ -22,7 +22,7 @@ etherattach(Chan *c, Chan *ac, char *spec, int flags)
 
 	ctlrno = 0;
 	if(spec && *spec){
-		ctlrno = strtoul(spec, &p, 0);
+		ctlrno = jehanne_strtoul(spec, &p, 0);
 		if((ctlrno == 0 && p == spec) || *p != 0)
 			error(Ebadarg);
 		if(ctlrno < 0 || ctlrno >= MaxEther)
@@ -122,7 +122,7 @@ etherrtrace(Netfile* f, Etherpkt* pkt, int len)
 	bp = iallocb(64);
 	if(bp == nil)
 		return;
-	memmove(bp->wp, pkt->d, n);
+	jehanne_memmove(bp->wp, pkt->d, n);
 	i = TK2MS(sys->ticks);
 	bp->wp[58] = len>>8;
 	bp->wp[59] = len;
@@ -153,7 +153,7 @@ etheriq(Ether* ether, Block* bp, int fromwire)
 
 	multi = pkt->d[0] & 1;
 	/* check for valid multcast addresses */
-	if(multi && memcmp(pkt->d, ether->netif.bcast, sizeof(pkt->d)) != 0 && ether->netif.prom == 0){
+	if(multi && jehanne_memcmp(pkt->d, ether->netif.bcast, sizeof(pkt->d)) != 0 && ether->netif.prom == 0){
 		if(!activemulti(&ether->netif, pkt->d, sizeof(pkt->d))){
 			if(fromwire){
 				freeb(bp);
@@ -164,8 +164,8 @@ etheriq(Ether* ether, Block* bp, int fromwire)
 	}
 
 	/* is it for me? */
-	tome = memcmp(pkt->d, ether->ea, sizeof(pkt->d)) == 0;
-	fromme = memcmp(pkt->s, ether->ea, sizeof(pkt->s)) == 0;
+	tome = jehanne_memcmp(pkt->d, ether->ea, sizeof(pkt->d)) == 0;
+	fromme = jehanne_memcmp(pkt->s, ether->ea, sizeof(pkt->s)) == 0;
 
 	/*
 	 * Multiplex the packet to all the connections which want it.
@@ -184,7 +184,7 @@ etheriq(Ether* ether, Block* bp, int fromwire)
 				if(fromwire && fx == 0)
 					fx = f;
 				else if(xbp = iallocb(len)){
-					memmove(xbp->wp, pkt, len);
+					jehanne_memmove(xbp->wp, pkt, len);
 					xbp->wp += len;
 					xbp->flag = bp->flag;
 					if(qpass(f->iq, xbp) < 0)
@@ -230,8 +230,8 @@ etheroq(Ether* ether, Block* bp)
 	 */
 	pkt = (Etherpkt*)bp->rp;
 	len = BLEN(bp);
-	loopback = memcmp(pkt->d, ether->ea, sizeof(pkt->d)) == 0;
-	if(loopback || memcmp(pkt->d, ether->netif.bcast, sizeof(pkt->d)) == 0 || ether->netif.prom)
+	loopback = jehanne_memcmp(pkt->d, ether->ea, sizeof(pkt->d)) == 0;
+	if(loopback || jehanne_memcmp(pkt->d, ether->netif.bcast, sizeof(pkt->d)) == 0 || ether->netif.prom)
 		if(etheriq(ether, bp, loopback) == 0)
 			return len;
 
@@ -255,16 +255,16 @@ etherwrite(Chan* chan, void* buf, long n, int64_t _1)
 		if(nn >= 0)
 			return nn;
 		cb = parsecmd(buf, n);
-		if(cb->f[0] && strcmp(cb->f[0], "nonblocking") == 0){
+		if(cb->f[0] && jehanne_strcmp(cb->f[0], "nonblocking") == 0){
 			if(cb->nf <= 1)
 				onoff = 1;
 			else
-				onoff = atoi(cb->f[1]);
+				onoff = jehanne_atoi(cb->f[1]);
 			qnoblock(ether->netif.oq, onoff);
-			free(cb);
+			jehanne_free(cb);
 			return n;
 		}
-		free(cb);
+		jehanne_free(cb);
 		if(ether->ctl!=nil)
 			return ether->ctl(ether,buf,n);
 
@@ -281,8 +281,8 @@ etherwrite(Chan* chan, void* buf, long n, int64_t _1)
 		freeb(bp);
 		nexterror();
 	}
-	memmove(bp->rp, buf, n);
-	memmove(bp->rp+Eaddrlen, ether->ea, Eaddrlen);
+	jehanne_memmove(bp->rp, buf, n);
+	jehanne_memmove(bp->rp+Eaddrlen, ether->ea, Eaddrlen);
 	poperror();
 	bp->wp += n;
 
@@ -353,7 +353,7 @@ parseether(uint8_t *to, char *from)
 			return -1;
 		nip[1] = *p++;
 		nip[2] = 0;
-		to[i] = strtoul(nip, 0, 16);
+		to[i] = jehanne_strtoul(nip, 0, 16);
 		if(*p == ':')
 			p++;
 	}
@@ -368,12 +368,12 @@ etherprobe(int cardno, int ctlrno)
 	Ether *ether;
 	char buf[128], name[32];
 
-	ether = malloc(sizeof(Ether));
+	ether = jehanne_malloc(sizeof(Ether));
 	if(ether == nil){
-		print("etherprobe: no memory for Ether\n");
+		jehanne_print("etherprobe: no memory for Ether\n");
 		return nil;
 	}
-	memset(ether, 0, sizeof(Ether));
+	jehanne_memset(ether, 0, sizeof(Ether));
 	ether->ctlrno = ctlrno;
 	ether->tbdf = BUSUNKNOWN;
 	ether->netif.mbps = 10;
@@ -382,28 +382,28 @@ etherprobe(int cardno, int ctlrno)
 
 	if(cardno < 0){
 		if(isaconfig("ether", ctlrno, ether) == 0){
-			free(ether);
+			jehanne_free(ether);
 			return nil;
 		}
 		for(cardno = 0; cards[cardno].type; cardno++){
-			if(cistrcmp(cards[cardno].type, ether->type))
+			if(jehanne_cistrcmp(cards[cardno].type, ether->type))
 				continue;
 			for(i = 0; i < ether->nopt; i++){
-				if(strncmp(ether->opt[i], "ea=", 3))
+				if(jehanne_strncmp(ether->opt[i], "ea=", 3))
 					continue;
 				if(parseether(ether->ea, &ether->opt[i][3]))
-					memset(ether->ea, 0, Eaddrlen);
+					jehanne_memset(ether->ea, 0, Eaddrlen);
 			}
 			break;
 		}
 	}
 
 	if(cardno >= MaxEther || cards[cardno].type == nil){
-		free(ether);
+		jehanne_free(ether);
 		return nil;
 	}
 	if(cards[cardno].reset(ether) < 0){
-		free(ether);
+		jehanne_free(ether);
 		return nil;
 	}
 
@@ -414,7 +414,7 @@ etherprobe(int cardno, int ctlrno)
 	 */
 	if(ether->irq == 2)
 		ether->irq = 9;
-	snprint(name, sizeof(name), "ether%d", ctlrno);
+	jehanne_snprint(name, sizeof(name), "ether%d", ctlrno);
 
 	/*
 	 * If ether->irq is <0, it is a hack to indicate no interrupt
@@ -425,19 +425,19 @@ etherprobe(int cardno, int ctlrno)
 	if(ether->irq >= 0)
 		ether->vector = intrenable(ether->irq, ether->interrupt, ether, ether->tbdf, name);
 
-	i = sprint(buf, "#l%d: %s: %dMbps port %#p irq %d",
+	i = jehanne_sprint(buf, "#l%d: %s: %dMbps port %#p irq %d",
 		ctlrno, cards[cardno].type, ether->netif.mbps, ether->port, ether->irq);
 	if(ether->mem)
-		i += sprint(buf+i, " addr %#p", ether->mem);
+		i += jehanne_sprint(buf+i, " addr %#p", ether->mem);
 	if(ether->size)
-		i += sprint(buf+i, " size %ld", ether->size);
-	i += sprint(buf+i, ": %2.2ux%2.2ux%2.2ux%2.2ux%2.2ux%2.2ux",
+		i += jehanne_sprint(buf+i, " size %ld", ether->size);
+	i += jehanne_sprint(buf+i, ": %2.2ux%2.2ux%2.2ux%2.2ux%2.2ux%2.2ux",
 		ether->ea[0], ether->ea[1], ether->ea[2],
 		ether->ea[3], ether->ea[4], ether->ea[5]);
-	sprint(buf+i, "\n");
-	print(buf);
+	jehanne_sprint(buf+i, "\n");
+	jehanne_print(buf);
 
-	/* compute log10(ether->mbps) into lg */
+	/* compute jehanne_log10(ether->mbps) into lg */
 	for(lg = 0, mb = ether->netif.mbps; mb >= 10; lg++)
 		mb /= 10;
 	if (lg > 0)
@@ -457,8 +457,8 @@ etherprobe(int cardno, int ctlrno)
 	if(ether->netif.oq == 0)
 		panic("etherreset %s", name);
 	ether->netif.alen = Eaddrlen;
-	memmove(ether->netif.addr, ether->ea, Eaddrlen);
-	memset(ether->netif.bcast, 0xFF, Eaddrlen);
+	jehanne_memmove(ether->netif.addr, ether->ea, Eaddrlen);
+	jehanne_memset(ether->netif.bcast, 0xFF, Eaddrlen);
 
 	return ether;
 }
@@ -506,7 +506,7 @@ ethershutdown(void)
 		if(ether->irq >= 0)
 			intrdisable(ether->vector);
 		if(ether->shutdown == nil) {
-			print("#l%d: no shutdown function\n", i);
+			jehanne_print("#l%d: no shutdown function\n", i);
 			continue;
 		}
 		(*ether->shutdown)(ether);

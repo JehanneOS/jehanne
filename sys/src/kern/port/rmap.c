@@ -45,7 +45,7 @@ rmapfree(RMap* rmap, uintmem addr, uintmem size)
 	if(p != nil && p->addr+p->size > addr ||
 	   n != nil && addr+size > n->addr){
 		iunlock(&rmap->l);
-		print("rmapfree: overlap: %#P %#P (%lld)\n", addr, size, (uint64_t)size);
+		jehanne_print("rmapfree: overlap: %#P %#P (%lld)\n", addr, size, (uint64_t)size);
 		return;
 	}
 
@@ -70,7 +70,7 @@ rmapfree(RMap* rmap, uintmem addr, uintmem size)
 				p->next = n;
 				*lp = p;
 			}else
-				print("rmapfree: %s: losing 0x%llux, %llud\n", rmap->name, (uint64_t)addr, (uint64_t)size);
+				jehanne_print("rmapfree: %s: losing 0x%llux, %llud\n", rmap->name, (uint64_t)addr, (uint64_t)size);
 		}
 	}
 	iunlock(&rmap->l);
@@ -207,7 +207,7 @@ rmapprint(RMap *r)
 {
 	RMapel *e;
 
-	print("%s:\n", r->name);
+	jehanne_print("%s:\n", r->name);
 	for(e = r->map; e != nil; e = e->next)
-		print("\t%#P %#P (%llud)\n", e->addr, e->addr+e->size, (uint64_t)e->size);
+		jehanne_print("\t%#P %#P (%llud)\n", e->addr, e->addr+e->size, (uint64_t)e->size);
 }

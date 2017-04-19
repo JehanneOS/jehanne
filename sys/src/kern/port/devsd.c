@@ -91,7 +91,7 @@ sdaddpart(SDunit* unit, char* name, uint64_t start, uint64_t end)
 					partno = i;
 				break;
 			}
-			if(strcmp(name, pp->name) == 0){
+			if(jehanne_strcmp(name, pp->name) == 0){
 				if(pp->start == start && pp->end == end)
 					return;
 				error(Ebadctl);
@@ -99,7 +99,7 @@ sdaddpart(SDunit* unit, char* name, uint64_t start, uint64_t end)
 		}
 	}
 	else{
-		if((unit->part = malloc(sizeof(SDpart)*SDnpart)) == nil)
+		if((unit->part = jehanne_malloc(sizeof(SDpart)*SDnpart)) == nil)
 			error(Enomem);
 		unit->npart = SDnpart;
 		partno = 0;
@@ -112,10 +112,10 @@ sdaddpart(SDunit* unit, char* name, uint64_t start, uint64_t end)
 	if(partno == -1){
 		if(unit->npart >= NPart)
 			error(Enomem);
-		if((pp = malloc(sizeof(SDpart)*(unit->npart+SDnpart))) == nil)
+		if((pp = jehanne_malloc(sizeof(SDpart)*(unit->npart+SDnpart))) == nil)
 			error(Enomem);
-		memmove(pp, unit->part, sizeof(SDpart)*unit->npart);
-		free(unit->part);
+		jehanne_memmove(pp, unit->part, sizeof(SDpart)*unit->npart);
+		jehanne_free(unit->part);
 		unit->part = pp;
 		partno = unit->npart;
 		unit->npart += SDnpart;
@@ -147,13 +147,13 @@ sddelpart(SDunit* unit, char* name)
 	 */
 	pp = unit->part;
 	for(i = 0; i < unit->npart; i++){
-		if(strcmp(name, pp->name) == 0)
+		if(jehanne_strcmp(name, pp->name) == 0)
 			break;
 		pp++;
 	}
 	if(i >= unit->npart)
 		error(Ebadctl);
-	if(strcmp(up->user, pp->user) && !iseve())
+	if(jehanne_strcmp(up->user, pp->user) && !iseve())
 		error(Eperm);
 	pp->valid = 0;
 	pp->vers++;
@@ -212,16 +212,16 @@ sdinitpart(SDunit* unit)
 		 * partitions will have the null-string for user.
 		 * The gen functions patch it up.
 		 */
-		snprint(buf, sizeof buf, "%spart", unit->name);
+		jehanne_snprint(buf, sizeof buf, "%spart", unit->name);
 		for(p = getconf(buf); p != nil; p = q){
-			if(q = strchr(p, '/'))
+			if(q = jehanne_strchr(p, '/'))
 				*q++ = '\0';
-			nf = tokenize(p, f, nelem(f));
+			nf = jehanne_tokenize(p, f, nelem(f));
 			if(nf < 3)
 				continue;
 
-			start = strtoull(f[1], 0, 0);
-			end = strtoull(f[2], 0, 0);
+			start = jehanne_strtoull(f[1], 0, 0);
+			end = jehanne_strtoull(f[2], 0, 0);
 			if(!waserror()){
 				sdaddpart(unit, f[0], start, end);
 				poperror();
@@ -237,7 +237,7 @@ sdindex(int idno)
 {
 	char *p;
 
-	p = strchr(devletters, idno);
+	p = jehanne_strchr(devletters, idno);
 	if(p == nil)
 		return -1;
 	return p-devletters;
@@ -287,13 +287,13 @@ sdgetunit(SDev* sdev, int subno)
 			qunlock(&sdev->unitlock);
 			return nil;
 		}
-		if((unit = malloc(sizeof(SDunit))) == nil){
+		if((unit = jehanne_malloc(sizeof(SDunit))) == nil){
 			qunlock(&sdev->unitlock);
 			return nil;
 		}
 		sdev->unitflg[subno] = 1;
 
-		snprint(buf, sizeof(buf), "%s%d", sdev->name, subno);
+		jehanne_snprint(buf, sizeof(buf), "%s%d", sdev->name, subno);
 		kstrdup(&unit->name, buf);
 		kstrdup(&unit->user, eve);
 		unit->perm = 0555;
@@ -311,7 +311,7 @@ sdgetunit(SDev* sdev, int subno)
 		 */
 		if(unit->dev->ifc->verify(unit) == 0){
 			qunlock(&sdev->unitlock);
-			free(unit);
+			jehanne_free(unit);
 			return nil;
 		}
 		sdev->unit[subno] = unit;
@@ -345,21 +345,21 @@ sdadddevs(SDev *sdev)
 	for(; sdev; sdev=next){
 		next = sdev->next;
 
-		sdev->unit = (SDunit**)malloc(sdev->nunit * sizeof(SDunit*));
-		sdev->unitflg = (int*)malloc(sdev->nunit * sizeof(int));
+		sdev->unit = (SDunit**)jehanne_malloc(sdev->nunit * sizeof(SDunit*));
+		sdev->unitflg = (int*)jehanne_malloc(sdev->nunit * sizeof(int));
 		if(sdev->unit == nil || sdev->unitflg == nil){
-			print("sdadddevs: out of memory\n");
+			jehanne_print("sdadddevs: out of memory\n");
 		giveup:
-			free(sdev->unit);
-			free(sdev->unitflg);
+			jehanne_free(sdev->unit);
+			jehanne_free(sdev->unitflg);
 			if(sdev->ifc->clear)
 				sdev->ifc->clear(sdev);
-			free(sdev);
+			jehanne_free(sdev);
 			continue;
 		}
 		id = sdindex(sdev->idno);
 		if(id == -1){
-			print("sdadddevs: bad id number %d (%C)\n", id, id);
+			jehanne_print("sdadddevs: bad id number %d (%C)\n", id, id);
 			goto giveup;
 		}
 		qlock(&devslock);
@@ -367,13 +367,13 @@ sdadddevs(SDev *sdev)
 			if(devs[j = (id+i)%nelem(devs)] == nil){
 				sdev->idno = devletters[j];
 				devs[j] = sdev;
-				snprint(sdev->name, sizeof sdev->name, "sd%c", devletters[j]);
+				jehanne_snprint(sdev->name, sizeof sdev->name, "sd%c", devletters[j]);
 				break;
 			}
 		}
 		qunlock(&devslock);
 		if(i == nelem(devs)){
-			print("sdadddevs: out of device letters\n");
+			jehanne_print("sdadddevs: out of device letters\n");
 			goto giveup;
 		}
 	}
@@ -384,7 +384,7 @@ sdadddevs(SDev *sdev)
 // {
 // 	char buf[2];
 //
-// 	snprint(buf, sizeof buf, "%c", sdev->idno);
+// 	jehanne_snprint(buf, sizeof buf, "%c", sdev->idno);
 // 	unconfigure(buf);
 // }
 
@@ -485,7 +485,7 @@ sdgen(Chan* c, char* _1, Dirtab* _2, int _3, int s, Dir* dp)
 	case Qtopdir:
 		if(s == DEVDOTDOT){
 			mkqid(&q, QID(0, 0, 0, Qtopdir), 0, QTDIR);
-			sprint(up->genbuf, "#%C", sddevtab.dc);
+			jehanne_sprint(up->genbuf, "#%C", sddevtab.dc);
 			devdir(c, q, up->genbuf, 0, eve, 0555, dp);
 			return 1;
 		}
@@ -533,7 +533,7 @@ sdgen(Chan* c, char* _1, Dirtab* _2, int _3, int s, Dir* dp)
 	case Qunitdir:
 		if(s == DEVDOTDOT){
 			mkqid(&q, QID(0, 0, 0, Qtopdir), 0, QTDIR);
-			sprint(up->genbuf, "#%C", sddevtab.dc);
+			jehanne_sprint(up->genbuf, "#%C", sddevtab.dc);
 			devdir(c, q, up->genbuf, 0, eve, 0555, dp);
 			return 1;
 		}
@@ -623,7 +623,7 @@ sdattach(Chan *c, Chan *ac, char *spec, int flags)
 	if(spec[0] != 's' || spec[1] != 'd')
 		error(Ebadspec);
 	idno = spec[2];
-	subno = strtol(&spec[3], &p, 0);
+	subno = jehanne_strtol(&spec[3], &p, 0);
 	if(p == &spec[3])
 		error(Ebadspec);
 
@@ -751,7 +751,7 @@ sdbio(Chan* c, int write, char* a, long len, int64_t off)
 	qlock(&unit->ctl);
 	while(waserror()){
 		/* notification of media change; go around again */
-		if(strcmp(up->errstr, Eio) == 0 && unit->sectors == 0 && nchange++ == 0){
+		if(jehanne_strcmp(up->errstr, Eio) == 0 && unit->sectors == 0 && nchange++ == 0){
 			sdinitpart(unit);
 			continue;
 		}
@@ -821,7 +821,7 @@ sdbio(Chan* c, int write, char* a, long len, int64_t off)
 					len = l;
 			}
 		}
-		memmove(b+offset, a, len);
+		jehanne_memmove(b+offset, a, len);
 		l = unit->dev->ifc->bio(unit, 0, 1, b, nb, bno);
 		if(l < 0)
 			error(Eio);
@@ -838,7 +838,7 @@ sdbio(Chan* c, int write, char* a, long len, int64_t off)
 			len = 0;
 		else if(len > l - offset)
 			len = l - offset;
-		memmove(a, b+offset, len);
+		jehanne_memmove(a, b+offset, len);
 	}
 	sdfree(b);
 	poperror();
@@ -865,7 +865,7 @@ sdrio(SDreq* r, void* a, long n)
 		if((data = sdmalloc(n)) == nil)
 			error(Enomem);
 		if(r->write)
-			memmove(data, a, n);
+			jehanne_memmove(data, a, n);
 	}
 	r->data = data;
 	r->dlen = n;
@@ -880,7 +880,7 @@ sdrio(SDreq* r, void* a, long n)
 		error(Eio);
 
 	if(!r->write && r->rlen > 0)
-		memmove(a, data, r->rlen);
+		jehanne_memmove(a, data, r->rlen);
 	sdfree(data);
 	r->data = nil;
 	poperror();
@@ -908,7 +908,7 @@ sdsetsense(SDreq *r, int status, int key, int asc, int ascq)
 		len = sizeof unit->sense;
 		if(len > sizeof r->sense-1)
 			len = sizeof r->sense-1;
-		memmove(r->sense, unit->sense, len);
+		jehanne_memmove(r->sense, unit->sense, len);
 		unit->sense[2] = 0;
 		unit->sense[12] = 0;
 		unit->sense[13] = 0;
@@ -938,11 +938,11 @@ sdmodesense(SDreq *r, uint8_t *cmd, void *info, int ilen)
 	if(r->data == nil || r->dlen < len)
 		return sdsetsense(r, SDcheck, 0x05, 0x20, 1);
 	data = r->data;
-	memset(data, 0, 8);
+	jehanne_memset(data, 0, 8);
 	data[0] = ilen>>8;
 	data[1] = ilen;
 	if(ilen)
-		memmove(data+8, info, ilen);
+		jehanne_memmove(data+8, info, ilen);
 	r->rlen = 8+ilen;
 	return sdsetsense(r, SDok, 0, 0, 0);
 }
@@ -998,7 +998,7 @@ sdfakescsi(SDreq *r, void *info, int ilen)
 		else
 			len = sizeof unit->sense;
 		if(r->data && r->dlen >= len){
-			memmove(r->data, unit->sense, len);
+			jehanne_memmove(r->data, unit->sense, len);
 			r->rlen = len;
 		}
 		return sdsetsense(r, SDok, 0, 0, 0);
@@ -1009,7 +1009,7 @@ sdfakescsi(SDreq *r, void *info, int ilen)
 		else
 			len = sizeof unit->inquiry;
 		if(r->data && r->dlen >= len){
-			memmove(r->data, unit->inquiry, len);
+			jehanne_memmove(r->data, unit->inquiry, len);
 			r->rlen = len;
 		}
 		return sdsetsense(r, SDok, 0, 0, 0);
@@ -1096,7 +1096,7 @@ sdread(Chan *c, void *a, long n, int64_t off)
 		error(Eperm);
 	case Qtopctl:
 		m = 64*1024;	/* room for register dumps */
-		p = buf = malloc(m);
+		p = buf = jehanne_malloc(m);
 		if(p == nil)
 			error(Enomem);
 		e = p + m;
@@ -1108,7 +1108,7 @@ sdread(Chan *c, void *a, long n, int64_t off)
 		}
 		qunlock(&devslock);
 		n = readstr(offset, a, n, buf);
-		free(buf);
+		jehanne_free(buf);
 		return n;
 
 	case Qtopdir:
@@ -1122,10 +1122,10 @@ sdread(Chan *c, void *a, long n, int64_t off)
 
 		unit = sdev->unit[UNIT(c->qid)];
 		m = 16*1024;	/* room for register dumps */
-		p = malloc(m);
+		p = jehanne_malloc(m);
 		if(p == nil)
 			error(Enomem);
-		l = snprint(p, m, "inquiry %.48s\n",
+		l = jehanne_snprint(p, m, "inquiry %.48s\n",
 			(char*)unit->inquiry+8);
 		qlock(&unit->ctl);
 		/*
@@ -1139,13 +1139,13 @@ sdread(Chan *c, void *a, long n, int64_t off)
 			sdinitpart(unit);
 		if(unit->sectors){
 			if(unit->dev->ifc->rctl == nil)
-				l += snprint(p+l, m-l,
+				l += jehanne_snprint(p+l, m-l,
 					"geometry %llud %lud\n",
 					unit->sectors, unit->secsize);
 			pp = unit->part;
 			for(i = 0; i < unit->npart; i++){
 				if(pp->valid)
-					l += snprint(p+l, m-l,
+					l += jehanne_snprint(p+l, m-l,
 						"part %s %llud %llud\n",
 						pp->name, pp->start, pp->end);
 				pp++;
@@ -1154,7 +1154,7 @@ sdread(Chan *c, void *a, long n, int64_t off)
 		qunlock(&unit->ctl);
 		decref(&sdev->r);
 		l = readstr(offset, a, n, p);
-		free(p);
+		jehanne_free(p);
 		return l;
 
 	case Qraw:
@@ -1176,7 +1176,7 @@ sdread(Chan *c, void *a, long n, int64_t off)
 		else if(unit->state == Rawstatus){
 			status = unit->req->status;
 			unit->state = Rawcmd;
-			free(unit->req);
+			jehanne_free(unit->req);
 			unit->req = nil;
 			i = readnum(0, a, n, status, NUMSIZE);
 		} else
@@ -1211,7 +1211,7 @@ sdwrite(Chan* c, void* a, long n, int64_t off)
 	case Qtopctl:
 		cb = parsecmd(a, n);
 		if(waserror()){
-			free(cb);
+			jehanne_free(cb);
 			nexterror();
 		}
 		if(cb->nf == 0)
@@ -1219,11 +1219,11 @@ sdwrite(Chan* c, void* a, long n, int64_t off)
 		f0 = cb->f[0];
 		cb->f++;
 		cb->nf--;
-		if(strcmp(f0, "config") == 0){
+		if(jehanne_strcmp(f0, "config") == 0){
 			/* wormhole into ugly legacy interface */
 			legacytopctl(cb);
 			poperror();
-			free(cb);
+			jehanne_free(cb);
 			break;
 		}
 		/*
@@ -1233,7 +1233,7 @@ sdwrite(Chan* c, void* a, long n, int64_t off)
 		ifc = nil;
 		sdev = nil;
 		for(i=0; sdifc[i]; i++){
-			if(strcmp(sdifc[i]->name, f0) == 0){
+			if(jehanne_strcmp(sdifc[i]->name, f0) == 0){
 				ifc = sdifc[i];
 				sdev = nil;
 				goto subtopctl;
@@ -1266,7 +1266,7 @@ sdwrite(Chan* c, void* a, long n, int64_t off)
 		poperror();
 		if(sdev)
 			decref(&sdev->r);
-		free(cb);
+		jehanne_free(cb);
 		break;
 
 	case Qctl:
@@ -1280,7 +1280,7 @@ sdwrite(Chan* c, void* a, long n, int64_t off)
 		if(waserror()){
 			qunlock(&unit->ctl);
 			decref(&sdev->r);
-			free(cb);
+			jehanne_free(cb);
 			nexterror();
 		}
 		if(unit->vers != c->qid.vers)
@@ -1288,16 +1288,16 @@ sdwrite(Chan* c, void* a, long n, int64_t off)
 
 		if(cb->nf < 1)
 			error(Ebadctl);
-		if(strcmp(cb->f[0], "part") == 0){
+		if(jehanne_strcmp(cb->f[0], "part") == 0){
 			if(cb->nf != 4)
 				error(Ebadctl);
 			if(unit->sectors == 0 && !sdinitpart(unit))
 				error(Eio);
-			start = strtoull(cb->f[2], 0, 0);
-			end = strtoull(cb->f[3], 0, 0);
+			start = jehanne_strtoull(cb->f[2], 0, 0);
+			end = jehanne_strtoull(cb->f[3], 0, 0);
 			sdaddpart(unit, cb->f[1], start, end);
 		}
-		else if(strcmp(cb->f[0], "delpart") == 0){
+		else if(jehanne_strcmp(cb->f[0], "delpart") == 0){
 			if(cb->nf != 2 || unit->part == nil)
 				error(Ebadctl);
 			sddelpart(unit, cb->f[1]);
@@ -1309,7 +1309,7 @@ sdwrite(Chan* c, void* a, long n, int64_t off)
 		qunlock(&unit->ctl);
 		decref(&sdev->r);
 		poperror();
-		free(cb);
+		jehanne_free(cb);
 		break;
 
 	case Qraw:
@@ -1327,10 +1327,10 @@ sdwrite(Chan* c, void* a, long n, int64_t off)
 		case Rawcmd:
 			if(n < 6 || n > sizeof(req->cmd))
 				error(Ebadarg);
-			if((req = malloc(sizeof(SDreq))) == nil)
+			if((req = jehanne_malloc(sizeof(SDreq))) == nil)
 				error(Enomem);
 			req->unit = unit;
-			memmove(req->cmd, a, n);
+			jehanne_memmove(req->cmd, a, n);
 			req->clen = n;
 			req->flags = SDnosense;
 			req->status = ~0;
@@ -1341,7 +1341,7 @@ sdwrite(Chan* c, void* a, long n, int64_t off)
 
 		case Rawstatus:
 			unit->state = Rawcmd;
-			free(unit->req);
+			jehanne_free(unit->req);
 			unit->req = nil;
 			error(Ebadusefd);
 
@@ -1380,7 +1380,7 @@ sdwstat(Chan* c, uint8_t* dp, long n)
 	qlock(&unit->ctl);
 	d = nil;
 	if(waserror()){
-		free(d);
+		jehanne_free(d);
 		qunlock(&unit->ctl);
 		decref(&sdev->r);
 		nexterror();
@@ -1403,11 +1403,11 @@ sdwstat(Chan* c, uint8_t* dp, long n)
 		break;
 	}
 
-	if(strcmp(up->user, perm->user) && !iseve())
+	if(jehanne_strcmp(up->user, perm->user) && !iseve())
 		error(Eperm);
 
 	d = smalloc(sizeof(Dir)+n);
-	n = convM2D(dp, n, &d[0], (char*)&d[1]);
+	n = jehanne_convM2D(dp, n, &d[0], (char*)&d[1]);
 	if(n == 0)
 		error(Eshortstat);
 	if(!emptystr(d[0].uid))
@@ -1415,7 +1415,7 @@ sdwstat(Chan* c, uint8_t* dp, long n)
 	if(d[0].mode != (uint32_t)~0UL)
 		perm->perm = (perm->perm & ~0777) | (d[0].mode & 0777);
 
-	free(d);
+	jehanne_free(d);
 	qunlock(&unit->ctl);
 	decref(&sdev->r);
 	poperror();
@@ -1432,11 +1432,11 @@ configure(char* spec, DevConf* cf)
 	if(sdindex(*spec) < 0)
 		error("bad sd spec");
 
-	if((p = strchr(cf->type, '/')) != nil)
+	if((p = jehanne_strchr(cf->type, '/')) != nil)
 		*p++ = '\0';
 
 	for(i = 0; sdifc[i] != nil; i++)
-		if(strcmp(sdifc[i]->name, cf->type) == 0)
+		if(jehanne_strcmp(sdifc[i]->name, cf->type) == 0)
 			break;
 	if(sdifc[i] == nil)
 		error("sd type not found");
@@ -1481,15 +1481,15 @@ unconfigure(char* spec)
 
 	for(i = 0; i != sdev->nunit; i++){
 		if(unit = sdev->unit[i]){
-			free(unit->name);
-			free(unit->user);
-			free(unit);
+			jehanne_free(unit->name);
+			jehanne_free(unit->user);
+			jehanne_free(unit);
 		}
 	}
 
 	if(sdev->ifc->clear)
 		sdev->ifc->clear(sdev);
-	free(sdev);
+	jehanne_free(sdev);
 	return 0;
 }
 
@@ -1537,9 +1537,9 @@ struct Confdata {
 static void
 parseswitch(Confdata* cd, char* option)
 {
-	if(!strcmp("on", option))
+	if(!jehanne_strcmp("on", option))
 		cd->on = 1;
-	else if(!strcmp("off", option))
+	else if(!jehanne_strcmp("off", option))
 		cd->on = 0;
 	else
 		error(Ebadarg);
@@ -1548,7 +1548,7 @@ parseswitch(Confdata* cd, char* option)
 static void
 parsespec(Confdata* cd, char* option)
 {
-	if(strlen(option) > 1)
+	if(jehanne_strlen(option) > 1)
 		error(Ebadarg);
 	cd->spec = option;
 }
@@ -1558,12 +1558,12 @@ getnewport(DevConf* dc)
 {
 	Devport *p;
 
-	p = (Devport *)malloc((dc->nports + 1) * sizeof(Devport));
+	p = (Devport *)jehanne_malloc((dc->nports + 1) * sizeof(Devport));
 	if(p == nil)
 		error(Enomem);
 	if(dc->nports > 0){
-		memmove(p, dc->ports, dc->nports * sizeof(Devport));
-		free(dc->ports);
+		jehanne_memmove(p, dc->ports, dc->nports * sizeof(Devport));
+		jehanne_free(dc->ports);
 	}
 	dc->ports = p;
 	p = &dc->ports[dc->nports++];
@@ -1582,7 +1582,7 @@ parseport(Confdata* cd, char* option)
 		p = getnewport(&cd->cf);
 	else
 		p = &cd->cf.ports[cd->cf.nports-1];
-	p->port = strtol(option, &e, 0);
+	p->port = jehanne_strtol(option, &e, 0);
 	if(e == nil || *e != '\0')
 		error(Ebadarg);
 }
@@ -1597,7 +1597,7 @@ parsesize(Confdata* cd, char* option)
 		p = getnewport(&cd->cf);
 	else
 		p = &cd->cf.ports[cd->cf.nports-1];
-	p->size = (int)strtol(option, &e, 0);
+	p->size = (int)jehanne_strtol(option, &e, 0);
 	if(e == nil || *e != '\0')
 		error(Ebadarg);
 }
@@ -1607,7 +1607,7 @@ parseirq(Confdata* cd, char* option)
 {
 	char *e;
 
-	cd->cf.intnum = strtoul(option, &e, 0);
+	cd->cf.intnum = jehanne_strtoul(option, &e, 0);
 	if(e == nil || *e != '\0')
 		error(Ebadarg);
 }
@@ -1637,14 +1637,14 @@ legacytopctl(Cmdbuf *cb)
 	int i, j;
 	Confdata cd;
 
-	memset(&cd, 0, sizeof cd);
+	jehanne_memset(&cd, 0, sizeof cd);
 	cd.on = -1;
 	for(i=0; i<cb->nf; i+=2){
 		if(i+2 > cb->nf)
 			error(Ebadarg);
 		opt = cb->f[i];
 		for(j=0; j<nelem(options); j++)
-			if(strcmp(opt, options[j].name) == 0){
+			if(jehanne_strcmp(opt, options[j].name) == 0){
 				options[j].parse(&cd, cb->f[i+1]);
 				break;
 			}

@@ -73,16 +73,16 @@ xdtoa(Fmt *fmt, char *s2, double f)
 		prec = fmt->prec;
 	if(prec > FDIGIT)
 		prec = FDIGIT;
-	if(isNaN(f)) {
-		strcpy(s2, "NaN");
+	if(jehanne_isNaN(f)) {
+		jehanne_strcpy(s2, "NaN");
 		return;
 	}
-	if(isInf(f, 1)) {
-		strcpy(s2, "+Inf");
+	if(jehanne_isInf(f, 1)) {
+		jehanne_strcpy(s2, "+Inf");
 		return;
 	}
-	if(isInf(f, -1)) {
-		strcpy(s2, "-Inf");
+	if(jehanne_isInf(f, -1)) {
+		jehanne_strcpy(s2, "-Inf");
 		return;
 	}
 	sign = 0;
@@ -94,29 +94,29 @@ xdtoa(Fmt *fmt, char *s2, double f)
 	chr = fmt->r;
 	if(isupper(chr)) {
 		ucase = 1;
-		chr = tolower(chr);
+		chr = jehanne_tolower(chr);
 	}
 
 	e = 0;
 	g = f;
 	if(g != 0) {
-		frexp(f, &e);
+		jehanne_frexp(f, &e);
 		e = e * .301029995664;
 		if(e >= -150 && e <= +150) {
 			d = 0;
 			h = f;
 		} else {
 			d = e/2;
-			h = f * pow10(-d);
+			h = f * jehanne_pow10(-d);
 		}
-		g = h * pow10(d-e);
+		g = h * jehanne_pow10(d-e);
 		while(g < 1) {
 			e--;
-			g = h * pow10(d-e);
+			g = h * jehanne_pow10(d-e);
 		}
 		while(g >= 10) {
 			e++;
-			g = h * pow10(d-e);
+			g = h * jehanne_pow10(d-e);
 		}
 	}
 
@@ -138,22 +138,22 @@ xdtoa(Fmt *fmt, char *s2, double f)
 	if(chr == 'f')
 		c2 += e;
 	if(c2 >= NSIGNIF-2) {
-		strcpy(s2, s1);
+		jehanne_strcpy(s2, s1);
 		d = e;
 		s1[NSIGNIF-2] = '0';
 		s1[NSIGNIF-1] = '0';
-		sprint(s1+NSIGNIF, "e%d", e-NSIGNIF+1);
-		g = strtod(s1, nil);
+		jehanne_sprint(s1+NSIGNIF, "e%d", e-NSIGNIF+1);
+		g = jehanne_strtod(s1, nil);
 		if(g == f)
 			goto found;
 		if(xadd(s1, NSIGNIF-3, 1)) {
 			e++;
-			sprint(s1+NSIGNIF, "e%d", e-NSIGNIF+1);
+			jehanne_sprint(s1+NSIGNIF, "e%d", e-NSIGNIF+1);
 		}
-		g = strtod(s1, nil);
+		g = jehanne_strtod(s1, nil);
 		if(g == f)
 			goto found;
-		strcpy(s1, s2);
+		jehanne_strcpy(s1, s2);
 		e = d;
 	}
 
@@ -161,8 +161,8 @@ xdtoa(Fmt *fmt, char *s2, double f)
 	 * convert back so s1 gets exact answer
 	 */
 	for(;;) {
-		sprint(s1+NSIGNIF, "e%d", e-NSIGNIF+1);
-		g = strtod(s1, nil);
+		jehanne_sprint(s1+NSIGNIF, "e%d", e-NSIGNIF+1);
+		g = jehanne_strtod(s1, nil);
 		if(f > g) {
 			if(xadd(s1, NSIGNIF-1, 1))
 				e--;
@@ -313,7 +313,7 @@ _floatfmt(Fmt *fmt, double f)
 	 */	
 	xdtoa(fmt, s, f);
 	fmt->flags &= FmtWidth|FmtLeft;
-	_fmtcpy(fmt, s, strlen(s), strlen(s));
+	_fmtcpy(fmt, s, jehanne_strlen(s), jehanne_strlen(s));
 	return 0;
 }
 

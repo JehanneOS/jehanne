@@ -13,12 +13,12 @@
 #define	N	256
 
 char*
-strtok(char *s, char *b)
+jehanne_strtok(char *s, char *b)
 {
 	static char *under_rock;
 	char map[N], *os;
 
-	memset(map, 0, N);
+	jehanne_memset(map, 0, N);
 	while(*b)
 		map[*(uint8_t*)b++] = 1;
 	if(s == 0)

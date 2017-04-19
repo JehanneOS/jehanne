@@ -12,17 +12,17 @@
 #include <9P2000.h>
 
 int
-dirwstat(const char *name, Dir *d)
+jehanne_dirwstat(const char *name, Dir *d)
 {
 	uint8_t *buf;
 	int r;
 
-	r = sizeD2M(d);
-	buf = malloc(r);
+	r = jehanne_sizeD2M(d);
+	buf = jehanne_malloc(r);
 	if(buf == nil)
 		return -1;
-	convD2M(d, buf, r);
-	r = wstat(name, buf, r);
-	free(buf);
+	jehanne_convD2M(d, buf, r);
+	r = jehanne_wstat(name, buf, r);
+	jehanne_free(buf);
 	return r;
 }

@@ -5,7 +5,7 @@
  * Arch-independent kernel debugging */
 
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 #include "dat.h"
 #include "fns.h"
 

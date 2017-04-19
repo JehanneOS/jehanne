@@ -20,7 +20,7 @@ desCBCencrypt(uint8_t *p, int len, DESstate *s)
 		for(eip = ip+8; ip < eip; )
 			*p2++ ^= *ip++;
 		block_cipher(s->expanded, p, 0);
-		memmove(s->ivec, p, 8);
+		jehanne_memmove(s->ivec, p, 8);
 		p += 8;
 	}
 
@@ -39,7 +39,7 @@ desCBCdecrypt(uint8_t *p, int len, DESstate *s)
 	uint8_t tmp[8];
 
 	for(; len >= 8; len -= 8){
-		memmove(tmp, p, 8);
+		jehanne_memmove(tmp, p, 8);
 		block_cipher(s->expanded, p, 1);
 		tp = tmp;
 		ip = s->ivec;

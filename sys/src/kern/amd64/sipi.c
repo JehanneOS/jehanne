@@ -44,8 +44,8 @@ sipi(void)
 	if((sipipa & (4*KiB - 1)) || sipipa > (1*MiB - 2*4*KiB))
 		return;
 	sipiptr = UINT2PTR(SIPIHANDLER);
-	memmove(sipiptr, sipihandler, sizeof(sipihandler));
-	memset(sipiptr+4*KiB, 0, sizeof(Sipi)*Napic);
+	jehanne_memmove(sipiptr, sipihandler, sizeof(sipihandler));
+	jehanne_memset(sipiptr+4*KiB, 0, sizeof(Sipi)*Napic);
 
 	/*
 	 * Notes:
@@ -61,7 +61,7 @@ sipi(void)
 		if(apic == nil || !apic->useable || apic->machno == 0)
 			continue;
 		if(++nproc >= MACHMAX){
-			print("sipi: MACHMAX too small, need %d\n", nproc);
+			jehanne_print("sipi: MACHMAX too small, need %d\n", nproc);
 			break;
 		}
 		sipi = &((Sipi*)(sipiptr+4*KiB))[apicno];
@@ -71,10 +71,10 @@ sipi(void)
 		 * bootstrap processor, until this code is worked out,
 		 * so only the Mach and stack portions are used below.
 		 */
-		alloc = mallocalign(MACHSTKSZ+4*PTSZ+4*KiB+MACHSZ, 4096, 0, 0);
+		alloc = jehanne_mallocalign(MACHSTKSZ+4*PTSZ+4*KiB+MACHSZ, 4096, 0, 0);
 		if(alloc == nil)
 			continue;
-		memset(alloc, 0, MACHSTKSZ+4*PTSZ+4*KiB+MACHSZ);
+		jehanne_memset(alloc, 0, MACHSTKSZ+4*PTSZ+4*KiB+MACHSZ);
 		p = alloc+MACHSTKSZ;
 
 		sipi->pml4 = cr3get();

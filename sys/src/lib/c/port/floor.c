@@ -15,22 +15,22 @@
  */
 
 double
-floor(double d)
+jehanne_floor(double d)
 {
 	double fract;
 
 	if(d < 0) {
-		fract = modf(-d, &d);
+		fract = jehanne_modf(-d, &d);
 		if(fract != 0.0)
 			d += 1;
 		d = -d;
 	} else
-		modf(d, &d);
+		jehanne_modf(d, &d);
 	return d;
 }
 
 double
-ceil(double d)
+jehanne_ceil(double d)
 {
-	return -floor(-d);
+	return -jehanne_floor(-d);
 }

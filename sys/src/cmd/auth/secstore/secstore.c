@@ -1,7 +1,7 @@
 /* secstore - network login client */
 #define PORTABLE_SYSCALLS
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 #include <mp.h>
 #include <libsec.h>
 #include <authsrv.h>

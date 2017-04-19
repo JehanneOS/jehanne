@@ -74,7 +74,7 @@ static ProcSegment*
 segment_alloc(SegmentType type, SegPermission permissions, SegFlag flags, uintptr_t base, uintptr_t top)
 {
 	ProcSegment* s;
-	s = mallocz(sizeof(ProcSegment), 1);
+	s = jehanne_mallocz(sizeof(ProcSegment), 1);
 	if(s == nil)
 		return nil;
 	s->r.ref = 1;
@@ -85,7 +85,7 @@ segment_alloc(SegmentType type, SegPermission permissions, SegFlag flags, uintpt
 	s->top = top;
 	if(type != SgPhysical	/* Physical segments do not need pages */
 	&& !table_new(&s->table, base, top)){
-		free(s);
+		jehanne_free(s);
 		return nil;
 	}
 
@@ -146,7 +146,7 @@ segment_userinit(ProcSegment** slot, int data)
 		if(!page_new(page, i == (shared-1)))
 			panic("segment_userinit: out of memory, pc %#p", getcallerpc());
 		tmp = page_kmap(*page);
-		memmove(tmp, content+i*PGSZ, MIN(PGSZ, top-base-i*PGSZ));
+		jehanne_memmove(tmp, content+i*PGSZ, MIN(PGSZ, top-base-i*PGSZ));
 		page_kunmap(*page, &tmp);
 	}
 	new->image = data;
@@ -453,7 +453,7 @@ segment_release(ProcSegment** s)
 		case SgPhysical:
 			break;
 	}
-	free(segment);
+	jehanne_free(segment);
 }
 
 /* replaces the segment in s with a copy with debug enabled/disabled
@@ -701,7 +701,7 @@ static void
 check_single_page(uintptr_t va, UserPage* page)
 {
 	if(!iskaddr(page))
-		print("%d %s: invalid page off %#p pg %#p\n", up->pid, up->text, va, page);
+		jehanne_print("%d %s: invalid page off %#p pg %#p\n", up->pid, up->text, va, page);
 	else
 		checkmmu(va, page->pa);
 }

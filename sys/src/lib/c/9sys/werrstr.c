@@ -11,13 +11,13 @@
 #include <libc.h>
 
 void
-werrstr(const char *fmt, ...)
+jehanne_werrstr(const char *fmt, ...)
 {
 	va_list arg;
 	char buf[ERRMAX];
 
 	va_start(arg, fmt);
-	vseprint(buf, buf+ERRMAX, fmt, arg);
+	jehanne_vseprint(buf, buf+ERRMAX, fmt, arg);
 	va_end(arg);
 	errstr(buf, ERRMAX);
 }

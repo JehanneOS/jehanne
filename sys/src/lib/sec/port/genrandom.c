@@ -16,7 +16,7 @@ X917(uint8_t *rand, int nrand)
 	uint64_t I, x;
 
 	/* 1. Compute intermediate value I = Ek(time). */
-	I = nsec();
+	I = jehanne_nsec();
 	triple_block_cipher(x917state.des3.expanded, (uint8_t*)&I, 0); /* two-key EDE */
 
 	/* 2. x[i] = Ek(I^seed);  seed = Ek(x[i]^I); */
@@ -25,7 +25,7 @@ X917(uint8_t *rand, int nrand)
 		x = I ^ x917state.seed;
 		triple_block_cipher(x917state.des3.expanded, (uint8_t*)&x, 0);
 		n8 = (nrand>8) ? 8 : nrand;
-		memcpy(rand, (uint8_t*)&x, n8);
+		jehanne_memcpy(rand, (uint8_t*)&x, n8);
 		rand += 8;
 		nrand -= 8;
 		x ^= I;
@@ -44,7 +44,7 @@ X917init(void)
 
 	ulp = (uint32_t*)key3;
 	for(n = 0; n < sizeof(key3)/sizeof(uint32_t); n++)
-		ulp[n] = truerand();
+		ulp[n] = jehanne_truerand();
 	setupDES3state(&x917state.des3, key3, nil);
 	X917(mix, sizeof mix);
 	x917state.seeded = 1;
@@ -53,9 +53,9 @@ X917init(void)
 void
 genrandom(uint8_t *p, int n)
 {
-	qlock(&x917state.lock);
+	jehanne_qlock(&x917state.lock);
 	if(x917state.seeded == 0)
 		X917init();
 	X917(p, n);
-	qunlock(&x917state.lock);
+	jehanne_qunlock(&x917state.lock);
 }

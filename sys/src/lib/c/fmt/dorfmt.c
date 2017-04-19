@@ -14,7 +14,7 @@
 /* format the output into f->to and return the number of characters fmted  */
 
 int
-dorfmt(Fmt *f, const Rune *fmt)
+jehanne_dorfmt(Fmt *f, const Rune *fmt)
 {
 	Rune *rt, *rs;
 	int r;

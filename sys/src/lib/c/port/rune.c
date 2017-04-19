@@ -33,7 +33,7 @@ enum
 };
 
 int
-chartorune(Rune *rune, const char *str)
+jehanne_chartorune(Rune *rune, const char *str)
 {
 	int c[UTFmax], i;
 	Rune l;
@@ -82,7 +82,7 @@ bad:
 }
 
 int
-runetochar(char *str, const Rune *rune)
+jehanne_runetochar(char *str, const Rune *rune)
 {
 	int i, j;
 	Rune c;
@@ -126,15 +126,15 @@ runetochar(char *str, const Rune *rune)
 }
 
 int
-runelen(Rune c)
+jehanne_runelen(Rune c)
 {
 	char str[10];
 
-	return runetochar(str, &c);
+	return jehanne_runetochar(str, &c);
 }
 
 int
-runenlen(const Rune *r, int nrune)
+jehanne_runenlen(const Rune *r, int nrune)
 {
 	int nb, i;
 	Rune c;
@@ -156,7 +156,7 @@ runenlen(const Rune *r, int nrune)
 }
 
 int
-fullrune(const char *str, int n)
+jehanne_fullrune(const char *str, int n)
 {
 	int  i;
 	Rune c;

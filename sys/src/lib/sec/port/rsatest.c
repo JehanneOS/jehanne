@@ -14,11 +14,11 @@ main(void)
 	RSApriv *rsa;
 	mpint *clr, *enc, *clr2;
 
-	fmtinstall('B', mpfmt);
+	jehanne_fmtinstall('B', mpfmt);
 
 	rsa = rsagen(1024, 16, 0);
 	if(rsa == nil)
-		sysfatal("rsagen");
+		jehanne_sysfatal("rsagen");
 	Binit(&b, 0, OREAD);
 	clr = mpnew(0);
 	clr2 = mpnew(0);
@@ -27,30 +27,30 @@ main(void)
 	strtomp("123456789abcdef123456789abcdef123456789abcdef123456789abcdef", nil, 16, clr);
 	rsaencrypt(&rsa->pub, clr, enc);
 	
-	start = nsec();
+	start = jehanne_nsec();
 	for(n = 0; n < 10; n++)
 		rsadecrypt(rsa, enc, clr);
-	print("%lld\n", nsec()-start);
+	jehanne_print("%lld\n", jehanne_nsec()-start);
 
-	start = nsec();
+	start = jehanne_nsec();
 	for(n = 0; n < 10; n++)
 		mpexp(enc, rsa->dk, rsa->pub.n, clr2);
-	print("%lld\n", nsec()-start);
+	jehanne_print("%lld\n", jehanne_nsec()-start);
 
 	if(mpcmp(clr, clr2) != 0)
-		print("%B != %B\n", clr, clr2);
+		jehanne_print("%B != %B\n", clr, clr2);
 	
-	print("> ");
+	jehanne_print("> ");
 	while(p = Brdline(&b, '\n')){
 		n = Blinelen(&b);
 		letomp((uint8_t*)p, n, clr);
-		print("clr %B\n", clr);
+		jehanne_print("clr %B\n", clr);
 		rsaencrypt(&rsa->pub, clr, enc);
-		print("enc %B\n", enc);
+		jehanne_print("enc %B\n", enc);
 		rsadecrypt(rsa, enc, clr);
-		print("clr %B\n", clr);
+		jehanne_print("clr %B\n", clr);
 		n = mptole(clr, buf, sizeof(buf), nil);
 		write(1, buf, n);
-		print("> ");
+		jehanne_print("> ");
 	}
 }

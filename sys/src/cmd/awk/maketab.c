@@ -29,7 +29,7 @@ THIS SOFTWARE.
  */
 
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 #include <bio.h>
 #include "awk.h"
 #include "y.tab.h"
@@ -118,7 +118,7 @@ void main(int _, char** __)
 	char *buf, *toks[3];
 
 	print("#include <u.h>\n");
-	print("#include <libc.h>\n");
+	print("#include <lib9.h>\n");
 	print("#include <bio.h>\n");
 	print("#include \"awk.h\"\n");
 	print("#include \"y.tab.h\"\n\n");

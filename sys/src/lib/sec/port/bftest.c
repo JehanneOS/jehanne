@@ -1,5 +1,5 @@
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 #include <libsec.h>
 
 enum{
@@ -185,35 +185,35 @@ testECB(Testvector *t)
 	int i;
 	uint8_t aux[Bsz];
 
-	memcpy(aux, t->plain, Bsz);
+	jehanne_memcpy(aux, t->plain, Bsz);
 
-	memset(&s, 0, sizeof(BFstate));
+	jehanne_memset(&s, 0, sizeof(BFstate));
 	setupBFstate(&s, t->key, Bsz, nil);
 	bfECBencrypt(aux, Bsz, &s);
 
-	if(memcmp(aux, t->cipher, Bsz) != 0){
-		fprint(2, "ECB encrypt failed, ciphertext is:\n");
+	if(jehanne_memcmp(aux, t->cipher, Bsz) != 0){
+		jehanne_fprint(2, "ECB encrypt failed, ciphertext is:\n");
 		for(i = 0; i < Bsz; i++)
-			fprint(2, "%02X", aux[i]);
-		fprint(2, "\nand should be:\n");
+			jehanne_fprint(2, "%02X", aux[i]);
+		jehanne_fprint(2, "\nand should be:\n");
 		for(i = 0; i < Bsz; i++)
-			fprint(2, "%02X", t->cipher[i]);
-		fprint(2, "\n");
+			jehanne_fprint(2, "%02X", t->cipher[i]);
+		jehanne_fprint(2, "\n");
 		return -1;
 	}
 
-	memset(&s, 0, sizeof(BFstate));
+	jehanne_memset(&s, 0, sizeof(BFstate));
 	setupBFstate(&s, t->key, Bsz, nil);
 	bfECBdecrypt(aux, Bsz, &s);
 
-	if(memcmp(aux, t->plain, Bsz) != 0){
-		fprint(2, "ECB decrypt failed, plaintext is:\n");
+	if(jehanne_memcmp(aux, t->plain, Bsz) != 0){
+		jehanne_fprint(2, "ECB decrypt failed, plaintext is:\n");
 		for(i = 0; i < Bsz; i++)
-			fprint(2, "%02X", aux[i]);
-		fprint(2, "\nand should be:\n");
+			jehanne_fprint(2, "%02X", aux[i]);
+		jehanne_fprint(2, "\nand should be:\n");
 		for(i = 0; i < Bsz; i++)
-			fprint(2, "%02X", t->plain[i]);
-		fprint(2, "\n");
+			jehanne_fprint(2, "%02X", t->plain[i]);
+		jehanne_fprint(2, "\n");
 		return -1;
 	}
 	return 0;
@@ -226,35 +226,35 @@ testCBC(void)
 	uint8_t aux[32];
 	int i;
 
-	memset(aux, 0 , sizeof(aux));
-	memcpy(aux, CBCdata, sizeof(CBCdata));
-	memset(&s, 0, sizeof(BFstate));
+	jehanne_memset(aux, 0 , sizeof(aux));
+	jehanne_memcpy(aux, CBCdata, sizeof(CBCdata));
+	jehanne_memset(&s, 0, sizeof(BFstate));
 	setupBFstate(&s, CBCkey, sizeof(CBCkey), CBCiv);
 	bfCBCencrypt(aux, 32, &s);
 	
-	if(memcmp(aux, CBCcipher, sizeof(CBCcipher)) != 0){
-		fprint(2, "CBC encrypt failed, ciphertext is:\n");
+	if(jehanne_memcmp(aux, CBCcipher, sizeof(CBCcipher)) != 0){
+		jehanne_fprint(2, "CBC encrypt failed, ciphertext is:\n");
 		for(i = 0; i < sizeof(aux); i++)
-			fprint(2, "%02X", aux[i]);
-		fprint(2, "\nand should be:\n");
+			jehanne_fprint(2, "%02X", aux[i]);
+		jehanne_fprint(2, "\nand should be:\n");
 		for(i = 0; i < sizeof(CBCcipher); i++)
-			fprint(2, "%02X", CBCcipher[i]);
-		fprint(2, "\n");
+			jehanne_fprint(2, "%02X", CBCcipher[i]);
+		jehanne_fprint(2, "\n");
 		return -1;
 	}
 
-	memset(&s, 0, sizeof(BFstate));
+	jehanne_memset(&s, 0, sizeof(BFstate));
 	setupBFstate(&s, CBCkey, sizeof(CBCkey), CBCiv);
 	bfCBCdecrypt(aux, 32, &s);
 
-	if(memcmp(aux, CBCdata, sizeof(CBCdata)) != 0){
-		fprint(2, "CBC decrypt failed, plaintext is:\n");
+	if(jehanne_memcmp(aux, CBCdata, sizeof(CBCdata)) != 0){
+		jehanne_fprint(2, "CBC decrypt failed, plaintext is:\n");
 		for(i = 0; i < sizeof(aux); i++)
-			fprint(2, "%02X", aux[i]);
-		fprint(2, "\nand should be:\n");
+			jehanne_fprint(2, "%02X", aux[i]);
+		jehanne_fprint(2, "\nand should be:\n");
 		for(i = 0; i < sizeof(CBCdata); i++)
-			fprint(2, "%02X", CBCdata[i]);
-		fprint(2, "\n");
+			jehanne_fprint(2, "%02X", CBCdata[i]);
+		jehanne_fprint(2, "\n");
 		return -1;
 	}
 
@@ -267,13 +267,13 @@ main(int argc, char **argv)
 	int i;
 
 	if(argc != 1)
-		sysfatal("usage: %s", argv[0]);
+		jehanne_sysfatal("usage: %s", argv[0]);
 
 	for(i=0; i < nelem(vector); i++)
 		if(testECB(&vector[i]) < 0)
-			sysfatal("TestECB %d failed", i);
+			jehanne_sysfatal("TestECB %d failed", i);
 
 	if(testCBC() < 0)
-		sysfatal("TestCBC failed");
-	exits(nil);
+		jehanne_sysfatal("TestCBC failed");
+	jehanne_exits(nil);
 }

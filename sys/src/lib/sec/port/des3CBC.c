@@ -20,7 +20,7 @@ des3CBCencrypt(uint8_t *p, int len, DES3state *s)
 		for(eip = ip+8; ip < eip; )
 			*p2++ ^= *ip++;
 		triple_block_cipher(s->expanded, p, DES3EDE);
-		memmove(s->ivec, p, 8);
+		jehanne_memmove(s->ivec, p, 8);
 		p += 8;
 	}
 
@@ -39,7 +39,7 @@ des3CBCdecrypt(uint8_t *p, int len, DES3state *s)
 	uint8_t tmp[8];
 
 	for(; len >= 8; len -= 8){
-		memmove(tmp, p, 8);
+		jehanne_memmove(tmp, p, 8);
 		triple_block_cipher(s->expanded, p, DES3DED);
 		tp = tmp;
 		ip = s->ivec;

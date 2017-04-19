@@ -19,10 +19,10 @@ poly1305(uint8_t *m, uint32_t len, uint8_t *key, uint32_t klen, uint8_t *digest,
 	uint32_t hibit, mask, c;
 
 	if(s == nil){
-		s = malloc(sizeof(*s));
+		s = jehanne_malloc(sizeof(*s));
 		if(s == nil)
 			return nil;
-		memset(s, 0, sizeof(*s));
+		jehanne_memset(s, 0, sizeof(*s));
 		s->malloced = 1;
 	}
 
@@ -56,7 +56,7 @@ poly1305(uint8_t *m, uint32_t len, uint8_t *key, uint32_t klen, uint8_t *digest,
 		c = 16 - s->blen;
 		if(c > len)
 			c = len;
-		memmove(s->buf + s->blen, m, c);
+		jehanne_memmove(s->buf + s->blen, m, c);
 		len -= c, m += c;
 		s->blen += c;
 		if(s->blen == 16){
@@ -118,7 +118,7 @@ Block:
 
 	if(len){
 		s->blen = len;
-		memmove(s->buf, m, len);
+		jehanne_memmove(s->buf, m, len);
 	}
 
 	if(digest == nil){
@@ -185,11 +185,11 @@ Block:
 	U32TO8(&digest[12], h3);
 
 	if(s->malloced){
-		memset(s, 0, sizeof(*s));
-		free(s);
+		jehanne_memset(s, 0, sizeof(*s));
+		jehanne_free(s);
 		return nil;
 	}
 
-	memset(s, 0, sizeof(*s));
+	jehanne_memset(s, 0, sizeof(*s));
 	return nil;
 }

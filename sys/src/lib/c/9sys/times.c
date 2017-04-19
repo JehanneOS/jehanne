@@ -30,14 +30,14 @@ skip(char *p)
  *  in the middle of this routine.
  */
 int32_t
-times(int32_t *t)
+jehanne_times(int32_t *t)
 {
 	char b[200], *p;
 	static int f = -1;
 	int i, retries;
 	uint32_t r;
 
-	memset(b, 0, sizeof(b));
+	jehanne_memset(b, 0, sizeof(b));
 	for(retries = 0; retries < 100; retries++){
 		if(f < 0)
 			f = open("/dev/cputime", OREAD|OCEXEC);
@@ -53,17 +53,17 @@ times(int32_t *t)
 	}
 	p = b;
 	if(t)
-		t[0] = atol(p);
+		t[0] = jehanne_atol(p);
 	p = skip(p);
 	if(t)
-		t[1] = atol(p);
+		t[1] = jehanne_atol(p);
 	p = skip(p);
-	r = atol(p);
+	r = jehanne_atol(p);
 	if(t){
 		p = skip(p);
-		t[2] = atol(p);
+		t[2] = jehanne_atol(p);
 		p = skip(p);
-		t[3] = atol(p);
+		t[3] = jehanne_atol(p);
 	}
 	return r;
 }

@@ -11,11 +11,11 @@
 #include <libc.h>
 
 int
-needsrcquote(int c)
+jehanne_needsrcquote(int c)
 {
 	if(c <= ' ')
 		return 1;
-	if(utfrune("`^#*[]=|\\?${}()'<>&;", c))
+	if(jehanne_utfrune("`^#*[]=|\\?${}()'<>&;", c))
 		return 1;
 	return 0;
 }

@@ -8,7 +8,7 @@
  */
 
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 
 double	min = 1.0;
 double	max = 0.0;

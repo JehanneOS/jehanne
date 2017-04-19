@@ -7,16 +7,16 @@ extern void	**_privates;
 extern int	_nprivates;
 
 void **
-privalloc(void)
+jehanne_privalloc(void)
 {
 	void **p;
 
-	lock(&privlock);
+	jehanne_lock(&privlock);
 	if(_nprivates > 0)
 		p = &_privates[--_nprivates];
 	else
 		p = nil;
-	unlock(&privlock);
+	jehanne_unlock(&privlock);
 
 	return p;
 }

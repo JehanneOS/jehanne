@@ -11,7 +11,7 @@
 #include <libc.h>
 
 char*
-vseprint(char *buf, char *e, const char *fmt, va_list args)
+jehanne_vseprint(char *buf, char *e, const char *fmt, va_list args)
 {
 	Fmt f;
 
@@ -26,7 +26,7 @@ vseprint(char *buf, char *e, const char *fmt, va_list args)
 	f.nfmt = 0;
 	//f.args = args;
 	va_copy(f.args,args);
-	dofmt(&f, fmt);
+	jehanne_dofmt(&f, fmt);
 	va_end(f.args);
 	*(char*)f.to = '\0';
 	return f.to;

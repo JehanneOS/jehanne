@@ -5,7 +5,7 @@
 #include "fns.h"
 #include "io.h"
 
-#define VFLAG(...)	if(vflag) print(__VA_ARGS__)
+#define VFLAG(...)	if(vflag) jehanne_print(__VA_ARGS__)
 
 #define UPTR2INT(p)	((uintptr_t)(p))
 
@@ -76,7 +76,7 @@ void
 BIOS32close(BIOS32si* si)
 {
 	vunmap(si->base, si->length);
-	free(si);
+	jehanne_free(si);
 }
 
 BIOS32si*
@@ -93,7 +93,7 @@ bios32open(char* id)
 	}
 
 	VFLAG("bios32si: %s\n", id);
-	memset(&ci, 0, sizeof(BIOS32ci));
+	jehanne_memset(&ci, 0, sizeof(BIOS32ci));
 	ci.eax = (id[3]<<24|(id[2]<<16)|(id[1]<<8)|id[0]);
 
 	bios32call(&ci, bios32ptr);
@@ -105,10 +105,10 @@ bios32open(char* id)
 	VFLAG("bios32si: base %#ux length %#ux offset %#ux\n",
 		ci.ebx, ci.ecx, ci.edx);
 
-	if((si = malloc(sizeof(BIOS32si))) == nil)
+	if((si = jehanne_malloc(sizeof(BIOS32si))) == nil)
 		return nil;
 	if((si->base = vmap(ci.ebx, ci.ecx)) == nil){
-		free(si);
+		jehanne_free(si);
 		return nil;
 	}
 	si->length = ci.ecx;

@@ -8,7 +8,7 @@
  */
 
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 #include "String.h"
 
 extern String*	_s_alloc(void);

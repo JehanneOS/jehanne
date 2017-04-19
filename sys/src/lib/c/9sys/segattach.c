@@ -19,7 +19,7 @@
 #include <libc.h>
 
 void*
-segattach(int attr, const char *class, void *va, unsigned long len)
+jehanne_segattach(int attr, const char *class, void *va, unsigned long len)
 {
 	int fd;
 	long tmp;
@@ -29,14 +29,14 @@ segattach(int attr, const char *class, void *va, unsigned long len)
 	if(fd < 0)
 		return (void*)-1;
 
-	tmp = snprint(msg, sizeof(msg), "attach 0x%ux %#p %ulld %s", attr, va, len, class);
+	tmp = jehanne_snprint(msg, sizeof(msg), "attach 0x%ux %#p %ulld %s", attr, va, len, class);
 	tmp = write(fd, msg, tmp);
 	close(fd);
 	return (void*)tmp;
 }
 
 int
-segdetach(void *addr)
+jehanne_segdetach(void *addr)
 {
 	int fd, tmp;
 	char msg[256];
@@ -45,14 +45,14 @@ segdetach(void *addr)
 	if(fd < 0)
 		return -1;
 
-	tmp = snprint(msg, sizeof(msg), "detach %#p", addr);
+	tmp = jehanne_snprint(msg, sizeof(msg), "detach %#p", addr);
 	tmp = write(fd, msg, tmp);
 	close(fd);
 	return tmp;
 }
 
 int
-segfree(void *addr, unsigned long len)
+jehanne_segfree(void *addr, unsigned long len)
 {
 	int fd, tmp;
 	char msg[256];
@@ -61,7 +61,7 @@ segfree(void *addr, unsigned long len)
 	if(fd < 0)
 		return -1;
 
-	tmp = snprint(msg, sizeof(msg), "free %#p %ulld", addr, len);
+	tmp = jehanne_snprint(msg, sizeof(msg), "free %#p %ulld", addr, len);
 	tmp = write(fd, msg, tmp);
 	close(fd);
 	return tmp;

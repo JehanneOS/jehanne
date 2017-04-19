@@ -52,16 +52,16 @@ growfd(Fgrp *f, int fd)	/* fd is always >= 0 */
 	 */
 	if(f->nfd >= 5000){
     Exhausted:
-		print("no free file descriptors\n");
+		jehanne_print("no free file descriptors\n");
 		return -1;
 	}
-	newfd = malloc((f->nfd+DELTAFD)*sizeof(Chan*));
+	newfd = jehanne_malloc((f->nfd+DELTAFD)*sizeof(Chan*));
 	if(newfd == nil)
 		goto Exhausted;
 	oldfd = f->fd;
-	memmove(newfd, oldfd, f->nfd*sizeof(Chan*));
+	jehanne_memmove(newfd, oldfd, f->nfd*sizeof(Chan*));
 	f->fd = newfd;
-	free(oldfd);
+	jehanne_free(oldfd);
 	f->nfd += DELTAFD;
 	if(fd > f->maxfd){
 		if(fd/100 > f->maxfd/100)
@@ -173,7 +173,7 @@ sysfd2path(int fd, char* buf, int nbuf)
 	buf = validaddr(buf, nbuf, 1);
 
 	c = fdtochan(fd, -1, 0, 1);
-	snprint(buf, nbuf, "%s", chanpath(c));
+	jehanne_snprint(buf, nbuf, "%s", chanpath(c));
 	cclose(c);
 
 	return 0;
@@ -405,9 +405,9 @@ dirsetname(char *name, usize len, uint8_t *p, usize n, usize maxn)
 		return BIT16SZ;
 
 	if(len != olen)
-		memmove(oname+len, oname+olen, p+n-(uint8_t*)(oname+olen));
+		jehanne_memmove(oname+len, oname+olen, p+n-(uint8_t*)(oname+olen));
 	PBIT16((uint8_t*)(oname-2), len);
-	memmove(oname, name, len);
+	jehanne_memmove(oname, name, len);
 
 	return nn;
 }
@@ -437,12 +437,12 @@ mountrock(Chan *c, uint8_t *p, uint8_t **pe)
 	if(c->nrock+len > c->mrock){
 		n = ROUNDUP(c->nrock+len, 1024);
 		r = smalloc(n);
-		memmove(r, c->dirrock, c->nrock);
-		free(c->dirrock);
+		jehanne_memmove(r, c->dirrock, c->nrock);
+		jehanne_free(c->dirrock);
 		c->dirrock = r;
 		c->mrock = n;
 	}
-	memmove(c->dirrock+c->nrock, p, len);
+	jehanne_memmove(c->dirrock+c->nrock, p, len);
 	c->nrock += len;
 	qunlock(&c->rockqlock);
 
@@ -473,7 +473,7 @@ mountrockread(Chan *c, uint8_t *op, int32_t n, int32_t *nn)
 		dirlen = BIT16SZ+GBIT16(rp);
 		if(p+dirlen > ep)
 			break;
-		memmove(p, rp, dirlen);
+		jehanne_memmove(p, rp, dirlen);
 		p += dirlen;
 		rp += dirlen;
 	}
@@ -485,7 +485,7 @@ mountrockread(Chan *c, uint8_t *op, int32_t n, int32_t *nn)
 
 	/* shift the rest */
 	if(rp != erp)
-		memmove(c->dirrock, rp, erp-rp);
+		jehanne_memmove(c->dirrock, rp, erp-rp);
 	c->nrock = erp - rp;
 
 	*nn = p - op;
@@ -572,7 +572,7 @@ mountfix(Chan *c, uint8_t *op, int32_t n, int32_t maxn)
 				}
 			}
 			if(r != dirlen){
-				memmove(p+r, p+dirlen, rest);
+				jehanne_memmove(p+r, p+dirlen, rest);
 				dirlen = r;
 				e = p+dirlen+rest;
 			}
@@ -580,7 +580,7 @@ mountfix(Chan *c, uint8_t *op, int32_t n, int32_t maxn)
 			/*
 			 * Rewrite directory entry.
 			 */
-			memmove(p, buf, r);
+			jehanne_memmove(p, buf, r);
 
 		    Norewrite:
 			cclose(nc);
@@ -588,7 +588,7 @@ mountfix(Chan *c, uint8_t *op, int32_t n, int32_t maxn)
 		}
 	}
 	if(buf)
-		free(buf);
+		jehanne_free(buf);
 
 	if(p != e)
 		error("oops in mountfix");
@@ -792,7 +792,7 @@ sseek(int fd, int64_t offset, int whence)
 		if(c->qid.type & QTDIR)
 			error(Eisdir);
 		n = c->dev->stat(c, buf, sizeof buf);
-		if(convM2D(buf, n, &dir, nil) == 0)
+		if(jehanne_convM2D(buf, n, &dir, nil) == 0)
 			error("internal error: stat error in seek");
 		offset += dir.length;
 		c->offset = offset;
@@ -835,10 +835,10 @@ validstat(uint8_t *s, usize n)
 	s += BIT16SZ;
 	if(m+1 > sizeof buf)
 		return;
-	memmove(buf, s, m);
+	jehanne_memmove(buf, s, m);
 	buf[m] = '\0';
 	/* name could be '/' */
-	if(strcmp(buf, "/") != 0)
+	if(jehanne_strcmp(buf, "/") != 0)
 		validname(buf, 0);
 }
 
@@ -852,7 +852,7 @@ pathlast(Path *p)
 		return nil;
 	if(p->len == 0)
 		return nil;
-	s = strrchr(p->s, '/');
+	s = jehanne_strrchr(p->s, '/');
 	if(s)
 		return s+1;
 	return p->s;
@@ -915,7 +915,7 @@ bindmount(int dc, int fd, int afd, char* arg0, char* arg1, int flag, char* spec)
 		validaddr(spec, 1, 0);
 		spec = validnamedup(spec, 1);
 		if(waserror()){
-			free(spec);
+			jehanne_free(spec);
 			nexterror();
 		}
 		if (! checkdc(dc))
@@ -968,7 +968,7 @@ bindmount(int dc, int fd, int afd, char* arg0, char* arg1, int flag, char* spec)
 	if(dc){
 		fdclose(fd, 0);
 		poperror();
-		free(spec);
+		jehanne_free(spec);
 	}
 	return i;
 }

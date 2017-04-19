@@ -7,9 +7,9 @@ rsapuballoc(void)
 {
 	RSApub *rsa;
 
-	rsa = mallocz(sizeof(*rsa), 1);
+	rsa = jehanne_mallocz(sizeof(*rsa), 1);
 	if(rsa == nil)
-		sysfatal("rsapuballoc");
+		jehanne_sysfatal("rsapuballoc");
 	return rsa;
 }
 
@@ -20,7 +20,7 @@ rsapubfree(RSApub *rsa)
 		return;
 	mpfree(rsa->ek);
 	mpfree(rsa->n);
-	free(rsa);
+	jehanne_free(rsa);
 }
 
 
@@ -29,9 +29,9 @@ rsaprivalloc(void)
 {
 	RSApriv *rsa;
 
-	rsa = mallocz(sizeof(*rsa), 1);
+	rsa = jehanne_mallocz(sizeof(*rsa), 1);
 	if(rsa == nil)
-		sysfatal("rsaprivalloc");
+		jehanne_sysfatal("rsaprivalloc");
 	return rsa;
 }
 
@@ -48,5 +48,5 @@ rsaprivfree(RSApriv *rsa)
 	mpfree(rsa->kp);
 	mpfree(rsa->kq);
 	mpfree(rsa->c2);
-	free(rsa);
+	jehanne_free(rsa);
 }

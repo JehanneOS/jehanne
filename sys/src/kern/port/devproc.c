@@ -182,7 +182,7 @@ procgen(Chan *c, char *name, Dirtab *tab, int _1, int s, Dir *dp)
 
 	if(c->qid.path == Qdir){
 		if(s == 0){
-			strcpy(up->genbuf, "trace");
+			jehanne_strcpy(up->genbuf, "trace");
 			mkqid(&qid, Qtrace, -1, QTFILE);
 			devdir(c, qid, up->genbuf, 0, eve, 0444, dp);
 			return 1;
@@ -190,7 +190,7 @@ procgen(Chan *c, char *name, Dirtab *tab, int _1, int s, Dir *dp)
 
 		if(name != nil){
 			/* ignore s and use name to find pid */
-			pid = strtol(name, &ename, 10);
+			pid = jehanne_strtol(name, &ename, 10);
 			if(pid<=0 || ename[0]!='\0')
 				return -1;
 			s = psindex(pid);
@@ -202,12 +202,12 @@ procgen(Chan *c, char *name, Dirtab *tab, int _1, int s, Dir *dp)
 
 		if((p = psincref(s)) == nil || (pid = p->pid) == 0)
 			return 0;
-		sprint(up->genbuf, "%d", pid);
+		jehanne_sprint(up->genbuf, "%d", pid);
 		/*
 		 * String comparison is done in devwalk so
 		 * name must match its formatted pid.
 		 */
-		if(name != nil && strcmp(name, up->genbuf) != 0)
+		if(name != nil && jehanne_strcmp(name, up->genbuf) != 0)
 			return -1;
 		mkqid(&qid, (s+1)<<QSHIFT, pid, QTDIR);
 		devdir(c, qid, up->genbuf, 0, p->user, DMDIR|0555, dp);
@@ -215,7 +215,7 @@ procgen(Chan *c, char *name, Dirtab *tab, int _1, int s, Dir *dp)
 		return 1;
 	}
 	if(c->qid.path == Qtrace){
-		strcpy(up->genbuf, "trace");
+		jehanne_strcpy(up->genbuf, "trace");
 		mkqid(&qid, Qtrace, -1, QTFILE);
 		devdir(c, qid, up->genbuf, 0, eve, 0444, dp);
 		return 1;
@@ -247,7 +247,7 @@ procgen(Chan *c, char *name, Dirtab *tab, int _1, int s, Dir *dp)
 		/* file length might be relevant to the caller to
 		 * malloc enough space in the buffer
 		 */
-		len = 1 + strlen(p->dot->path->s);
+		len = 1 + jehanne_strlen(p->dot->path->s);
 		break;
 	}
 
@@ -280,7 +280,7 @@ static void
 procinit(void)
 {
 	if(procalloc.nproc >= (1<<(16-QSHIFT))-1)
-		print("warning: too many procs for devproc\n");
+		jehanne_print("warning: too many procs for devproc\n");
 	addclock0link((void (*)(void))profclock, 113);	/* Relative prime to HZ */
 }
 
@@ -313,7 +313,7 @@ nonone(Proc *p)
 {
 	if(p == up)
 		return;
-	if(strcmp(up->user, "none") != 0)
+	if(jehanne_strcmp(up->user, "none") != 0)
 		return;
 	if(isevegroup())
 		return;
@@ -343,7 +343,7 @@ procopen(Chan *c, unsigned long omode)
 			error("already open");
 		topens++;
 		if (tevents == nil){
-			tevents = (Traceevent*)malloc(sizeof(Traceevent) * Nevents);
+			tevents = (Traceevent*)jehanne_malloc(sizeof(Traceevent) * Nevents);
 			if(tevents == nil)
 				error(Enomem);
 			tproduced = tconsumed = 0;
@@ -428,7 +428,7 @@ procopen(Chan *c, unsigned long omode)
 	case Qns:
 		if(omode != OREAD)
 			error(Eperm);
-		c->aux = malloc(sizeof(Mntwalk));
+		c->aux = jehanne_malloc(sizeof(Mntwalk));
 		break;
 
 	case Qnotepg:
@@ -447,7 +447,7 @@ procopen(Chan *c, unsigned long omode)
 			break;
 		if(omode > ORDWR)
 			error(Eperm);
-		if(strcmp(up->user, p->user) != 0	/* process owner can read/write */
+		if(jehanne_strcmp(up->user, p->user) != 0	/* process owner can read/write */
 		|| !iseve()				/* host owner can read */
 		|| (omode&OWRITE) != 0)
 			error(Eperm);
@@ -498,22 +498,22 @@ procwstat(Chan *c, uint8_t *db, long n)
 	if(waserror()){
 		qunlock(&p->debug);
 		psdecref(p);
-		free(d);
+		jehanne_free(d);
 		nexterror();
 	}
 
 	if(p->pid != PID(c->qid))
 		error(Eprocdied);
 
-	if(strcmp(up->user, p->user) != 0 && strcmp(up->user, eve) != 0)
+	if(jehanne_strcmp(up->user, p->user) != 0 && jehanne_strcmp(up->user, eve) != 0)
 		error(Eperm);
 
 	d = smalloc(sizeof(Dir)+n);
-	n = convM2D(db, n, &d[0], (char*)&d[1]);
+	n = jehanne_convM2D(db, n, &d[0], (char*)&d[1]);
 	if(n == 0)
 		error(Eshortstat);
-	if(!emptystr(d->uid) && strcmp(d->uid, p->user) != 0){
-		if(strcmp(up->user, eve) != 0)
+	if(!emptystr(d->uid) && jehanne_strcmp(d->uid, p->user) != 0){
+		if(jehanne_strcmp(up->user, eve) != 0)
 			error(Eperm);
 		else
 			kstrdup(&p->user, d->uid);
@@ -524,7 +524,7 @@ procwstat(Chan *c, uint8_t *db, long n)
 	poperror();
 	qunlock(&p->debug);
 	psdecref(p);
-	free(d);
+	jehanne_free(d);
 
 	return n;
 }
@@ -536,7 +536,7 @@ procoffset(long offset, char *va, int *np)
 	if(offset > 0) {
 		offset -= *np;
 		if(offset < 0) {
-			memmove(va, va+*np+offset, -offset);
+			jehanne_memmove(va, va+*np+offset, -offset);
 			*np = -offset;
 		}
 		else
@@ -550,7 +550,7 @@ procqidwidth(Chan *c)
 {
 	char buf[32];
 
-	return sprint(buf, "%lud", c->qid.vers);
+	return jehanne_sprint(buf, "%lud", c->qid.vers);
 }
 
 static int
@@ -559,7 +559,7 @@ _procfdprint(Chan *c, int fd, int w, char *s, int ns, char * modestr)
 	int n;
 	if(w == 0)
 		w = procqidwidth(c);
-	n = snprint(s, ns, "%3d %.2s %C %4ud (%.16llux %*lud %.2ux) %5ld %8lld %s\n",
+	n = jehanne_snprint(s, ns, "%3d %.2s %C %4ud (%.16llux %*lud %.2ux) %5ld %8lld %s\n",
 		fd,
 		&modestr[(c->mode&3)<<1],
 		c->dev->dc, c->devno,
@@ -602,7 +602,7 @@ procfds(Proc *p, char *va, int count, long offset)
 	}
 
 	n = readstr(0, a, count, p->dot->path->s);
-	n += snprint(a+n, count-n, "\n");
+	n += jehanne_snprint(a+n, count-n, "\n");
 	offset = procoffset(offset, a, &n);
 	/* compute width of qid.path */
 	w = 0;
@@ -633,7 +633,7 @@ procfds(Proc *p, char *va, int count, long offset)
 	qunlock(&p->debug);
 
 	/* copy result to user space, now that locks are released */
-	memmove(va, buf, n);
+	jehanne_memmove(va, buf, n);
 
 	return n;
 }
@@ -654,7 +654,7 @@ procclose(Chan * c)
 		break;
 	case Qns:
 		if(c->aux != nil)
-			free(c->aux);
+			jehanne_free(c->aux);
 		break;
 	case Qsyscall:
 		if((p = psincref(SLOT(c->qid))) != nil){
@@ -703,8 +703,8 @@ procargs(Proc *p, char *buf, int nbuf)
 	if(args == nil)
 		return 0;
 	if(p->setargs){
-		snprint(buf, nbuf, "%s [%s]", p->text, args[0]);
-		return strlen(buf);
+		jehanne_snprint(buf, nbuf, "%s [%s]", p->text, args[0]);
+		return jehanne_strlen(buf);
 	}
 	e = buf + nbuf;
 
@@ -723,7 +723,7 @@ procargs(Proc *p, char *buf, int nbuf)
 	 */
 	page = segment_page(s, USTKTOP - PGSZ);
 	if(page == 0){
-		buf = seprint(buf, e, "cannot print args for %s %d: stack gone", p->text, p->pid);
+		buf = jehanne_seprint(buf, e, "cannot print args for %s %d: stack gone", p->text, p->pid);
 		goto ArgsPrinted;
 	}
 
@@ -734,9 +734,9 @@ procargs(Proc *p, char *buf, int nbuf)
 			break;
 		argaddr = (uintptr_t)args[i];
 		if(argaddr > USTKTOP || argaddr < USTKTOP - PGSZ || argaddr < (uintptr_t)args[p->nargs-1]){
-			buf = seprint(buf, e, i?" *%#p":"*%#p", args[i]);
+			buf = jehanne_seprint(buf, e, i?" *%#p":"*%#p", args[i]);
 		} else {
-			buf = seprint(buf, e, i?" %q":"%q", pbase + (argaddr&(PGSZ-1)));
+			buf = jehanne_seprint(buf, e, i?" %q":"%q", pbase + (argaddr&(PGSZ-1)));
 		}
 	}
 
@@ -789,7 +789,7 @@ procread(Chan *c, void *va, long n, int64_t off)
 			else
 				ne = navail;
 			i = ne * sizeof(Traceevent);
-			memmove(rptr, &tevents[tconsumed & Emask], i);
+			jehanne_memmove(rptr, &tevents[tconsumed & Emask], i);
 
 			tconsumed += ne;
 			rptr += i;
@@ -818,7 +818,7 @@ procread(Chan *c, void *va, long n, int64_t off)
 			return 0;
 		if(offset+n > j)
 			n = j-offset;
-		memmove(va, &up->genbuf[offset], n);
+		jehanne_memmove(va, &up->genbuf[offset], n);
 		return n;
 
 	case Qsyscall:
@@ -841,7 +841,7 @@ procread(Chan *c, void *va, long n, int64_t off)
 		if(offset < PTR2UINT(end)) {
 			if(offset+n > PTR2UINT(end))
 				n = PTR2UINT(end) - offset;
-			memmove(va, UINT2PTR(offset), n);
+			jehanne_memmove(va, UINT2PTR(offset), n);
 			psdecref(p);
 			return n;
 		}
@@ -854,7 +854,7 @@ procread(Chan *c, void *va, long n, int64_t off)
 		/* plimit-1 because plimit might be zero (address space top) */
 		if(paddr+n >= plimit-1)
 			n = plimit - paddr;
-		memmove(va, UINT2PTR(offset), n);
+		jehanne_memmove(va, UINT2PTR(offset), n);
 		psdecref(p);
 		return n;
 
@@ -872,14 +872,14 @@ procread(Chan *c, void *va, long n, int64_t off)
 		if(p->nnote == 0)
 			n = 0;
 		else {
-			i = strlen(p->note[0].msg) + 1;
+			i = jehanne_strlen(p->note[0].msg) + 1;
 			if(i > n)
 				i = n;
 			rptr = va;
-			memmove(rptr, p->note[0].msg, i);
+			jehanne_memmove(rptr, p->note[0].msg, i);
 			rptr[i-1] = '\0';
 			p->nnote--;
-			memmove(p->note, p->note+1, p->nnote*sizeof(Note));
+			jehanne_memmove(p->note, p->note+1, p->nnote*sizeof(Note));
 			n = i;
 		}
 		if(p->nnote == 0)
@@ -896,7 +896,7 @@ procread(Chan *c, void *va, long n, int64_t off)
 		}
 		if(offset+n > sizeof(Proc))
 			n = sizeof(Proc) - offset;
-		memmove(va, ((char*)p)+offset, n);
+		jehanne_memmove(va, ((char*)p)+offset, n);
 		psdecref(p);
 		return n;
 
@@ -914,12 +914,12 @@ procread(Chan *c, void *va, long n, int64_t off)
 		}
 		if(offset+n > rsize)
 			n = rsize - offset;
-		memmove(va, rptr+offset, n);
+		jehanne_memmove(va, rptr+offset, n);
 		psdecref(p);
 		return n;
 
 	case Qkregs:
-		memset(&kur, 0, sizeof(Ureg));
+		jehanne_memset(&kur, 0, sizeof(Ureg));
 		setkernur(&kur, p);
 		rptr = (uint8_t*)&kur;
 		rsize = sizeof(Ureg);
@@ -941,8 +941,8 @@ procread(Chan *c, void *va, long n, int64_t off)
 		sps = p->psstate;
 		if(sps == 0)
 			sps = statename[p->state];
-		memset(statbuf, ' ', sizeof statbuf);
-		sprint(statbuf, "%-*.*s%-*.*s%-12.11s",
+		jehanne_memset(statbuf, ' ', sizeof statbuf);
+		jehanne_sprint(statbuf, "%-*.*s%-*.*s%-12.11s",
 			KNAMELEN, KNAMELEN-1, p->text,
 			KNAMELEN, KNAMELEN-1, p->user,
 			sps);
@@ -972,7 +972,7 @@ procread(Chan *c, void *va, long n, int64_t off)
 		statbuf[j++] = '\n';
 		if(offset+n > j)
 			n = j-offset;
-		memmove(va, statbuf+offset, n);
+		jehanne_memmove(va, statbuf+offset, n);
 		psdecref(p);
 		return n;
 
@@ -982,7 +982,7 @@ procread(Chan *c, void *va, long n, int64_t off)
 			sg = p->seg[i];
 			if(sg == 0)
 				continue;
-			j += sprint(statbuf+j, "%-6s %c%c %p %p %4d\n",
+			j += jehanne_sprint(statbuf+j, "%-6s %c%c %p %p %4d\n",
 				segment_name(sg),
 				!(sg->type&SgWrite) ? 'R' : ' ',
 				(sg->type&SgExecute) ? 'x' : ' ',
@@ -996,7 +996,7 @@ procread(Chan *c, void *va, long n, int64_t off)
 			n = j-offset;
 		if(n == 0 && offset == 0)
 			exhausted("segments");
-		memmove(va, &statbuf[offset], n);
+		jehanne_memmove(va, &statbuf[offset], n);
 		return n;
 
 	case Qwait:
@@ -1032,11 +1032,11 @@ procread(Chan *c, void *va, long n, int64_t off)
 		poperror();
 		qunlock(&p->qwaitr);
 		psdecref(p);
-		n = snprint(va, n, "%d %lud %lud %lud %q",
+		n = jehanne_snprint(va, n, "%d %lud %lud %lud %q",
 			wq->w.pid,
 			wq->w.time[TUser], wq->w.time[TSys], wq->w.time[TReal],
 			wq->w.msg);
-		free(wq);
+		jehanne_free(wq);
 		return n;
 
 	case Qns:
@@ -1058,21 +1058,21 @@ procread(Chan *c, void *va, long n, int64_t off)
 		mntscan(mw, p);
 		if(mw->mh == 0){
 			mw->cddone = 1;
-			i = snprint(va, n, "cd %s\n", p->dot->path->s);
+			i = jehanne_snprint(va, n, "cd %s\n", p->dot->path->s);
 			poperror();
 			qunlock(&p->debug);
 			psdecref(p);
 			return i;
 		}
 		int2flag(mw->cm->mflag, flag);
-		if(strcmp(mw->cm->to->path->s, "#9") == 0){
+		if(jehanne_strcmp(mw->cm->to->path->s, "#9") == 0){
 			srv = srvname(mw->cm->to->mchan);
-			i = snprint(va, n, "mount %s %s %s %s\n", flag,
+			i = jehanne_snprint(va, n, "mount %s %s %s %s\n", flag,
 				srv==nil? mw->cm->to->mchan->path->s : srv,
 				mw->mh->from->path->s, mw->cm->spec? mw->cm->spec : "");
-			free(srv);
+			jehanne_free(srv);
 		}else
-			i = snprint(va, n, "bind %s %s %s\n", flag,
+			i = jehanne_snprint(va, n, "bind %s %s %s\n", flag,
 				mw->cm->to->path->s, mw->mh->from->path->s);
 		poperror();
 		qunlock(&p->debug);
@@ -1173,17 +1173,17 @@ procwrite(Chan *c, void *va, long n, int64_t off)
 			error(Eshort);
 		if(n >= ERRMAX)
 			error(Etoobig);
-		memmove(buf, va, n);
-		args = malloc(sizeof(char*)+n+1);
+		jehanne_memmove(buf, va, n);
+		args = jehanne_malloc(sizeof(char*)+n+1);
 		if(args == nil)
 			error(Enomem);
 		args[0] = ((char*)args)+sizeof(char*);
-		memmove(args[0], buf, n);
+		jehanne_memmove(args[0], buf, n);
 		l = n;
 		if(args[0][l-1] != 0)
 			args[0][l++] = 0;
 		if(p->setargs)	/* setargs == 0 => args in stack from sysexec */
-			free(p->args);
+			jehanne_free(p->args);
 		p->nargs = l;
 		p->args = args;
 		p->setargs = 1;
@@ -1219,13 +1219,13 @@ procwrite(Chan *c, void *va, long n, int64_t off)
 			error(Eperm);
 		if(n >= ERRMAX-1)
 			error(Etoobig);
-		memmove(buf, va, n);
+		jehanne_memmove(buf, va, n);
 		buf[n] = 0;
 		if(!postnote(p, 0, buf, NUser))
 			error("note not posted");
 		break;
 	case Qnoteid:
-		id = atoi(va);
+		id = jehanne_atoi(va);
 		if(id == p->pid) {
 			p->noteid = id;
 			break;
@@ -1235,7 +1235,7 @@ procwrite(Chan *c, void *va, long n, int64_t off)
 				psdecref(t);
 				continue;
 			}
-			if(strcmp(p->user, t->user) != 0){
+			if(jehanne_strcmp(p->user, t->user) != 0){
 				psdecref(t);
 				error(Eperm);
 			}
@@ -1389,7 +1389,7 @@ procctlreq(Proc *p, char *va, int n)
 
 	cb = parsecmd(va, n);
 	if(waserror()){
-		free(cb);
+		jehanne_free(cb);
 		nexterror();
 	}
 
@@ -1397,7 +1397,7 @@ procctlreq(Proc *p, char *va, int n)
 
 	switch(ct->index){
 	case CMclose:
-		procctlclosefiles(p, 0, atoi(cb->f[1]));
+		procctlclosefiles(p, 0, jehanne_atoi(cb->f[1]));
 		break;
 	case CMclosefiles:
 		procctlclosefiles(p, 1, 0);
@@ -1415,13 +1415,13 @@ procctlreq(Proc *p, char *va, int n)
 		/* obsolete */
 		break;
 	case CMpri:
-		pri = atoi(cb->f[1]);
+		pri = jehanne_atoi(cb->f[1]);
 		if(pri > PriNormal && !iseve())
 			error(Eperm);
 		procpriority(p, pri, 0);
 		break;
 	case CMfixedpri:
-		pri = atoi(cb->f[1]);
+		pri = jehanne_atoi(cb->f[1]);
 		if(pri > PriNormal && !iseve())
 			error(Eperm);
 		procpriority(p, pri, 1);
@@ -1455,7 +1455,7 @@ procctlreq(Proc *p, char *va, int n)
 		procstopwait(p, 0);
 		break;
 	case CMwired:
-		procwired(p, atoi(cb->f[1]));
+		procwired(p, jehanne_atoi(cb->f[1]));
 		break;
 	case CMtrace:
 		switch(cb->nf){
@@ -1463,7 +1463,7 @@ procctlreq(Proc *p, char *va, int n)
 			p->trace ^= 1;
 			break;
 		case 2:
-			p->trace = (atoi(cb->f[1]) != 0);
+			p->trace = (jehanne_atoi(cb->f[1]) != 0);
 			break;
 		default:
 			error("args");
@@ -1472,7 +1472,7 @@ procctlreq(Proc *p, char *va, int n)
 	}
 
 	poperror();
-	free(cb);
+	jehanne_free(cb);
 }
 
 static int
@@ -1520,10 +1520,10 @@ procctlmemio(Proc *p, uintptr_t offset, int n, void *va, int read)
 		/* caller is reading: the destination buffer is at va
 		 * and it can fault if not yet loaded
 		 */
-		memmove(va, b, n);
+		jehanne_memmove(va, b, n);
 	} else {
 		/* caller is writing: the source buffer is at va */
-		memmove(b, va, n);
+		jehanne_memmove(b, va, n);
 	}
 	poperror();
 	page_kunmap(page, &k);

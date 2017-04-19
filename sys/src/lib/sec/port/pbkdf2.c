@@ -22,13 +22,13 @@ pbkdf2_x(p, plen, s, slen, rounds, d, dlen, x, xlen)
 		tmp[0] = i >> 24;
 		ds = (*x)(s, slen, p, plen, nil, nil);
 		(*x)(tmp, 4, p, plen, block, ds);
-		memmove(tmp, block, xlen);
+		jehanne_memmove(tmp, block, xlen);
 		for(j = 1; j < rounds; j++){
 			(*x)(tmp, xlen, p, plen, tmp, nil);
 			for(k=0; k<xlen; k++)
 				block[k] ^= tmp[k];
 		}
 		n = dlen > xlen ? xlen : dlen;
-		memmove(d, block, n); 
+		jehanne_memmove(d, block, n); 
 	}
 }

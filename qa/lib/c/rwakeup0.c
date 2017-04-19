@@ -16,7 +16,7 @@
  * along with Jehanne.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 
 /* verify that rwakeup returns 0 on Rendez that has already been awaken */
 

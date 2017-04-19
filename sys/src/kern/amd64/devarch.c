@@ -68,19 +68,19 @@ addarchfile(char *name, int perm, Rdwrfn *rdfn, Rdwrfn *wrfn)
 	Dirtab d;
 	Dirtab *dp;
 
-	memset(&d, 0, sizeof d);
-	strcpy(d.name, name);
+	jehanne_memset(&d, 0, sizeof d);
+	jehanne_strcpy(d.name, name);
 	d.perm = perm;
 
 	lock(&archwlock);
 	if(narchdir >= Qmax){
 		unlock(&archwlock);
-		print("addarchfile: out of entries for %s\n", name);
+		jehanne_print("addarchfile: out of entries for %s\n", name);
 		return nil;
 	}
 
 	for(i=0; i<narchdir; i++)
-		if(strcmp(archdir[i].name, name) == 0){
+		if(jehanne_strcmp(archdir[i].name, name) == 0){
 			unlock(&archwlock);
 			return nil;
 		}
@@ -120,14 +120,14 @@ ioinit(void)
 			char *ends;
 			int io_s, io_e;
 
-			io_s = (int)strtol(s, &ends, 0);
+			io_s = (int)jehanne_strtol(s, &ends, 0);
 			if (ends == nil || ends == s || *ends != '-') {
-				print("ioinit: cannot parse option string\n");
+				jehanne_print("ioinit: cannot parse option string\n");
 				break;
 			}
 			s = ++ends;
 
-			io_e = (int)strtol(s, &ends, 0);
+			io_e = (int)jehanne_strtol(s, &ends, 0);
 			if (ends && *ends == ',')
 				*ends++ = '\0';
 			s = ends;
@@ -170,7 +170,7 @@ ioreserve(int _1, int size, int align, char *tag)
 	}
 	map = iomap.free;
 	if(map == nil){
-		print("ioalloc: out of maps");
+		jehanne_print("ioalloc: out of maps");
 		unlock(&iomap);
 		return port;
 	}
@@ -179,7 +179,7 @@ ioreserve(int _1, int size, int align, char *tag)
 	map->start = port;
 	map->end = port + size;
 	map->reserved = 1;
-	strncpy(map->tag, tag, sizeof(map->tag));
+	jehanne_strncpy(map->tag, tag, sizeof(map->tag));
 	map->tag[sizeof(map->tag)-1] = 0;
 	*l = map;
 
@@ -243,7 +243,7 @@ ioalloc(int port, int size, int align, char *tag)
 	}
 	map = iomap.free;
 	if(map == nil){
-		print("ioalloc: out of maps");
+		jehanne_print("ioalloc: out of maps");
 		unlock(&iomap);
 		return port;
 	}
@@ -251,7 +251,7 @@ ioalloc(int port, int size, int align, char *tag)
 	map->next = *l;
 	map->start = port;
 	map->end = port + size;
-	strncpy(map->tag, tag, sizeof(map->tag));
+	jehanne_strncpy(map->tag, tag, sizeof(map->tag));
 	map->tag[sizeof(map->tag)-1] = 0;
 	*l = map;
 
@@ -402,7 +402,7 @@ archread(Chan *c, void *a, long n, int64_t offset)
 		break;
 	}
 
-	if((buf = malloc(n)) == nil)
+	if((buf = jehanne_malloc(n)) == nil)
 		error(Enomem);
 	p = buf;
 	n = n/Linelen;
@@ -412,15 +412,15 @@ archread(Chan *c, void *a, long n, int64_t offset)
 	for(map = iomap.map; n > 0 && map != nil; map = map->next){
 		if(offset-- > 0)
 			continue;
-		sprint(p, "%#8lux %#8lux %-12.12s\n", map->start, map->end-1, map->tag);
+		jehanne_sprint(p, "%#8lux %#8lux %-12.12s\n", map->start, map->end-1, map->tag);
 		p += Linelen;
 		n--;
 	}
 	unlock(&iomap);
 
 	n = p - buf;
-	memmove(a, buf, n);
-	free(buf);
+	jehanne_memmove(a, buf, n);
+	jehanne_free(buf);
 
 	return n;
 }
@@ -514,7 +514,7 @@ cputyperead(Chan* _1, void *a, long n, int64_t off)
 {
 	char str[32];
 
-	snprint(str, sizeof(str), "%s %ud\n", "AMD64", m->cpumhz);
+	jehanne_snprint(str, sizeof(str), "%s %ud\n", "AMD64", m->cpumhz);
 	return readstr(off, a, n, str);
 }
 
@@ -522,7 +522,7 @@ static long
 numcoresread(Chan* c, void *a, long n, int64_t off)
 {
 	char buf[8];
-	snprint(buf, 8, "%d\n", sys->nmach);
+	jehanne_snprint(buf, 8, "%d\n", sys->nmach);
 	return readstr(off, a, n, buf);
 }
 
@@ -550,7 +550,7 @@ archreset(void)
 	 * The reset register (0xcf9) is usually in one of the bridge
 	 * chips. The actual location and sequence could be extracted from
 	 * ACPI but why bother, this is the end of the line anyway.
-	print("Takes a licking and keeps on ticking...\n");
+	jehanne_print("Takes a licking and keeps on ticking...\n");
 	 */
 	*(uint16_t*)KADDR(0x472) = 0x1234;	/* BIOS warm-boot flag */
 	i = inb(0xcf9);					/* ICHx reset control */

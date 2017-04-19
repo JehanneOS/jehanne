@@ -51,17 +51,17 @@ writememimage(int fd, Memimage *i)
 	r = i->r;
 	bpl = bytesperline(r, i->depth);
 	n = Dy(r)*bpl;
-	data = malloc(n);
+	data = jehanne_malloc(n);
 	ncblock = _compblocksize(r, i->depth);
-	outbuf = malloc(ncblock);
-	hash = malloc(NHASH*sizeof(Hlist));
-	chain = malloc(NMEM*sizeof(Hlist));
+	outbuf = jehanne_malloc(ncblock);
+	hash = jehanne_malloc(NHASH*sizeof(Hlist));
+	chain = jehanne_malloc(NMEM*sizeof(Hlist));
 	if(data == 0 || outbuf == 0 || hash == 0 || chain == 0){
 	ErrOut:
-		free(data);
-		free(outbuf);
-		free(hash);
-		free(chain);
+		jehanne_free(data);
+		jehanne_free(outbuf);
+		jehanne_free(hash);
+		jehanne_free(chain);
 		return -1;
 	}
 	for(miny = r.min.y; miny != r.max.y; miny += dy){
@@ -73,7 +73,7 @@ writememimage(int fd, Memimage *i)
 		if(nb != dy*bpl)
 			goto ErrOut;
 	}
-	sprint(hdr, "compressed\n%11s %11d %11d %11d %11d ",
+	jehanne_sprint(hdr, "compressed\n%11s %11d %11d %11d %11d ",
 		chantostr(cbuf, i->chan), r.min.x, r.min.y, r.max.x, r.max.y);
 	if(write(fd, hdr, 11+5*12) != 11+5*12)
 		goto ErrOut;
@@ -82,8 +82,8 @@ writememimage(int fd, Memimage *i)
 	line = data;
 	r.max.y = r.min.y;
 	while(line != edata){
-		memset(hash, 0, NHASH*sizeof(Hlist));
-		memset(chain, 0, NMEM*sizeof(Hlist));
+		jehanne_memset(hash, 0, NHASH*sizeof(Hlist));
+		jehanne_memset(chain, 0, NMEM*sizeof(Hlist));
 		cp = chain;
 		h = 0;
 		outp = outbuf;
@@ -127,7 +127,7 @@ writememimage(int fd, Memimage *i)
 						if(eout-outp < ndump+1)
 							goto Bfull;
 						*outp++ = ndump-1+128;
-						memmove(outp, dumpbuf, ndump);
+						jehanne_memmove(outp, dumpbuf, ndump);
 						outp += ndump;
 						ndump = 0;
 					}
@@ -139,7 +139,7 @@ writememimage(int fd, Memimage *i)
 						if(eout-outp < ndump+1)
 							goto Bfull;
 						*outp++ = ndump-1+128;
-						memmove(outp, dumpbuf, ndump);
+						jehanne_memmove(outp, dumpbuf, ndump);
 						outp += ndump;
 						ndump = 0;
 					}
@@ -168,7 +168,7 @@ writememimage(int fd, Memimage *i)
 				if(eout-outp < ndump+1)
 					goto Bfull;
 				*outp++ = ndump-1+128;
-				memmove(outp, dumpbuf, ndump);
+				jehanne_memmove(outp, dumpbuf, ndump);
 				outp += ndump;
 			}
 			line = eline;
@@ -179,14 +179,14 @@ writememimage(int fd, Memimage *i)
 		if(loutp == outbuf)
 			goto ErrOut;
 		n = loutp-outbuf;
-		sprint(hdr, "%11d %11ld ", r.max.y, n);
+		jehanne_sprint(hdr, "%11d %11ld ", r.max.y, n);
 		write(fd, hdr, 2*12);
 		write(fd, outbuf, n);
 		r.min.y = r.max.y;
 	}
-	free(data);
-	free(outbuf);
-	free(hash);
-	free(chain);
+	jehanne_free(data);
+	jehanne_free(outbuf);
+	jehanne_free(hash);
+	jehanne_free(chain);
 	return 0;
 }

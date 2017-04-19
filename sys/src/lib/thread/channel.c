@@ -45,17 +45,17 @@ _chanfree(Channel *c)
 		c->freed = 1;
 	else{
 		if(c->qentry)
-			free(c->qentry);
-		free(c);
+			jehanne_free(c->qentry);
+		jehanne_free(c);
 	}
 }
 
 void
 chanfree(Channel *c)
 {
-	lock(&chanlock);
+	jehanne_lock(&chanlock);
 	_chanfree(c);
-	unlock(&chanlock);
+	jehanne_unlock(&chanlock);
 }
 
 int
@@ -114,7 +114,7 @@ alt(Alt *alts)
 	if(t->moribund || _threadexitsallstatus)
 		yield();	/* won't return */
 	s = _procsplhi();
-	lock(&chanlock);
+	jehanne_lock(&chanlock);
 	t->alt = alts;
 	t->chan = Chanalt;
 
@@ -129,14 +129,14 @@ alt(Alt *alts)
 
 		c = xa->c;
 		if(c==nil){
-			unlock(&chanlock);
+			jehanne_unlock(&chanlock);
 			_procsplx(s);
 			t->chan = Channone;
 			return -1;
 		}
 
 		if(isopenfor((Channel*)c, xa->op) && canexec(xa))
-			if(nrand(++n) == 0)
+			if(jehanne_nrand(++n) == 0)
 				a = xa;
 	}
 
@@ -144,7 +144,7 @@ alt(Alt *alts)
 	if(a==nil){
 		/* nothing can proceed */
 		if(xa->op == CHANNOBLK){
-			unlock(&chanlock);
+			jehanne_unlock(&chanlock);
 			_procsplx(s);
 			t->chan = Channone;
 			if(xa->op == CHANNOBLK)
@@ -171,13 +171,13 @@ alt(Alt *alts)
 			if(ca != nil){
 				/* everything was closed, select last channel */
 				ca->err = errcl;
-				unlock(&chanlock);
+				jehanne_unlock(&chanlock);
 				_procsplx(s);
 				t->chan = Channone;
 				return ca - alts;
 			} else if(allreadycl){
 				/* everything was already closed */
-				unlock(&chanlock);
+				jehanne_unlock(&chanlock);
 				_procsplx(s);
 				t->chan = Channone;
 				return -1;
@@ -192,11 +192,11 @@ alt(Alt *alts)
 		 * and we flag an error for the entry.
 		 */
 	    Again:
-		unlock(&chanlock);
+		jehanne_unlock(&chanlock);
 		_procsplx(s);
 		r = _threadrendezvous(&c, 0);
 		s = _procsplhi();
-		lock(&chanlock);
+		jehanne_lock(&chanlock);
 
 		if(r==Intred){		/* interrupted */
 			if(c!=nil)	/* someone will meet us; go back */
@@ -217,7 +217,7 @@ alt(Alt *alts)
 			}
 			dequeue(xa);
 		}
-		unlock(&chanlock);
+		jehanne_unlock(&chanlock);
 		_procsplx(s);
 		if(a == nil){	/* we were interrupted */
 			assert(c==(Channel*)~0);
@@ -237,10 +237,10 @@ chanclose(Channel *c)
 	int i, s;
 
 	s = _procsplhi();	/* note handlers; see :/^alt */
-	lock(&chanlock);
+	jehanne_lock(&chanlock);
 	if(c->closed){
 		/* Already close; we fail but it's ok. don't print */
-		unlock(&chanlock);
+		jehanne_unlock(&chanlock);
 		_procsplx(s);
 		return -1;
 	}
@@ -261,18 +261,18 @@ chanclose(Channel *c)
 		if(a->op != CHANSND && (a->op != CHANRCV || c->n != 0))
 			continue;
 		*a->tag = c;
-		unlock(&chanlock);
+		jehanne_unlock(&chanlock);
 		_procsplx(s);
 		while(_threadrendezvous(a->tag, Closed) == Intred)
 			;
 		s = _procsplhi();
-		lock(&chanlock);
+		jehanne_lock(&chanlock);
 	}
 
 	c->closed = 2;		/* Fully closed */
 	if(c->freed)
 		_chanfree(c);
-	unlock(&chanlock);
+	jehanne_unlock(&chanlock);
 	_procsplx(s);
 	return 0;
 }
@@ -283,12 +283,12 @@ chanclosing(Channel *c)
 	int n, s;
 
 	s = _procsplhi();	/* note handlers; see :/^alt */
-	lock(&chanlock);
+	jehanne_lock(&chanlock);
 	if(c->closed == 0)
 		n = -1;
 	else
 		n = c->n;
-	unlock(&chanlock);
+	jehanne_unlock(&chanlock);
 	_procsplx(s);
 	return n;
 }
@@ -334,7 +334,7 @@ runop(int op, Channel *c, void *v, int nb)
 			return -1;
 		return 1;
 	default:
-		fprint(2, "ERROR: channel alt returned %d\n", r);
+		jehanne_fprint(2, "ERROR: channel alt returned %d\n", r);
 		abort();
 		return -1;
 	}
@@ -368,7 +368,7 @@ static void
 channelsize(Channel *c, int sz)
 {
 	if(c->e != sz){
-		fprint(2, "expected channel with elements of size %d, got size %d\n",
+		jehanne_fprint(2, "expected channel with elements of size %d, got size %d\n",
 			sz, c->e);
 		abort();
 	}
@@ -459,10 +459,10 @@ emptyentry(Channel *c)
 
 	extra = 16;
 	c->nentry += extra;
-	c->qentry = realloc((void*)c->qentry, c->nentry*sizeof(c->qentry[0]));
+	c->qentry = jehanne_realloc((void*)c->qentry, c->nentry*sizeof(c->qentry[0]));
 	if(c->qentry == nil)
-		sysfatal("realloc channel entries: %r");
-	memset(&c->qentry[i], 0, extra*sizeof(c->qentry[0]));
+		jehanne_sysfatal("realloc channel entries: %r");
+	jehanne_memset(&c->qentry[i], 0, extra*sizeof(c->qentry[0]));
 	return i;
 }
 
@@ -553,9 +553,9 @@ altcopy(void *dst, void *src, int sz)
 {
 	if(dst){
 		if(src)
-			memmove(dst, src, sz);
+			jehanne_memmove(dst, src, sz);
 		else
-			memset(dst, 0, sz);
+			jehanne_memset(dst, 0, sz);
 	}
 }
 
@@ -576,7 +576,7 @@ altexec(Alt *a, int spl)
 	me = a->v;
 	for(i=0; i<c->nentry; i++)
 		if(c->qentry[i] && c->qentry[i]->op==otherop && *c->qentry[i]->tag==nil)
-			if(nrand(++n) == 0)
+			if(jehanne_nrand(++n) == 0)
 				b = c->qentry[i];
 	if(b != nil){
 		_threaddebug(DBGCHAN, "rendez %s alt %p chan %p alt %p", a->op==CHANRCV?"recv":"send", a, c, b);
@@ -604,7 +604,7 @@ altexec(Alt *a, int spl)
 		}
 		*b->tag = c;	/* commits us to rendezvous */
 		_threaddebug(DBGCHAN, "unlocking the chanlock");
-		unlock(&chanlock);
+		jehanne_unlock(&chanlock);
 		_procsplx(spl);
 		_threaddebug(DBGCHAN, "chanlock is %lud",
 			     *(uint32_t*)&chanlock);
@@ -619,7 +619,7 @@ altexec(Alt *a, int spl)
 	else
 		altcopy(buf, me, c->e);
 
-	unlock(&chanlock);
+	jehanne_unlock(&chanlock);
 	_procsplx(spl);
 	return 1;
 }

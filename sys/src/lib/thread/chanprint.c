@@ -19,10 +19,10 @@ chanprint(Channel *c, char *fmt, ...)
 	int n;
 
 	va_start(arg, fmt);
-	p = vsmprint(fmt, arg);
+	p = jehanne_vsmprint(fmt, arg);
 	va_end(arg);
 	if(p == nil)
-		sysfatal("vsmprint failed: %r");
+		jehanne_sysfatal("vsmprint failed: %r");
 	n = sendp(c, p);
 	yield();	/* let recipient handle message immediately */
 	return n;

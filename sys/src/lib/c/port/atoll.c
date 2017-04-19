@@ -11,7 +11,7 @@
 #include <libc.h>
 
 int64_t
-atoll(const char *s)
+jehanne_atoll(const char *s)
 {
-	return strtoll(s, nil, 0);
+	return jehanne_strtoll(s, nil, 0);
 }

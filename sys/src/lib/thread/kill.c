@@ -20,18 +20,18 @@ threadxxxgrp(int grp, int dokill)
 	Proc *p;
 	Thread *t;
 
-	lock(&_threadpq.lock);
+	jehanne_lock(&_threadpq.lock);
 	for(p=_threadpq.head; p; p=p->next){
-		lock(&p->lock);
+		jehanne_lock(&p->lock);
 		for(t=p->threads.head; t; t=t->nextt)
 			if(t->grp == grp){
 				if(dokill)
 					t->moribund = 1;
 				tinterrupt(p, t);
 			}
-		unlock(&p->lock);
+		jehanne_unlock(&p->lock);
 	}
-	unlock(&_threadpq.lock);
+	jehanne_unlock(&_threadpq.lock);
 	_threadbreakrendez();
 }
 
@@ -41,22 +41,22 @@ threadxxx(int id, int dokill)
 	Proc *p;
 	Thread *t;
 
-	lock(&_threadpq.lock);
+	jehanne_lock(&_threadpq.lock);
 	for(p=_threadpq.head; p; p=p->next){
-		lock(&p->lock);
+		jehanne_lock(&p->lock);
 		for(t=p->threads.head; t; t=t->nextt)
 			if(t->id == id){
 				if(dokill)
 					t->moribund = 1;
 				tinterrupt(p, t);
-				unlock(&p->lock);
-				unlock(&_threadpq.lock);
+				jehanne_unlock(&p->lock);
+				jehanne_unlock(&_threadpq.lock);
 				_threadbreakrendez();
 				return;
 			}
-		unlock(&p->lock);
+		jehanne_unlock(&p->lock);
 	}
-	unlock(&_threadpq.lock);
+	jehanne_unlock(&_threadpq.lock);
 	_threaddebug(DBGNOTE, "Can't find thread to kill");
 	return;
 }
@@ -90,7 +90,7 @@ tinterrupt(Proc *p, Thread *t)
 {
 	switch(t->state){
 	case Running:
-		postnote(PNPROC, p->pid, "threadint");
+		jehanne_postnote(PNPROC, p->pid, "threadint");
 		break;
 	case Rendezvous:
 		_threadflagrendez(t);

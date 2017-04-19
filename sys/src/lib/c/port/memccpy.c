@@ -11,7 +11,7 @@
 #include	<libc.h>
 
 void*
-memccpy(void *a1, const void *a2, int c, uint32_t n)
+jehanne_memccpy(void *a1, const void *a2, int c, uint32_t n)
 {
 	uint8_t *s1;
 	const uint8_t *s2;

@@ -26,11 +26,11 @@ static char *modes[] =
 static void
 rwx(int32_t m, char *s)
 {
-	strncpy(s, modes[m], 3);
+	jehanne_strncpy(s, modes[m], 3);
 }
 
 int
-dirmodefmt(Fmt *f)
+jehanne_dirmodefmt(Fmt *f)
 {
 	static char buf[16];
 	uint32_t m;
@@ -53,5 +53,5 @@ dirmodefmt(Fmt *f)
 	rwx((m>>3)&7, buf+5);
 	rwx((m>>0)&7, buf+8);
 	buf[11] = 0;
-	return fmtstrcpy(f, buf);
+	return jehanne_fmtstrcpy(f, buf);
 }

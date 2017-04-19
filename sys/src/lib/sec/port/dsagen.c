@@ -38,7 +38,7 @@ dsagen(DSApub *opub)
 	mpsub(pub->p, mpone, exp);
 	mpdiv(exp, pub->q, exp, r);
 	if(mpcmp(r, mpzero) != 0)
-		sysfatal("dsagen foul up");
+		jehanne_sysfatal("dsagen foul up");
 	while(1){
 		mprand(bits, genrandom, g);
 		mpmod(g, pub->p, g);

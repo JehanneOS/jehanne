@@ -11,14 +11,14 @@
 #include <libc.h>
 
 char*
-utfrrune(const char *s, Rune c)
+jehanne_utfrrune(const char *s, Rune c)
 {
 	int32_t c1;
 	Rune r;
 	const char *s1;
 
 	if(c < Runesync)		/* not part of utf sequence */
-		return strrchr(s, c);
+		return jehanne_strrchr(s, c);
 
 	s1 = 0;
 	for(;;) {
@@ -31,7 +31,7 @@ utfrrune(const char *s, Rune c)
 			s++;
 			continue;
 		}
-		c1 = chartorune(&r, s);
+		c1 = jehanne_chartorune(&r, s);
 		if(r == c)
 			s1 = s;
 		s += c1;

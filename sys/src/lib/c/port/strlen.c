@@ -11,7 +11,7 @@
 #include <libc.h>
 
 int
-strlen(const char *s)
+jehanne_strlen(const char *s)
 {
-	return strchr(s, 0) - s;
+	return jehanne_strchr(s, 0) - s;
 }

@@ -15,11 +15,11 @@ static Lock fmtl;
 void
 _fmtlock(void)
 {
-	lock(&fmtl);
+	jehanne_lock(&fmtl);
 }
 
 void
 _fmtunlock(void)
 {
-	unlock(&fmtl);
+	jehanne_unlock(&fmtl);
 }

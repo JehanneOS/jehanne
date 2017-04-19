@@ -321,7 +321,7 @@ tlsgen(Chan *c, char* _1, Dirtab * _2, int _3, int s, Dir *dp)
 			nm = tr->user;
 		else
 			nm = eve;
-		snprint(up->genbuf, sizeof(up->genbuf), "%d", s);
+		jehanne_snprint(up->genbuf, sizeof(up->genbuf), "%d", s);
 		devdir(c, q, up->genbuf, 0, nm, 0555, dp);
 		unlock(&tdlock);
 		return 1;
@@ -450,7 +450,7 @@ tlsopen(Chan *c, unsigned long omode)
 		if(tr == nil)
 			error("must open connection using clone");
 		if((perm & (tr->perm>>6)) != perm
-		&& (strcmp(up->user, tr->user) != 0
+		&& (jehanne_strcmp(up->user, tr->user) != 0
 		    || (perm & tr->perm) != perm))
 			error(Eperm);
 		if(t == Qhand){
@@ -494,7 +494,7 @@ tlswstat(Chan *c, uint8_t *dp, long n)
 
 	d = nil;
 	if(waserror()){
-		free(d);
+		jehanne_free(d);
 		unlock(&tdlock);
 		nexterror();
 	}
@@ -503,11 +503,11 @@ tlswstat(Chan *c, uint8_t *dp, long n)
 	tr = tlsdevs[CONV(c->qid)];
 	if(tr == nil)
 		error(Ebadusefd);
-	if(strcmp(tr->user, up->user) != 0)
+	if(jehanne_strcmp(tr->user, up->user) != 0)
 		error(Eperm);
 
 	d = smalloc(n + sizeof *d);
-	rv = convM2D(dp, n, &d[0], (char*) &d[1]);
+	rv = jehanne_convM2D(dp, n, &d[0], (char*) &d[1]);
 	if(rv == 0)
 		error(Eshortstat);
 	if(!emptystr(d->uid))
@@ -515,7 +515,7 @@ tlswstat(Chan *c, uint8_t *dp, long n)
 	if(d->mode != (uint32_t)~0UL)
 		tr->perm = d->mode;
 
-	free(d);
+	jehanne_free(d);
 	poperror();
 	unlock(&tdlock);
 
@@ -582,8 +582,8 @@ tlsclose(Chan *c)
 		freeSec(tr->in.new);
 		freeSec(tr->out.sec);
 		freeSec(tr->out.new);
-		free(tr->user);
-		free(tr);
+		jehanne_free(tr->user);
+		jehanne_free(tr);
 		break;
 	}
 }
@@ -637,7 +637,7 @@ consume(Block **l, uint8_t *p, int n)
 		i = BLEN(b);
 		if(i > n)
 			i = n;
-		memmove(p, b->rp, i);
+		jehanne_memmove(p, b->rp, i);
 		b->rp += i;
 		p += i;
 		if(BLEN(b) < 0)
@@ -662,13 +662,13 @@ regurgitate(TlsRec *s, uint8_t *p, int n)
 	b = s->unprocessed;
 	if(s->unprocessed == nil || b->rp - b->base < n) {
 		b = allocb(n);
-		memmove(b->wp, p, n);
+		jehanne_memmove(b->wp, p, n);
 		b->wp += n;
 		b->next = s->unprocessed;
 		s->unprocessed = b;
 	} else {
 		b->rp -= n;
-		memmove(b->rp, p, n);
+		jehanne_memmove(b->rp, p, n);
 	}
 }
 
@@ -732,7 +732,7 @@ tlsrecread(TlsRec *tr)
 
 	nconsumed = 0;
 	if(waserror()){
-		if(strcmp(up->errstr, Eintr) == 0 && !waserror()){
+		if(jehanne_strcmp(up->errstr, Eintr) == 0 && !waserror()){
 			regurgitate(tr, header, nconsumed);
 			poperror();
 		}else
@@ -806,7 +806,7 @@ if(tr->debug) pdump(unpad_len, p, "decrypted:");
 		(*tr->packMac)(in->sec, in->sec->mackey, seq, header, p, len, hmac);
 		if(unpad_len < in->sec->maclen)
 			rcvError(tr, EBadRecordMac, "short record mac");
-		if(memcmp(hmac, p+len, in->sec->maclen) != 0)
+		if(jehanne_memcmp(hmac, p+len, in->sec->maclen) != 0)
 			rcvError(tr, EBadRecordMac, "record mac mismatch");
 		b->wp = b->rp + len;
 	}
@@ -965,7 +965,7 @@ rcvError(TlsRec *tr, int err, char *fmt, ...)
 	va_list arg;
 
 	va_start(arg, fmt);
-	vseprint(msg, msg+sizeof(msg), fmt, arg);
+	jehanne_vseprint(msg, msg+sizeof(msg), fmt, arg);
 	va_end(arg);
 if(tr->debug) pprint("rcvError: %s\n", msg);
 
@@ -993,14 +993,14 @@ alertHand(TlsRec *tr, char *msg)
 	tr->hqref++;
 	unlock(&tr->hqlock);
 
-	n = strlen(msg);
+	n = jehanne_strlen(msg);
 	if(waserror()){
 		dechandq(tr);
 		nexterror();
 	}
 	b = allocb(n + 2);
 	*b->wp++ = RAlert;
-	memmove(b->wp, msg, n + 1);
+	jehanne_memmove(b->wp, msg, n + 1);
 	b->wp += n + 1;
 
 	qbwrite(tr->handq, b);
@@ -1136,37 +1136,37 @@ tlsread(Chan *c, void *a, long n, int64_t off)
 		qlock(&tr->out.seclock);
 		s = buf;
 		e = buf + Statlen;
-		s = seprint(s, e, "State: %s\n", tlsstate(tr->state));
-		s = seprint(s, e, "Version: %#x\n", tr->version);
+		s = jehanne_seprint(s, e, "State: %s\n", tlsstate(tr->state));
+		s = jehanne_seprint(s, e, "Version: %#x\n", tr->version);
 		if(tr->in.sec != nil)
-			s = seprint(s, e, "EncIn: %s\nHashIn: %s\n", tr->in.sec->encalg, tr->in.sec->hashalg);
+			s = jehanne_seprint(s, e, "EncIn: %s\nHashIn: %s\n", tr->in.sec->encalg, tr->in.sec->hashalg);
 		if(tr->in.new != nil)
-			s = seprint(s, e, "NewEncIn: %s\nNewHashIn: %s\n", tr->in.new->encalg, tr->in.new->hashalg);
+			s = jehanne_seprint(s, e, "NewEncIn: %s\nNewHashIn: %s\n", tr->in.new->encalg, tr->in.new->hashalg);
 		if(tr->out.sec != nil)
-			s = seprint(s, e, "EncOut: %s\nHashOut: %s\n", tr->out.sec->encalg, tr->out.sec->hashalg);
+			s = jehanne_seprint(s, e, "EncOut: %s\nHashOut: %s\n", tr->out.sec->encalg, tr->out.sec->hashalg);
 		if(tr->out.new != nil)
-			seprint(s, e, "NewEncOut: %s\nNewHashOut: %s\n", tr->out.new->encalg, tr->out.new->hashalg);
+			jehanne_seprint(s, e, "NewEncOut: %s\nNewHashOut: %s\n", tr->out.new->encalg, tr->out.new->hashalg);
 		qunlock(&tr->in.seclock);
 		qunlock(&tr->out.seclock);
 		n = readstr(offset, a, n, buf);
-		free(buf);
+		jehanne_free(buf);
 		return n;
 	case Qstats:
 		buf = smalloc(Statlen);
 		s = buf;
 		e = buf + Statlen;
-		s = seprint(s, e, "DataIn: %lld\n", tr->datain);
-		s = seprint(s, e, "DataOut: %lld\n", tr->dataout);
-		s = seprint(s, e, "HandIn: %lld\n", tr->handin);
-		seprint(s, e, "HandOut: %lld\n", tr->handout);
+		s = jehanne_seprint(s, e, "DataIn: %lld\n", tr->datain);
+		s = jehanne_seprint(s, e, "DataOut: %lld\n", tr->dataout);
+		s = jehanne_seprint(s, e, "HandIn: %lld\n", tr->handin);
+		jehanne_seprint(s, e, "HandOut: %lld\n", tr->handout);
 		n = readstr(offset, a, n, buf);
-		free(buf);
+		jehanne_free(buf);
 		return n;
 	case Qctl:
 		buf = smalloc(Statlen);
-		snprint(buf, Statlen, "%llud", CONV(c->qid));
+		jehanne_snprint(buf, Statlen, "%llud", CONV(c->qid));
 		n = readstr(offset, a, n, buf);
-		free(buf);
+		jehanne_free(buf);
 		return n;
 	case Qdata:
 	case Qhand:
@@ -1187,7 +1187,7 @@ tlsread(Chan *c, void *a, long n, int64_t off)
 	va = a;
 	for(nb = b; nb; nb = nb->next){
 		i = BLEN(nb);
-		memmove(va+n, nb->rp, i);
+		jehanne_memmove(va+n, nb->rp, i);
 		n += i;
 	}
 
@@ -1248,7 +1248,7 @@ if(tr->debug)pdump(BLEN(b), b->rp, "sent:");
 		if(n > MaxRecLen){
 			n = MaxRecLen;
 			nb = allocb(n + pad + RecHdrLen);
-			memmove(nb->wp + RecHdrLen, bb->rp, n);
+			jehanne_memmove(nb->wp + RecHdrLen, bb->rp, n);
 			bb->rp += n;
 		}else{
 			/*
@@ -1296,7 +1296,7 @@ if(tr->debug)pdump(BLEN(b), b->rp, "sent:");
 		 * if not, we're out of sync with the receiver and will not recover.
 		 */
 		if(waserror()){
-			if(strcmp(up->errstr, "interrupted") != 0)
+			if(jehanne_strcmp(up->errstr, "interrupted") != 0)
 				tlsError(tr, "channel error");
 			nexterror();
 		}
@@ -1354,7 +1354,7 @@ initmd5key(Hashalg *ha, int version, Secret *s, uint8_t *p)
 		s->mac = sslmac_md5;
 	else
 		s->mac = hmac_md5;
-	memmove(s->mackey, p, ha->maclen);
+	jehanne_memmove(s->mackey, p, ha->maclen);
 }
 
 static void
@@ -1372,7 +1372,7 @@ initsha1key(Hashalg *ha, int version, Secret *s, uint8_t *p)
 		s->mac = sslmac_sha1;
 	else
 		s->mac = hmac_sha1;
-	memmove(s->mackey, p, ha->maclen);
+	jehanne_memmove(s->mackey, p, ha->maclen);
 }
 
 static Hashalg hashtab[] =
@@ -1389,7 +1389,7 @@ parsehashalg(char *p)
 	Hashalg *ha;
 
 	for(ha = hashtab; ha->name; ha++)
-		if(strcmp(p, ha->name) == 0)
+		if(jehanne_strcmp(p, ha->name) == 0)
 			return ha;
 	error("unsupported hash algorithm");
 	return nil;
@@ -1458,7 +1458,7 @@ parseencalg(char *p)
 	Encalg *ea;
 
 	for(ea = encrypttab; ea->name; ea++)
-		if(strcmp(p, ea->name) == 0)
+		if(jehanne_strcmp(p, ea->name) == 0)
 			return ea;
 	error("unsupported encryption algorithm");
 	return nil;
@@ -1498,7 +1498,7 @@ tlswrite(Chan *c, void *a, long n, int64_t off)
 				freeb(b);
 				nexterror();
 			}
-			memmove(b->wp, p, i);
+			jehanne_memmove(b->wp, p, i);
 			poperror();
 			b->wp += i;
 
@@ -1516,7 +1516,7 @@ tlswrite(Chan *c, void *a, long n, int64_t off)
 
 	cb = parsecmd(a, n);
 	if(waserror()){
-		free(cb);
+		jehanne_free(cb);
 		nexterror();
 	}
 	if(cb->nf < 1)
@@ -1531,25 +1531,25 @@ tlswrite(Chan *c, void *a, long n, int64_t off)
 	qlock(&tr->in.seclock);
 	qlock(&tr->out.seclock);
 
-	if(strcmp(cb->f[0], "fd") == 0){
+	if(jehanne_strcmp(cb->f[0], "fd") == 0){
 		if(cb->nf != 3)
 			error("usage: fd open-fd version");
 		if(tr->c != nil)
 			error(Einuse);
-		i = strtol(cb->f[2], nil, 0);
+		i = jehanne_strtol(cb->f[2], nil, 0);
 		if(i < MinProtoVersion || i > MaxProtoVersion)
 			error("unsupported version");
 		tr->c = buftochan(cb->f[1]);
 		tr->version = i;
 		tlsSetState(tr, SHandshake, SClosed);
-	}else if(strcmp(cb->f[0], "version") == 0){
+	}else if(jehanne_strcmp(cb->f[0], "version") == 0){
 		if(cb->nf != 2)
 			error("usage: version vers");
 		if(tr->c == nil)
 			error("must set fd before version");
 		if(tr->verset)
 			error("version already set");
-		i = strtol(cb->f[1], nil, 0);
+		i = jehanne_strtol(cb->f[1], nil, 0);
 		if(i == SSL3Version)
 			tr->packMac = sslPackMac;
 		else if(i == TLSVersion)
@@ -1558,7 +1558,7 @@ tlswrite(Chan *c, void *a, long n, int64_t off)
 			error("unsupported version");
 		tr->verset = 1;
 		tr->version = i;
-	}else if(strcmp(cb->f[0], "secret") == 0){
+	}else if(jehanne_strcmp(cb->f[0], "secret") == 0){
 		if(cb->nf != 5)
 			error("usage: secret hashalg encalg isclient secretdata");
 		if(tr->c == nil || !tr->verset)
@@ -1577,17 +1577,17 @@ tlswrite(Chan *c, void *a, long n, int64_t off)
 		ea = parseencalg(cb->f[2]);
 
 		p = cb->f[4];
-		i = (strlen(p)*3)/2;
+		i = (jehanne_strlen(p)*3)/2;
 		x = smalloc(i);
 		tos = nil;
 		toc = nil;
 		if(waserror()){
 			freeSec(tos);
 			freeSec(toc);
-			free(x);
+			jehanne_free(x);
 			nexterror();
 		}
-		i = dec64(x, i, p, strlen(p));
+		i = jehanne_dec64(x, i, p, jehanne_strlen(p));
 		if(i < 2 * ha->maclen + 2 * ea->keylen + 2 * ea->ivlen)
 			error("not enough secret data provided");
 
@@ -1603,7 +1603,7 @@ tlswrite(Chan *c, void *a, long n, int64_t off)
 		if(!tos->mac || !tos->enc || !tos->dec
 		|| !toc->mac || !toc->enc || !toc->dec)
 			error("missing algorithm implementations");
-		if(strtol(cb->f[3], nil, 0) == 0){
+		if(jehanne_strtol(cb->f[3], nil, 0) == 0){
 			tr->in.new = tos;
 			tr->out.new = toc;
 		}else{
@@ -1622,9 +1622,9 @@ tlswrite(Chan *c, void *a, long n, int64_t off)
 		tos->encalg = ea->name;
 		tos->hashalg = ha->name;
 
-		free(x);
+		jehanne_free(x);
 		poperror();
-	}else if(strcmp(cb->f[0], "changecipher") == 0){
+	}else if(jehanne_strcmp(cb->f[0], "changecipher") == 0){
 		if(cb->nf != 1)
 			error("usage: changecipher");
 		if(tr->out.new == nil)
@@ -1633,7 +1633,7 @@ tlswrite(Chan *c, void *a, long n, int64_t off)
 		qunlock(&tr->in.seclock);
 		qunlock(&tr->out.seclock);
 		poperror();
-		free(cb);
+		jehanne_free(cb);
 		poperror();
 
 		/*
@@ -1644,7 +1644,7 @@ tlswrite(Chan *c, void *a, long n, int64_t off)
 		*b->wp++ = 1;
 		tlsrecwrite(tr, RChangeCipherSpec, b);
 		return n;
-	}else if(strcmp(cb->f[0], "opened") == 0){
+	}else if(jehanne_strcmp(cb->f[0], "opened") == 0){
 		if(cb->nf != 1)
 			error("usage: opened");
 		if(tr->in.sec == nil || tr->out.sec == nil)
@@ -1657,17 +1657,17 @@ tlswrite(Chan *c, void *a, long n, int64_t off)
 		tr->state = SOpen;
 		unlock(&tr->statelk);
 		tr->opened = 1;
-	}else if(strcmp(cb->f[0], "alert") == 0){
+	}else if(jehanne_strcmp(cb->f[0], "alert") == 0){
 		if(cb->nf != 2)
 			error("usage: alert n");
 		if(tr->c == nil)
 			error("must set fd before sending alerts");
-		i = strtol(cb->f[1], nil, 0);
+		i = jehanne_strtol(cb->f[1], nil, 0);
 
 		qunlock(&tr->in.seclock);
 		qunlock(&tr->out.seclock);
 		poperror();
-		free(cb);
+		jehanne_free(cb);
 		poperror();
 
 		sendAlert(tr, i);
@@ -1676,9 +1676,9 @@ tlswrite(Chan *c, void *a, long n, int64_t off)
 			tlsclosed(tr, SLClose);
 
 		return n;
-	} else if(strcmp(cb->f[0], "debug") == 0){
+	} else if(jehanne_strcmp(cb->f[0], "debug") == 0){
 		if(cb->nf == 2){
-			if(strcmp(cb->f[1], "on") == 0)
+			if(jehanne_strcmp(cb->f[1], "on") == 0)
 				tr->debug = 1;
 			else
 				tr->debug = 0;
@@ -1690,7 +1690,7 @@ tlswrite(Chan *c, void *a, long n, int64_t off)
 	qunlock(&tr->in.seclock);
 	qunlock(&tr->out.seclock);
 	poperror();
-	free(cb);
+	jehanne_free(cb);
 	poperror();
 
 	return n;
@@ -1706,7 +1706,7 @@ tlsinit(void)
 	static int already;
 
 	if(!already){
-//		fmtinstall('H', encodefmt);
+//		jehanne_fmtinstall('H', encodefmt);
 		already = 1;
 	}
 
@@ -1714,11 +1714,11 @@ tlsinit(void)
 
 	n = 1;
 	for(e = encrypttab; e->name != nil; e++)
-		n += strlen(e->name) + 1;
+		n += jehanne_strlen(e->name) + 1;
 	cp = encalgs = smalloc(n);
 	for(e = encrypttab;;){
-		strcpy(cp, e->name);
-		cp += strlen(e->name);
+		jehanne_strcpy(cp, e->name);
+		cp += jehanne_strlen(e->name);
 		e++;
 		if(e->name == nil)
 			break;
@@ -1728,11 +1728,11 @@ tlsinit(void)
 
 	n = 1;
 	for(h = hashtab; h->name != nil; h++)
-		n += strlen(h->name) + 1;
+		n += jehanne_strlen(h->name) + 1;
 	cp = hashalgs = smalloc(n);
 	for(h = hashtab;;){
-		strcpy(cp, h->name);
-		cp += strlen(h->name);
+		jehanne_strcpy(cp, h->name);
+		cp += jehanne_strlen(h->name);
 		h++;
 		if(h->name == nil)
 			break;
@@ -1771,7 +1771,7 @@ buftochan(char *p)
 
 	if(p == 0)
 		error(Ebadarg);
-	fd = strtoul(p, 0, 0);
+	fd = jehanne_strtoul(p, 0, 0);
 	if(fd < 0)
 		error(Ebadarg);
 	c = fdtochan(fd, -1, 0, 1);	/* error check and inc ref */
@@ -1823,7 +1823,7 @@ if(tr->debug)pprint("tleError %s\n", msg);
 	s = tr->state;
 	tr->state = SError;
 	if(s != SError){
-		strncpy(tr->err, msg, ERRMAX - 1);
+		jehanne_strncpy(tr->err, msg, ERRMAX - 1);
 		tr->err[ERRMAX - 1] = '\0';
 	}
 	unlock(&tr->statelk);
@@ -1885,10 +1885,10 @@ newtls(Chan *ch)
 		if(newmax > MaxTlsDevs)
 			newmax = MaxTlsDevs;
 		np = smalloc(sizeof(TlsRec*) * newmax);
-		memmove(np, tlsdevs, sizeof(TlsRec*) * maxtlsdevs);
+		jehanne_memmove(np, tlsdevs, sizeof(TlsRec*) * maxtlsdevs);
 		tlsdevs = np;
 		pp = &tlsdevs[maxtlsdevs];
-		memset(pp, 0, sizeof(TlsRec*)*(newmax - maxtlsdevs));
+		jehanne_memset(pp, 0, sizeof(TlsRec*)*(newmax - maxtlsdevs));
 
 		maxtlsdevs = newmax;
 	}
@@ -1910,7 +1910,7 @@ mktlsrec(void)
 {
 	TlsRec *tr;
 
-	tr = mallocz(sizeof(*tr), 1);
+	tr = jehanne_mallocz(sizeof(*tr), 1);
 	if(tr == nil)
 		error(Enomem);
 	tr->state = SClosed;
@@ -1946,8 +1946,8 @@ static void
 freeSec(Secret *s)
 {
 	if(s != nil){
-		free(s->enckey);
-		free(s);
+		jehanne_free(s->enckey);
+		jehanne_free(s);
 	}
 }
 
@@ -2099,7 +2099,7 @@ sslPackMac(Secret *sec, uint8_t *mackey, uint8_t *seq, uint8_t *header, uint8_t 
 	DigestState *s;
 	uint8_t buf[11];
 
-	memmove(buf, seq, 8);
+	jehanne_memmove(buf, seq, 8);
 	buf[8] = header[0];
 	buf[9] = header[3];
 	buf[10] = header[4];
@@ -2114,8 +2114,8 @@ tlsPackMac(Secret *sec, uint8_t *mackey, uint8_t *seq, uint8_t *header, uint8_t 
 	DigestState *s;
 	uint8_t buf[13];
 
-	memmove(buf, seq, 8);
-	memmove(&buf[8], header, 5);
+	jehanne_memmove(buf, seq, 8);
+	jehanne_memmove(&buf[8], header, 5);
 
 	s = (*sec->mac)(buf, 13, mackey, sec->maclen, 0, 0);
 	(*sec->mac)(body, len, mackey, sec->maclen, mac, s);
@@ -2177,9 +2177,9 @@ pdump(int len, void *a, char *tag)
 	char *q;
 
 	p = a;
-	strcpy(buf, tag);
+	jehanne_strcpy(buf, tag);
 	while(len > 0){
-		q = buf + strlen(tag);
+		q = buf + jehanne_strlen(tag);
 		for(i = 0; len > 0 && i < 32; i++){
 			if(*p >= ' ' && *p < 0x7f){
 				*q++ = ' ';

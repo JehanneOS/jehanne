@@ -223,7 +223,7 @@ timersinit(void)
 	 * T->tf == nil means the HZ clock for this processor.
 	 */
 	todinit();
-	t = malloc(sizeof(*t));
+	t = jehanne_malloc(sizeof(*t));
 	if(t == nil)
 		panic("timersinit: no memory for Timer");
 	t->tmode = Tperiodic;
@@ -240,7 +240,7 @@ addclock0link(void (*f)(void), int ms)
 	int64_t when;
 
 	/* Synchronize to hztimer if ms is 0 */
-	nt = malloc(sizeof(Timer));
+	nt = jehanne_malloc(sizeof(Timer));
 	if(nt == nil)
 		panic("addclock0link: no memory for Timer");
 	if(ms == 0)

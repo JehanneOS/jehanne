@@ -11,14 +11,14 @@
 #include <libc.h>
 
 void
-perror(const char *s)
+jehanne_perror(const char *s)
 {
 	char buf[ERRMAX];
 
 	buf[0] = '\0';
 	errstr(buf, sizeof buf);
 	if(s && *s)
-		fprint(2, "%s: %s\n", s, buf);
+		jehanne_fprint(2, "%s: %s\n", s, buf);
 	else
-		fprint(2, "%s\n", buf);
+		jehanne_fprint(2, "%s\n", buf);
 }

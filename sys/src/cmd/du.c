@@ -11,7 +11,7 @@
  * du - print disk usage
  */
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 #include <String.h>
 
 extern	int64_t	du(char*, Dir*);

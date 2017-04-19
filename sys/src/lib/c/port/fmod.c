@@ -14,7 +14,7 @@
  * floating-point mod function without infinity or NaN checking
  */
 double
-fmod (double x, double y)
+jehanne_fmod(double x, double y)
 {
 	int sign, yexp, rexp;
 	double r, yfr, rfr;
@@ -23,7 +23,7 @@ fmod (double x, double y)
 		return x;
 	if (y < 0)
 		y = -y;
-	yfr = frexp(y, &yexp);
+	yfr = jehanne_frexp(y, &yexp);
 	sign = 0;
 	if(x < 0) {
 		r = -x;
@@ -31,8 +31,8 @@ fmod (double x, double y)
 	} else
 		r = x;
 	while(r >= y) {
-		rfr = frexp(r, &rexp);
-		r -= ldexp(y, rexp - yexp - (rfr < yfr));
+		rfr = jehanne_frexp(r, &rexp);
+		r -= jehanne_ldexp(y, rexp - yexp - (rfr < yfr));
 	}
 	if(sign)
 		r = -r;

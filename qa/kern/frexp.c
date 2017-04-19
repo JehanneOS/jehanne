@@ -1,5 +1,5 @@
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 
 #define DEEPS	".5*2^-1073"
 #define DENEPS	"-.5*2^-1073"

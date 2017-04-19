@@ -31,13 +31,13 @@ mregfmt(Fmt* f)
 
 	mreg = va_arg(f->args, Mreg);
 	if(sizeof(Mreg) == sizeof(uint64_t))
-		return fmtprint(f, "%#16.16llux", (uint64_t)mreg);
-	return fmtprint(f, "%#8.8ux", (uint32_t)mreg);
+		return jehanne_fmtprint(f, "%#16.16llux", (uint64_t)mreg);
+	return jehanne_fmtprint(f, "%#8.8ux", (uint32_t)mreg);
 }
 
 void
 fmtinit(void)
 {
-	quotefmtinstall();
+	jehanne_quotefmtinstall();
 	archfmtinstall();
 }

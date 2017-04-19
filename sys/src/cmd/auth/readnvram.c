@@ -1,6 +1,6 @@
 /* readnvram */
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 #include <auth.h>
 #include <authsrv.h>
 

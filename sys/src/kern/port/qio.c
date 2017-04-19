@@ -61,9 +61,9 @@ ixsummary(void)
 {
 	debugging ^= 1;
 	iallocsummary();
-	print("pad %lud, concat %lud, pullup %lud, copy %lud\n",
+	jehanne_print("pad %lud, concat %lud, pullup %lud, copy %lud\n",
 		padblockcnt, concatblockcnt, pullupblockcnt, copyblockcnt);
-	print("consume %lud, produce %lud, qcopy %lud\n",
+	jehanne_print("consume %lud, produce %lud, qcopy %lud\n",
 		consumecnt, producecnt, qcopycnt);
 }
 
@@ -105,7 +105,7 @@ padblock(Block *bp, int size)
 		nbp = allocb(size+n);
 		nbp->rp += size;
 		nbp->wp = nbp->rp;
-		memmove(nbp->wp, bp->rp, n);
+		jehanne_memmove(nbp->wp, bp->rp, n);
 		nbp->wp += n;
 		freeb(bp);
 		nbp->rp -= size;
@@ -121,7 +121,7 @@ padblock(Block *bp, int size)
 		n = BLEN(bp);
 		padblockcnt++;
 		nbp = allocb(size+n);
-		memmove(nbp->wp, bp->rp, n);
+		jehanne_memmove(nbp->wp, bp->rp, n);
 		nbp->wp += n;
 		freeb(bp);
 	}
@@ -177,7 +177,7 @@ concatblock(Block *bp)
 	nb = allocb(blocklen(bp));
 	for(f = bp; f; f = f->next) {
 		len = BLEN(f);
-		memmove(nb->wp, f->rp, len);
+		jehanne_memmove(nb->wp, f->rp, len);
 		nb->wp += len;
 	}
 	concatblockcnt += BLEN(nb);
@@ -219,7 +219,7 @@ pullupblock(Block *bp, int n)
 	while(nbp = bp->next){
 		i = BLEN(nbp);
 		if(i > n) {
-			memmove(bp->wp, nbp->rp, n);
+			jehanne_memmove(bp->wp, nbp->rp, n);
 			pullupblockcnt++;
 			bp->wp += n;
 			nbp->rp += n;
@@ -228,11 +228,11 @@ pullupblock(Block *bp, int n)
 		} else {
 			/* shouldn't happen but why crash if it does */
 			if(i < 0){
-				print("pullupblock -ve length, from %#p\n",
+				jehanne_print("pullupblock -ve length, from %#p\n",
 					getcallerpc());
 				i = 0;
 			}
-			memmove(bp->wp, nbp->rp, i);
+			jehanne_memmove(bp->wp, nbp->rp, i);
 			pullupblockcnt++;
 			bp->wp += i;
 			bp->next = nbp->next;
@@ -327,12 +327,12 @@ copyblock(Block *bp, int count)
 		l = BLEN(bp);
 		if(l > count)
 			l = count;
-		memmove(nbp->wp, bp->rp, l);
+		jehanne_memmove(nbp->wp, bp->rp, l);
 		nbp->wp += l;
 		count -= l;
 	}
 	if(count > 0){
-		memset(nbp->wp, 0, count);
+		jehanne_memset(nbp->wp, 0, count);
 		nbp->wp += count;
 	}
 	copyblockcnt++;
@@ -362,7 +362,7 @@ adjustblock(Block* bp, int len)
 
 	n = BLEN(bp);
 	if(len > n)
-		memset(bp->wp, 0, len-n);
+		jehanne_memset(bp->wp, 0, len-n);
 	bp->wp = bp->rp+len;
 	QDEBUG checkb(bp, "adjustblock 2");
 
@@ -533,7 +533,7 @@ qconsume(Queue *q, void *vp, int len)
 
 	if(n < len)
 		len = n;
-	memmove(p, b->rp, len);
+	jehanne_memmove(p, b->rp, len);
 	consumecnt += n;
 	b->rp += len;
 	q->dlen -= len;
@@ -685,7 +685,7 @@ packblock(Block *bp)
 		n = BLEN(nbp);
 		if((n<<2) < BALLOC(nbp)){
 			*l = allocb(n);
-			memmove((*l)->wp, nbp->rp, n);
+			jehanne_memmove((*l)->wp, nbp->rp, n);
 			(*l)->wp += n;
 			(*l)->next = nbp->next;
 			freeb(nbp);
@@ -719,7 +719,7 @@ qproduce(Queue *q, void *vp, int len)
 		iunlock(q);
 		return 0;
 	}
-	memmove(b->wp, p, len);
+	jehanne_memmove(b->wp, p, len);
 	producecnt += len;
 	b->wp += len;
 	if(q->bfirst)
@@ -783,7 +783,7 @@ qcopy(Queue *q, int len, uint32_t offset)
 	for(sofar = 0; sofar < len;){
 		if(n > len - sofar)
 			n = len - sofar;
-		memmove(nb->wp, p, n);
+		jehanne_memmove(nb->wp, p, n);
 		qcopycnt += n;
 		sofar += n;
 		nb->wp += n;
@@ -806,7 +806,7 @@ qopen(int limit, int msg, void (*kick)(void*), void *arg)
 {
 	Queue *q;
 
-	q = malloc(sizeof(Queue));
+	q = jehanne_malloc(sizeof(Queue));
 	if(q == 0)
 		return 0;
 
@@ -828,7 +828,7 @@ qbypass(void (*bypass)(void*, Block*), void *arg)
 {
 	Queue *q;
 
-	q = malloc(sizeof(Queue));
+	q = jehanne_malloc(sizeof(Queue));
 	if(q == 0)
 		return 0;
 
@@ -863,7 +863,7 @@ qwait(Queue *q)
 		if(q->state & Qclosed){
 			if(++q->eof > 3)
 				return -1;
-			if(*q->err && strcmp(q->err, Ehungup) != 0)
+			if(*q->err && jehanne_strcmp(q->err, Ehungup) != 0)
 				return -1;
 			return 0;
 		}
@@ -955,11 +955,11 @@ bl2mem(uint8_t *p, Block *b, int n)
 	for(; b != nil; b = next){
 		i = BLEN(b);
 		if(i > n){
-			memmove(p, b->rp, n);
+			jehanne_memmove(p, b->rp, n);
 			b->rp += n;
 			return b;
 		}
-		memmove(p, b->rp, i);
+		jehanne_memmove(p, b->rp, i);
 		n -= i;
 		p += i;
 		b->rp += i;
@@ -991,8 +991,8 @@ mem2bl(uint8_t *p, int len)
 			n = Maxatomic;
 
 		*l = b = allocb(n);
-		setmalloctag(b->base, getcallerpc());
-		memmove(b->wp, p, n);
+		jehanne_setmalloctag(b->base, getcallerpc());
+		jehanne_memmove(b->wp, p, n);
 		b->wp += n;
 		p += n;
 		len -= n;
@@ -1082,7 +1082,7 @@ qbread(Queue *q, int len)
 		if((q->state&Qmsg) == 0){
 			n -= len;
 			b = allocb(n);
-			memmove(b->wp, nb->rp+len, n);
+			jehanne_memmove(b->wp, nb->rp+len, n);
 			b->wp += n;
 			qputback(q, b);
 		}
@@ -1310,7 +1310,7 @@ qwrite(Queue *q, void *vp, int len)
 	uint8_t *p = vp;
 
 	QDEBUG if(!islo())
-		print("qwrite hi %#p\n", getcallerpc());
+		jehanne_print("qwrite hi %#p\n", getcallerpc());
 
 	sofar = 0;
 	do {
@@ -1319,12 +1319,12 @@ qwrite(Queue *q, void *vp, int len)
 			n = Maxatomic;
 
 		b = allocb(n);
-		setmalloctag(b->base, getcallerpc());
+		jehanne_setmalloctag(b->base, getcallerpc());
 		if(waserror()){
 			freeb(b);
 			nexterror();
 		}
-		memmove(b->wp, p+sofar, n);
+		jehanne_memmove(b->wp, p+sofar, n);
 		poperror();
 		b->wp += n;
 
@@ -1337,7 +1337,7 @@ qwrite(Queue *q, void *vp, int len)
 }
 
 /*
- *  used by print() to write to a queue.  Since we may be splhi or not in
+ *  used by jehanne_print() to write to a queue.  Since we may be splhi or not in
  *  a process, don't qlock.
  *
  *  this routine merges adjacent blocks if block n+1 will fit into
@@ -1361,7 +1361,7 @@ qiwrite(Queue *q, void *vp, int len)
 		b = iallocb(n);
 		if(b == nil)
 			break;
-		memmove(b->wp, p+sofar, n);
+		jehanne_memmove(b->wp, p+sofar, n);
 		b->wp += n;
 
 		ilock(q);
@@ -1411,7 +1411,7 @@ void
 qfree(Queue *q)
 {
 	qclose(q);
-	free(q);
+	jehanne_free(q);
 }
 
 /*
@@ -1430,7 +1430,7 @@ qclose(Queue *q)
 	ilock(q);
 	q->state |= Qclosed;
 	q->state &= ~(Qflow|Qstarve);
-	strcpy(q->err, Ehungup);
+	jehanne_strcpy(q->err, Ehungup);
 	bfirst = q->bfirst;
 	q->bfirst = 0;
 	q->len = 0;
@@ -1457,9 +1457,9 @@ qhangup(Queue *q, char *msg)
 	ilock(q);
 	q->state |= Qclosed;
 	if(msg == 0 || *msg == 0)
-		strcpy(q->err, Ehungup);
+		jehanne_strcpy(q->err, Ehungup);
 	else
-		strncpy(q->err, msg, ERRMAX-1);
+		jehanne_strncpy(q->err, msg, ERRMAX-1);
 	iunlock(q);
 
 	/* wake up readers/writers */

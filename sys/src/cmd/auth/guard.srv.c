@@ -2,7 +2,7 @@
  * guard service
  */
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 #include <9P2000.h>
 #include <bio.h>
 #include <ndb.h>

@@ -11,7 +11,7 @@
  * Editor
  */
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 #include <bio.h>
 #include <regexp.h>
 

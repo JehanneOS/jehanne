@@ -32,16 +32,16 @@ getmemdefont(void)
 	p = (char*)defontdata;
 	n = (uintptr_t)p & 3;
 	if(n != 0){
-		memmove(p+(4-n), p, sizeofdefont-n);
+		jehanne_memmove(p+(4-n), p, sizeofdefont-n);
 		p += 4-n;
 	}
-	ld = atoi(p+0*12);
-	r.min.x = atoi(p+1*12);
-	r.min.y = atoi(p+2*12);
-	r.max.x = atoi(p+3*12);
-	r.max.y = atoi(p+4*12);
+	ld = jehanne_atoi(p+0*12);
+	r.min.x = jehanne_atoi(p+1*12);
+	r.min.y = jehanne_atoi(p+2*12);
+	r.max.x = jehanne_atoi(p+3*12);
+	r.max.y = jehanne_atoi(p+4*12);
 
-	md = mallocz(sizeof(Memdata), 1);
+	md = jehanne_mallocz(sizeof(Memdata), 1);
 	if(md == nil)
 		return nil;
 	
@@ -54,23 +54,23 @@ getmemdefont(void)
 
 	i = allocmemimaged(r, drawld2chan[ld], md);
 	if(i == nil){
-		free(md);
+		jehanne_free(md);
 		return nil;
 	}
 
 	hdr = p+Dy(r)*i->width*sizeof(uint32_t);
-	n = atoi(hdr);
+	n = jehanne_atoi(hdr);
 	p = hdr+3*12;
-	fc = malloc(sizeof(Fontchar)*(n+1));
+	fc = jehanne_malloc(sizeof(Fontchar)*(n+1));
 	if(fc == 0){
 		freememimage(i);
 		return 0;
 	}
 	_unpackinfo(fc, (uint8_t*)p, n);
-	f = allocmemsubfont("*default*", n, atoi(hdr+12), atoi(hdr+24), fc, i);
+	f = allocmemsubfont("*default*", n, jehanne_atoi(hdr+12), jehanne_atoi(hdr+24), fc, i);
 	if(f == 0){
 		freememimage(i);
-		free(fc);
+		jehanne_free(fc);
 		return 0;
 	}
 	return f;

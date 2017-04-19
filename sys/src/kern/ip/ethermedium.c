@@ -152,7 +152,7 @@ etherbind(Ipifc *ifc, int argc, char **argv)
 		if(cchan6 != nil)
 			cclose(cchan6);
 		if(buf != nil)
-			free(buf);
+			jehanne_free(buf);
 		nexterror();
 	}
 
@@ -162,18 +162,18 @@ etherbind(Ipifc *ifc, int argc, char **argv)
 	 *  the dial will fail if the type is already open on
 	 *  this device.
 	 */
-	snprint(addr, sizeof(addr), "%s!0x800", argv[2]);	/* ETIP4 */
+	jehanne_snprint(addr, sizeof(addr), "%s!0x800", argv[2]);	/* ETIP4 */
 	mchan4 = chandial(addr, nil, dir, &cchan4);
 
 	/*
 	 *  make it non-blocking
 	 */
-	cchan4->dev->write(cchan4, nbmsg, strlen(nbmsg), 0);
+	cchan4->dev->write(cchan4, nbmsg, jehanne_strlen(nbmsg), 0);
 
 	/*
 	 *  get mac address and speed
 	 */
-	snprint(addr, sizeof(addr), "%s/stats", argv[2]);
+	jehanne_snprint(addr, sizeof(addr), "%s/stats", argv[2]);
 	buf = smalloc(512);
 	schan = namec(addr, Aopen, OREAD, 0);
 	if(waserror()){
@@ -185,23 +185,23 @@ etherbind(Ipifc *ifc, int argc, char **argv)
 	poperror();
 	buf[n] = 0;
 
-	ptr = strstr(buf, "addr: ");
+	ptr = jehanne_strstr(buf, "addr: ");
 	if(!ptr)
 		error(Eio);
 	ptr += 6;
 	parsemac(ifc->mac, ptr, 6);
 
-	ptr = strstr(buf, "mbps: ");
+	ptr = jehanne_strstr(buf, "mbps: ");
 	if(ptr){
 		ptr += 6;
-		ifc->mbps = atoi(ptr);
+		ifc->mbps = jehanne_atoi(ptr);
 	} else
 		ifc->mbps = 100;
 
 	/*
 	 *  open arp conversation
 	 */
-	snprint(addr, sizeof(addr), "%s!0x806", argv[2]);	/* ETARP */
+	jehanne_snprint(addr, sizeof(addr), "%s!0x806", argv[2]);	/* ETARP */
 	achan = chandial(addr, nil, nil, nil);
 
 	/*
@@ -210,13 +210,13 @@ etherbind(Ipifc *ifc, int argc, char **argv)
 	 *  the dial will fail if the type is already open on
 	 *  this device.
 	 */
-	snprint(addr, sizeof(addr), "%s!0x86DD", argv[2]);	/* ETIP6 */
+	jehanne_snprint(addr, sizeof(addr), "%s!0x86DD", argv[2]);	/* ETIP6 */
 	mchan6 = chandial(addr, nil, dir, &cchan6);
 
 	/*
 	 *  make it non-blocking
 	 */
-	cchan6->dev->write(cchan6, nbmsg, strlen(nbmsg), 0);
+	cchan6->dev->write(cchan6, nbmsg, jehanne_strlen(nbmsg), 0);
 
 	er = smalloc(sizeof(*er));
 	er->mchan4 = mchan4;
@@ -227,7 +227,7 @@ etherbind(Ipifc *ifc, int argc, char **argv)
 	er->f = ifc->conv->p->f;
 	ifc->arg = er;
 
-	free(buf);
+	jehanne_free(buf);
 	poperror();
 
 	kproc("etherread4", etherread4, ifc);
@@ -265,7 +265,7 @@ etherunbind(Ipifc *ifc)
 	if(er->cchan6 != nil)
 		cclose(er->cchan6);
 
-	free(er);
+	jehanne_free(er);
 }
 
 /*
@@ -308,8 +308,8 @@ etherbwrite(Ipifc *ifc, Block *bp, int version, uint8_t *ip)
 	eh = (Etherhdr*)bp->rp;
 
 	/* copy in mac addresses and ether type */
-	memmove(eh->s, ifc->mac, sizeof(eh->s));
-	memmove(eh->d, mac, sizeof(eh->d));
+	jehanne_memmove(eh->s, ifc->mac, sizeof(eh->s));
+	jehanne_memmove(eh->d, mac, sizeof(eh->d));
 
 	switch(version){
 	case V4:
@@ -417,13 +417,13 @@ etheraddmulti(Ipifc *ifc, uint8_t *a, uint8_t * _1)
 	int version;
 
 	version = multicastea(mac, a);
-	sprint(buf, "addmulti %E", mac);
+	jehanne_sprint(buf, "addmulti %E", mac);
 	switch(version){
 	case V4:
-		er->cchan4->dev->write(er->cchan4, buf, strlen(buf), 0);
+		er->cchan4->dev->write(er->cchan4, buf, jehanne_strlen(buf), 0);
 		break;
 	case V6:
-		er->cchan6->dev->write(er->cchan6, buf, strlen(buf), 0);
+		er->cchan6->dev->write(er->cchan6, buf, jehanne_strlen(buf), 0);
 		break;
 	default:
 		panic("etheraddmulti: version %d", version);
@@ -439,13 +439,13 @@ etherremmulti(Ipifc *ifc, uint8_t *a, uint8_t * _1)
 	int version;
 
 	version = multicastea(mac, a);
-	sprint(buf, "remmulti %E", mac);
+	jehanne_sprint(buf, "remmulti %E", mac);
 	switch(version){
 	case V4:
-		er->cchan4->dev->write(er->cchan4, buf, strlen(buf), 0);
+		er->cchan4->dev->write(er->cchan4, buf, jehanne_strlen(buf), 0);
 		break;
 	case V6:
-		er->cchan6->dev->write(er->cchan6, buf, strlen(buf), 0);
+		er->cchan6->dev->write(er->cchan6, buf, jehanne_strlen(buf), 0);
 		break;
 	default:
 		panic("etherremmulti: version %d", version);
@@ -486,13 +486,13 @@ sendarp(Ipifc *ifc, Arpent *a)
 	if(n < a->type->mintu)
 		n = a->type->mintu;
 	bp = allocb(n);
-	memset(bp->rp, 0, n);
+	jehanne_memset(bp->rp, 0, n);
 	e = (Etherarp*)bp->rp;
-	memmove(e->tpa, a->ip+IPv4off, sizeof(e->tpa));
+	jehanne_memmove(e->tpa, a->ip+IPv4off, sizeof(e->tpa));
 	ipv4local(ifc, e->spa);
-	memmove(e->sha, ifc->mac, sizeof(e->sha));
-	memset(e->d, 0xff, sizeof(e->d));		/* ethernet broadcast */
-	memmove(e->s, ifc->mac, sizeof(e->s));
+	jehanne_memmove(e->sha, ifc->mac, sizeof(e->sha));
+	jehanne_memset(e->d, 0xff, sizeof(e->d));		/* ethernet broadcast */
+	jehanne_memmove(e->s, ifc->mac, sizeof(e->s));
 
 	hnputs(e->type, ETARP);
 	hnputs(e->hrd, 1);
@@ -561,13 +561,13 @@ sendgarp(Ipifc *ifc, uint8_t *ip)
 	if(n < ifc->medium->mintu)
 		n = ifc->medium->mintu;
 	bp = allocb(n);
-	memset(bp->rp, 0, n);
+	jehanne_memset(bp->rp, 0, n);
 	e = (Etherarp*)bp->rp;
-	memmove(e->tpa, ip+IPv4off, sizeof(e->tpa));
-	memmove(e->spa, ip+IPv4off, sizeof(e->spa));
-	memmove(e->sha, ifc->mac, sizeof(e->sha));
-	memset(e->d, 0xff, sizeof(e->d));		/* ethernet broadcast */
-	memmove(e->s, ifc->mac, sizeof(e->s));
+	jehanne_memmove(e->tpa, ip+IPv4off, sizeof(e->tpa));
+	jehanne_memmove(e->spa, ip+IPv4off, sizeof(e->spa));
+	jehanne_memmove(e->sha, ifc->mac, sizeof(e->sha));
+	jehanne_memset(e->d, 0xff, sizeof(e->d));		/* ethernet broadcast */
+	jehanne_memmove(e->s, ifc->mac, sizeof(e->s));
 
 	hnputs(e->type, ETARP);
 	hnputs(e->hrd, 1);
@@ -603,8 +603,8 @@ recvarp(Ipifc *ifc)
 		/* check for machine using my ip address */
 		v4tov6(ip, e->spa);
 		if(iplocalonifc(ifc, ip) || ipproxyifc(er->f, ifc, ip)){
-			if(memcmp(e->sha, ifc->mac, sizeof(e->sha)) != 0){
-				print("arprep: 0x%E/0x%E also has ip addr %V\n",
+			if(jehanne_memcmp(e->sha, ifc->mac, sizeof(e->sha)) != 0){
+				jehanne_print("arprep: 0x%E/0x%E also has ip addr %V\n",
 					e->s, e->sha, e->spa);
 				break;
 			}
@@ -612,8 +612,8 @@ recvarp(Ipifc *ifc)
 
 		/* make sure we're not entering broadcast addresses */
 		if(ipcmp(ip, ipbroadcast) == 0 ||
-			!memcmp(e->sha, etherbroadcast, sizeof(e->sha))){
-			print("arprep: 0x%E/0x%E cannot register broadcast address %I\n",
+			!jehanne_memcmp(e->sha, etherbroadcast, sizeof(e->sha))){
+			jehanne_print("arprep: 0x%E/0x%E cannot register broadcast address %I\n",
 				e->s, e->sha, e->spa);
 			break;
 		}
@@ -629,18 +629,18 @@ recvarp(Ipifc *ifc)
 		/* check for machine using my ip or ether address */
 		v4tov6(ip, e->spa);
 		if(iplocalonifc(ifc, ip) || ipproxyifc(er->f, ifc, ip)){
-			if(memcmp(e->sha, ifc->mac, sizeof(e->sha)) != 0){
-				if (memcmp(eprinted, e->spa, sizeof(e->spa))){
+			if(jehanne_memcmp(e->sha, ifc->mac, sizeof(e->sha)) != 0){
+				if (jehanne_memcmp(eprinted, e->spa, sizeof(e->spa))){
 					/* print only once */
-					print("arpreq: 0x%E also has ip addr %V\n", e->sha, e->spa);
-					memmove(eprinted, e->spa, sizeof(e->spa));
+					jehanne_print("arpreq: 0x%E also has ip addr %V\n", e->sha, e->spa);
+					jehanne_memmove(eprinted, e->spa, sizeof(e->spa));
 				}
 			}
 		} else {
-			if(memcmp(e->sha, ifc->mac, sizeof(e->sha)) == 0){
+			if(jehanne_memcmp(e->sha, ifc->mac, sizeof(e->sha)) == 0){
 				/* Ignore ARP probes from ourself. */
-				if(memcmp(e->spa, nullspa, sizeof(e->spa)) != 0)
-					print("arpreq: %V also has ether addr %E\n", e->spa, e->sha);
+				if(jehanne_memcmp(e->spa, nullspa, sizeof(e->spa)) != 0)
+					jehanne_print("arpreq: %V also has ether addr %E\n", e->spa, e->sha);
 				break;
 			}
 		}
@@ -659,19 +659,19 @@ recvarp(Ipifc *ifc)
 			n = ifc->mintu;
 		rbp = allocb(n);
 		r = (Etherarp*)rbp->rp;
-		memset(r, 0, sizeof(Etherarp));
+		jehanne_memset(r, 0, sizeof(Etherarp));
 		hnputs(r->type, ETARP);
 		hnputs(r->hrd, 1);
 		hnputs(r->pro, ETIP4);
 		r->hln = sizeof(r->sha);
 		r->pln = sizeof(r->spa);
 		hnputs(r->op, ARPREPLY);
-		memmove(r->tha, e->sha, sizeof(r->tha));
-		memmove(r->tpa, e->spa, sizeof(r->tpa));
-		memmove(r->sha, ifc->mac, sizeof(r->sha));
-		memmove(r->spa, e->tpa, sizeof(r->spa));
-		memmove(r->d, e->sha, sizeof(r->d));
-		memmove(r->s, ifc->mac, sizeof(r->s));
+		jehanne_memmove(r->tha, e->sha, sizeof(r->tha));
+		jehanne_memmove(r->tpa, e->spa, sizeof(r->tpa));
+		jehanne_memmove(r->sha, ifc->mac, sizeof(r->sha));
+		jehanne_memmove(r->spa, e->tpa, sizeof(r->spa));
+		jehanne_memmove(r->d, e->sha, sizeof(r->d));
+		jehanne_memmove(r->s, ifc->mac, sizeof(r->s));
 		rbp->wp += n;
 
 		er->achan->dev->bwrite(er->achan, rbp, 0);
@@ -733,7 +733,7 @@ multicastarp(Fs *f, Arpent *a, Medium *medium, uint8_t *mac)
 	case Runi:
 		return nil;
 	case Rbcast:
-		memset(mac, 0xff, 6);
+		jehanne_memset(mac, 0xff, 6);
 		return arpresolve(f->arp, a, medium, mac);
 	default:
 		break;

@@ -11,13 +11,13 @@
 #include <libc.h>
 
 Rune*
-runesmprint(const char *fmt, ...)
+jehanne_runesmprint(const char *fmt, ...)
 {
 	va_list args;
 	Rune *p;
 
 	va_start(args, fmt);
-	p = runevsmprint(fmt, args);
+	p = jehanne_runevsmprint(fmt, args);
 	va_end(args);
 	return p;
 }

@@ -95,9 +95,9 @@ putmpt(Mpt *mpt)
 		return;
 	if(mpt->m.to != nil)
 		cclose(mpt->m.to);
-	free(mpt->name);
-	free(mpt->owner);
-	free(mpt);
+	jehanne_free(mpt->name);
+	jehanne_free(mpt->owner);
+	jehanne_free(mpt);
 }
 
 static void
@@ -105,9 +105,9 @@ putshr(Shr *shr)
 {
 	if(decref(&shr->ref))
 		return;
-	free(shr->name);
-	free(shr->owner);
-	free(shr);
+	jehanne_free(shr->name);
+	jehanne_free(shr->owner);
+	jehanne_free(shr);
 }
 
 static Qid
@@ -153,7 +153,7 @@ shrclone(Chan *c)
 				// this is a plan9-9k specific behaviour, but why?
 				// many related places are marked with XDYNX
 	sch = smalloc(sizeof(*sch));
-	memmove(sch, och, sizeof(*sch));
+	jehanne_memmove(sch, och, sizeof(*sch));
 	if(sch->shr != nil)
 		incref(&sch->shr->ref);
 	if(sch->mpt != nil)
@@ -175,7 +175,7 @@ shrclunk(Chan *c)
 		putmpt(sch->mpt);
 	if(sch->shr != nil)
 		putshr(sch->shr);
-	free(sch);
+	jehanne_free(sch);
 }
 
 static Walkqid*
@@ -204,7 +204,7 @@ shrwalk(Chan *c, Chan *nc, char **name, int nname)
 		if(wq->nqid > 0)
 			wq->clone = nil;
 		else {
-			free(wq);
+			jehanne_free(wq);
 			wq = nil;
 		}
 		return wq;
@@ -233,7 +233,7 @@ shrwalk(Chan *c, Chan *nc, char **name, int nname)
 		} else if(sch->level == Qcroot || sch->level == Qroot) {
 			qlock(&shrslk);
 			for(shr = shrs; shr != nil; shr = shr->next)
-				if(strcmp(nam, shr->name) == 0){
+				if(jehanne_strcmp(nam, shr->name) == 0){
 					incref(&shr->ref);
 					break;
 				}
@@ -250,7 +250,7 @@ shrwalk(Chan *c, Chan *nc, char **name, int nname)
 			rlock(&h->lock);
 			for(m = h->mount; m != nil; m = m->next){
 				mpt = tompt(m);
-				if(strcmp(nam, mpt->name) == 0){
+				if(jehanne_strcmp(nam, mpt->name) == 0){
 					incref(&mpt->ref);
 					break;
 				}
@@ -276,12 +276,12 @@ shrwalk(Chan *c, Chan *nc, char **name, int nname)
 			runlock(&h->lock);
 			if(wq2 == nil)
 				error(Enonexist);
-			memmove(wq->qid + wq->nqid, wq2->qid, wq2->nqid);
+			jehanne_memmove(wq->qid + wq->nqid, wq2->qid, wq2->nqid);
 			wq->nqid += wq2->nqid;
 			if(alloc)
 				cclose(wq->clone);
 			wq->clone = wq2->clone;
-			free(wq2);
+			jehanne_free(wq2);
 			poperror();
 			return wq;
 		} else
@@ -368,7 +368,7 @@ shrstat(Chan *c, uint8_t *db, long n)
 		devdir(c, c->qid, sch->mpt->name, 0, sch->mpt->owner, sch->mpt->perm, &dir);
 		break;
 	}
-	rc = convD2M(&dir, db, n);
+	rc = jehanne_convD2M(&dir, db, n);
 	if(rc == 0)
 		error(Ebadarg);
 	return rc;
@@ -445,7 +445,7 @@ shrcreate(Chan *c, char *name, unsigned long omode, unsigned long perm)
 	switch(sch->level){
 	case Qcroot:
 	case Qcshr:
-		if(strcmp(up->user, "none") == 0)
+		if(jehanne_strcmp(up->user, "none") == 0)
 			error(Eperm);
 	}
 	switch(sch->level){
@@ -472,7 +472,7 @@ shrcreate(Chan *c, char *name, unsigned long omode, unsigned long perm)
 			error(Enoattach);
 		if((perm & DMDIR) == 0 || mode != OREAD)
 			error(Eperm);
-		if(strlen(name) >= sizeof(up->genbuf))
+		if(jehanne_strlen(name) >= sizeof(up->genbuf))
 			error(Etoolong);
 		qlock(&shrslk);
 		if(waserror()){
@@ -480,7 +480,7 @@ shrcreate(Chan *c, char *name, unsigned long omode, unsigned long perm)
 			nexterror();
 		}
 		for(shr = shrs; shr != nil; shr = shr->next)
-			if(strcmp(name, shr->name) == 0)
+			if(jehanne_strcmp(name, shr->name) == 0)
 				error(Eexist);
 
 		shr = smalloc(sizeof(*shr));
@@ -508,11 +508,11 @@ shrcreate(Chan *c, char *name, unsigned long omode, unsigned long perm)
 			error(Eperm);
 
 		shr = sch->shr;
-		if(strcmp(shr->owner, eve) == 0 && !iseve())
+		if(jehanne_strcmp(shr->owner, eve) == 0 && !iseve())
 			error(Eperm);
 		devpermcheck(shr->owner, shr->perm, ORDWR);
 
-		if(strlen(name) >= sizeof(up->genbuf))
+		if(jehanne_strlen(name) >= sizeof(up->genbuf))
 			error(Etoolong);
 
 		h = &shr->umh;
@@ -523,7 +523,7 @@ shrcreate(Chan *c, char *name, unsigned long omode, unsigned long perm)
 		}
 		for(m = h->mount; m != nil; m = m->next){
 			mpt = tompt(m);
-			if(strcmp(name, mpt->name) == 0)
+			if(jehanne_strcmp(name, mpt->name) == 0)
 				error(Eexist);
 		}
 
@@ -573,7 +573,7 @@ shrremove(Chan *c)
 	case Qcmpt:
 		shr = sch->shr;
 		if(!iseve()){
-			if(strcmp(shr->owner, eve) == 0)
+			if(jehanne_strcmp(shr->owner, eve) == 0)
 				error(Eperm);
 			devpermcheck(shr->owner, shr->perm, ORDWR);
 		}
@@ -628,10 +628,10 @@ shrwstat(Chan *c, uint8_t *dp, long n)
 
 	strs = smalloc(n);
 	if(waserror()){
-		free(strs);
+		jehanne_free(strs);
 		nexterror();
 	}
-	n = convM2D(dp, n, &d, strs);
+	n = jehanne_convM2D(dp, n, &d, strs);
 	if(n == 0)
 		error(Eshortstat);
 
@@ -659,13 +659,13 @@ shrwstat(Chan *c, uint8_t *dp, long n)
 		break;
 	}
 
-	if(strcmp(ent->owner, up->user) && !iseve())
+	if(jehanne_strcmp(ent->owner, up->user) && !iseve())
 		error(Eperm);
 
-	if(d.name != nil && *d.name && strcmp(ent->name, d.name) != 0) {
-		if(strchr(d.name, '/') != nil)
+	if(d.name != nil && *d.name && jehanne_strcmp(ent->name, d.name) != 0) {
+		if(jehanne_strchr(d.name, '/') != nil)
 			error(Ebadchar);
-		if(strlen(d.name) >= sizeof(up->genbuf))
+		if(jehanne_strlen(d.name) >= sizeof(up->genbuf))
 			error(Etoolong);
 		kstrdup(&ent->name, d.name);
 	}
@@ -686,7 +686,7 @@ shrwstat(Chan *c, uint8_t *dp, long n)
 	}
 
 	poperror();
-	free(strs);
+	jehanne_free(strs);
 
 	return n;
 }
@@ -737,13 +737,13 @@ shrwrite(Chan *c, void *va, long n, int64_t _)
 
 	buf = smalloc(n+1);
 	if(waserror()){
-		free(buf);
+		jehanne_free(buf);
 		nexterror();
 	}
-	memmove(buf, va, n);
+	jehanne_memmove(buf, va, n);
 	buf[n] = 0;
 
-	fd = strtol(buf, &p, 10);
+	fd = jehanne_strtol(buf, &p, 10);
 	if(p == buf || (*p != 0 && *p != '\n'))
 		error(Ebadarg);
 	if(*p == '\n' && *(p+1) != 0)
@@ -760,7 +760,7 @@ shrwrite(Chan *c, void *va, long n, int64_t _)
 	poperror();
 	cclose(bc);
 	poperror();
-	free(buf);
+	jehanne_free(buf);
 
 	if(c0 == nil)
 		error(Egreg);
@@ -811,7 +811,7 @@ Dev shrdevtab = {
 static void
 chowner(Ent *ent, char *old, char *new)
 {
-	if(ent->owner != nil && strcmp(old, ent->owner) == 0)
+	if(ent->owner != nil && jehanne_strcmp(old, ent->owner) == 0)
 		kstrdup(&ent->owner, new);
 }
 

@@ -61,15 +61,15 @@ memimageinit(void)
 
 	didinit = 1;
 
-	if(strcmp(imagmem->name, "Image") == 0 || strcmp(imagmem->name, "image") == 0)
+	if(jehanne_strcmp(imagmem->name, "Image") == 0 || jehanne_strcmp(imagmem->name, "image") == 0)
 		imagmem->move = memimagemove;
 
 	mktables();
 	_memmkcmap();
 
-	fmtinstall('R', Rfmt); 
-	fmtinstall('P', Pfmt);
-	fmtinstall('b', _ifmt);
+	jehanne_fmtinstall('R', Rfmt); 
+	jehanne_fmtinstall('P', Pfmt);
+	jehanne_fmtinstall('b', _ifmt);
 
 	memones = allocmemimage(Rect(0,0,1,1), GREY1);
 	memones->flags |= Frepl;
@@ -103,7 +103,7 @@ memimagedraw(Memimage *dst, Rectangle r, Memimage *src, Point p0, Memimage *mask
 	if(mask == nil)
 		mask = memopaque;
 
-	DBG	print("memimagedraw %p/%luX %R @ %p %p/%luX %P %p/%luX %P... ", dst, dst->chan, r, dst->data->bdata, src, src->chan, p0, mask, mask->chan, p1);
+	DBG	jehanne_print("memimagedraw %p/%luX %R @ %p %p/%luX %P %p/%luX %P... ", dst, dst->chan, r, dst->data->bdata, src, src->chan, p0, mask, mask->chan, p1);
 
 	if(drawclip(dst, &r, src, &p0, mask, &p1, &par.sr, &par.mr) == 0){
 		return;
@@ -130,7 +130,7 @@ memimagedraw(Memimage *dst, Rectangle r, Memimage *src, Point p0, Memimage *mask
 			par.srgba = imgtorgba(src, par.sval);
 			par.sdval = rgbatoimg(dst, par.srgba);
 			if((par.srgba&0xFF) == 0 && (op&DoutS)){
-				DBG print("fill with transparent source\n");
+				DBG jehanne_print("fill with transparent source\n");
 				return;	/* no-op successfully handled */
 			}
 		}
@@ -141,7 +141,7 @@ memimagedraw(Memimage *dst, Rectangle r, Memimage *src, Point p0, Memimage *mask
 		if(Dx(mask->r)==1 && Dy(mask->r)==1){
 			par.mval = pixelbits(mask, mask->r.min);
 			if(par.mval == 0 && (op&DoutS)){
-				DBG print("fill with zero mask\n");
+				DBG jehanne_print("fill with zero mask\n");
 				return;	/* no-op successfully handled */
 			}
 			par.state |= Simplemask;
@@ -151,7 +151,7 @@ memimagedraw(Memimage *dst, Rectangle r, Memimage *src, Point p0, Memimage *mask
 		}
 	}
 
-	DBG print("draw dr %R sr %R mr %R %lux\n", r, par.sr, par.mr, par.state);
+	DBG jehanne_print("draw dr %R sr %R mr %R %lux\n", r, par.sr, par.mr, par.state);
 
 	/*
 	 * Now that we've clipped the parameters down to be consistent, we 
@@ -165,17 +165,17 @@ memimagedraw(Memimage *dst, Rectangle r, Memimage *src, Point p0, Memimage *mask
 	 * which checks to see if there is anything it can help with.
 	 * There could be an if around this checking to see if dst is in video memory.
 	 */
-	DBG print("test hwdraw\n");
+	DBG jehanne_print("test hwdraw\n");
 	if(hwdraw(&par)){
-		DBG print("hwdraw handled\n");
+		DBG jehanne_print("hwdraw handled\n");
 		return;
 	}
 	/*
 	 * Optimizations using memmove and memset.
 	 */
-	DBG print("test memoptdraw\n");
+	DBG jehanne_print("test memoptdraw\n");
 	if(memoptdraw(&par)){
-		DBG print("memopt handled\n");
+		DBG jehanne_print("memopt handled\n");
 		return;
 	}
 
@@ -183,18 +183,18 @@ memimagedraw(Memimage *dst, Rectangle r, Memimage *src, Point p0, Memimage *mask
 	 * Character drawing.
 	 * Solid source color being painted through a boolean mask onto a high res image.
 	 */
-	DBG print("test chardraw\n");
+	DBG jehanne_print("test chardraw\n");
 	if(chardraw(&par)){
-		DBG print("chardraw handled\n");
+		DBG jehanne_print("chardraw handled\n");
 		return;
 	}
 
 	/*
 	 * General calculation-laden case that does alpha for each pixel.
 	 */
-	DBG print("do alphadraw\n");
+	DBG jehanne_print("do alphadraw\n");
 	alphadraw(&par);
-		DBG print("alphadraw handled\n");
+		DBG jehanne_print("alphadraw handled\n");
 }
 #undef DBG
 
@@ -343,8 +343,8 @@ mktables(void)
 	if(tablesbuilt)
 		return;
 
-	fmtinstall('R', Rfmt);
-	fmtinstall('P', Pfmt);
+	jehanne_fmtinstall('R', Rfmt);
+	jehanne_fmtinstall('P', Pfmt);
 	tablesbuilt = 1;
 
 	/* bit replication up to 8 bits */
@@ -501,7 +501,7 @@ allocdbuf(void)
 	for(i=0; i<nelem(dbuf); i++){
 		if(dbuf[i].inuse)
 			continue;
-		if(!_tas(&dbuf[i].inuse))
+		if(!jehanne__tas(&dbuf[i].inuse))
 			return &dbuf[i];
 	}
 	return nil;
@@ -512,7 +512,7 @@ getparam(Param *p, Memimage *img, Rectangle r, int convgrey, int needbuf, int *n
 {
 	int nbuf;
 
-	memset(p, 0, sizeof *p);
+	jehanne_memset(p, 0, sizeof *p);
 
 	p->img = img;
 	p->r = r;
@@ -561,32 +561,32 @@ dumpbuf(char *s, Buffer b, int n)
 	int i;
 	uint8_t *p;
 	
-	print("%s", s);
+	jehanne_print("%s", s);
 	for(i=0; i<n; i++){
-		print(" ");
+		jehanne_print(" ");
 		if(p=b.grey){
-			print(" k%.2uX", *p);
+			jehanne_print(" k%.2uX", *p);
 			b.grey += b.delta;
 		}else{	
 			if(p=b.red){
-				print(" r%.2uX", *p);
+				jehanne_print(" r%.2uX", *p);
 				b.red += b.delta;
 			}
 			if(p=b.grn){
-				print(" g%.2uX", *p);
+				jehanne_print(" g%.2uX", *p);
 				b.grn += b.delta;
 			}
 			if(p=b.blu){
-				print(" b%.2uX", *p);
+				jehanne_print(" b%.2uX", *p);
 				b.blu += b.delta;
 			}
 		}
 		if((p=b.alpha) != &ones){
-			print(" α%.2uX", *p);
+			jehanne_print(" α%.2uX", *p);
 			b.alpha += b.delta;
 		}
 	}
-	print("\n");
+	jehanne_print("\n");
 }
 
 /*
@@ -668,9 +668,9 @@ alphadraw(Memdrawparam *par)
 	 * but it avoids a fair amount of code duplication to make this a case here
 	 * rather than have a separate booldraw.
 	 */
-	DBG print("flag %lud mchan %lux=?%x dd %d\n", src->flags&Falpha, mask->chan, GREY1, dst->depth);
+	DBG jehanne_print("flag %lud mchan %lux=?%x dd %d\n", src->flags&Falpha, mask->chan, GREY1, dst->depth);
 	if(!(src->flags&Falpha) && mask->chan == GREY1 && dst->depth >= 8 && op == SoverD){
-		DBG print("boolcopy...");
+		DBG jehanne_print("boolcopy...");
 		rdsrc = convfn(dst, &z->dpar, src, &z->spar, &ndrawbuf);
 		rddst = readptr;
 		rdmask = readfn(mask);
@@ -724,8 +724,8 @@ alphadraw(Memdrawparam *par)
 	}
 
 	if(z->n < ndrawbuf){
-		free(z->p);
-		if((z->p = mallocz(ndrawbuf, 0)) == nil){
+		jehanne_free(z->p);
+		if((z->p = jehanne_mallocz(ndrawbuf, 0)) == nil){
 			z->inuse = 0;
 			return 0;
 		}
@@ -770,9 +770,9 @@ alphadraw(Memdrawparam *par)
 		clipy(mask, &masky);
 
 		bsrc = rdsrc(&z->spar, z->spar.bufbase, srcy);
-		DBG print("[");
+		DBG jehanne_print("[");
 		bmask = rdmask(&z->mpar, z->mpar.bufbase, masky);
-		DBG print("]\n");
+		DBG jehanne_print("]\n");
 		bdst = rddst(&z->dpar, z->dpar.bufbase, dsty);
 		DBG	dumpbuf("src", bsrc, dx);
 		DBG	dumpbuf("mask", bmask, dx);
@@ -793,7 +793,7 @@ alphacalc0(Buffer bdst, Buffer b1, Buffer b2, int dx, int grey, int op)
 	USED(op);
 	USED(b1);
 	USED(b2);
-	memset(bdst.rgba, 0, dx*bdst.delta);
+	jehanne_memset(bdst.rgba, 0, dx*bdst.delta);
 	return bdst;
 }
 
@@ -1262,22 +1262,22 @@ readnbit(Param *p, uint8_t *buf, int y)
 		n = p->img->r.max.x - x;
 
 	r = p->bytermin + y*p->bwidth;
-	DBG print("readnbit dx %d %p=%p+%d*%d, *r=%d fetch %d ", dx, r, p->bytermin, y, p->bwidth, *r, n);
+	DBG jehanne_print("readnbit dx %d %p=%p+%d*%d, *r=%d fetch %d ", dx, r, p->bytermin, y, p->bwidth, *r, n);
 	bits = *r++;
 	nbits = 8;
 	if(i=x&(npack-1)){
-		DBG print("throwaway %d...", i);
+		DBG jehanne_print("throwaway %d...", i);
 		bits <<= depth*i;
 		nbits -= depth*i;
 	}
 	for(i=0; i<n; i++){
 		if(nbits == 0){
-			DBG print("(%.2ux)...", *r);
+			DBG jehanne_print("(%.2ux)...", *r);
 			bits = *r++;
 			nbits = 8;
 		}
 		*w++ = repl[bits>>sh];
-		DBG print("bit %x...", repl[bits>>sh]);
+		DBG jehanne_print("bit %x...", repl[bits>>sh]);
 		bits <<= depth;
 		nbits -= depth;
 	}
@@ -1294,24 +1294,24 @@ readnbit(Param *p, uint8_t *buf, int y)
 		n = p->r.min.x - x;
 
 	r = p->bytey0s + y*p->bwidth;
-	DBG print("x=%d r=%p...", x, r);
+	DBG jehanne_print("x=%d r=%p...", x, r);
 	bits = *r++;
 	nbits = 8;
 	if(i=x&(npack-1)){
 		bits <<= depth*i;
 		nbits -= depth*i;
 	}
-	DBG print("nbits=%d...", nbits);
+	DBG jehanne_print("nbits=%d...", nbits);
 	for(i=0; i<n; i++){
 		if(nbits == 0){
 			bits = *r++;
 			nbits = 8;
 		}
 		*w++ = repl[bits>>sh];
-		DBG print("bit %x...", repl[bits>>sh]);
+		DBG jehanne_print("bit %x...", repl[bits>>sh]);
 		bits <<= depth;
 		nbits -= depth;
-		DBG print("bits %x nbits %d...", bits, nbits);
+		DBG jehanne_print("bits %x nbits %d...", bits, nbits);
 	}
 	dx -= n;
 	if(dx == 0)
@@ -1350,7 +1350,7 @@ writenbit(Param *p, uint8_t *w, Buffer src)
 
 	for(; x<ex; x++){
 		bits <<= depth;
-		DBG print(" %x", *r);
+		DBG jehanne_print(" %x", *r);
 		bits |= (*r++ >> sh);
 		nbits += depth;
 		if(nbits == 8){
@@ -1365,7 +1365,7 @@ writenbit(Param *p, uint8_t *w, Buffer src)
 		bits |= *w & ((1<<sh)-1);
 		*w = bits;
 	}
-	DBG print("\n");
+	DBG jehanne_print("\n");
 	return;
 }
 #undef DBG
@@ -1479,12 +1479,12 @@ readbyte(Param *p, uint8_t *buf, int y)
 	alphaonly = p->alphaonly;
 	copyalpha = (img->flags&Falpha) ? 1 : 0;
 
-	DBG print("copyalpha %d alphaonly %d convgrey %d isgrey %d\n", copyalpha, alphaonly, convgrey, isgrey);
+	DBG jehanne_print("copyalpha %d alphaonly %d convgrey %d isgrey %d\n", copyalpha, alphaonly, convgrey, isgrey);
 	/* if we can, avoid processing everything */
 	if(!(img->flags&Frepl) && !convgrey && (img->flags&Fbytes)){
-		memset(&b, 0, sizeof b);
+		jehanne_memset(&b, 0, sizeof b);
 		if(p->needbuf){
-			memmove(buf, r, dx*nb);
+			jehanne_memmove(buf, r, dx*nb);
 			r = buf;
 		}
 		b.rgba = (uint32_t*)r;
@@ -1504,7 +1504,7 @@ readbyte(Param *p, uint8_t *buf, int y)
 		return b;
 	}
 
-	DBG print("2\n");
+	DBG jehanne_print("2\n");
 	rrepl = replbit[img->nbits[CRed]];
 	grepl = replbit[img->nbits[CGreen]];
 	brepl = replbit[img->nbits[CBlue]];
@@ -1515,7 +1515,7 @@ readbyte(Param *p, uint8_t *buf, int y)
 		u = r[0] | (r[1]<<8) | (r[2]<<16) | (r[3]<<24);
 		if(copyalpha) {
 			*w++ = arepl[(u>>img->shift[CAlpha]) & img->mask[CAlpha]];
-			DBG print("a %x\n", w[-1]);
+			DBG jehanne_print("a %x\n", w[-1]);
 		}
 
 		if(isgrey)
@@ -1525,9 +1525,9 @@ readbyte(Param *p, uint8_t *buf, int y)
 			ugrn = grepl[(u >> img->shift[CGreen]) & img->mask[CGreen]];
 			ublu = brepl[(u >> img->shift[CBlue]) & img->mask[CBlue]];
 			if(convgrey){
-				DBG print("g %x %x %x\n", ured, ugrn, ublu);
+				DBG jehanne_print("g %x %x %x\n", ured, ugrn, ublu);
 				*w++ = RGB2K(ured, ugrn, ublu);
-				DBG print("%x\n", w[-1]);
+				DBG jehanne_print("%x\n", w[-1]);
 			}else{
 				*w++ = brepl[(u >> img->shift[CBlue]) & img->mask[CBlue]];
 				*w++ = grepl[(u >> img->shift[CGreen]) & img->mask[CGreen]];
@@ -1550,7 +1550,7 @@ readbyte(Param *p, uint8_t *buf, int y)
 		b.grey = buf+copyalpha;
 		b.red = b.grn = b.blu = buf+copyalpha;
 		b.delta = copyalpha+1;
-		DBG print("alpha %x grey %x\n", b.alpha ? *b.alpha : 0xFF, *b.grey);
+		DBG jehanne_print("alpha %x grey %x\n", b.alpha ? *b.alpha : 0xFF, *b.grey);
 	}else{
 		b.blu = buf+copyalpha;
 		b.grn = buf+copyalpha+1;
@@ -1596,12 +1596,12 @@ writebyte(Param *p, uint8_t *w, Buffer src)
 
 	for(i=0; i<dx; i++){
 		u = w[0] | (w[1]<<8) | (w[2]<<16) | (w[3]<<24);
-		DBG print("u %.8lux...", u);
+		DBG jehanne_print("u %.8lux...", u);
 		u &= mask;
-		DBG print("&mask %.8lux...", u);
+		DBG jehanne_print("&mask %.8lux...", u);
 		if(isgrey){
 			u |= ((*grey >> (8-img->nbits[CGrey])) & img->mask[CGrey]) << img->shift[CGrey];
-			DBG print("|grey %.8lux...", u);
+			DBG jehanne_print("|grey %.8lux...", u);
 			grey += delta;
 		}else{
 			u |= ((*red >> (8-img->nbits[CRed])) & img->mask[CRed]) << img->shift[CRed];
@@ -1610,13 +1610,13 @@ writebyte(Param *p, uint8_t *w, Buffer src)
 			red += delta;
 			grn += delta;
 			blu += delta;
-			DBG print("|rgb %.8lux...", u);
+			DBG jehanne_print("|rgb %.8lux...", u);
 		}
 
 		if(isalpha){
 			u |= ((*alpha >> (8-img->nbits[CAlpha])) & img->mask[CAlpha]) << img->shift[CAlpha];
 			alpha += adelta;
-			DBG print("|alpha %.8lux...", u);
+			DBG jehanne_print("|alpha %.8lux...", u);
 		}
 
 		w[0] = u;
@@ -1685,7 +1685,7 @@ boolmemmove(Buffer bdst, Buffer bsrc, Buffer b1, int dx, int i, int o)
 	USED(o);
 	USED(b1);
 	USED(bsrc);
-	memmove(bdst.red, bsrc.red, dx*bdst.delta);
+	jehanne_memmove(bdst.red, bsrc.red, dx*bdst.delta);
 	return bdst;
 }
 
@@ -2030,7 +2030,7 @@ rgbatoimg(Memimage *img, uint32_t rgba)
 		}
 		d += nb;
 	}
-//	print("rgba2img %.8lux = %.*lux\n", rgba, 2*d/8, v);
+//	jehanne_print("rgba2img %.8lux = %.*lux\n", rgba, 2*d/8, v);
 	return v;
 }
 
@@ -2049,7 +2049,7 @@ memoptdraw(Memdrawparam *par)
 	dst = par->dst;
 	op = par->op;
 
-	DBG print("state %lux mval %lux dd %d\n", par->state, par->mval, dst->depth);
+	DBG jehanne_print("state %lux mval %lux dd %d\n", par->state, par->mval, dst->depth);
 	/*
 	 * If we have an opaque mask and source is one opaque pixel we can convert to the
 	 * destination format and just replicate with memset.
@@ -2060,11 +2060,11 @@ memoptdraw(Memdrawparam *par)
 		int d, dwid, ppb, np, nb;
 		unsigned char lm, rm;
 
-		DBG print("memopt, dst %p, dst->data->bdata %p\n", dst, dst->data->bdata);
+		DBG jehanne_print("memopt, dst %p, dst->data->bdata %p\n", dst, dst->data->bdata);
 		dwid = dst->width*sizeof(uint32_t);
 		dp = byteaddr(dst, par->r.min);
 		v = par->sdval;
-		DBG print("sdval %lud, depth %d\n", v, dst->depth);
+		DBG jehanne_print("sdval %lud, depth %d\n", v, dst->depth);
 		switch(dst->depth){
 		case 1:
 		case 2:
@@ -2078,16 +2078,16 @@ memoptdraw(Memdrawparam *par)
 			dx -= (ppb-np);
 			nb = 8 - np * dst->depth;		/* no. bits used on right side of word */
 			lm = (1<<nb)-1;
-			DBG print("np %d x %d nb %d lm %ux ppb %d m %ux\n", np, par->r.min.x, nb, lm, ppb, m);	
+			DBG jehanne_print("np %d x %d nb %d lm %ux ppb %d m %ux\n", np, par->r.min.x, nb, lm, ppb, m);	
 
 			/* right edge */
 			np = par->r.max.x&m;	/* no. pixels used on left side of word */
 			dx -= np;
 			nb = 8 - np * dst->depth;		/* no. bits unused on right side of word */
 			rm = ~((1<<nb)-1);
-			DBG print("np %d x %d nb %d rm %ux ppb %d m %ux\n", np, par->r.max.x, nb, rm, ppb, m);	
+			DBG jehanne_print("np %d x %d nb %d rm %ux ppb %d m %ux\n", np, par->r.max.x, nb, rm, ppb, m);	
 
-			DBG print("dx %d Dx %d\n", dx, Dx(par->r));
+			DBG jehanne_print("dx %d Dx %d\n", dx, Dx(par->r));
 			/* lm, rm are masks that are 1 where we should touch the bits */
 			if(dx < 0){	/* just one byte */
 				lm &= rm;
@@ -2099,7 +2099,7 @@ memoptdraw(Memdrawparam *par)
 
 				for(y=0; y<dy; y++, dp+=dwid){
 					if(lm){
-						DBG print("dp %p v %lux lm %ux (v ^ *dp) & lm %lux\n", dp, v, lm, (v^*dp)&lm);
+						DBG jehanne_print("dp %p v %lux lm %ux (v ^ *dp) & lm %lux\n", dp, v, lm, (v^*dp)&lm);
 						*dp ^= (v ^ *dp) & lm;
 						dp++;
 					}
@@ -2116,7 +2116,7 @@ memoptdraw(Memdrawparam *par)
 						*dp ^= (v ^ *dp) & lm;
 						dp++;
 					}
-					memset(dp, v, dx);
+					jehanne_memset(dp, v, dx);
 					dp += dx;
 					*dp ^= (v ^ *dp) & rm;
 				}
@@ -2130,7 +2130,7 @@ memoptdraw(Memdrawparam *par)
 			p[0] = v;		/* make little endian */
 			p[1] = v>>8;
 			v = *(uint16_t*)p;
-			DBG print("dp=%p; dx=%d; for(y=0; y<%d; y++, dp+=%d)\nmemsets(dp, v, dx);\n", dp, dx, dy, dwid);
+			DBG jehanne_print("dp=%p; dx=%d; for(y=0; y<%d; y++, dp+=%d)\nmemsets(dp, v, dx);\n", dp, dx, dy, dwid);
 			for(y=0; y<dy; y++, dp+=dwid)
 				memsets(dp, v, dx);
 			return 1;
@@ -2181,7 +2181,7 @@ memoptdraw(Memdrawparam *par)
 		}
 		nb = (dx*src->depth)/8;
 		for(y=0; y<dy; y++, sp+=swid, dp+=dwid)
-			memmove(dp, sp, nb);
+			jehanne_memmove(dp, sp, nb);
 		return 1;
 	}
 
@@ -2302,7 +2302,7 @@ chardraw(Memdrawparam *par)
 	Rectangle r, mr;
 	Memimage *mask, *src, *dst;
 
-DBG print("chardraw? mf %lux md %d sf %lux dxs %d dys %d dd %d ddat %p sdat %p\n",
+DBG jehanne_print("chardraw? mf %lux md %d sf %lux dxs %d dys %d dd %d ddat %p sdat %p\n",
 		par->mask->flags, par->mask->depth, par->src->flags, 
 		Dx(par->src->r), Dy(par->src->r), par->dst->depth, par->dst->data, par->src->data);
 
@@ -2326,7 +2326,7 @@ DBG print("chardraw? mf %lux md %d sf %lux dxs %d dys %d dd %d ddat %p sdat %p\n
 
 	wp = byteaddr(dst, r.min);
 	dstwid = dst->width*sizeof(uint32_t);
-	DBG print("bsh %d\n", bsh);
+	DBG jehanne_print("bsh %d\n", bsh);
 	dy = Dy(r);
 	dx = Dx(r);
 
@@ -2363,7 +2363,7 @@ DBG print("chardraw? mf %lux md %d sf %lux dxs %d dys %d dd %d ddat %p sdat %p\n
 				i = x&7;
 				if(i == 8-1)
 					bits = *q++;
-				DBG print("bits %lux sh %d...", bits, i);
+				DBG jehanne_print("bits %lux sh %d...", bits, i);
 				if((bits>>i)&1)
 					*wc = v;
 			}
@@ -2375,7 +2375,7 @@ DBG print("chardraw? mf %lux md %d sf %lux dxs %d dys %d dd %d ddat %p sdat %p\n
 				i = x&7;
 				if(i == 8-1)
 					bits = *q++;
-				DBG print("bits %lux sh %d...", bits, i);
+				DBG jehanne_print("bits %lux sh %d...", bits, i);
 				if((bits>>i)&1)
 					*ws = v;
 			}
@@ -2386,7 +2386,7 @@ DBG print("chardraw? mf %lux md %d sf %lux dxs %d dys %d dd %d ddat %p sdat %p\n
 				i = x&7;
 				if(i == 8-1)
 					bits = *q++;
-				DBG print("bits %lux sh %d...", bits, i);
+				DBG jehanne_print("bits %lux sh %d...", bits, i);
 				if((bits>>i)&1){
 					wc[0] = sp[0];
 					wc[1] = sp[1];
@@ -2409,7 +2409,7 @@ DBG print("chardraw? mf %lux md %d sf %lux dxs %d dys %d dd %d ddat %p sdat %p\n
 		}
 	}
 
-	DBG print("\n");	
+	DBG jehanne_print("\n");	
 	return 1;	
 }
 #undef DBG

@@ -2,7 +2,7 @@
 
 cat <<EOF
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 
 typedef struct Err Err;
 struct Err

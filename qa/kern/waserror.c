@@ -3,7 +3,7 @@
 // -- complete
 // Since we're going to improve waserror
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 
 void
 main(void)

@@ -18,7 +18,7 @@
 #include <u.h>
 
 void*
-bsearch(const void* key, const void* base, long nmemb, int size,
+jehanne_bsearch(const void* key, const void* base, long nmemb, int size,
 		int (*compar)(const void*, const void*))
 {
 	long i, bot, top, new;

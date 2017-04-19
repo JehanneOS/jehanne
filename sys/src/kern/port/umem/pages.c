@@ -77,7 +77,7 @@ umem_init(void)
 	avail = sys->pmpaged;	/* could include a portion of unassigned memory */
 	pool.npages = avail/PGSZ;
 	pool.npages -= (pool.npages*sizeof(UserPage)) / PGSZ;	/* little overestimate of the space occupied by the paging structures */
-	pool.pages = mallocz(pool.npages*sizeof(UserPage), 1);
+	pool.pages = jehanne_mallocz(pool.npages*sizeof(UserPage), 1);
 	if(pool.pages == nil)
 		panic("umem_init: out of memory");
 	pool.freepages = 0;
@@ -93,7 +93,7 @@ umem_init(void)
 	rawmem_init();
 	imagepool_init();
 
-	print("%lldM memory: %lldK+%lldM kernel,"
+	jehanne_print("%lldM memory: %lldK+%lldM kernel,"
 		" %lldM user, %lldM uncommitted\n",
 		mkb/KiB, kkb, kmkb/KiB, pkb/KiB, (mkb-kkb-kmkb-pkb)/KiB
 	);
@@ -177,7 +177,7 @@ page_new(PagePointer *slot, int clear)
 
 	if(clear) {
 		k = kmap2(p);
-		memset(VA(k), 0, PGSZ);
+		jehanne_memset(VA(k), 0, PGSZ);
 		kunmap(k);
 	}
 
@@ -312,7 +312,7 @@ page_duplicate(PagePointer *slot)
 
 	o = kmap2(original);
 	d = kmap2(duplicate);
-	memmove(VA(d), VA(o), PGSZ);
+	jehanne_memmove(VA(d), VA(o), PGSZ);
 	kunmap(d);
 	kunmap(o);
 
@@ -402,7 +402,7 @@ table_new(PageTable** table, uintptr_t base, uintptr_t top)
 	if(npages > (SEGMAPSIZE*PTEPERTAB))
 		return 0;
 	mapsize = HOWMANY(npages, PTEPERTAB);
-	new = mallocz(sizeof(PageTable) + mapsize*sizeof(PageTableEntry*), 1);
+	new = jehanne_mallocz(sizeof(PageTable) + mapsize*sizeof(PageTableEntry*), 1);
 	if(new == nil)
 		return 0;
 	new->base = base;
@@ -436,7 +436,7 @@ table_lookup(PageTable* table, uintptr_t va)
 		pte->first = PTEPERTAB-1;
 		pte->last = 0;
 		if(!CASV(&table->map[pteindex], nil, pte)){
-			free(pte);
+			jehanne_free(pte);
 			pte = table->map[pteindex];
 		}
 	}
@@ -482,7 +482,7 @@ table_clone(PageTable* target, PageTable* original)
 		opte = original->map[entry];
 		if(opte == nil)
 			continue;
-		pte = mallocz(sizeof(PageTableEntry), 1);
+		pte = jehanne_mallocz(sizeof(PageTableEntry), 1);
 		if(pte == nil)
 			goto FreePageTableEntries;
 		pte->first = opte->first;
@@ -499,14 +499,14 @@ table_clone(PageTable* target, PageTable* original)
 	return 1;
 
 FreePageTableEntries:
-	for(--entry; entry > 0; --entry){
+	for(--entry; entry >= 0; --entry){
 		pte = target->map[entry];
 		if(pte == nil)
 			continue;
 		for(page = pte->first; page <= pte->last; ++page)
 			page_dispose(&pte->pages[page]);
-		free(pte);
-		/* no need to zero new->map[entry]: it dies on free(new) */
+		jehanne_free(pte);
+		/* no need to zero new->map[entry]: it dies on jehanne_free(new) */
 	}
 	return 0;
 }
@@ -521,11 +521,11 @@ table_free_pages(PageTable* table)
 	MLG("target %#p", table);
 	if(table->base == 0)
 		panic("table_free_pages: uninitialized target, pc %#p", getcallerpc());
-	for(entry = table->mapsize - 1; entry > 0; --entry){
+	for(entry = table->mapsize - 1; entry >= 0; --entry){
 		pte = table->map[entry];
 		if(pte == nil)
 			continue;
-		for(page = pte->last; page > pte->first; --page){
+		for(page = pte->last; page >= pte->first; --page){
 			if(pte->pages[page] == 0)
 				continue;
 			if(!page_dispose(&pte->pages[page]))
@@ -545,7 +545,7 @@ table_walk_pages(PageTable* table, void (*func)(uintptr_t, UserPage*))
 		pte = table->map[entry];
 		if(pte == nil)
 			continue;
-		for(page = pte->first; page < pte->last; ++page){
+		for(page = pte->first; page <= pte->last; ++page){
 			if(pte->pages[page] == 0)
 				continue;
 			func(
@@ -571,19 +571,19 @@ table_free(PageTable** target)
 		panic("table_free: empty target, pc %#p", getcallerpc());
 	if(table->base == 0)
 		panic("table_free: uninitialized target, pc %#p", getcallerpc());
-	for(entry = table->mapsize - 1; entry > 0; --entry){
+	for(entry = table->mapsize - 1; entry >= 0; --entry){
 		pte = table->map[entry];
 		if(pte == nil)
 			continue;
-		for(page = pte->last; page > pte->first; --page){
+		for(page = pte->last; page >= pte->first; --page){
 			if(pte->pages[page] == 0)
 				continue;
 			if(!page_dispose(&pte->pages[page]))
 				panic("table_free: concurrent disposition of a page, pc %#p", getcallerpc());
 		}
-		free(pte);	/* this is why we don't simply call table_free_pages */
+		jehanne_free(pte);	/* this is why we don't simply call table_free_pages */
 	}
-	free(table);
+	jehanne_free(table);
 }
 
 int
@@ -614,22 +614,22 @@ table_resize(PageTable** target, uintptr_t top)
 		return 0;
 	copy = MIN(new->mapsize, old->mapsize);
 
-	memmove(new->map, old->map, copy*sizeof(PageTableEntry*));
+	jehanne_memmove(new->map, old->map, copy*sizeof(PageTableEntry*));
 	if(!CASV(target, old, new))
 		panic("table_resize: concurrent resize, pc %#p", getcallerpc());
 	while(copy < old->mapsize){
 		pte = old->map[copy++];
 		if(pte == nil)
 			continue;
-		for(page = pte->last; page > pte->first; --page){
+		for(page = pte->last; page >= pte->first; --page){
 			if(pte->pages[page] == 0)
 				continue;
 			if(!page_dispose(&pte->pages[page]))
 				panic("table_resize: concurrent disposition of a page, pc %#p", getcallerpc());
 		}
-		free(pte);
-		/* no need to zero old->map[copy-1]: it dies on free(old) */
+		jehanne_free(pte);
+		/* no need to zero old->map[copy-1]: it dies on jehanne_free(old) */
 	}
-	free(old);
+	jehanne_free(old);
 	return 1;
 }

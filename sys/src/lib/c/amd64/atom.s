@@ -1,8 +1,8 @@
 .text
 
-.globl ainc				/* long ainc(long *); */
+.globl jehanne_ainc				/* long ainc(long *); */
 					/* N.B.: long in Plan 9 is 32 BITS! */
-ainc:
+jehanne_ainc:
 
 	pushq	%rcx
 ainclp:
@@ -15,8 +15,8 @@ ainclp:
 	popq %rcx
 	ret
 
-.globl adec     /* long adec(long*); */
-adec:
+.globl jehanne_adec     /* long adec(long*); */
+jehanne_adec:
 	pushq	%rcx
 adeclp:
 	movl	(%rdi), %eax
@@ -31,8 +31,8 @@ adeclp:
 /*
  * void mfence(void);
  */
-.globl mfence
-mfence:
+.globl jehanne_mfence
+jehanne_mfence:
 	mfence
 	ret
 

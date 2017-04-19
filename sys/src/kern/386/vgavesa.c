@@ -51,8 +51,8 @@ vbesetup(VGAreg *u, int ax)
 	uint32_t pa;
 
 	pa = PADDR(RMBUF);
-	memset(modebuf, 0, sizeof modebuf);
-	memset(u, 0, sizeof *u);
+	jehanne_memset(modebuf, 0, sizeof modebuf);
+	jehanne_memset(u, 0, sizeof *u);
 	u->ax = ax;
 	u->es = (pa>>4)&0xF000;
 	u->di = pa&0xFFFF;
@@ -78,7 +78,7 @@ vbecall(VGAreg *u)
 	pa = PADDR(RMBUF);
 	cmem->dev->write(cmem, modebuf, sizeof modebuf, pa);
 	u->trap = 0x10;
-	print("vbecall: sizeof u is %d\n", sizeof *u);
+	jehanne_print("vbecall: sizeof u is %d\n", sizeof *u);
 	creg->dev->write(creg, u, sizeof *u, 0);
 
 	creg->dev->read(creg, u, sizeof *u, 0);
@@ -99,9 +99,9 @@ vbecheck(void)
 	uint8_t *p;
 
 	p = vbesetup(&u, 0x4F00);
-	strcpy((char*)p, "VBE2");
+	jehanne_strcpy((char*)p, "VBE2");
 	vbecall(&u);
-	if(memcmp((char*)p, "VESA", 4) != 0)
+	if(jehanne_memcmp((char*)p, "VESA", 4) != 0)
 		error("bad vesa signature");
 	if(p[5] < 2)
 		error("bad vesa version");
@@ -221,7 +221,7 @@ vesaflush(VGAscr *scr, Rectangle r)
 	sp += off;
 	esp = sp + Dy(r) * wid;
 	while(sp < esp){
-		memmove(hp, sp, w);
+		jehanne_memmove(hp, sp, w);
 		hp += wid;
 		sp += wid;
 	}

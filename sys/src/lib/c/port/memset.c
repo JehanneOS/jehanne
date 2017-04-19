@@ -11,7 +11,7 @@
 #include	<libc.h>
 
 void*
-memset(void *ap, int c, uint32_t n)
+jehanne_memset(void *ap, int c, uint32_t n)
 {
 	char *p;
 

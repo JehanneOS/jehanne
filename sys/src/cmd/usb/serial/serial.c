@@ -4,7 +4,7 @@
  */
 
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 #include <ctype.h>
 #include <thread.h>
 #include <9P2000.h>

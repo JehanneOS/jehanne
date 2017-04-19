@@ -27,7 +27,7 @@
  * - the (positive) length of the working directory on success
  */
 long
-getwd(char *buf, int nbuf)
+jehanne_getwd(char *buf, int nbuf)
 {
 	long n;
 	int fd;

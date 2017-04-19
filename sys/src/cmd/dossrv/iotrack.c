@@ -139,7 +139,7 @@ loop:
 		}
 	unmlock(&mp->lock);
 	if(p == mp){
-		print("iotrack all ref'd\n");
+		jehanne_print("iotrack all ref'd\n");
 		goto loop;
 	}
 	if(p->flags & BMOD){
@@ -235,7 +235,7 @@ tread(Iotrack *t)
 	}
 	for(i=0; i<Sect2trk; i++)
 		if(t->tp->p[i] == 0){
-			memmove(t->tp->buf[i], buf[i], Sectorsize);
+			jehanne_memmove(t->tp->buf[i], buf[i], Sectorsize);
 			chat("%d ", i);
 		}
 	chat("done]");
@@ -293,7 +293,7 @@ iotrack_init(void)
 		p->prev = p->next = p;
 		TOFRONT(mp, p);
 		p->tp = sbrk(sizeof(Track));
-		memset(p->tp->p, 0, sizeof p->tp->p);
+		jehanne_memset(p->tp->p, 0, sizeof p->tp->p);
 	}
 }
 
@@ -309,7 +309,7 @@ newsect(void)
 	if(p = freelist)	/* assign = */
 		freelist = p->next;
 	else
-		p = malloc(sizeof(Iosect));
+		p = jehanne_malloc(sizeof(Iosect));
 	unmlock(&freelock);
 	p->next = 0;
 	return p;

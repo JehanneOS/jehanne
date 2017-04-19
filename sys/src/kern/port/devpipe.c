@@ -52,20 +52,20 @@ pipeattach(Chan *c, Chan *ac, char *spec, int flags)
 	Pipe *p;
 
 	c = devattach('|', spec);
-	p = malloc(sizeof(Pipe));
+	p = jehanne_malloc(sizeof(Pipe));
 	if(p == 0)
 		exhausted("memory");
 	p->ref = 1;
 
 	p->q[0] = qopen(PIPEQSIZE, 0, 0, 0);
 	if(p->q[0] == 0){
-		free(p);
+		jehanne_free(p);
 		exhausted("memory");
 	}
 	p->q[1] = qopen(PIPEQSIZE, 0, 0, 0);
 	if(p->q[1] == 0){
-		free(p->q[0]);
-		free(p);
+		jehanne_free(p->q[0]);
+		jehanne_free(p);
 		exhausted("memory");
 	}
 
@@ -125,7 +125,7 @@ pipewalk(Chan *c, Chan *nc, char **name, int nname)
 		qlock(p);
 		p->ref++;
 		if(c->flag & COPEN){
-			print("channel open in pipewalk\n");
+			jehanne_print("channel open in pipewalk\n");
 			switch(PIPETYPE(c->qid.path)){
 			case Qdata0:
 				p->qref[0]++;
@@ -161,7 +161,7 @@ pipestat(Chan *c, uint8_t *db, long n)
 	default:
 		panic("pipestat");
 	}
-	n = convD2M(&dir, db, n);
+	n = jehanne_convD2M(&dir, db, n);
 	if(n < BIT16SZ)
 		error(Eshortstat);
 	return n;
@@ -248,9 +248,9 @@ pipeclose(Chan *c)
 	p->ref--;
 	if(p->ref == 0){
 		qunlock(p);
-		free(p->q[0]);
-		free(p->q[1]);
-		free(p);
+		jehanne_free(p->q[0]);
+		jehanne_free(p->q[1]);
+		jehanne_free(p);
 	} else
 		qunlock(p);
 }
@@ -302,7 +302,7 @@ pipewrite(Chan *c, void *va, long n, int64_t _1)
 	Pipe *p;
 
 	if(!islo())
-		print("pipewrite hi %#p\n", getcallerpc());
+		jehanne_print("pipewrite hi %#p\n", getcallerpc());
 	if(waserror()) {
 		/* avoid notes when pipe is a mounted queue */
 		if((c->flag & CMSG) == 0)

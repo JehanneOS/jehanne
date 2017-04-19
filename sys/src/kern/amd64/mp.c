@@ -8,7 +8,7 @@
 #include "apic.h"
 
 #undef DBG
-#define	DBG	print
+#define	DBG	jehanne_print
 /*
  * MultiProcessor Specification Version 1.[14].
  */
@@ -59,11 +59,11 @@ mpintrprint(char* s, uint8_t* p)
 
 	b = buf;
 	e = b + sizeof(buf);
-	b = seprint(b, e, "mpparse: intr:");
+	b = jehanne_seprint(b, e, "mpparse: intr:");
 	if(s != nil)
-		b = seprint(b, e, " %s:", s);
-	seprint(b, e, format, p[1], l16get(p+2), p[4], p[5], p[6], p[7]);
-	print(buf);
+		b = jehanne_seprint(b, e, " %s:", s);
+	jehanne_seprint(b, e, format, p[1], l16get(p+2), p[4], p[5], p[6], p[7]);
+	jehanne_print(buf);
 }
 
 static uint32_t
@@ -189,14 +189,14 @@ mpparse(PCMP* pcmp)
 	e = ((uint8_t*)pcmp)+l16get(pcmp->length);
 	while(p < e) switch(*p){
 	default:
-		print("mpparse: unknown PCMP type %d (e-p %#ld)\n", *p, e-p);
+		jehanne_print("mpparse: unknown PCMP type %d (e-p %#ld)\n", *p, e-p);
 		for(i = 0; p < e; i++){
 			if(i && ((i & 0x0f) == 0))
-				print("\n");
-			print(" %#2.2ux", *p);
+				jehanne_print("\n");
+			jehanne_print(" %#2.2ux", *p);
 			p++;
 		}
-		print("\n");
+		jehanne_print("\n");
 		break;
 	case 0:					/* processor */
 		/*
@@ -215,16 +215,16 @@ mpparse(PCMP* pcmp)
 	case 1:					/* bus */
 		DBG("mpparse: bus: %d type %6.6s\n", p[1], (char*)p+2);
 		if(mpbus[p[1]] != nil){
-			print("mpparse: bus %d already allocated\n", p[1]);
+			jehanne_print("mpparse: bus %d already allocated\n", p[1]);
 			p += 8;
 			break;
 		}
 		for(i = 0; i < nelem(mpbusdef); i++){
-			if(memcmp(p+2, mpbusdef[i].type, 6) != 0)
+			if(jehanne_memcmp(p+2, mpbusdef[i].type, 6) != 0)
 				continue;
-			if(memcmp(p+2, "ISA   ", 6) == 0){
+			if(jehanne_memcmp(p+2, "ISA   ", 6) == 0){
 				if(mpisabusno != -1){
-					print("mpparse: bus %d already have ISA bus %d\n",
+					jehanne_print("mpparse: bus %d already have ISA bus %d\n",
 						p[1], mpisabusno);
 					continue;
 				}
@@ -234,7 +234,7 @@ mpparse(PCMP* pcmp)
 			break;
 		}
 		if(mpbus[p[1]] == nil)
-			print("mpparse: bus %d type %6.6s unknown\n",
+			jehanne_print("mpparse: bus %d type %6.6s unknown\n",
 				p[1], (char*)p+2);
 
 		p += 8;
@@ -280,9 +280,9 @@ mpparse(PCMP* pcmp)
 		 * (but unlikely).
 		 */
 		bustype = -1;
-		if(memcmp(mpbus[p[4]]->type, "PCI   ", 6) == 0)
+		if(jehanne_memcmp(mpbus[p[4]]->type, "PCI   ", 6) == 0)
 			bustype = BusPCI;	/* had devno = p[5]<<2 */
-		else if(memcmp(mpbus[p[4]]->type, "ISA   ", 6) == 0)
+		else if(jehanne_memcmp(mpbus[p[4]]->type, "ISA   ", 6) == 0)
 			bustype = BusISA;
 		if(bustype != -1)
 			ioapicintrinit(bustype, p[4], p[6], p[7], p[5], lo);
@@ -328,14 +328,14 @@ mpparse(PCMP* pcmp)
 	while(p < e) switch(*p){
 	default:
 		n = p[1];
-		print("mpparse: unknown extended entry %d length %d\n", *p, n);
+		jehanne_print("mpparse: unknown extended entry %d length %d\n", *p, n);
 		for(i = 0; i < n; i++){
 			if(i && ((i & 0x0f) == 0))
-				print("\n");
-			print(" %#2.2ux", *p);
+				jehanne_print("\n");
+			jehanne_print(" %#2.2ux", *p);
 			p++;
 		}
-		print("\n");
+		jehanne_print("\n");
 		break;
 	case 128:
 		DBG("address space mapping\n");
@@ -410,7 +410,7 @@ mpsinit(void)
 		p = ((uint8_t*)pcmp) + l16get(pcmp->length);
 		i = checksum(p, l16get(pcmp->xlength));
 		if(((i+pcmp->xchecksum) & 0xff) != 0){
-			print("extended table checksums to %#ux\n", i);
+			jehanne_print("extended table checksums to %#ux\n", i);
 			vunmap(pcmp, n);
 			return;
 		}

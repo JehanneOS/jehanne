@@ -25,7 +25,7 @@ pgrpnote(uint32_t noteid, char *a, long n, int flag)
 	if(n >= ERRMAX-1)
 		error(Etoobig);
 
-	memmove(buf, a, n);
+	jehanne_memmove(buf, a, n);
 	buf[n] = 0;
 	for(i = 0; (p = psincref(i)) != nil; i++){
 		if(p == up || p->state == Dead || p->noteid != noteid || p->kp){
@@ -72,7 +72,7 @@ void
 closergrp(Rgrp *r)
 {
 	if(decref(&r->r) == 0)
-		free(r);
+		jehanne_free(r);
 }
 
 void
@@ -101,7 +101,7 @@ closepgrp(Pgrp *p)
 	}
 	wunlock(&p->ns);
 	qunlock(&p->debug);
-	free(p);
+	jehanne_free(p);
 }
 
 void
@@ -187,10 +187,10 @@ dupfgrp(Fgrp *f)
 	i = new->nfd%DELTAFD;
 	if(i != 0)
 		new->nfd += DELTAFD - i;
-	new->fd = malloc(new->nfd*sizeof(Chan*));
+	new->fd = jehanne_malloc(new->nfd*sizeof(Chan*));
 	if(new->fd == nil){
 		unlock(&f->l);
-		free(new);
+		jehanne_free(new);
 		error("no memory for fgrp");
 	}
 	new->r.ref = 1;
@@ -232,8 +232,8 @@ closefgrp(Fgrp *f)
 	}
 	up->closingfgrp = nil;
 
-	free(f->fd);
-	free(f);
+	jehanne_free(f->fd);
+	jehanne_free(f);
 }
 
 /*
@@ -254,7 +254,7 @@ forceclosefgrp(void)
 	Fgrp *f;
 
 	if(up->procctl != Proc_exitme || up->closingfgrp == nil){
-		print("bad forceclosefgrp call");
+		jehanne_print("bad forceclosefgrp call");
 		return;
 	}
 
@@ -295,8 +295,8 @@ mountfree(Mount *mount)
 		f = mount->next;
 		cclose(mount->to);
 		mount->mountid = 0;
-		free(mount->spec);
-		free(mount);
+		jehanne_free(mount->spec);
+		jehanne_free(mount);
 		mount = f;
 	}
 }
@@ -322,7 +322,7 @@ resrcwait(char *reason, char *pstag)
 		/* don't tie up the console with complaints */
 		if(now - lastwhine > Whinesecs) {
 			lastwhine = now;
-			print("%s\n", reason);
+			jehanne_print("%s\n", reason);
 		}
 	}
 

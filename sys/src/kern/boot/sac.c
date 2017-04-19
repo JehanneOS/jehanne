@@ -45,9 +45,9 @@ configsac(Method *mp)
 	write(fd, "brick", 5);
 	close(fd);
 
-	sprint(cmd, "/arch/%s/init", cputype);
-	print("starting %s\n", cmd);
-	execl(cmd, "init", "-c", 0);
+	jehanne_sprint(cmd, "/arch/%s/init", cputype);
+	jehanne_print("starting %s\n", cmd);
+	jehanne_execl(cmd, "init", "-c", 0);
 	fatal(cmd);
 }
 

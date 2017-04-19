@@ -304,7 +304,7 @@ cfissetup(Aportc *pc)
 	uint8_t *cfis;
 
 	cfis = pc->pm->ctab->cfis;
-	memset(cfis, 0, 0x20);
+	jehanne_memset(cfis, 0, 0x20);
 	cfis[0] = 0x27;
 	cfis[1] = 0x80;
 	cfis[7] = Obs;
@@ -499,7 +499,7 @@ ahciidentify0(Aportc *pc, void *id, int atapi)
 	c[2] = tab[atapi];
 	listsetup(pc, 1<<16);
 
-	memset(id, 0, 0x100);			/* magic */
+	jehanne_memset(id, 0, 0x100);			/* magic */
 	p = &pc->pm->ctab->prdt;
 	p->dba = PCIWADDRL(id);
 	p->dbahi = PCIWADDRH(id);
@@ -684,7 +684,7 @@ ahcirecover(Aportc *pc)
 static void*
 malign(int size, int align)
 {
-	return mallocalign(size, align, 0, 0);
+	return jehanne_mallocalign(size, align, 0, 0);
 }
 
 static void
@@ -845,7 +845,7 @@ idmove(char *p, uint16_t *a, int n)
 	e = p;
 	for (p = op; *p == ' '; p++)
 		;
-	memmove(op, p, n - (e - p));
+	jehanne_memmove(op, p, n - (e - p));
 }
 
 static int
@@ -858,7 +858,7 @@ identify(Drive *d)
 
 	if(d->info == nil) {
 		d->infosz = 512 * sizeof(uint16_t);
-		d->info = malloc(d->infosz);
+		d->info = jehanne_malloc(d->infosz);
 	}
 	if(d->info == nil) {
 		d->info = d->tinyinfo;
@@ -871,7 +871,7 @@ identify(Drive *d)
 		return -1;
 	}
 	osectors = d->sectors;
-	memmove(oserial, d->serial, sizeof d->serial);
+	jehanne_memmove(oserial, d->serial, sizeof d->serial);
 
 	u = d->unit;
 	d->sectors = s;
@@ -884,13 +884,13 @@ identify(Drive *d)
 	idmove(d->firmware, id+23, 8);
 	idmove(d->model, id+27, 40);
 
-	memset(u->inquiry, 0, sizeof u->inquiry);
+	jehanne_memset(u->inquiry, 0, sizeof u->inquiry);
 	u->inquiry[2] = 2;
 	u->inquiry[3] = 2;
 	u->inquiry[4] = sizeof u->inquiry - 4;
-	memmove(u->inquiry+8, d->model, 40);
+	jehanne_memmove(u->inquiry+8, d->model, 40);
 
-	if(osectors != s || memcmp(oserial, d->serial, sizeof oserial) != 0){
+	if(osectors != s || jehanne_memcmp(oserial, d->serial, sizeof oserial) != 0){
 		d->mediachange = 1;
 		u->sectors = 0;
 	}
@@ -1171,13 +1171,13 @@ checkdrive(Drive *d, int i)
 	char *name;
 
 	if(d == nil) {
-		print("checkdrive: nil d\n");
+		jehanne_print("checkdrive: nil d\n");
 		return;
 	}
 	ilock(d);
 	if(d->unit == nil || d->port == nil) {
 		if(0)
-			print("checkdrive: nil d->%s\n",
+			jehanne_print("checkdrive: nil d->%s\n",
 				d->unit == nil? "unit": "port");
 		iunlock(d);
 		return;
@@ -1406,7 +1406,7 @@ awaitspinup(Drive *d)
 			ilock(d);
 			break;
 		}
-	print("awaitspinup: %s didn't spin up after 20 seconds\n", name);
+	jehanne_print("awaitspinup: %s didn't spin up after 20 seconds\n", name);
 	iunlock(d);
 }
 
@@ -1447,7 +1447,7 @@ iaenable(SDev *s)
 		if(c->ndrive == 0)
 			panic("iaenable: zero s->ctlr->ndrive");
 		pcisetbme(c->pci);
-		snprint(name, sizeof name, "%s (%s)", s->name, s->ifc->name);
+		jehanne_snprint(name, sizeof name, "%s (%s)", s->name, s->ifc->name);
 		c->vector = intrenable(c->pci->intl, iainterrupt, c, c->pci->tbdf, name);
 		/* supposed to squelch leftover interrupts here. */
 		ahcienable(c->hba);
@@ -1470,7 +1470,7 @@ iadisable(SDev *s)
 	c = s->ctlr;
 	ilock(c);
 	ahcidisable(c->hba);
-	snprint(name, sizeof name, "%s (%s)", s->name, s->ifc->name);
+	jehanne_snprint(name, sizeof name, "%s (%s)", s->name, s->ifc->name);
 	intrdisable(c->vector);
 	c->enabled = 0;
 	iunlock(c);
@@ -1586,8 +1586,8 @@ ahcibuildpkt(Aportm *pm, SDreq *r, void *data, int n)
 	fill = pm->feat&Datapi16? 16: 12;
 	if((len = r->clen) > fill)
 		len = fill;
-	memmove(t->atapi, r->cmd, len);
-	memset(t->atapi+len, 0, fill-len);
+	jehanne_memmove(t->atapi, r->cmd, len);
+	jehanne_memset(t->atapi+len, 0, fill-len);
 
 	c[0] = 0x27;
 	c[1] = 0x80;
@@ -1646,7 +1646,7 @@ waitready(Drive *d)
 			return 0;	/* ready, present & phy. comm. */
 		esleep(250);
 	}
-	print("%s: not responding; offline\n", d->unit->name);
+	jehanne_print("%s: not responding; offline\n", d->unit->name);
 	d->state = Doffline;
 	return -1;
 }
@@ -1745,7 +1745,7 @@ retry:
 	qunlock(&d->portm);
 	if(flag == 0){
 		if(++try == 10){
-			print("%s: bad disk\n", name);
+			jehanne_print("%s: bad disk\n", name);
 			r->status = SDcheck;
 			return SDcheck;
 		}
@@ -1768,13 +1768,13 @@ retry:
 			break;
 		}
 		if (!wormwrite) {
-			print("%s: retry\n", name);
+			jehanne_print("%s: retry\n", name);
 			goto retry;
 		}
 	}
 	if(flag & Ferror){
 		if((task&Eidnf) == 0)
-			print("%s: i/o error task=%#ux\n", name, task);
+			jehanne_print("%s: i/o error task=%#ux\n", name, task);
 		r->status = SDcheck;
 		return SDcheck;
 	}
@@ -1820,7 +1820,7 @@ iario(SDreq *r)
 	}
 
 	if(*cmd != 0x28 && *cmd != 0x2a){
-		print("%s: bad cmd %.2#ux\n", name, cmd[0]);
+		jehanne_print("%s: bad cmd %.2#ux\n", name, cmd[0]);
 		r->status = SDcheck;
 		return SDcheck;
 	}
@@ -1880,15 +1880,15 @@ retry:
 		qunlock(&d->portm);
 		if(flag == 0){
 			if(++try == 10){
-				print("%s: bad disk\n", name);
+				jehanne_print("%s: bad disk\n", name);
 				r->status = SDeio;
 				return SDeio;
 			}
-			print("%s: retry blk %lld\n", name, lba);
+			jehanne_print("%s: retry blk %lld\n", name, lba);
 			goto retry;
 		}
 		if(flag & Ferror){
-			print("%s: i/o error task=%#ux @%,lld\n",
+			jehanne_print("%s: i/o error task=%#ux @%,lld\n",
 				name, task, lba);
 			r->status = SDeio;
 			return SDeio;
@@ -1955,20 +1955,20 @@ didtype(Pcidev *p)
 		break;
 	case 0x1002:
 		if(p->did == 0x4380 || p->did == 0x4390 || p->did == 0x4391){
-			print("detected sb600 vid %#ux did %#ux\n", p->vid, p->did);
+			jehanne_print("detected sb600 vid %#ux did %#ux\n", p->vid, p->did);
 			return Tsb600;
 		}
 		break;
 	case 0x1b4b:
 		/* can't cope with sata 3 yet; touching sd files will hang */
 		if (p->did == 0x9123) {
-			print("ahci: ignoring sata 3 controller\n");
+			jehanne_print("ahci: ignoring sata 3 controller\n");
 			return -1;
 		}
 		break;
 	}
 	if(p->ccrb == Pcibcstore && p->ccru == Pciscsata && p->ccrp == 1){
-		print("ahci: Tunk: VID %#4.4ux DID %#4.4ux\n", p->vid, p->did);
+		jehanne_print("ahci: Tunk: VID %#4.4ux DID %#4.4ux\n", p->vid, p->did);
 		return Tunk;
 	}
 	return -1;
@@ -1984,13 +1984,13 @@ newctlr(Ctlr *ctlr, SDev *sdev, int nunit)
 	ctlr->mport = ctlr->hba->cap & ((1<<5)-1);
 
 	i = (ctlr->hba->cap >> 20) & ((1<<4)-1);		/* iss */
-	print("#S/sd%c: %s: %#p %s, %d ports, irq %d\n", sdev->idno,
+	jehanne_print("#S/sd%c: %s: %#p %s, %d ports, irq %d\n", sdev->idno,
 		Tname(ctlr), ctlr->physio, descmode[i], nunit, ctlr->pci->intl);
 	/* map the drives -- they don't all need to be enabled. */
 	n = 0;
-	ctlr->rawdrive = malloc(NCtlrdrv * sizeof(Drive));
+	ctlr->rawdrive = jehanne_malloc(NCtlrdrv * sizeof(Drive));
 	if(ctlr->rawdrive == nil) {
-		print("ahci: out of memory\n");
+		jehanne_print("ahci: out of memory\n");
 		return -1;
 	}
 	for(i = 0; i < NCtlrdrv; i++) {
@@ -2035,7 +2035,7 @@ iapnp(void)
 	if(done++)
 		return nil;
 
-	memset(olds, 0xff, sizeof olds);
+	jehanne_memset(olds, 0xff, sizeof olds);
 	p = nil;
 	head = tail = nil;
 	while((p = pcimatch(p, 0, 0)) != nil){
@@ -2043,19 +2043,19 @@ iapnp(void)
 		if (type == -1 || p->mem[Abar].bar == 0)
 			continue;
 		if(niactlr == NCtlr){
-			print("ahci: iapnp: %s: too many controllers\n",
+			jehanne_print("ahci: iapnp: %s: too many controllers\n",
 				tname[type]);
 			break;
 		}
 		c = iactlr + niactlr;
 		s = sdevs  + niactlr;
-		memset(c, 0, sizeof *c);
-		memset(s, 0, sizeof *s);
+		jehanne_memset(c, 0, sizeof *c);
+		jehanne_memset(s, 0, sizeof *s);
 		io = p->mem[Abar].bar & ~0xf;
 		c->physio = (uint8_t *)io;
 		c->mmio = vmap(io, p->mem[Abar].size);
 		if(c->mmio == 0){
-			print("ahci: %s: address %#lux in use did=%#ux\n",
+			jehanne_print("ahci: %s: address %#lux in use did=%#ux\n",
 				Tname(c), io, p->did);
 			continue;
 		}
@@ -2106,8 +2106,8 @@ pflag(char *s, char *e, uint8_t f)
 
 	for(i = 0; i < 8; i++)
 		if(f & (1 << i))
-			s = seprint(s, e, "%s ", flagname[i]);
-	return seprint(s, e, "\n");
+			s = jehanne_seprint(s, e, "%s ", flagname[i]);
+	return jehanne_seprint(s, e, "\n");
 }
 
 static int
@@ -2121,7 +2121,7 @@ iarctl(SDunit *u, char *p, int l)
 
 	c = u->dev->ctlr;
 	if(c == nil) {
-print("iarctl: nil u->dev->ctlr\n");
+jehanne_print("iarctl: nil u->dev->ctlr\n");
 		return 0;
 	}
 	d = c->drive[u->subno];
@@ -2130,28 +2130,28 @@ print("iarctl: nil u->dev->ctlr\n");
 	e = p+l;
 	op = p;
 	if(d->state == Dready){
-		p = seprint(p, e, "model\t%s\n", d->model);
-		p = seprint(p, e, "serial\t%s\n", d->serial);
-		p = seprint(p, e, "firm\t%s\n", d->firmware);
+		p = jehanne_seprint(p, e, "model\t%s\n", d->model);
+		p = jehanne_seprint(p, e, "serial\t%s\n", d->serial);
+		p = jehanne_seprint(p, e, "firm\t%s\n", d->firmware);
 		if(d->smartrs == 0xff)
-			p = seprint(p, e, "smart\tenable error\n");
+			p = jehanne_seprint(p, e, "smart\tenable error\n");
 		else if(d->smartrs == 0)
-			p = seprint(p, e, "smart\tdisabled\n");
+			p = jehanne_seprint(p, e, "smart\tdisabled\n");
 		else
-			p = seprint(p, e, "smart\t%s\n",
+			p = jehanne_seprint(p, e, "smart\t%s\n",
 				smarttab[d->portm.smart]);
-		p = seprint(p, e, "flag\t");
+		p = jehanne_seprint(p, e, "flag\t");
 		p = pflag(p, e, d->portm.feat);
 	}else
-		p = seprint(p, e, "no disk present [%s]\n", diskstates[d->state]);
+		p = jehanne_seprint(p, e, "no disk present [%s]\n", diskstates[d->state]);
 	serrstr(o->serror, buf, buf + sizeof buf - 1);
-	p = seprint(p, e, "reg\ttask %#lux cmd %#lux serr %#lux %s ci %#lux "
+	p = jehanne_seprint(p, e, "reg\ttask %#lux cmd %#lux serr %#lux %s ci %#lux "
 		"is %#lux; sig %#lux sstatus %06#lux\n",
 		o->task, o->cmd, o->serror, buf,
 		o->ci, o->isr, o->sig, o->sstatus);
 	if(d->unit == nil)
 		panic("iarctl: nil d->unit");
-	p = seprint(p, e, "geometry %llud %lud\n", d->sectors, d->unit->secsize);
+	p = jehanne_seprint(p, e, "geometry %llud %lud\n", d->sectors, d->unit->secsize);
 	return p - op;
 }
 
@@ -2172,7 +2172,7 @@ forcemode(Drive *d, char *mode)
 	int i;
 
 	for(i = 0; i < nelem(modename); i++)
-		if(strcmp(mode, modename[i]) == 0)
+		if(jehanne_strcmp(mode, modename[i]) == 0)
 			break;
 	if(i == nelem(modename))
 		i = 0;
@@ -2201,7 +2201,7 @@ forcestate(Drive *d, char *state)
 	int i;
 
 	for(i = 0; i < nelem(diskstates); i++)
-		if(strcmp(state, diskstates[i]) == 0)
+		if(jehanne_strcmp(state, diskstates[i]) == 0)
 			break;
 	if(i == nelem(diskstates))
 		error(Ebadctl);
@@ -2238,18 +2238,18 @@ iawctl(SDunit *u, Cmdbuf *cmd)
 	d = c->drive[u->subno];
 	f = cmd->f;
 
-	if(strcmp(f[0], "change") == 0)
+	if(jehanne_strcmp(f[0], "change") == 0)
 		changemedia(u);
-	else if(strcmp(f[0], "flushcache") == 0)
+	else if(jehanne_strcmp(f[0], "flushcache") == 0)
 		runflushcache(d);
-	else if(strcmp(f[0], "identify") ==  0){
-		i = strtoul(f[1]? f[1]: "0", 0, 0);
+	else if(jehanne_strcmp(f[0], "identify") ==  0){
+		i = jehanne_strtoul(f[1]? f[1]: "0", 0, 0);
 		if(i > 0xff)
 			i = 0;
 		dprint("ahci: %04d %#ux\n", i, d->info[i]);
-	}else if(strcmp(f[0], "mode") == 0)
+	}else if(jehanne_strcmp(f[0], "mode") == 0)
 		forcemode(d, f[1]? f[1]: "satai");
-	else if(strcmp(f[0], "nop") == 0){
+	else if(jehanne_strcmp(f[0], "nop") == 0){
 		if((d->portm.feat & Dnop) == 0){
 			cmderror(cmd, "no drive support");
 			return -1;
@@ -2263,9 +2263,9 @@ iawctl(SDunit *u, Cmdbuf *cmd)
 		nop(&d->portc);
 		qunlock(&d->portm);
 		poperror();
-	}else if(strcmp(f[0], "reset") == 0)
+	}else if(jehanne_strcmp(f[0], "reset") == 0)
 		forcestate(d, "reset");
-	else if(strcmp(f[0], "smart") == 0){
+	else if(jehanne_strcmp(f[0], "smart") == 0){
 		if(d->smartrs == 0){
 			cmderror(cmd, "smart not enabled");
 			return -1;
@@ -2280,11 +2280,11 @@ iawctl(SDunit *u, Cmdbuf *cmd)
 		d->portm.smart = 2 + smartrs(&d->portc);
 		qunlock(&d->portm);
 		poperror();
-	}else if(strcmp(f[0], "smartdisable") == 0)
+	}else if(jehanne_strcmp(f[0], "smartdisable") == 0)
 		runsmartable(d, 1);
-	else if(strcmp(f[0], "smartenable") == 0)
+	else if(jehanne_strcmp(f[0], "smartenable") == 0)
 		runsmartable(d, 0);
-	else if(strcmp(f[0], "state") == 0)
+	else if(jehanne_strcmp(f[0], "state") == 0)
 		forcestate(d, f[1]? f[1]: "null");
 	else{
 		cmderror(cmd, Ebadctl);
@@ -2303,18 +2303,18 @@ portr(char *p, char *e, uint32_t x)
 	for(i = 0; i < 32; i++){
 		if((x & (1<<i)) == 0){
 			if(a != -1 && i - 1 != a)
-				p = seprint(p, e, "-%d", i - 1);
+				p = jehanne_seprint(p, e, "-%d", i - 1);
 			a = -1;
 			continue;
 		}
 		if(a == -1){
 			if(i > 0)
-				p = seprint(p, e, ", ");
-			p = seprint(p, e, "%d", a = i);
+				p = jehanne_seprint(p, e, ", ");
+			p = jehanne_seprint(p, e, "%d", a = i);
 		}
 	}
 	if(a != -1 && i - 1 != a)
-		p = seprint(p, e, "-%d", i - 1);
+		p = jehanne_seprint(p, e, "-%d", i - 1);
 	return p;
 }
 
@@ -2327,11 +2327,11 @@ iartopctl(SDev *sdev, char *p, char *e)
 	Ahba *hba;
 	Ctlr *ctlr;
 
-#define has(x, str) if(cap & (x)) p = seprint(p, e, "%s ", (str))
+#define has(x, str) if(cap & (x)) p = jehanne_seprint(p, e, "%s ", (str))
 
 	ctlr = sdev->ctlr;
 	hba = ctlr->hba;
-	p = seprint(p, e, "sd%c ahci port %#p: ", sdev->idno, ctlr->physio);
+	p = jehanne_seprint(p, e, "sd%c ahci port %#p: ", sdev->idno, ctlr->physio);
 	cap = hba->cap;
 	has(Hs64a, "64a");
 	has(Hsalp, "alp");
@@ -2349,7 +2349,7 @@ iartopctl(SDev *sdev, char *p, char *e)
 	has(Hsss, "ss");
 	has(Hsxs, "sxs");
 	portr(pr, pr + sizeof pr, hba->pi);
-	return seprint(p, e,
+	return jehanne_seprint(p, e,
 		"iss %ld ncs %ld np %ld; ghc %#lux isr %#lux pi %#lux %s ver %#lux\n",
 		(cap>>20) & 0xf, (cap>>8) & 0x1f, 1 + (cap & 0x1f),
 		hba->ghc, hba->isr, hba->pi, pr, hba->ver);
@@ -2367,11 +2367,11 @@ iawtopctl(SDev * _1, Cmdbuf *cmd)
 
 	if (f[0] == nil)
 		return 0;
-	if(strcmp(f[0], "debug") == 0)
+	if(jehanne_strcmp(f[0], "debug") == 0)
 		v = &debug;
-	else if(strcmp(f[0], "idprint") == 0)
+	else if(jehanne_strcmp(f[0], "idprint") == 0)
 		v = &prid;
-	else if(strcmp(f[0], "aprint") == 0)
+	else if(jehanne_strcmp(f[0], "aprint") == 0)
 		v = &datapi;
 	else
 		cmderror(cmd, Ebadctl);
@@ -2384,7 +2384,7 @@ iawtopctl(SDev * _1, Cmdbuf *cmd)
 		break;
 	case 2:
 		if(f[1])
-			*v = strcmp(f[1], "on") == 0;
+			*v = jehanne_strcmp(f[1], "on") == 0;
 		else
 			*v ^= 1;
 		break;

@@ -8,7 +8,7 @@ testcrt(mpint **p)
 	CRTres *res;
 	mpint *m, *x, *y;
 
-	fmtinstall('B', mpfmt);
+	jehanne_fmtinstall('B', mpfmt);
 
 	// get a modulus and a test number
 	m = mpnew(1024+160);
@@ -25,7 +25,7 @@ testcrt(mpint **p)
 	// convert back
 	y = mpnew(1024+160);
 	crtout(crt, res, y);
-	print("x %B\ny %B\n", x, y);
+	jehanne_print("x %B\ny %B\n", x, y);
 	mpfree(m);
 	mpfree(x);
 	mpfree(y);
@@ -38,7 +38,7 @@ main(void)
 	mpint *p[2];
 	int32_t start;
 
-	start = time(0);
+	start = jehanne_time(0);
 	for(i = 0; i < 10; i++){
 		p[0] = mpnew(1024);
 		p[1] = mpnew(1024);
@@ -47,6 +47,6 @@ main(void)
 		mpfree(p[0]);
 		mpfree(p[1]);
 	}
-	print("%ld secs with more\n", time(0)-start);
-	exits(0);
+	jehanne_print("%ld secs with more\n", jehanne_time(0)-start);
+	jehanne_exits(0);
 }

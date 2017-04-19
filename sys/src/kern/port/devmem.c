@@ -307,19 +307,19 @@ memwrite(Chan *c, void *a, long n, int64_t)
 	case Qctl:
 		cb = parsecmd(a, n);
 		if(waserror()){
-			free(cb);
+			jehanne_free(cb);
 			nexterror();
 		}
-		if(cb->nf == 1 && strcmp(cb->f[0], "start") == 0){
+		if(cb->nf == 1 && jehanne_strcmp(cb->f[0], "start") == 0){
 			if(incref(&monitoring) == 1)
 				setmemprof(mprofmonitor);
-		}else if(cb->nf == 1 && strcmp(cb->f[0], "stop") == 0){
+		}else if(cb->nf == 1 && jehanne_strcmp(cb->f[0], "stop") == 0){
 			if(decref(&monitoring) == 0)
 				setmemprof(nil);
 		}else
 			cmderror(cb, "unknown command");
 		poperror();
-		free(cb);
+		jehanne_free(cb);
 		break;
 	}
 	return n;

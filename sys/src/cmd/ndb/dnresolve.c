@@ -2,7 +2,7 @@
  * domain name resolvers, see rfcs 1035 and 1123
  */
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 #include <ip.h>
 #include <bio.h>
 #include <ndb.h>

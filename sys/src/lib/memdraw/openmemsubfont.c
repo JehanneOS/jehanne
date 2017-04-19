@@ -30,33 +30,33 @@ openmemsubfont(char *name)
 	if(i == nil)
 		goto Err;
 	if(read(fd, hdr, 3*12) != 3*12){
-		werrstr("openmemsubfont: header read error: %r");
+		jehanne_werrstr("openmemsubfont: header read error: %r");
 		goto Err;
 	}
-	n = atoi(hdr);
-	p = malloc(6*(n+1));
+	n = jehanne_atoi(hdr);
+	p = jehanne_malloc(6*(n+1));
 	if(p == nil)
 		goto Err;
 	if(read(fd, p, 6*(n+1)) != 6*(n+1)){
-		werrstr("openmemsubfont: fontchar read error: %r");
+		jehanne_werrstr("openmemsubfont: fontchar read error: %r");
 		goto Err;
 	}
-	fc = malloc(sizeof(Fontchar)*(n+1));
+	fc = jehanne_malloc(sizeof(Fontchar)*(n+1));
 	if(fc == nil)
 		goto Err;
 	_unpackinfo(fc, p, n);
-	sf = allocmemsubfont(name, n, atoi(hdr+12), atoi(hdr+24), fc, i);
+	sf = allocmemsubfont(name, n, jehanne_atoi(hdr+12), jehanne_atoi(hdr+24), fc, i);
 	if(sf == nil){
-		free(fc);
+		jehanne_free(fc);
 		goto Err;
 	}
-	free(p);
+	jehanne_free(p);
 	return sf;
 Err:
 	close(fd);
 	if (i != nil)
 		freememimage(i);
 	if (p != nil)
-		free(p);
+		jehanne_free(p);
 	return nil;
 }

@@ -1,5 +1,5 @@
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 #include <bio.h>
 #include <ndb.h>
 #include <ip.h>
@@ -122,7 +122,7 @@ dblookup(char *name, int class, int type, int auth, int ttl)
 		return rp;
 	}
 
-	lock(&dblock);
+	jehanne_lock(&dblock);
 	dp = idnlookup(name, class, 1);
 
 	if(opendatabase() < 0)
@@ -166,7 +166,7 @@ out:
 		dp->respcode = err;
 	}
 
-	unlock(&dblock);
+	jehanne_unlock(&dblock);
 	return rp;
 }
 
@@ -684,10 +684,10 @@ db2cache(int doit)
 
 	refresh_areas(owned);
 
-	lock(&dblock);
+	jehanne_lock(&dblock);
 
 	if(opendatabase() < 0){
-		unlock(&dblock);
+		jehanne_unlock(&dblock);
 		return;
 	}
 
@@ -746,7 +746,7 @@ db2cache(int doit)
 		createptrs();
 	}
 
-	unlock(&dblock);
+	jehanne_unlock(&dblock);
 }
 
 extern char	mntpt[Maxpath];		/* net mountpoint */
@@ -770,13 +770,13 @@ lookupinfo(char *attr)
 	snprint(buf, sizeof buf, "%I", ipaddr);
 	a[0] = attr;
 
-	lock(&dblock);
+	jehanne_lock(&dblock);
 	if(opendatabase() < 0){
-		unlock(&dblock);
+		jehanne_unlock(&dblock);
 		return nil;
 	}
 	t = ndbipinfo(db, "ip", buf, a, 1);
-	unlock(&dblock);
+	jehanne_unlock(&dblock);
 	return t;
 }
 
@@ -1174,11 +1174,11 @@ insideaddr(char *dom)
 	if (dom[0] == '\0' || strcmp(dom, ".") == 0)	/* dns root? */
 		return 1;			/* hack for initialisation */
 
-	lock(&dblock);
+	jehanne_lock(&dblock);
 	if (indoms == nil)
 		loaddomsrvs();
 	if (indoms == nil) {
-		unlock(&dblock);
+		jehanne_unlock(&dblock);
 		return 1;  /* no "inside-dom" sys, try inside nameservers */
 	}
 
@@ -1196,7 +1196,7 @@ insideaddr(char *dom)
 			break;
 		}
 	}
-	unlock(&dblock);
+	jehanne_unlock(&dblock);
 	return rv;
 }
 

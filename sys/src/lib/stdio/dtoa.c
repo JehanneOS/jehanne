@@ -17,11 +17,11 @@
  *	printed as %.17g.  Then atof(s) is exactly y.
  */
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 
 static Lock _dtoalk[2];
-#define ACQUIRE_DTOA_LOCK(n)	lock(&_dtoalk[n])
-#define FREE_DTOA_LOCK(n)	unlock(&_dtoalk[n])
+#define ACQUIRE_DTOA_LOCK(n)	jehanne_lock(&_dtoalk[n])
+#define FREE_DTOA_LOCK(n)	jehanne_unlock(&_dtoalk[n])
 
 #define PRIVATE_mem ((2000+sizeof(double)-1)/sizeof(double))
 static double private_mem[PRIVATE_mem], *pmem_next = private_mem;

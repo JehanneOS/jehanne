@@ -27,7 +27,7 @@ static Rune __isspacer[] = {
 };
 
 int
-isspacerune(Rune c)
+jehanne_isspacerune(Rune c)
 {
 	Rune *p;
 
@@ -83,7 +83,7 @@ static Rune __isdigitr[] = {
 };
 
 int
-isdigitrune(Rune c)
+jehanne_isdigitrune(Rune c)
 {
 	Rune *p;
 
@@ -586,7 +586,7 @@ static Rune __isalphas[] = {
 };
 
 int
-isalpharune(Rune c)
+jehanne_isalpharune(Rune c)
 {
 	Rune *p;
 
@@ -758,7 +758,7 @@ static Rune __isuppers[] = {
 };
 
 int
-isupperrune(Rune c)
+jehanne_isupperrune(Rune c)
 {
 	Rune *p;
 
@@ -941,7 +941,7 @@ static Rune __islowers[] = {
 };
 
 int
-islowerrune(Rune c)
+jehanne_islowerrune(Rune c)
 {
 	Rune *p;
 
@@ -1072,7 +1072,7 @@ static Rune __istitles[] = {
 };
 
 int
-istitlerune(Rune c)
+jehanne_istitlerune(Rune c)
 {
 	Rune *p;
 
@@ -1260,7 +1260,7 @@ static Rune __touppers[] = {
 };
 
 Rune
-toupperrune(Rune c)
+jehanne_toupperrune(Rune c)
 {
 	Rune *p;
 
@@ -1446,7 +1446,7 @@ static Rune __tolowers[] = {
 };
 
 Rune
-tolowerrune(Rune c)
+jehanne_tolowerrune(Rune c)
 {
 	Rune *p;
 
@@ -1632,7 +1632,7 @@ static Rune __totitles[] = {
 };
 
 Rune
-totitlerune(Rune c)
+jehanne_totitlerune(Rune c)
 {
 	Rune *p;
 

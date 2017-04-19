@@ -1,6 +1,6 @@
 /* RFC2136 DNS inform - necessary for Win2k3 DNS servers */
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 #include <bio.h>
 #include <ndb.h>
 #include <ip.h>

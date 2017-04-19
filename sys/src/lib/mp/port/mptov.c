@@ -16,7 +16,7 @@ vtomp(int64_t v, mpint *b)
 
 	if(b == nil){
 		b = mpnew(VLDIGITS*sizeof(mpdigit));
-		setmalloctag(b, getcallerpc());
+		jehanne_setmalloctag(b, jehanne_getcallerpc());
 	}else
 		mpbits(b, VLDIGITS*sizeof(mpdigit));
 	b->sign = (v >> (sizeof(v)*8 - 1)) | 1;

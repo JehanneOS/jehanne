@@ -20,13 +20,13 @@
 #include <libc.h>
 
 int
-stat(const char* name, uint8_t* edir, int nedir)
+jehanne_stat(const char* name, uint8_t* edir, int nedir)
 {
 	int fd, statsz;
 
 	fd = open(name, OSTAT);
 	if(fd < 0){
-		werrstr("stat: %r");
+		jehanne_werrstr("stat: %r");
 		return fd;
 	}
 	statsz = fstat(fd, edir, nedir);
@@ -35,13 +35,13 @@ stat(const char* name, uint8_t* edir, int nedir)
 }
 
 int
-wstat(const char* name, uint8_t* edir, int nedir)
+jehanne_wstat(const char* name, uint8_t* edir, int nedir)
 {
 	int fd, statsz;
 
 	fd = open(name, OSTAT);
 	if(fd < 0){
-		werrstr("wstat: %r");
+		jehanne_werrstr("wstat: %r");
 		return fd;
 	}
 	statsz = fwstat(fd, edir, nedir);

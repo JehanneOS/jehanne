@@ -1950,7 +1950,7 @@ static Rune	_base2[] =
 };
 
 Rune
-tobaserune(Rune c)
+jehanne_tobaserune(Rune c)
 {
 	Rune *p;
 
@@ -1961,7 +1961,7 @@ tobaserune(Rune c)
 }
 
 int
-isbaserune(Rune c)
+jehanne_isbaserune(Rune c)
 {
-	return tobaserune(c) == c;
+	return jehanne_tobaserune(c) == c;
 }

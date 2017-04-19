@@ -11,7 +11,7 @@
 #include <libc.h>
 
 uintptr_t
-getcallerpc(void)
+jehanne_getcallerpc(void)
 {
 	return (uintptr_t)__builtin_return_address(2);
 }

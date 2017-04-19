@@ -11,7 +11,7 @@
 #include <libc.h>
 
 uint32_t
-ntruerand(uint32_t n)
+jehanne_ntruerand(uint32_t n)
 {
 	uint32_t m, r;
 
@@ -25,7 +25,7 @@ ntruerand(uint32_t n)
 		/* 2^32 - 2^32%n - 1 = (2^32 - 1) - (2*(2^31%n))%n */
 		m = 0xFFFFFFFFUL - (2*((1UL<<31)%n))%n;
 
-	while((r = truerand()) > m)
+	while((r = jehanne_truerand()) > m)
 		;
 
 	return r%n;

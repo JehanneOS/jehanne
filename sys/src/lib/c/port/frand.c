@@ -14,13 +14,13 @@
 #define	NORM	(1.0/(1.0+MASK))
 
 double
-frand(void)
+jehanne_frand(void)
 {
 	double x;
 
 	do {
-		x = lrand() * NORM;
-		x = (x + lrand()) * NORM;
+		x = jehanne_lrand() * NORM;
+		x = (x + jehanne_lrand()) * NORM;
 	} while(x >= 1);
 	return x;
 }

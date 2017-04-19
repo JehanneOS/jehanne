@@ -21,13 +21,13 @@ netifinit(Netif *nif, char *name, int nfile, uint32_t limit)
 {
 	if(nif->inited)
 		return;
-	strncpy(nif->name, name, KNAMELEN-1);
+	jehanne_strncpy(nif->name, name, KNAMELEN-1);
 	nif->name[KNAMELEN-1] = 0;
 	nif->nfile = nfile;
-	nif->f = malloc(nfile*sizeof(Netfile*));
+	nif->f = jehanne_malloc(nfile*sizeof(Netfile*));
 	if(nif->f == nil)
 		panic("netifinit: %s: out of memory", name);
-	memset(nif->f, 0, nfile*sizeof(Netfile*));
+	jehanne_memset(nif->f, 0, nfile*sizeof(Netfile*));
 	nif->limit = limit;
 	nif->inited = 1;
 }
@@ -59,7 +59,7 @@ netifgen(Chan *c, char* _1, Dirtab *vp, int _2, int i, Dir *dp)
 		case 0:
 			q.path = N2ndqid;
 			q.type = QTDIR;
-			strcpy(up->genbuf, nif->name);
+			jehanne_strcpy(up->genbuf, nif->name);
 			devdir(c, q, up->genbuf, 0, eve, 0555, dp);
 			break;
 		default:
@@ -110,7 +110,7 @@ netifgen(Chan *c, char* _1, Dirtab *vp, int _2, int i, Dir *dp)
 				return 0;
 			q.type = QTDIR;
 			q.path = NETQID(i, N3rdqid);
-			sprint(up->genbuf, "%d", i);
+			jehanne_sprint(up->genbuf, "%d", i);
 			devdir(c, q, up->genbuf, 0, eve, DMDIR|0555, dp);
 			break;
 		}
@@ -132,7 +132,7 @@ netifgen(Chan *c, char* _1, Dirtab *vp, int _2, int i, Dir *dp)
 	case DEVDOTDOT:
 		q.type = QTDIR;
 		q.path = N2ndqid;
-		strcpy(up->genbuf, nif->name);
+		jehanne_strcpy(up->genbuf, nif->name);
 		devdir(c, q, up->genbuf, 0, eve, DMDIR|0555, dp);
 		break;
 	case 0:
@@ -229,52 +229,52 @@ netifread(Netif *nif, Chan *c, void *a, long n, int64_t off)
 	case Nctlqid:
 		return readnum(offset, a, n, NETID(c->qid.path), NUMSIZE);
 	case Nstatqid:
-		p = op = malloc(READSTR);
+		p = op = jehanne_malloc(READSTR);
 		if(p == nil)
 			return 0;
 		e = p + READSTR;
-		p = seprint(p, e, "in: %llud\n", nif->inpackets);
-		p = seprint(p, e, "link: %d\n", nif->link);
-		p = seprint(p, e, "out: %llud\n", nif->outpackets);
-		p = seprint(p, e, "crc errs: %d\n", nif->crcs);
-		p = seprint(p, e, "overflows: %d\n", nif->overflows);
-		p = seprint(p, e, "input overflows: %d\n", nif->inoverflows);
-		p = seprint(p, e, "output overflows: %d\n", nif->outoverflows);
-		p = seprint(p, e, "loopback frames: %d\n", nif->loopbacks);
-		p = seprint(p, e, "framing errs: %d\n", nif->frames);
-		p = seprint(p, e, "buffer errs: %d\n", nif->buffs);
-		p = seprint(p, e, "output errs: %d\n", nif->oerrs);
-		p = seprint(p, e, "prom: %d\n", nif->prom);
-		p = seprint(p, e, "mbps: %d\n", nif->mbps);
-		p = seprint(p, e, "limit: %d\n", nif->limit);
-		p = seprint(p, e, "addr: ");
+		p = jehanne_seprint(p, e, "in: %llud\n", nif->inpackets);
+		p = jehanne_seprint(p, e, "link: %d\n", nif->link);
+		p = jehanne_seprint(p, e, "out: %llud\n", nif->outpackets);
+		p = jehanne_seprint(p, e, "crc errs: %d\n", nif->crcs);
+		p = jehanne_seprint(p, e, "overflows: %d\n", nif->overflows);
+		p = jehanne_seprint(p, e, "input overflows: %d\n", nif->inoverflows);
+		p = jehanne_seprint(p, e, "output overflows: %d\n", nif->outoverflows);
+		p = jehanne_seprint(p, e, "loopback frames: %d\n", nif->loopbacks);
+		p = jehanne_seprint(p, e, "framing errs: %d\n", nif->frames);
+		p = jehanne_seprint(p, e, "buffer errs: %d\n", nif->buffs);
+		p = jehanne_seprint(p, e, "output errs: %d\n", nif->oerrs);
+		p = jehanne_seprint(p, e, "prom: %d\n", nif->prom);
+		p = jehanne_seprint(p, e, "mbps: %d\n", nif->mbps);
+		p = jehanne_seprint(p, e, "limit: %d\n", nif->limit);
+		p = jehanne_seprint(p, e, "addr: ");
 		for(i = 0; i < nif->alen; i++)
-			p = seprint(p, e, "%2.2ux", nif->addr[i]);
-		p = seprint(p, e, "\n");
-		seprint(p, e, "oq len: %d\n", qblen(nif->oq));
+			p = jehanne_seprint(p, e, "%2.2ux", nif->addr[i]);
+		p = jehanne_seprint(p, e, "\n");
+		jehanne_seprint(p, e, "oq len: %d\n", qblen(nif->oq));
 		n = readstr(offset, a, n, op);
-		free(op);
+		jehanne_free(op);
 		return n;
 	case N3statqid:
 		f = nif->f[NETID(c->qid.path)];
-		p = op = malloc(READSTR);
+		p = op = jehanne_malloc(READSTR);
 		if(p == nil)
 			return 0;
 		e = p + READSTR;
-		p = seprint(p, e, "in qlen: %ud\n", qblen(f->iq));
-		seprint(p, e, "input overflows: %ud\n", f->inoverflows);
+		p = jehanne_seprint(p, e, "in qlen: %ud\n", qblen(f->iq));
+		jehanne_seprint(p, e, "input overflows: %ud\n", f->inoverflows);
 		n = readstr(offset, a, n, op);
-		free(op);
+		jehanne_free(op);
 		return n;
 	case Naddrqid:
-		p = op = malloc(READSTR);
+		p = op = jehanne_malloc(READSTR);
 		if(p == nil)
 			return 0;
 		e = p + READSTR;
 		for(i = 0; i < nif->alen; i++)
-			p = seprint(p, e, "%2.2ux", nif->addr[i]);
+			p = jehanne_seprint(p, e, "%2.2ux", nif->addr[i]);
 		n = readstr(offset, a, n, op);
-		free(op);
+		jehanne_free(op);
 		return n;
 	case Ntypeqid:
 		f = nif->f[NETID(c->qid.path)];
@@ -282,10 +282,10 @@ netifread(Netif *nif, Chan *c, void *a, long n, int64_t off)
 	case Nifstatqid:
 		return 0;
 	case Nmtuqid:
-		snprint(up->genbuf, sizeof(up->genbuf), "%11.ud %11.ud %11.ud\n", nif->minmtu, nif->mtu, nif->maxmtu);
+		jehanne_snprint(up->genbuf, sizeof(up->genbuf), "%11.ud %11.ud %11.ud\n", nif->minmtu, nif->mtu, nif->maxmtu);
 		return readstr(offset, a, n, up->genbuf);
 	case Nmaxmtuqid:
-		snprint(up->genbuf, sizeof(up->genbuf), "%d", nif->maxmtu);
+		jehanne_snprint(up->genbuf, sizeof(up->genbuf), "%d", nif->maxmtu);
 		return readstr(offset, a, n, up->genbuf);
 	}
 	error(Ebadarg);
@@ -361,7 +361,7 @@ netifwrite(Netif *nif, Chan *c, void *a, long n)
 
 	if(n >= sizeof(buf))
 		n = sizeof(buf)-1;
-	memmove(buf, a, n);
+	jehanne_memmove(buf, a, n);
 	buf[n] = 0;
 
 	if(waserror()){
@@ -373,7 +373,7 @@ netifwrite(Netif *nif, Chan *c, void *a, long n)
 	f = nif->f[NETID(c->qid.path)];
 	if((p = matchtoken(buf, "connect")) != 0){
 		qclose(f->iq);
-		type = atoi(p);
+		type = jehanne_atoi(p);
 		if(typeinuse(nif, type))
 			error(Einuse);
 		f->type = type;
@@ -390,7 +390,7 @@ netifwrite(Netif *nif, Chan *c, void *a, long n)
 	} else if((p = matchtoken(buf, "scanbs")) != 0){
 		/* scan for base stations */
 		if(f->scan == 0){
-			type = atoi(p);
+			type = jehanne_atoi(p);
 			if(type < 5)
 				type = 5;
 			if(nif->scanbs != nil)
@@ -399,7 +399,7 @@ netifwrite(Netif *nif, Chan *c, void *a, long n)
 			nif->scan++;
 		}
 	} else if((p = matchtoken(buf, "mtu")) != 0){
-		mtu = atoi(p);
+		mtu = jehanne_atoi(p);
 		/* zero resets default. */
 		if(mtu != 0)
 		if(mtu < nif->minmtu || mtu > nif->maxmtu)
@@ -430,7 +430,7 @@ netifwrite(Netif *nif, Chan *c, void *a, long n)
 		if(*p == 0)
 			onoff = 1;
 		else
-			onoff = atoi(p);
+			onoff = jehanne_atoi(p);
 		f->fat = onoff;
 	} else
 		n = -1;
@@ -454,16 +454,16 @@ netifwstat(Netif *nif, Chan *c, uint8_t *db, long n)
 		error(Eperm);
 
 	dir = smalloc(sizeof(Dir)+n);
-	l = convM2D(db, n, &dir[0], (char*)&dir[1]);
+	l = jehanne_convM2D(db, n, &dir[0], (char*)&dir[1]);
 	if(l == 0){
-		free(dir);
+		jehanne_free(dir);
 		error(Eshortstat);
 	}
 	if(!emptystr(dir[0].uid))
-		strncpy(f->owner, dir[0].uid, KNAMELEN);
+		jehanne_strncpy(f->owner, dir[0].uid, KNAMELEN);
 	if(dir[0].mode != (uint32_t)~0UL)
 		f->mode = dir[0].mode;
-	free(dir);
+	jehanne_free(dir);
 	return l;
 }
 
@@ -540,9 +540,9 @@ netown(Netfile *p, char *o, int omode)
 
 	lock(&netlock);
 	if(*p->owner){
-		if(strncmp(o, p->owner, KNAMELEN) == 0)	/* User */
+		if(jehanne_strncmp(o, p->owner, KNAMELEN) == 0)	/* User */
 			mode = p->mode;
-		else if(strncmp(o, eve, KNAMELEN) == 0)	/* Bootes is group */
+		else if(jehanne_strncmp(o, eve, KNAMELEN) == 0)	/* Bootes is group */
 			mode = p->mode<<3;
 		else
 			mode = p->mode<<6;		/* Other */
@@ -556,7 +556,7 @@ netown(Netfile *p, char *o, int omode)
 			return -1;
 		}
 	}
-	strncpy(p->owner, o, KNAMELEN);
+	jehanne_strncpy(p->owner, o, KNAMELEN);
 	p->mode = 0660;
 	unlock(&netlock);
 	return 0;
@@ -591,12 +591,12 @@ openfile(Netif *nif, int id)
 	for(fp = nif->f; fp < efp; fp++){
 		f = *fp;
 		if(f == 0){
-			f = malloc(sizeof(Netfile));
+			f = jehanne_malloc(sizeof(Netfile));
 			if(f == 0)
 				exhausted("memory");
 			f->iq = qopen(nif->limit, Qmsg, 0, 0);
 			if(f->iq == nil){
-				free(f);
+				jehanne_free(f);
 				exhausted("memory");
 			}
 			qlock(f);
@@ -629,8 +629,8 @@ matchtoken(char *p, char *token)
 {
 	int n;
 
-	n = strlen(token);
-	if(strncmp(p, token, n))
+	n = jehanne_strlen(token);
+	if(jehanne_strncmp(p, token, n))
 		return 0;
 	p += n;
 	if(*p == 0)
@@ -658,7 +658,7 @@ activemulti(Netif *nif, uint8_t *addr, int alen)
 	Netaddr *hp;
 
 	for(hp = nif->mhash[hash(addr, alen)]; hp; hp = hp->hnext)
-		if(memcmp(addr, hp->addr, alen) == 0){
+		if(jehanne_memcmp(addr, hp->addr, alen) == 0){
 			if(hp->ref)
 				return 1;
 			else
@@ -683,7 +683,7 @@ parseaddr(uint8_t *to, char *from, int alen)
 			return -1;
 		nip[1] = *p++;
 		nip[2] = 0;
-		to[i] = strtoul(nip, 0, 16);
+		to[i] = jehanne_strtoul(nip, 0, 16);
 		if(*p == ':')
 			p++;
 	}
@@ -706,7 +706,7 @@ netmulti(Netif *nif, Netfile *f, uint8_t *addr, int add)
 	l = &nif->maddr;
 	i = 0;
 	for(ap = *l; ap; ap = *l){
-		if(memcmp(addr, ap->addr, nif->alen) == 0)
+		if(jehanne_memcmp(addr, ap->addr, nif->alen) == 0)
 			break;
 		i++;
 		l = &ap->next;
@@ -715,7 +715,7 @@ netmulti(Netif *nif, Netfile *f, uint8_t *addr, int add)
 	if(add){
 		if(ap == 0){
 			*l = ap = smalloc(sizeof(*ap));
-			memmove(ap->addr, addr, nif->alen);
+			jehanne_memmove(ap->addr, addr, nif->alen);
 			ap->next = 0;
 			ap->ref = 1;
 			h = hash(addr, nif->alen);

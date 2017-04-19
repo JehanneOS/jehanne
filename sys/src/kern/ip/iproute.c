@@ -51,11 +51,11 @@ allocroute(int type)
 	if(r != nil){
 		*l = r->mid;
 	} else {
-		r = malloc(n);
+		r = jehanne_malloc(n);
 		if(r == nil)
 			panic("out of routing nodes");
 	}
-	memset(r, 0, n);
+	jehanne_memset(r, 0, n);
 	r->type = type;
 	r->ifc = nil;
 	r->ref = 1;
@@ -147,9 +147,9 @@ static void
 copygate(Route *old, Route *new)
 {
 	if(new->type & Rv4)
-		memmove(old->v4.gate, new->v4.gate, IPv4addrlen);
+		jehanne_memmove(old->v4.gate, new->v4.gate, IPv4addrlen);
 	else
-		memmove(old->v6.gate, new->v6.gate, IPaddrlen);
+		jehanne_memmove(old->v6.gate, new->v6.gate, IPaddrlen);
 }
 
 /*
@@ -305,8 +305,8 @@ v4addroute(Fs *f, char *tag, uint8_t *a, uint8_t *mask, uint8_t *gate, int type)
 		p = allocroute(Rv4 | type);
 		p->v4.address = sa;
 		p->v4.endaddress = ea;
-		memmove(p->v4.gate, gate, sizeof(p->v4.gate));
-		memmove(p->tag, tag, sizeof(p->tag));
+		jehanne_memmove(p->v4.gate, gate, sizeof(p->v4.gate));
+		jehanne_memmove(p->tag, tag, sizeof(p->tag));
 
 		wlock(&routelock);
 		addnode(f, &f->v4root[h], p);
@@ -323,7 +323,7 @@ v4addroute(Fs *f, char *tag, uint8_t *a, uint8_t *mask, uint8_t *gate, int type)
 }
 
 #define	V6H(a)	(((a)[IPllen-1] & 0x07ffffff)>>(32-Lroot-5))
-#define ISDFLT(a, mask, tag) ((ipcmp((a),v6Unspecified)==0) && (ipcmp((mask),v6Unspecified)==0) && (strcmp((tag), "ra")!=0))
+#define ISDFLT(a, mask, tag) ((ipcmp((a),v6Unspecified)==0) && (ipcmp((mask),v6Unspecified)==0) && (jehanne_strcmp((tag), "ra")!=0))
 
 void
 v6addroute(Fs *f, char *tag, uint8_t *a, uint8_t *mask, uint8_t *gate, int type)
@@ -349,10 +349,10 @@ v6addroute(Fs *f, char *tag, uint8_t *a, uint8_t *mask, uint8_t *gate, int type)
 	eh = V6H(ea);
 	for(h = V6H(sa); h <= eh; h++) {
 		p = allocroute(type);
-		memmove(p->v6.address, sa, IPaddrlen);
-		memmove(p->v6.endaddress, ea, IPaddrlen);
-		memmove(p->v6.gate, gate, IPaddrlen);
-		memmove(p->tag, tag, sizeof(p->tag));
+		jehanne_memmove(p->v6.address, sa, IPaddrlen);
+		jehanne_memmove(p->v6.endaddress, ea, IPaddrlen);
+		jehanne_memmove(p->v6.gate, gate, IPaddrlen);
+		jehanne_memmove(p->tag, tag, sizeof(p->tag));
 
 		wlock(&routelock);
 		addnode(f, &f->v6root[h], p);
@@ -507,7 +507,7 @@ v4lookup(Fs *f, uint8_t *a, Conv *c)
 	if(q && (q->ifc == nil || q->ifcid != q->ifc->ifcid)){
 		if(q->type & Rifc) {
 			hnputl(gate+IPv4off, q->v4.address);
-			memmove(gate, v4prefix, IPv4off);
+			jehanne_memmove(gate, v4prefix, IPv4off);
 		} else
 			v4tov6(gate, q->v4.gate);
 		ifc = findipifc(f, gate, q->type);
@@ -535,7 +535,7 @@ v6lookup(Fs *f, uint8_t *a, Conv *c)
 	uint8_t gate[IPaddrlen];
 	Ipifc *ifc;
 
-	if(memcmp(a, v4prefix, IPv4off) == 0){
+	if(jehanne_memcmp(a, v4prefix, IPv4off) == 0){
 		q = v4lookup(f, a+IPv4off, c);
 		if(q != nil)
 			return q;
@@ -599,7 +599,7 @@ next:		;
 void
 routetype(int type, char *p)
 {
-	memset(p, ' ', 4);
+	jehanne_memset(p, ' ', 4);
 	p[4] = 0;
 	if(type & Rv4)
 		*p++ = '4';
@@ -625,18 +625,18 @@ convroute(Route *r, uint8_t *addr, uint8_t *mask, uint8_t *gate, char *t, int *n
 	int i;
 
 	if(r->type & Rv4){
-		memmove(addr, v4prefix, IPv4off);
+		jehanne_memmove(addr, v4prefix, IPv4off);
 		hnputl(addr+IPv4off, r->v4.address);
-		memset(mask, 0xff, IPv4off);
+		jehanne_memset(mask, 0xff, IPv4off);
 		hnputl(mask+IPv4off, ~(r->v4.endaddress ^ r->v4.address));
-		memmove(gate, v4prefix, IPv4off);
-		memmove(gate+IPv4off, r->v4.gate, IPv4addrlen);
+		jehanne_memmove(gate, v4prefix, IPv4off);
+		jehanne_memmove(gate+IPv4off, r->v4.gate, IPv4addrlen);
 	} else {
 		for(i = 0; i < IPllen; i++){
 			hnputl(addr + 4*i, r->v6.address[i]);
 			hnputl(mask + 4*i, ~(r->v6.endaddress[i] ^ r->v6.address[i]));
 		}
-		memmove(gate, r->v6.gate, IPaddrlen);
+		jehanne_memmove(gate, r->v6.gate, IPaddrlen);
 	}
 
 	routetype(r->type, t);
@@ -662,13 +662,13 @@ sprintroute(Route *r, Routewalk *rw)
 	iname = "-";
 	if(nifc != -1) {
 		iname = ifbuf;
-		snprint(ifbuf, sizeof ifbuf, "%d", nifc);
+		jehanne_snprint(ifbuf, sizeof ifbuf, "%d", nifc);
 	}
-	p = seprint(rw->p, rw->e, rformat, addr, mask, gate, t, r->tag, iname);
+	p = jehanne_seprint(rw->p, rw->e, rformat, addr, mask, gate, t, r->tag, iname);
 	if(rw->o < 0){
 		n = p - rw->p;
 		if(n > -rw->o){
-			memmove(rw->p, rw->p-rw->o, n+rw->o);
+			jehanne_memmove(rw->p, rw->p-rw->o, n+rw->o);
 			rw->p = p + rw->o;
 		}
 		rw->o += n;
@@ -773,7 +773,7 @@ routeflush(Fs *f, Route *r, char *tag)
 	if(routeflush(f, r->right, tag))
 		return 1;
 	if((r->type & Rifc) == 0){
-		if(tag == nil || strncmp(tag, r->tag, sizeof(r->tag)) == 0){
+		if(tag == nil || jehanne_strncmp(tag, r->tag, sizeof(r->tag)) == 0){
 			delroute(f, r, 0);
 			return 1;
 		}
@@ -801,9 +801,9 @@ printroute(Route *r)
 	iname = "-";
 	if(nifc != -1) {
 		iname = ifbuf;
-		snprint(ifbuf, sizeof ifbuf, "%d", nifc);
+		jehanne_snprint(ifbuf, sizeof ifbuf, "%d", nifc);
 	}
-	print(rformat, addr, mask, gate, t, r->tag, iname);
+	jehanne_print(rformat, addr, mask, gate, t, r->tag, iname);
 }
 
 long
@@ -820,11 +820,11 @@ routewrite(Fs *f, Chan *c, char *p, int n)
 
 	cb = parsecmd(p, n);
 	if(waserror()){
-		free(cb);
+		jehanne_free(cb);
 		nexterror();
 	}
 
-	if(strcmp(cb->f[0], "flush") == 0){
+	if(jehanne_strcmp(cb->f[0], "flush") == 0){
 		tag = cb->f[1];
 		for(h = 0; h < nelem(f->v4root); h++)
 			for(changed = 1; changed;){
@@ -838,17 +838,17 @@ routewrite(Fs *f, Chan *c, char *p, int n)
 				changed = routeflush(f, f->v6root[h], tag);
 				wunlock(&routelock);
 			}
-	} else if(strcmp(cb->f[0], "remove") == 0){
+	} else if(jehanne_strcmp(cb->f[0], "remove") == 0){
 		if(cb->nf < 3)
 			error(Ebadarg);
 		if (parseip(addr, cb->f[1]) == -1)
 			error(Ebadip);
 		parseipmask(mask, cb->f[2]);
-		if(memcmp(addr, v4prefix, IPv4off) == 0)
+		if(jehanne_memcmp(addr, v4prefix, IPv4off) == 0)
 			v4delroute(f, addr+IPv4off, mask+IPv4off, 1);
 		else
 			v6delroute(f, addr, mask, 1);
-	} else if(strcmp(cb->f[0], "add") == 0){
+	} else if(jehanne_strcmp(cb->f[0], "add") == 0){
 		if(cb->nf < 4)
 			error(Ebadarg);
 		if(parseip(addr, cb->f[1]) == -1 ||
@@ -860,33 +860,33 @@ routewrite(Fs *f, Chan *c, char *p, int n)
 			a = c->aux;
 			tag = a->tag;
 		}
-		if(memcmp(addr, v4prefix, IPv4off) == 0)
+		if(jehanne_memcmp(addr, v4prefix, IPv4off) == 0)
 			v4addroute(f, tag, addr+IPv4off, mask+IPv4off, gate+IPv4off, 0);
 		else
 			v6addroute(f, tag, addr, mask, gate, 0);
-	} else if(strcmp(cb->f[0], "tag") == 0) {
+	} else if(jehanne_strcmp(cb->f[0], "tag") == 0) {
 		if(cb->nf < 2)
 			error(Ebadarg);
 
 		a = c->aux;
 		na = newipaux(a->owner, cb->f[1]);
 		c->aux = na;
-		free(a);
-	} else if(strcmp(cb->f[0], "route") == 0) {
+		jehanne_free(a);
+	} else if(jehanne_strcmp(cb->f[0], "route") == 0) {
 		if(cb->nf < 2)
 			error(Ebadarg);
 		if (parseip(addr, cb->f[1]) == -1)
 			error(Ebadip);
 
 		q = iproute(f, addr);
-		print("%I: ", addr);
+		jehanne_print("%I: ", addr);
 		if(q == nil)
-			print("no route\n");
+			jehanne_print("no route\n");
 		else
 			printroute(q);
 	}
 
 	poperror();
-	free(cb);
+	jehanne_free(cb);
 	return n;
 }

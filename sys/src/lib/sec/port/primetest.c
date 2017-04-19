@@ -10,23 +10,23 @@ main(void)
 	mpint *q = mpnew(0);
 	mpint *nine = mpnew(0);
 
-	fmtinstall('B', mpfmt);
+	jehanne_fmtinstall('B', mpfmt);
 	strtomp("2492491", nil, 16, z);	// 38347921 = x*y = (2**28-9)/7, 
 				//    an example of 3**(n-1)=1 mod n
 	strtomp("15662C00E811", nil, 16, p);// 23528569104401, a prime
 	uitomp(9, nine);
 
 	if(probably_prime(z, 5) == 1)
-		fprint(2, "tricked primality test\n");
+		jehanne_fprint(2, "tricked primality test\n");
 	if(probably_prime(nine, 5) == 1)
-		fprint(2, "9 passed primality test!\n");
+		jehanne_fprint(2, "9 passed primality test!\n");
 	if(probably_prime(p, 25) == 1)
-		fprint(2, "ok\n");
+		jehanne_fprint(2, "ok\n");
 
 	DSAprimes(q, p, nil);
-	print("q=%B\np=%B\n", q, p);
+	jehanne_print("q=%B\np=%B\n", q, p);
 
-	exits(0);
+	jehanne_exits(0);
 }
 
 // example output, checked with Maple:

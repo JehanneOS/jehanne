@@ -62,7 +62,6 @@ enum{
 
 struct Qlist
 {
-	Lock	lk;
 	Header*	first;
 
 	uint32_t	nalloc;
@@ -70,7 +69,6 @@ struct Qlist
 
 struct Region
 {
-	Lock	lk;
 	Region*	down;	/* run as a stack */
 	Header*	start;
 	Header*	tail;	/* next available, if any */
@@ -206,16 +204,13 @@ static int
 freetail(Header *h)
 {
 	if(h+h->s.size == tail->tail) {	/* worthwhile locking? */
-		MLOCK;
 		if(h+h->s.size == tail->tail){
 			/* block before tail */
 			tail->tail = h;
 			tail->size += h->s.size;
 			qstats[QSfreetail]++;
-			MUNLOCK;
 			return 1;
 		}
-		MUNLOCK;
 	}
 	return 0;
 }
@@ -226,10 +221,8 @@ freequick(Header *t)
 	Qlist *ql;
 
 	ql = &quicklist[t->s.size];
-	ilock(&ql->lk);
 	t->s.next = ql->first;
 	ql->first = t;
-	iunlock(&ql->lk);
 	qstats[QSfreequick]++;
 }
 
@@ -258,14 +251,14 @@ showchain(Header *p)
 static void
 badchain(char *tag, char *why, Header *p, Header *q, Header *r, void *h, Header *split)
 {
-	showchain(&misclist);
+	if(0)showchain(&misclist);
 	if(split != nil)
-		panic("%s: %s: %#p %#ux %#ux -> %#p %#ux %#ux [%#p -| %#p]%s %#p %#ux %#ux\n", tag, why,
+		panic("badchain %s: %s: %#p %#ux %#ux -> %#p %#ux %#ux [%#p -| %#p]%s %#p %#ux %#ux\n", tag, why,
 			q, q->s.size, q->s.tag,
 			r, r->s.size, r->s.tag,
 			p, h, " split", split, split->s.size, split->s.tag);
 	else
-		panic("%s: %s: %#p %#ux %#ux -> %#p %#ux %#ux [%#p -| %#p]\n", tag, why,
+		panic("badchain %s: %s: %#p %#ux %#ux -> %#p %#ux %#ux [%#p -| %#p]\n", tag, why,
 			q, q->s.size, q->s.tag,
 			r, r->s.size, r->s.tag,
 			p, h);
@@ -286,7 +279,7 @@ contained(Header *b, Header *chain)
 			return q;
 	}while((q = q->s.next) != chain && ++i < 100000);
 	if(i >= 100000)
-		print("long check chain\n");
+		jehanne_print("long check chain\n");
 	return 0;
 }
 
@@ -307,7 +300,7 @@ checkchain(Header *p, char *tag, void *h, Header *split)
 			badchain(tag, "mentioned", p, q, r, h, split);
 	}while((q = q->s.next) != p && ++i < 100000);
 	if(i >= 100000)
-		print("long chain\n");
+		jehanne_print("long chain\n");
 }
 
 static void*
@@ -334,19 +327,19 @@ qallocalign(usize nbytes, uintptr_t align, long offset, usize span, uintptr_t pc
 		 * Look for a conveniently aligned block
 		 * on one of the quicklists.
 		 */
+		MLOCK;
 		qlist = &quicklist[nunits];
-		ilock(&qlist->lk);
 		for(pp = &qlist->first; (p = *pp) != nil; pp = &p->s.next){
 			if(ALIGNED(p+1, align)){
 				*pp = p->s.next;
 				p->s.size |= Busy;
-				qstats[QSmalignquick]++;
-				iunlock(&qlist->lk);
+				MUNLOCK;
 				p->s.tag = pc;
+				qstats[QSmalignquick]++;
 				return H2D(p);
 			}
 		}
-		iunlock(&qlist->lk);
+		MUNLOCK;
 	}
 
 	alunits = HOWMANY(align, Unitsz);
@@ -402,9 +395,9 @@ qallocalign(usize nbytes, uintptr_t align, long offset, usize span, uintptr_t pc
 				}
 
 				p->s.size |= Busy;
+				p->s.next = nil;
 				MUNLOCK;
 
-				p->s.next = nil;
 				p->s.tag = pc;
 				return H2D(p);
 			}
@@ -442,9 +435,9 @@ qallocalign(usize nbytes, uintptr_t align, long offset, usize span, uintptr_t pc
 		qstats[QSmalignnottail]++;
 		freemisc(r);	/* put on misc list to allow combining if this block is freed */
 	}
+	p->s.next = nil;
 	MUNLOCK;
 
-	p->s.next = nil;
 	p->s.tag = pc;
 	return H2D(p);
 }
@@ -460,35 +453,37 @@ qalloc(usize nbytes, uintptr_t pc)
 	if(nbytes == 0)
 		return nil;
 
+	split = 0;
 	nunits = NUNITS(nbytes);
 	for(u = nunits; u <= NQUICK; u++){
+		MLOCK;
 		qlist = &quicklist[u];
-		ilock(&qlist->lk);
 		if((p = qlist->first) != nil){
 			qlist->first = p->s.next;
 			qlist->nalloc++;
-			iunlock(&qlist->lk);
-			p->s.next = nil;
 			if(p->s.size >= nunits+2*MinUnits){	/* don't make blocks pointlessly small */
 				t = p;
 				t->s.size -= nunits;
 				p += t->s.size;
 				p->s.size = nunits;
 				freequick(t);
-				qstats[QSsplitquick]++;
+				split = 1;
 			}
+			p->s.next = nil;
 			p->s.size |= Busy;
+			MUNLOCK;
 			p->s.tag = pc;
+			if(split)
+				qstats[QSsplitquick]++;
 			return H2D(p);
 		}
-		iunlock(&qlist->lk);
+		MUNLOCK;
 	}
 
 	MLOCK;
 	if(nunits > tail->size) {
 		/* hard way */
 		q = rover;
-		split = 0;
 		checkchain(q, "qalloc-1", rover, 0);
 		do {
 			p = q->s.next;
@@ -575,7 +570,7 @@ freemisc(Header *p)
 }
 
 uint32_t
-msize(void* ap)
+jehanne_msize(void* ap)
 {
 	BigAlloc *b;
 	Header *h;
@@ -613,29 +608,29 @@ mallocreadfmt(char* s, char* e)
 	n = 0;
 	u = 0;
 	for(r = tail; r != nil; r = r->down){
-		p = seprint(p, e, "reg%d: %#p %#p %#p : %#p %#p\n", n, r, r->base, r->limit, r->start, r->tail);
+		p = jehanne_seprint(p, e, "reg%d: %#p %#p %#p : %#p %#p\n", n, r, r->base, r->limit, r->start, r->tail);
 		t += r->limit - r->base;
 		u += (r->tail - r->start)*Unitsz;
 		n++;
 	}
 	MUNLOCK;
-	p = seprint(p, e, "%P kernel malloc %P used %d regions\n", t, u, n);
-	p = seprint(p, e, "0/0 kernel draw\n"); // keep scripts happy
+	p = jehanne_seprint(p, e, "%P kernel malloc %P used %d regions\n", t, u, n);
+	p = jehanne_seprint(p, e, "0/0 kernel draw\n"); // keep scripts happy
 
 	t = 0;
 	for(i = 0; i <= NQUICK; i++) {
 		n = 0;
+		MLOCK;
 		qlist = &quicklist[i];
-		ilock(&qlist->lk);
 		for(q = qlist->first; q != nil; q = q->s.next)
 			n++;
-		iunlock(&qlist->lk);
+		MUNLOCK;
 
 		if(n != 0)
-			p = seprint(p, e, "q%d %ud %ud %ud\n", i, n, n*i*Unitsz, qlist->nalloc);
+			p = jehanne_seprint(p, e, "q%d %ud %ud %ud\n", i, n, n*i*Unitsz, qlist->nalloc);
 		t += n * i*Unitsz;
 	}
-	p = seprint(p, e, "quick: %P bytes total\n", t);
+	p = jehanne_seprint(p, e, "quick: %P bytes total\n", t);
 
 	MLOCK;
 	if((q = rover) != nil){
@@ -643,17 +638,17 @@ mallocreadfmt(char* s, char* e)
 		do {
 			t += q->s.size;
 			i++;
-//			p = seprint(p, e, "m%d\t%#p\n", q->s.size, q);
+//			p = jehanne_seprint(p, e, "m%d\t%#p\n", q->s.size, q);
 		} while((q = q->s.next) != rover);
 
-		p = seprint(p, e, "rover: %d blocks %P bytes total\n",
+		p = jehanne_seprint(p, e, "rover: %d blocks %P bytes total\n",
 			i, t*Unitsz);
 	}
 	MUNLOCK;
 
 	for(i = 0; i < nelem(qstats); i++)
 		if(qstats[i] != 0)
-			p = seprint(p, e, "%s: %ud\n", qstatname[i], qstats[i]);
+			p = jehanne_seprint(p, e, "%s: %ud\n", qstatname[i], qstats[i]);
 	USED(p);
 }
 
@@ -662,15 +657,15 @@ mallocreadsummary(Chan* _1, void *a, long n, long offset)
 {
 	char *alloc;
 
-	alloc = malloc(READSTR);
+	alloc = jehanne_malloc(READSTR);
 	if(waserror()){
-		free(alloc);
+		jehanne_free(alloc);
 		nexterror();
 	}
 	mallocreadfmt(alloc, alloc+READSTR);
 	n = readstr(offset, a, n, alloc);
 	poperror();
-	free(alloc);
+	jehanne_free(alloc);
 
 	return n;
 }
@@ -786,18 +781,18 @@ mallocsummary(void)
 	t = 0;
 	for(i = 0; i <= NQUICK; i++) {
 		n = 0;
+		MLOCK;
 		qlist = &quicklist[i];
-		ilock(&qlist->lk);
 		for(q = qlist->first; q != nil; q = q->s.next){
 			if(q->s.size != i)
 				DBG("q%d\t%#p\t%ud\n", i, q, q->s.size);
 			n++;
 		}
-		iunlock(&qlist->lk);
+		MUNLOCK;
 
 		t += n * i*Unitsz;
 	}
-	print("quick: %ud bytes total\n", t);
+	jehanne_print("quick: %ud bytes total\n", t);
 
 	MLOCK;
 	if((q = rover) != nil){
@@ -814,22 +809,22 @@ mallocsummary(void)
 	MUNLOCK;
 
 	if(i != 0){
-		print("rover: %d blocks %ud bytes total\n",
+		jehanne_print("rover: %d blocks %ud bytes total\n",
 			i, t*Unitsz);
 		while(--i >= 0)
 			if(i < nelem(rovers) && rovers[i].size != 0)
-				print("R%d: %#8.8ux %ud\n", i, rovers[i].tag, rovers[i].size);
+				jehanne_print("R%d: %#8.8ux %ud\n", i, rovers[i].tag, rovers[i].size);
 	}
 
 	for(i = 0; i < nelem(qstats); i++){
 		if(qstats[i] == 0)
 			continue;
-		print("%s: %ud\n", qstatname[i], qstats[i]);
+		jehanne_print("%s: %ud\n", qstatname[i], qstats[i]);
 	}
 }
 
 void
-free(void* ap)
+jehanne_free(void* ap)
 {
 	Header *h;
 	BigAlloc *b;
@@ -856,15 +851,15 @@ free(void* ap)
 	if(memprof != nil)
 		memprof(ap, h->s.tag, (nunits-1)*Unitsz, -1);
 	if(Poisoning)
-		memset(h+1, 0xAA, (nunits-1)*Unitsz);
+		jehanne_memset(h+1, 0xAA, (nunits-1)*Unitsz);
+	MLOCK;
 	if(!freetail(h)){
 		if(nunits > NQUICK){
-			MLOCK;
 			freemisc(h);
-			MUNLOCK;
 		}else
 			freequick(h);
 	}
+	MUNLOCK;
 }
 
 void*
@@ -873,7 +868,7 @@ qmalloc(uint32_t size)
 	void* v;
 
 	qstats[QSmalloc]++;
-if(size > 1536*1024)print("qmalloc %lud %#p\n", size, getcallerpc());
+if(size > 1536*1024)jehanne_print("qmalloc %lud %#p\n", size, getcallerpc());
 	if(size >= BigThreshold)
 		v = bigalloc(size, 0, getcallerpc());
 	else
@@ -882,28 +877,28 @@ if(size > 1536*1024)print("qmalloc %lud %#p\n", size, getcallerpc());
 }
 
 void*
-malloc(uint32_t size)
+jehanne_malloc(uint32_t size)
 {
 	void* v;
 
 	qstats[QSmalloc]++;
-if(size > 1536*1024)print("malloc %lud %#p\n", size, getcallerpc());
+if(size > 1536*1024)jehanne_print("malloc %lud %#p\n", size, getcallerpc());
 	if(size >= BigThreshold)
 		v = bigalloc(size, 0, getcallerpc());
 	else
 		v = qalloc(size, getcallerpc());
 	if(v != nil)
-		memset(v, 0, size);
+		jehanne_memset(v, 0, size);
 	return v;
 }
 
 void*
-mallocz(uint32_t size, int clr)
+jehanne_mallocz(uint32_t size, int clr)
 {
 	void *v;
 
 	qstats[QSmalloc]++;
-if(size > 1900*1024)print("mallocz %lud %#p\n", size, getcallerpc());
+if(size > 1900*1024)jehanne_print("mallocz %lud %#p\n", size, getcallerpc());
 	if(size >= BigThreshold)
 		v = bigalloc(size, 0, getcallerpc());
 	else
@@ -911,12 +906,12 @@ if(size > 1900*1024)print("mallocz %lud %#p\n", size, getcallerpc());
 	if(v == nil)
 		return nil;
 	if(clr)
-		memset(v, 0, size);
+		jehanne_memset(v, 0, size);
 	return v;
 }
 
 void*
-mallocalign(uint32_t nbytes, uint32_t align, long offset, uint32_t span)
+jehanne_mallocalign(uint32_t nbytes, uint32_t align, long offset, uint32_t span)
 {
 	void *v;
 
@@ -928,9 +923,9 @@ mallocalign(uint32_t nbytes, uint32_t align, long offset, uint32_t span)
 		span = 0;
 	}
 	if(align <= Align)
-		return mallocz(nbytes, 1);
+		return jehanne_mallocz(nbytes, 1);
 
-if(nbytes > 1900*1024)print("mallocalign %lud %lud %#p\n", nbytes, align, getcallerpc());
+if(nbytes > 1900*1024)jehanne_print("mallocalign %lud %lud %#p\n", nbytes, align, getcallerpc());
 
 	if(nbytes >= BigThreshold)
 		v = bigalloc(nbytes, align, getcallerpc());
@@ -939,7 +934,7 @@ if(nbytes > 1900*1024)print("mallocalign %lud %lud %#p\n", nbytes, align, getcal
 	if(v != nil){
 		if(align && (uintptr_t)v & (align-1))
 			panic("mallocalign %#p %#lux", v, align);
-		memset(v, 0, nbytes);	/* leave it to caller? */
+		jehanne_memset(v, 0, nbytes);	/* leave it to caller? */
 	}
 	return v;
 }
@@ -949,9 +944,9 @@ sqmalloc(uint32_t size)
 {
 	void *v;
 
-	while((v = malloc(size)) == nil)
+	while((v = jehanne_malloc(size)) == nil)
 		tsleep(&up->sleep, return0, 0, 100);
-	setmalloctag(v, getcallerpc());
+	jehanne_setmalloctag(v, getcallerpc());
 
 	return v;
 }
@@ -961,16 +956,16 @@ smalloc(uint32_t size)
 {
 	void *v;
 
-	while((v = malloc(size)) == nil)
+	while((v = jehanne_malloc(size)) == nil)
 		tsleep(&up->sleep, return0, 0, 100);
-	setmalloctag(v, getcallerpc());
-	memset(v, 0, size);
+	jehanne_setmalloctag(v, getcallerpc());
+	jehanne_memset(v, 0, size);
 
 	return v;
 }
 
 void*
-realloc(void* ap, uint32_t size)
+jehanne_realloc(void* ap, uint32_t size)
 {
 	void *v;
 	Header *h;
@@ -989,13 +984,13 @@ realloc(void* ap, uint32_t size)
 	 * do nothing if units are the same.
 	 */
 	if(size == 0){
-		free(ap);
+		jehanne_free(ap);
 		return nil;
 	}
 	if(ap == nil){
-		v = malloc(size);
+		v = jehanne_malloc(size);
 		if(v != nil)
-			setmalloctag(v, getcallerpc());
+			jehanne_setmalloctag(v, getcallerpc());
 		return v;
 	}
 
@@ -1035,19 +1030,19 @@ realloc(void* ap, uint32_t size)
 	 * allocate, copy and free.
 	 * The original block must be unchanged on failure.
 	 */
-	if((v = malloc(size)) != nil){
-		setmalloctag(v, getcallerpc());
+	if((v = jehanne_malloc(size)) != nil){
+		jehanne_setmalloctag(v, getcallerpc());
 		if(size < osize)
 			osize = size;
-		memmove(v, ap, osize);
-		free(ap);
+		jehanne_memmove(v, ap, osize);
+		jehanne_free(ap);
 	}
 
 	return v;
 }
 
 void
-setmalloctag(void *a, uint32_t tag)
+jehanne_setmalloctag(void *a, uint32_t tag)
 {
 	Header *h;
 	BigAlloc *b;
@@ -1067,7 +1062,7 @@ setmalloctag(void *a, uint32_t tag)
 }
 
 uint32_t
-getmalloctag(void *a)
+jehanne_getmalloctag(void *a)
 {
 	BigAlloc *b;
 
@@ -1095,7 +1090,7 @@ mallocinit(void)
 	p->next = nil;
 	if(!morecore(BigThreshold/Unitsz))
 		panic("mallocinit");
-	print("base %#p bound %#p nunits %lud\n", tail->start, tail->end, tail->end - tail->start);
+	jehanne_print("base %#p bound %#p nunits %lud\n", tail->start, tail->end, tail->end - tail->start);
 }
 
 /*

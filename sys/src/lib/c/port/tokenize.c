@@ -20,7 +20,7 @@ qtoken(char *s, char *sep)
 
 	quoting = 0;
 	t = s;	/* s is output string, t is input string */
-	while(*t!='\0' && (quoting || utfrune(sep, *t)==nil)){
+	while(*t!='\0' && (quoting || jehanne_utfrune(sep, *t)==nil)){
 		if(*t != '\''){
 			*s++ = *t++;
 			continue;
@@ -57,7 +57,7 @@ etoken(char *t, const char *sep)
 
 	/* move to end of next token */
 	quoting = 0;
-	while(*t!='\0' && (quoting || utfrune(sep, *t)==nil)){
+	while(*t!='\0' && (quoting || jehanne_utfrune(sep, *t)==nil)){
 		if(*t != '\''){
 			t++;
 			continue;
@@ -82,12 +82,12 @@ etoken(char *t, const char *sep)
 }
 
 int
-gettokens(char *s, char **args, int maxargs, const char *sep)
+jehanne_gettokens(char *s, char **args, int maxargs, const char *sep)
 {
 	int nargs;
 
 	for(nargs=0; nargs<maxargs; nargs++){
-		while(*s!='\0' && utfrune(sep, *s)!=nil)
+		while(*s!='\0' && jehanne_utfrune(sep, *s)!=nil)
 			*s++ = '\0';
 		if(*s == '\0')
 			break;
@@ -99,12 +99,12 @@ gettokens(char *s, char **args, int maxargs, const char *sep)
 }
 
 int
-tokenize(char *s, char **args, int maxargs)
+jehanne_tokenize(char *s, char **args, int maxargs)
 {
 	int nargs;
 
 	for(nargs=0; nargs<maxargs; nargs++){
-		while(*s!='\0' && utfrune(qsep, *s)!=nil)
+		while(*s!='\0' && jehanne_utfrune(qsep, *s)!=nil)
 			s++;
 		if(*s == '\0')
 			break;

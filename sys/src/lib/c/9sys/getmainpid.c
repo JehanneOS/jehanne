@@ -24,7 +24,7 @@ extern int32_t _mainpid;	/* declared in $ARCH/argv0.c
 							 */
 
 int32_t
-getmainpid(void)
+jehanne_getmainpid(void)
 {
 	/* getmainpid returns the pid of the process at the top of the 
 	 * stack, that is the process that started the main() function.

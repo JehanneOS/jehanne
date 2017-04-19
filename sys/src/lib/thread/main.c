@@ -40,12 +40,12 @@ main(int argc, char **argv)
 
 	rfork(RFREND);
 	mainp = &p;
-	if(setjmp(_mainjmp))
+	if(jehanne_setjmp(_mainjmp))
 		_schedinit(p);
 
 //_threaddebuglevel = (DBGSCHED|DBGCHAN|DBGREND)^~0;
 	_systhreadinit();
-	_qlockinit(_threadrendezvous);
+	jehanne__qlockinit(_threadrendezvous);
 	_sysfatal = _threadsysfatal;
 	_dial = _threaddial;
 	__assert = _threadassert;
@@ -81,10 +81,10 @@ efork(Execargs *e)
 	close(e->fd[0]);
 	exec(e->prog, e->args);
 	_threaddebug(DBGEXEC, "_schedexec failed: %r");
-	rerrstr(buf, sizeof buf);
+	jehanne_rerrstr(buf, sizeof buf);
 	if(buf[0]=='\0')
-		strcpy(buf, "exec failed");
-	write(e->fd[1], buf, strlen(buf));
+		jehanne_strcpy(buf, "exec failed");
+	write(e->fd[1], buf, jehanne_strlen(buf));
 	close(e->fd[1]);
 	_exits(buf);
 }
@@ -110,7 +110,7 @@ _schedfork(Proc *p)
 	switch(pid = rfork(RFPROC|RFMEM|RFNOWAIT|p->rforkflag)){
 	case 0:
 		*mainp = p;	/* write to stack, so local to proc */
-		longjmp(_mainjmp, 1);
+		jehanne_longjmp(_mainjmp, 1);
 	default:
 		return pid;
 	}
@@ -122,7 +122,7 @@ _schedexit(Proc *p)
 	char ex[ERRMAX];
 	Proc **l;
 
-	lock(&_threadpq.lock);
+	jehanne_lock(&_threadpq.lock);
 	for(l=&_threadpq.head; *l; l=&(*l)->next){
 		if(*l == p){
 			*l = p->next;
@@ -131,10 +131,10 @@ _schedexit(Proc *p)
 			break;
 		}
 	}
-	unlock(&_threadpq.lock);
+	jehanne_unlock(&_threadpq.lock);
 
-	utfecpy(ex, ex+sizeof ex, p->exitstr);
-	free(p);
+	jehanne_utfecpy(ex, ex+sizeof ex, p->exitstr);
+	jehanne_free(p);
 	_exits(ex);
 }
 
@@ -154,18 +154,18 @@ _schedexecwait(void)
 
 	rfork(RFCFDG);
 	for(;;){
-		w = wait();
+		w = jehanne_wait();
 		if(w == nil)
 			break;
 		if(w->pid == pid)
 			break;
-		free(w);
+		jehanne_free(w);
 	}
 	if(w != nil){
 		if((c = _threadwaitchan) != nil)
 			sendp(c, w);
 		else
-			free(w);
+			jehanne_free(w);
 	}
 	threadexits("procexec");
 }
@@ -175,7 +175,7 @@ static Proc **procp;
 void
 _systhreadinit(void)
 {
-	procp = (Proc **)privalloc();
+	procp = (Proc **)jehanne_privalloc();
 }
 
 Proc*

@@ -11,15 +11,15 @@
 #include <libc.h>
 
 void
-setnetmtpt(char *net, int n, const char *x)
+jehanne_setnetmtpt(char *net, int n, const char *x)
 {
 	if(x == nil)
 		x = "/net";
 
 	if(*x == '/'){
-		strncpy(net, x, n);
+		jehanne_strncpy(net, x, n);
 		net[n-1] = 0;
 	} else {
-		snprint(net, n, "/net%s", x);
+		jehanne_snprint(net, n, "/net%s", x);
 	}
 }

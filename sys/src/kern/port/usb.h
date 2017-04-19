@@ -1,10 +1,10 @@
 /*
  * common USB definitions.
  */
-#define dprint(...)	do if(debug)print(__VA_ARGS__); while(0)
-#define ddprint(...)	do if(debug>1)print(__VA_ARGS__); while(0)
-#define deprint(...)	do if(debug || ep->debug)print(__VA_ARGS__); while(0)
-#define ddeprint(...)	do if(debug>1 || ep->debug>1)print(__VA_ARGS__); while(0)
+#define dprint(...)	do if(debug)jehanne_print(__VA_ARGS__); while(0)
+#define ddprint(...)	do if(debug>1)jehanne_print(__VA_ARGS__); while(0)
+#define deprint(...)	do if(debug || ep->debug)jehanne_print(__VA_ARGS__); while(0)
+#define ddeprint(...)	do if(debug>1 || ep->debug>1)jehanne_print(__VA_ARGS__); while(0)
 
 #define	GET2(p)		((((p)[1]&0xFF)<<8)|((p)[0]&0xFF))
 #define	PUT2(p,v)	{((p)[0] = (v)); ((p)[1] = (v)>>8);}

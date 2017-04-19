@@ -347,7 +347,7 @@ _memimageline(Memimage *dst, Point p0, Point p1, int end0, int end1, int radius,
 	if((src->flags&Frepl)==0 && rectclip(&clipr, rectsubpt(src->r, d))==0)
 		return;
 	/* this means that only verline() handles degenerate lines (p0==p1) */
-	hor = (abs(p1.x-p0.x) > abs(p1.y-p0.y));
+	hor = (jehanne_abs(p1.x-p0.x) > jehanne_abs(p1.y-p0.y));
 	/*
 	 * Clipping is a little peculiar.  We can't use Sutherland-Cohen
 	 * clipping because lines are wide.  But this is probably just fine:

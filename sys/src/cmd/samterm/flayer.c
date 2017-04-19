@@ -57,7 +57,7 @@ flnew(Flayer *l, Rune *(*fn)(Flayer*, long, uint32_t*), int u0, void *u1)
 {
 	if(nllist == nlalloc){
 		nlalloc += DELTA;
-		llist = realloc(llist, nlalloc*sizeof(Flayer**));
+		llist = jehanne_realloc(llist, nlalloc*sizeof(Flayer**));
 		if(llist == 0)
 			panic("flnew");
 	}
@@ -82,7 +82,7 @@ flrect(Flayer *l, Rectangle r)
 static void
 fontbuggered(char *name)
 {
-	fprint(2, "samterm: font %s has zero-width \"0\" character\n", name);
+	jehanne_fprint(2, "samterm: font %s has zero-width \"0\" character\n", name);
 	threadexits("font zero-width");
 }
 

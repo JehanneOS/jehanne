@@ -11,13 +11,13 @@
 #include	<libc.h>
 
 int
-print(const char *fmt, ...)
+jehanne_print(const char *fmt, ...)
 {
 	int n;
 	va_list args;
 
 	va_start(args, fmt);
-	n = vfprint(1, fmt, args);
+	n = jehanne_vfprint(1, fmt, args);
 	va_end(args);
 	return n;
 }

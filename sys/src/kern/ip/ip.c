@@ -74,7 +74,7 @@ initfrag(IP *ip, int size)
 	Fragment4 *fq4, *eq4;
 	Fragment6 *fq6, *eq6;
 
-	ip->fragfree4 = (Fragment4*)malloc(sizeof(Fragment4) * size);
+	ip->fragfree4 = (Fragment4*)jehanne_malloc(sizeof(Fragment4) * size);
 	if(ip->fragfree4 == nil)
 		panic("initfrag");
 
@@ -84,7 +84,7 @@ initfrag(IP *ip, int size)
 
 	ip->fragfree4[size-1].next = nil;
 
-	ip->fragfree6 = (Fragment6*)malloc(sizeof(Fragment6) * size);
+	ip->fragfree6 = (Fragment6*)jehanne_malloc(sizeof(Fragment6) * size);
 	if(ip->fragfree6 == nil)
 		panic("initfrag");
 
@@ -215,7 +215,7 @@ ipoput4(Fs *f, Block *bp, int gating, int ttl, int tos, Conv *c)
 		return 0;
 	}
 
-if((eh->frag[0] & (IP_DF>>8)) && !gating) print("%V: DF set\n", eh->dst);
+if((eh->frag[0] & (IP_DF>>8)) && !gating) jehanne_print("%V: DF set\n", eh->dst);
 
 	if(eh->frag[0] & (IP_DF>>8)){
 		ip->stats[FragFails]++;
@@ -256,7 +256,7 @@ if((eh->frag[0] & (IP_DF>>8)) && !gating) print("%V: DF set\n", eh->dst);
 		nb = allocb(IP4HDR+seglen);
 		feh = (Ip4hdr*)(nb->rp);
 
-		memmove(nb->wp, eh, IP4HDR);
+		jehanne_memmove(nb->wp, eh, IP4HDR);
 		nb->wp += IP4HDR;
 
 		if((fragoff + seglen) >= dlen) {
@@ -282,7 +282,7 @@ if((eh->frag[0] & (IP_DF>>8)) && !gating) print("%V: DF set\n", eh->dst);
 			blklen = chunk;
 			if(BLEN(xp) < chunk)
 				blklen = BLEN(xp);
-			memmove(nb->wp, xp->rp, blklen);
+			jehanne_memmove(nb->wp, xp->rp, blklen);
 			nb->wp += blklen;
 			xp->rp += blklen;
 			chunk -= blklen;
@@ -368,7 +368,7 @@ ipiput4(Fs *f, Ipifc *ifc, Block *bp)
 		if(notforme == 0) {
 			olen = nhgets(h->length);
 			dp = bp->rp + (hl - (IP_HLEN4<<2));
-			memmove(dp, h, IP_HLEN4<<2);
+			jehanne_memmove(dp, h, IP_HLEN4<<2);
 			bp->rp = dp;
 			h = (Ip4hdr*)(bp->rp);
 			h->vihl = (IP_VER4|IP_HLEN4);
@@ -384,7 +384,7 @@ ipiput4(Fs *f, Ipifc *ifc, Block *bp)
 		}
 
 		/* don't forward to source's network */
-		memset(&conv, 0, sizeof conv);
+		jehanne_memset(&conv, 0, sizeof conv);
 		r = v4lookup(f, h->dst, &conv);
 		if(r == nil || r->ifc == ifc){
 			ip->stats[OutDiscards]++;
@@ -463,7 +463,7 @@ ipstats(Fs *f, char *buf, int len)
 	p = buf;
 	e = p+len;
 	for(i = 0; i < Nipstats; i++)
-		p = seprint(p, e, "%s: %llud\n", statnames[i], ip->stats[i]);
+		p = jehanne_seprint(p, e, "%s: %llud\n", statnames[i], ip->stats[i]);
 	return p - buf;
 }
 
@@ -582,7 +582,7 @@ ip4reassemble(IP *ip, int offset, Block *bp, Ip4hdr *ih)
 				BKFG(*l)->flen -= ovlap;
 				BKFG(*l)->foff += ovlap;
 				/* move up ih hdrs */
-				memmove((*l)->rp + ovlap, (*l)->rp, IP4HDR);
+				jehanne_memmove((*l)->rp + ovlap, (*l)->rp, IP4HDR);
 				(*l)->rp += ovlap;
 				break;
 			}

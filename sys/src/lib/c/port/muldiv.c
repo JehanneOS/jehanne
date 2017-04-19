@@ -11,7 +11,7 @@
 #include <libc.h>
 
 uint32_t
-umuldiv(uint32_t a, uint32_t b, uint32_t c)
+jehanne_umuldiv(uint32_t a, uint32_t b, uint32_t c)
 {
 	double d;
 
@@ -22,7 +22,7 @@ umuldiv(uint32_t a, uint32_t b, uint32_t c)
 }
 
 int32_t
-muldiv(int32_t a, int32_t b, int32_t c)
+jehanne_muldiv(int32_t a, int32_t b, int32_t c)
 {
 	int s;
 	int32_t v;
@@ -40,7 +40,7 @@ muldiv(int32_t a, int32_t b, int32_t c)
 		s = !s;
 		c = -c;
 	}
-	v = umuldiv(a, b, c);
+	v = jehanne_umuldiv(a, b, c);
 	if(s)
 		v = -v;
 	return v;

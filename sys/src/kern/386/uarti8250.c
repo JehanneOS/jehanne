@@ -161,12 +161,12 @@ i8250status(Uart* uart, void* buf, long n, long offset)
 	uint8_t ier, lcr, mcr, msr;
 
 	ctlr = uart->regs;
-	p = malloc(READSTR);
+	p = jehanne_malloc(READSTR);
 	mcr = ctlr->sticky[Mcr];
 	msr = csr8r(ctlr, Msr);
 	ier = ctlr->sticky[Ier];
 	lcr = ctlr->sticky[Lcr];
-	snprint(p, READSTR,
+	jehanne_snprint(p, READSTR,
 		"b%d c%d d%d e%d l%d m%d p%c r%d s%d i%d\n"
 		"dev(%d) type(%d) framing(%d) overruns(%d) "
 		"berr(%d) serr(%d)%s%s%s%s\n",
@@ -194,7 +194,7 @@ i8250status(Uart* uart, void* buf, long n, long offset)
 		(msr & Ri) ? " ring": ""
 	);
 	n = readstr(offset, buf, n, p);
-	free(p);
+	jehanne_free(p);
 
 	return n;
 }
@@ -624,7 +624,7 @@ i8250alloc(int io, int irq, int tbdf)
 {
 	Ctlr *ctlr;
 
-	if((ctlr = malloc(sizeof(Ctlr))) != nil){
+	if((ctlr = jehanne_malloc(sizeof(Ctlr))) != nil){
 		ctlr->io = io;
 		ctlr->irq = irq;
 		ctlr->tbdf = tbdf;
@@ -746,7 +746,7 @@ i8250console(char* cfg)
 	 */
 	if((p = getconf("console")) == nil && (p = cfg) == nil)
 		return nil;
-	i = strtoul(p, &cmd, 0);
+	i = jehanne_strtoul(p, &cmd, 0);
 	if(p == cmd)
 		return nil;
 //WTF? Something to do with the PCIe-only machine?
@@ -766,7 +766,7 @@ i8250console(char* cfg)
 	}
 
 //Madness. Something to do with the PCIe-only machine?
-	memset(&isa, 0, sizeof(isa));
+	jehanne_memset(&isa, 0, sizeof(isa));
 	ctlr = uart->regs;
 	if(isaconfig("eia", i, &isa) != 0){
 		if(isa.port != 0)

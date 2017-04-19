@@ -11,8 +11,8 @@
 #include <libc.h>
 
 void
-nulldir(Dir *d)
+jehanne_nulldir(Dir *d)
 {
-	memset(d, ~0, sizeof(Dir));
+	jehanne_memset(d, ~0, sizeof(Dir));
 	d->name = d->uid = d->gid = d->muid = "";
 }

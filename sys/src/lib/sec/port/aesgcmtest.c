@@ -1,5 +1,5 @@
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 #include <mp.h>
 #include <libsec.h>
 
@@ -233,7 +233,7 @@ parsehex(char *s, uint8_t *h, char *l)
 	mpint *m;
 	int n;
 
-	n = strlen(s);
+	n = jehanne_strlen(s);
 	if(n == 0)
 		return 0;
 	assert((n & 1) == 0);
@@ -244,7 +244,7 @@ parsehex(char *s, uint8_t *h, char *l)
 		abort();
 	mptober(m, h, n);
 	if(l != nil)
-		print("%s = %.*H\n", l, n, h);
+		jehanne_print("%s = %.*H\n", l, n, h);
 	return n;
 }
 
@@ -262,11 +262,11 @@ runtest(Test *t)
 
 	setupAESGCMstate(&s, key, nkey, iv, niv);
 	aesgcm_encrypt(plain, nplain, aad, naad, tag, &s);
-	print("C = %.*H\n", nplain, plain);
-	print("T = %.*H\n", 16, tag);
+	jehanne_print("C = %.*H\n", nplain, plain);
+	jehanne_print("T = %.*H\n", 16, tag);
 
 	parsehex(t->T, tmp, nil);
-	assert(memcmp(tmp, tag, 16) == 0);
+	assert(jehanne_memcmp(tmp, tag, 16) == 0);
 }
 
 void
@@ -278,9 +278,9 @@ perftest(void)
 	int64_t now;
 	int i, delta;
 
-	now = nsec();
+	now = jehanne_nsec();
 	for(i=0; i<100; i++){
-		memset(buf, 0, sizeof(buf));
+		jehanne_memset(buf, 0, sizeof(buf));
 		if(1){
 			setupAESGCMstate(&s, zeros, 16, zeros, 12);
 			aesgcm_encrypt(buf, sizeof(buf), nil, 0, tag, &s);
@@ -289,8 +289,8 @@ perftest(void)
 			aesCBCencrypt(buf, sizeof(buf), &s);
 		}
 	}
-	delta = (nsec() - now) / 1000000000LL;
-	fprint(2, "%ds = %d/s\n", delta, i*sizeof(buf) / delta);
+	delta = (jehanne_nsec() - now) / 1000000000LL;
+	jehanne_fprint(2, "%ds = %d/s\n", delta, i*sizeof(buf) / delta);
 }
 
 void
@@ -298,17 +298,17 @@ main(int argc, char **argv)
 {
 	int i;
 
-	fmtinstall('H', encodefmt);
+	jehanne_fmtinstall('H', encodefmt);
 
 	ARGBEGIN {
 	case 'p':
 		perftest();
-		exits(nil);
+		jehanne_exits(nil);
 	} ARGEND;
 
 	for(i=0; i<nelem(tests); i++){
-		print("Test Case %d\n", i+1);
+		jehanne_print("Test Case %d\n", i+1);
 		runtest(&tests[i]);
-		print("\n");
+		jehanne_print("\n");
 	}
 }

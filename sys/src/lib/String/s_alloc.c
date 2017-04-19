@@ -8,7 +8,7 @@
  */
 
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 #include "String.h"
 
 #define STRLEN 128
@@ -18,12 +18,12 @@ s_free(String *sp)
 {
 	if (sp == nil)
 		return;
-	lock(sp);
+	jehanne_lock(sp);
 	if(--(sp->ref) != 0){
-		unlock(sp);
+		jehanne_unlock(sp);
 		return;
 	}
-	unlock(sp);
+	jehanne_unlock(sp);
 
 	if(sp->fixed == 0 && sp->base != nil)
 		free(sp->base);
@@ -34,9 +34,9 @@ s_free(String *sp)
 extern String *
 s_incref(String *sp)
 {
-	lock(sp);
+	jehanne_lock(sp);
 	sp->ref++;
-	unlock(sp);
+	jehanne_unlock(sp);
 
 	return sp;
 }

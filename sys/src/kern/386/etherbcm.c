@@ -18,7 +18,7 @@
 #include "etherif.h"
 #include "../port/ethermii.h"
 
-#define dprint(...)	do{ if(debug)print(__VA_ARGS__); }while(0)
+#define dprint(...)	do{ if(debug)jehanne_print(__VA_ARGS__); }while(0)
 #define Rbsz		ROUNDUP(1514+4, 4)
 
 typedef struct Ctlr Ctlr;
@@ -243,19 +243,19 @@ bcmifstat(Ether *edev, void *a, long n, usize offset)
 	Ctlr *c;
 
 	c = edev->ctlr;
-	p = s = malloc(READSTR);
+	p = s = jehanne_malloc(READSTR);
 	e = p + READSTR;
 
-	p = seprint(p, e, "nobuf	%ud\n", c->nobuf);
-	p = seprint(p, e, "partial	%ud\n", c->partial);
-	p = seprint(p, e, "rxerr	%ud\n", c->rxerr);
-	p = seprint(p, e, "qfull	%ud\n", c->qfull);
-	p = seprint(p, e, "dmaerr	%ud\n", c->dmaerr);
-	p = seprint(p, e, "type: %s\n", cname(c));
+	p = jehanne_seprint(p, e, "nobuf	%ud\n", c->nobuf);
+	p = jehanne_seprint(p, e, "partial	%ud\n", c->partial);
+	p = jehanne_seprint(p, e, "rxerr	%ud\n", c->rxerr);
+	p = jehanne_seprint(p, e, "qfull	%ud\n", c->qfull);
+	p = jehanne_seprint(p, e, "dmaerr	%ud\n", c->dmaerr);
+	p = jehanne_seprint(p, e, "type: %s\n", cname(c));
 
 	USED(p);
 	n = readstr(offset, a, n, s);
-	free(s);
+	jehanne_free(s);
 
 	return n;
 }
@@ -282,7 +282,7 @@ miiwait(Ctlr *ctlr)
 		}
 		microdelay(5);
 	}
-	print("#l%d: bcm: miiwait: timeout\n", ctlr->ether->ctlrno);
+	jehanne_print("#l%d: bcm: miiwait: timeout\n", ctlr->ether->ctlrno);
 	return ~0;
 }
 
@@ -299,7 +299,7 @@ miir(Ctlr *ctlr, int r)
 	if(v == ~0)
 		return -1;
 	if(v & Phyrdfail){
-		print("#l%d: bcm: miir: fail\n", ctlr->ether->ctlrno);
+		jehanne_print("#l%d: bcm: miir: fail\n", ctlr->ether->ctlrno);
 		return -1;
 	}
 	return v & 0xffff;
@@ -401,7 +401,7 @@ replenish(Ctlr *ctlr)
 		return -1;
 	}
 	next = ctlr->recvprod + ctlr->recvprodi * 8;
-	memset(next, 0, 32);
+	jehanne_memset(next, 0, 32);
 	next[0] = PCIWADDRH(bp->rp);
 	next[1] = PCIWADDRL(bp->rp);
 	next[2] = Rbsz;
@@ -495,7 +495,7 @@ bcmerror(Ether *edev)
 	ctlr = edev->ctlr;
 	if(csr32(ctlr, FlowAttention)) {
 		if(csr32(ctlr, FlowAttention) & 0xf8ff8080)
-			print("bcm: fatal error %#.8ux", csr32(ctlr, FlowAttention));
+			jehanne_print("bcm: fatal error %#.8ux", csr32(ctlr, FlowAttention));
 		csr32(ctlr, FlowAttention) = 0;
 	}
 	csr32(ctlr, MACEventStatus) = 0; /* worth ignoring */
@@ -507,7 +507,7 @@ bcmerror(Ether *edev)
 	}
 	if(csr32(ctlr, RISCState)) {
 		if(csr32(ctlr, RISCState) & 0x78000403)
-			print("bcm: RISC halted %#.8ux", csr32(ctlr, RISCState));
+			jehanne_print("bcm: RISC halted %#.8ux", csr32(ctlr, RISCState));
 		csr32(ctlr, RISCState) = 0;
 	}
 }
@@ -586,7 +586,7 @@ bcminit(Ether *edev)
 	csr32(ctlr, MiscHostCtl) |= MaskPCIInt | ClearIntA | WordSwap | IndirAccessEn;
 	csr32(ctlr, SwArbitration) |= SwArbitSet1;
 	if(bcmµwait(ctlr, 2000, SwArbitration, SwArbitWon1, SwArbitWon1) == -1){
-		print("bcm: arbiter failed to respond\n");
+		jehanne_print("bcm: arbiter failed to respond\n");
 		return -1;
 	}
 	csr32(ctlr, MemArbiterMode) |= Enable;
@@ -607,7 +607,7 @@ bcminit(Ether *edev)
 		if(mem32r(ctlr, Fwmbox) == ~Fwmagic)
 			break;
 		if(i == 20*10000 /* microseconds */){
-			print("bcm: fw failed to respond %#.8ux\n", mem32r(ctlr, Fwmbox));
+			jehanne_print("bcm: fw failed to respond %#.8ux\n", mem32r(ctlr, Fwmbox));
 			break; //return -1;
 		}
 		microdelay(100);
@@ -617,7 +617,7 @@ bcminit(Ether *edev)
 	 * i can find.  nor to i have a datasheet that recommends this.  - quanstro
 	 * csr32(ctlr, Pcitlplpl) |= 1<<25 | 1<<29;
 	 */
-	memset(ctlr->status, 0, 20);
+	jehanne_memset(ctlr->status, 0, 20);
 	csr32(ctlr, Dmarwctl) = (csr32(ctlr, Dmarwctl) & DMAWaterMask) | DMAWaterValue;
 	csr32(ctlr, ModeControl) |= HostSendBDs | HostStackUp | InterruptOnMAC;
 	csr32(ctlr, MiscConf) = (csr32(ctlr, MiscConf) & TimerMask) | TimerValue;
@@ -626,13 +626,13 @@ bcminit(Ether *edev)
 	csr32(ctlr, LowWaterMax) = (csr32(ctlr, LowWaterMax) & LowWaterMaxMask) | LowWaterMaxValue;
 	csr32(ctlr, BufferManMode) |= Enable | Attn;
 	if(bcmµwait(ctlr, 2000, BufferManMode, Enable, Enable) == -1){
-		print("bcm: failed to enable buffers\n");
+		jehanne_print("bcm: failed to enable buffers\n");
 		return -1;
 	}
 	csr32(ctlr, FTQReset) = ~0;
 	csr32(ctlr, FTQReset) = 0;
 	if(bcmµwait(ctlr, 2000, FTQReset, ~0, 0) == -1){
-		print("bcm: failed to bring ftq out of reset\n");
+		jehanne_print("bcm: failed to bring ftq out of reset\n");
 		return -1;
 	}
 	csr32(ctlr, RxBDHostAddr) = PCIWADDRH(ctlr->recvprod);
@@ -673,7 +673,7 @@ bcminit(Ether *edev)
 	csr32(ctlr, SendInitiatorConf) |= SendStats;
 	csr32(ctlr, HostCoalMode) = 0;
 	if(bcmµwait(ctlr, 2000, HostCoalMode, ~0, 0) == -1){
-		print("bcm: failed to unset coalescing\n");
+		jehanne_print("bcm: failed to unset coalescing\n");
 		return -1;
 	}
 	csr32(ctlr, HostCoalRxTicks) = 150;
@@ -719,7 +719,7 @@ bcminit(Ether *edev)
 			if((miir(ctlr, Bmcr) & BmcrR) == 0)
 				break;
 			if(i == 10000 /* microseconds */){
-				print("bcm: phy reset failure\n");
+				jehanne_print("bcm: phy reset failure\n");
 				return -1;
 			}
 			microdelay(100);
@@ -797,25 +797,25 @@ bcmpci(void)
 			continue;
 		pcisetbme(p);
 		pcisetpms(p, 0);
-		ctlr = malloc(sizeof(Ctlr));
+		ctlr = jehanne_malloc(sizeof(Ctlr));
 		if(ctlr == nil)
 			continue;
 		ctlr->type = type;
 		ctlr->port = p->mem[0].bar & ~(uintmem)0xf;
 		mem = vmap(ctlr->port, p->mem[0].size);
 		if(mem == nil) {
-			print("bcm: can't map %#p\n", (uint64_t)ctlr->port);
-			free(ctlr);
+			jehanne_print("bcm: can't map %#p\n", (uint64_t)ctlr->port);
+			jehanne_free(ctlr);
 			continue;
 		}
 		ctlr->pdev = p;
 		ctlr->nic = mem;
-		ctlr->status = mallocalign(20, 16, 0, 0);
-		ctlr->recvprod = mallocalign(32 * RxProdRingLen, 16, 0, 0);
-		ctlr->recvret = mallocalign(32 * RxRetRingLen, 16, 0, 0);
-		ctlr->sendr = mallocalign(16 * SendRingLen, 16, 0, 0);
-		ctlr->sends = malloc(sizeof *ctlr->sends * SendRingLen);
-		ctlr->rxs = malloc(sizeof *ctlr->sends * SendRingLen);
+		ctlr->status = jehanne_mallocalign(20, 16, 0, 0);
+		ctlr->recvprod = jehanne_mallocalign(32 * RxProdRingLen, 16, 0, 0);
+		ctlr->recvret = jehanne_mallocalign(32 * RxRetRingLen, 16, 0, 0);
+		ctlr->sendr = jehanne_mallocalign(16 * SendRingLen, 16, 0, 0);
+		ctlr->sends = jehanne_malloc(sizeof *ctlr->sends * SendRingLen);
+		ctlr->rxs = jehanne_malloc(sizeof *ctlr->sends * SendRingLen);
 		*xx = ctlr;
 		xx = &ctlr->next;
 	}

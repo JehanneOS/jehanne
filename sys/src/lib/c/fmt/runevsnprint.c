@@ -11,7 +11,7 @@
 #include <libc.h>
 
 int
-runevsnprint(Rune *buf, int len, const char *fmt, va_list args)
+jehanne_runevsnprint(Rune *buf, int len, const char *fmt, va_list args)
 {
 	Fmt f;
 
@@ -26,7 +26,7 @@ runevsnprint(Rune *buf, int len, const char *fmt, va_list args)
 	f.nfmt = 0;
 	//f.args = args;
 	va_copy(f.args,args);
-	dofmt(&f, fmt);
+	jehanne_dofmt(&f, fmt);
 	va_end(f.args);
 	*(Rune*)f.to = '\0';
 	return (Rune*)f.to - buf;

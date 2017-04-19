@@ -7,9 +7,9 @@ dsapuballoc(void)
 {
 	DSApub *dsa;
 
-	dsa = mallocz(sizeof(*dsa), 1);
+	dsa = jehanne_mallocz(sizeof(*dsa), 1);
 	if(dsa == nil)
-		sysfatal("dsapuballoc");
+		jehanne_sysfatal("dsapuballoc");
 	return dsa;
 }
 
@@ -22,7 +22,7 @@ dsapubfree(DSApub *dsa)
 	mpfree(dsa->q);
 	mpfree(dsa->alpha);
 	mpfree(dsa->key);
-	free(dsa);
+	jehanne_free(dsa);
 }
 
 
@@ -31,9 +31,9 @@ dsaprivalloc(void)
 {
 	DSApriv *dsa;
 
-	dsa = mallocz(sizeof(*dsa), 1);
+	dsa = jehanne_mallocz(sizeof(*dsa), 1);
 	if(dsa == nil)
-		sysfatal("dsaprivalloc");
+		jehanne_sysfatal("dsaprivalloc");
 	return dsa;
 }
 
@@ -47,7 +47,7 @@ dsaprivfree(DSApriv *dsa)
 	mpfree(dsa->pub.alpha);
 	mpfree(dsa->pub.key);
 	mpfree(dsa->secret);
-	free(dsa);
+	jehanne_free(dsa);
 }
 
 DSAsig*
@@ -55,9 +55,9 @@ dsasigalloc(void)
 {
 	DSAsig *dsa;
 
-	dsa = mallocz(sizeof(*dsa), 1);
+	dsa = jehanne_mallocz(sizeof(*dsa), 1);
 	if(dsa == nil)
-		sysfatal("dsasigalloc");
+		jehanne_sysfatal("dsasigalloc");
 	return dsa;
 }
 
@@ -68,5 +68,5 @@ dsasigfree(DSAsig *dsa)
 		return;
 	mpfree(dsa->r);
 	mpfree(dsa->s);
-	free(dsa);
+	jehanne_free(dsa);
 }

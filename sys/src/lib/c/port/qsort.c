@@ -120,7 +120,7 @@ qsorts(char *a, long n, Sort *p)
 }
 
 void
-qsort(void *va, long n, int es, int (*cmp)(const void*, const void*))
+jehanne_qsort(void *va, long n, int es, int (*cmp)(const void*, const void*))
 {
 	Sort s;
 

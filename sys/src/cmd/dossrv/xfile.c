@@ -56,9 +56,9 @@ getxfs(char *user, char *name)
 	 * of a boot manager programme at the beginning of the disc.
 	 */
 	offset = 0;
-	if(p = strrchr(name, ':')){
+	if(p = jehanne_strrchr(name, ':')){
 		*p++ = 0;
-		offset = strtol(p, &q, 0);
+		offset = jehanne_strtol(p, &q, 0);
 		chat("name %s, offset %ld\n", p, offset);
 		if(offset < 0 || p == q){
 			errno = Enofilsys;
@@ -83,7 +83,7 @@ getxfs(char *user, char *name)
 		errno = Eerrstr;
 		return 0;
 	}
-	dir = dirfstat(fd);
+	dir = jehanne_dirfstat(fd);
 	if(dir == nil){
 		errno = Eio;
 		close(fd);
@@ -91,7 +91,7 @@ getxfs(char *user, char *name)
 	}
 
 	dqid = dir->qid;
-	free(dir);
+	jehanne_free(dir);
 	mlock(&xlock);
 	for(fxf=0,xf=xhead; xf; xf=xf->next){
 		if(xf->ref == 0){
@@ -101,7 +101,7 @@ getxfs(char *user, char *name)
 		}
 		if(!eqqid(xf->qid, dqid))
 			continue;
-		if(strcmp(xf->name, name) != 0 || xf->dev < 0)
+		if(jehanne_strcmp(xf->name, name) != 0 || xf->dev < 0)
 			continue;
 		if(devcheck(xf) < 0) /* look for media change */
 			continue;
@@ -114,7 +114,7 @@ getxfs(char *user, char *name)
 		return xf;
 	}
 	if(fxf == nil){
-		fxf = malloc(sizeof(Xfs));
+		fxf = jehanne_malloc(sizeof(Xfs));
 		if(fxf == nil){
 			unmlock(&xlock);
 			close(fd);
@@ -125,7 +125,7 @@ getxfs(char *user, char *name)
 		xhead = fxf;
 	}
 	chat("alloc \"%s\", dev=%d...", name, fd);
-	fxf->name = strdup(name);
+	fxf->name = jehanne_strdup(name);
 	fxf->ref = 1;
 	fxf->qid = dqid;
 	fxf->dev = fd;
@@ -145,8 +145,8 @@ refxfs(Xfs *xf, int delta)
 	xf->ref += delta;
 	if(xf->ref == 0){
 		chat("free \"%s\", dev=%d...", xf->name, xf->dev);
-		free(xf->name);
-		free(xf->ptr);
+		jehanne_free(xf->name);
+		jehanne_free(xf->ptr);
 		purgebuf(xf);
 		if(xf->dev >= 0){
 			close(xf->dev);
@@ -206,7 +206,7 @@ xfile(int fid, int flag)
 		unmlock(&freelock);
 	} else {
 		unmlock(&freelock);
-		f = malloc(sizeof(Xfile));
+		f = jehanne_malloc(sizeof(Xfile));
 		if(f == nil){
 			errno = Enomem;
 			return nil;
@@ -228,7 +228,7 @@ Xfile *
 clean(Xfile *f)
 {
 	if(f->ptr){
-		free(f->ptr);
+		jehanne_free(f->ptr);
 		f->ptr = nil;
 	}
 	if(f->xf){
@@ -256,7 +256,7 @@ dosptrreloc(Xfile *f, Dosptr *dp, uint32_t addr, uint32_t offset)
 			xdp = p->ptr;
 			if(p != f && p->xf == f->xf
 			&& xdp != nil && xdp->addr == addr && xdp->offset == offset){
-				memmove(xdp, dp, sizeof(Dosptr));
+				jehanne_memmove(xdp, dp, sizeof(Dosptr));
 				xdp->p = nil;
 				xdp->d = nil;
 				p->qid.path = QIDPATH(xdp);

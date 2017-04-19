@@ -36,7 +36,7 @@ setbrk(uintptr_t p)
 }
 
 int
-brk(void *p)
+jehanne_brk(void *p)
 {
 	uintptr_t new_brk;
 
@@ -48,7 +48,7 @@ brk(void *p)
 }
 
 void*
-sbrk(uint32_t increment)
+jehanne_segbrk(uint32_t increment)
 {
 	uintptr_t new_brk;
 

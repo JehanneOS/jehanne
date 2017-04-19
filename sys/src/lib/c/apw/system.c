@@ -25,29 +25,29 @@ system(const char *command)
 	int ret = 0;
 	char *s = nil;
 	if(command == nil)
-		return access("/cmd/rc", AEXEC) == 0;
+		return jehanne_access("/cmd/rc", AEXEC) == 0;
 	switch(pid = rfork(RFFDG|RFREND|RFPROC|RFENVG|RFNOTEG)){
 		case -1:
 			return -1;
 		case 0:
-			execl("/cmd/rc", "rc", "-c", command, nil);
-			sysfatal("execl returned");
+			jehanne_execl("/cmd/rc", "rc", "-c", command, nil);
+			jehanne_sysfatal("execl returned");
 			return -1;
 		default:
 			// TODO: fix this http://man7.org/linux/man-pages/man3/system.3.html
-			while((w = wait()) && w->pid != pid)
-				free(w);
+			while((w = jehanne_wait()) && w->pid != pid)
+				jehanne_free(w);
 			if(w == nil)
 				return -1;
 			if(w->msg[0] != 0){
-				s = strstr(w->msg, __POSIX_EXIT_PREFIX);
+				s = jehanne_strstr(w->msg, __POSIX_EXIT_PREFIX);
 				if(s){
 					s += (sizeof(__POSIX_EXIT_PREFIX)/sizeof(char) - 1);
-					ret = atoi(s);
+					ret = jehanne_atoi(s);
 				} else
 					ret = 127;
 			}
-			free(w);
+			jehanne_free(w);
 			return ret;
 	}
 	

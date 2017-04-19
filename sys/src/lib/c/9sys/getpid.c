@@ -20,7 +20,7 @@
 #include	<libc.h>
 
 int
-getpid(void)
+jehanne_getpid(void)
 {
 	int pid;
 	pid = (int)remove("#0/pid");

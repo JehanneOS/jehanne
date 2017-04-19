@@ -15,7 +15,7 @@
  * 0 if none
  */
 Rune*
-runestrstr(const Rune *s1, const Rune *s2)
+jehanne_runestrstr(const Rune *s1, const Rune *s2)
 {
 	const Rune *p, *pa, *pb;
 	int c0, c;
@@ -24,7 +24,7 @@ runestrstr(const Rune *s1, const Rune *s2)
 	if(c0 == 0)
 		return (Rune*)s1;
 	s2++;
-	for(p=runestrchr(s1, c0); p; p=runestrchr(p+1, c0)) {
+	for(p=jehanne_runestrchr(s1, c0); p; p=jehanne_runestrchr(p+1, c0)) {
 		pa = p;
 		for(pb=s2;; pb++) {
 			c = *pb;

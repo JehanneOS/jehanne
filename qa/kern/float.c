@@ -1,5 +1,5 @@
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 
 #define DPRECSTR	"0.0000004000000000125"
 #define DPREC	0.0000004000000000125

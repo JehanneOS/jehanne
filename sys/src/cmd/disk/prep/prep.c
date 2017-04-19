@@ -87,8 +87,8 @@ Auto autox[] =
 void
 usage(void)
 {
-	fprint(2, "usage: disk/prep [-bcfprw] [-a partname]... [-s sectorsize] /dev/sdC0/plan9\n");
-	exits("usage");
+	jehanne_fprint(2, "usage: disk/prep [-bcfprw] [-a partname]... [-s sectorsize] /dev/sdC0/plan9\n");
+	jehanne_exits("usage");
 }
 
 void
@@ -104,9 +104,9 @@ main(int argc, char **argv)
 	case 'a':
 		p = EARGF(usage());
 		for(i=0; i<nelem(autox); i++){
-			if(strcmp(p, autox[i].name) == 0){
+			if(jehanne_strcmp(p, autox[i].name) == 0){
 				if(autox[i].alloc){
-					fprint(2, "you said -a %s more than once.\n", p);
+					jehanne_fprint(2, "you said -a %s more than once.\n", p);
 					usage();
 				}
 				autox[i].alloc = 1;
@@ -114,7 +114,7 @@ main(int argc, char **argv)
 			}
 		}
 		if(i == nelem(autox)){
-			fprint(2, "don't know how to create automatic partition %s\n", p);
+			jehanne_fprint(2, "don't know how to create automatic partition %s\n", p);
 			usage();
 		}
 		doautox = 1;
@@ -139,7 +139,7 @@ main(int argc, char **argv)
 		rdonly++;
 		break;
 	case 's':
-		secsize = atoi(ARGF());
+		secsize = jehanne_atoi(ARGF());
 		break;
 	case 'w':
 		dowrite++;
@@ -153,7 +153,7 @@ main(int argc, char **argv)
 
 	disk = opendisk(argv[0], rdonly, file);
 	if(disk == nil)
-		sysfatal("cannot open disk: %r");
+		jehanne_sysfatal("cannot open disk: %r");
 
 	if(secsize != 0) {
 		disk->secsize = secsize;
@@ -180,7 +180,7 @@ main(int argc, char **argv)
 
 	if(printflag) {
 		runcmd(&edit, (char[]){"P"});
-		exits(0);
+		jehanne_exits(0);
 	}
 
 	if(doautox)
@@ -188,12 +188,12 @@ main(int argc, char **argv)
 
 	if(dowrite) {
 		runcmd(&edit, (char[]){"w"});
-		exits(0);
+		jehanne_exits(0);
 	}
 
 	runcmd(&edit, (char[]){"p"});
 	for(;;) {
-		fprint(2, ">>> ");
+		jehanne_fprint(2, ">>> ");
 		runcmd(&edit, getline(&edit));
 	}
 }
@@ -223,16 +223,16 @@ cmdsum(Edit *edit, Part *p, int64_t a, int64_t b)
 		div = KB;
 	}else{
 		if (sz < 0)
-			fprint(2, "%s: negative size!\n", argv0);
+			jehanne_fprint(2, "%s: negative size!\n", argv0);
 		suf = "B ";
 		div = 1;
 	}
 
 	if(div == 1)
-		print("%c %-12s %*lld %-*lld (%lld sectors, %lld %s)\n", c, name,
+		jehanne_print("%c %-12s %*lld %-*lld (%lld sectors, %lld %s)\n", c, name,
 			edit->disk->width, a, edit->disk->width, b, b-a, sz, suf);
 	else
-		print("%c %-12s %*lld %-*lld (%lld sectors, %lld.%.2d %s)\n", c, name,
+		jehanne_print("%c %-12s %*lld %-*lld (%lld sectors, %lld.%.2d %s)\n", c, name,
 			edit->disk->width, a, edit->disk->width, b, b-a,
 			sz/div, (int)(((sz%div)*100)/div), suf);
 }
@@ -240,7 +240,7 @@ cmdsum(Edit *edit, Part *p, int64_t a, int64_t b)
 static char*
 cmdadd(Edit *edit, char *name, int64_t start, int64_t end)
 {
-	if(start < 2 && strcmp(name, "9fat") != 0)
+	if(start < 2 && jehanne_strcmp(name, "9fat") != 0)
 		return "overlaps with the pbs and/or the partition table";
 
 	return addpart(edit, mkpart(name, start, end, 1));
@@ -305,39 +305,39 @@ rdpart(Edit *edit)
 
 	disk = edit->disk;
 	seek(disk->fd, disk->secsize, 0);
-	if(readn(disk->fd, osecbuf, disk->secsize) != disk->secsize)
+	if(jehanne_readn(disk->fd, osecbuf, disk->secsize) != disk->secsize)
 		return;
 	osecbuf[disk->secsize] = '\0';
-	memmove(secbuf, osecbuf, disk->secsize+1);
+	jehanne_memmove(secbuf, osecbuf, disk->secsize+1);
 
-	if(strncmp(secbuf, "part", 4) != 0){
-		fprint(2, "no plan9 partition table found\n");
+	if(jehanne_strncmp(secbuf, "part", 4) != 0){
+		jehanne_fprint(2, "no plan9 partition table found\n");
 		return;
 	}
 
 	waserr = 0;
-	nline = getfields(secbuf, line, nelem(line), 1, "\n");
+	nline = jehanne_getfields(secbuf, line, nelem(line), 1, "\n");
 	for(i=0; i<nline; i++){
-		if(strncmp(line[i], "part", 4) != 0) {
+		if(jehanne_strncmp(line[i], "part", 4) != 0) {
 		Error:
 			if(waserr == 0)
-				fprint(2, "syntax error reading partition\n");
+				jehanne_fprint(2, "syntax error reading partition\n");
 			waserr = 1;
 			continue;
 		}
 
-		nf = getfields(line[i], f, nelem(f), 1, " \t\r");
-		if(nf != 4 || strcmp(f[0], "part") != 0)
+		nf = jehanne_getfields(line[i], f, nelem(f), 1, " \t\r");
+		if(nf != 4 || jehanne_strcmp(f[0], "part") != 0)
 			goto Error;
 
-		a = strtoll(f[2], 0, 0);
-		b = strtoll(f[3], 0, 0);
+		a = jehanne_strtoll(f[2], 0, 0);
+		b = jehanne_strtoll(f[3], 0, 0);
 		if(a >= b)
 			goto Error;
 
 		if(err = addpart(edit, mkpart(f[1], a, b, 0))) {
-			fprint(2, "?%s: not continuing\n", err);
-			exits("partition");
+			jehanne_fprint(2, "?%s: not continuing\n", err);
+			jehanne_exits("partition");
 		}
 	}
 }
@@ -352,7 +352,7 @@ autoxpart(Edit *edit)
 
 	if(edit->npart > 0) {
 		if(doautox)
-			fprint(2, "partitions already exist; not repartitioning\n");
+			jehanne_fprint(2, "partitions already exist; not repartitioning\n");
 		return;
 	}
 	secs = edit->disk->secs;
@@ -373,7 +373,7 @@ autoxpart(Edit *edit)
 			break;
 
 		if(secs <= 0){
-			fprint(2, "ran out of disk space during autoxpartition.\n");
+			jehanne_fprint(2, "ran out of disk space during autoxpartition.\n");
 			return;
 		}
 
@@ -435,9 +435,9 @@ autoxpart(Edit *edit)
 		e = (s + autox[i].size);
 		if((e + pa) % stride) e += stride - (e + pa) % stride;
 		if(e>secs) e = secs - stride + (secs + pa) % stride;
-		print("%s %llud\n", autox[i].name, e - s);
+		jehanne_print("%s %llud\n", autox[i].name, e - s);
 		if(err = addpart(edit, mkpart(autox[i].name, s, e, 1)))
-			fprint(2, "addpart %s: %s\n", autox[i].name, err);
+			jehanne_fprint(2, "addpart %s: %s\n", autox[i].name, err);
 		s = e;
 	}
 }
@@ -449,28 +449,28 @@ restore(Edit *edit, int ctlfd)
 	int64_t offset;
 
 	offset = edit->disk->offset;
-	fprint(2, "attempting to restore partitions to previous state\n");
+	jehanne_fprint(2, "attempting to restore partitions to previous state\n");
 	if(seek(edit->disk->wfd, edit->disk->secsize, 0) != 0){
-		fprint(2, "cannot restore: error seeking on disk\n");
-		exits("inconsistent");
+		jehanne_fprint(2, "cannot restore: error seeking on disk\n");
+		jehanne_exits("inconsistent");
 	}
 
 	if(write(edit->disk->wfd, osecbuf, edit->disk->secsize) != edit->disk->secsize){
-		fprint(2, "cannot restore: couldn't write old partition table to disk\n");
-		exits("inconsistent");
+		jehanne_fprint(2, "cannot restore: couldn't write old partition table to disk\n");
+		jehanne_exits("inconsistent");
 	}
 
 	if(ctlfd >= 0){
 		for(i=0; i<edit->npart; i++)
-			fprint(ctlfd, "delpart %s", edit->part[i]->name);
+			jehanne_fprint(ctlfd, "delpart %s", edit->part[i]->name);
 		for(i=0; i<nopart; i++){
-			if(fprint(ctlfd, "part %s %lld %lld", opart[i]->name, opart[i]->start+offset, opart[i]->end+offset) < 0){
-				fprint(2, "restored disk partition table but not kernel; reboot\n");
-				exits("inconsistent");
+			if(jehanne_fprint(ctlfd, "part %s %lld %lld", opart[i]->name, opart[i]->start+offset, opart[i]->end+offset) < 0){
+				jehanne_fprint(2, "restored disk partition table but not kernel; reboot\n");
+				jehanne_exits("inconsistent");
 			}
 		}
 	}
-	exits("restored");
+	jehanne_exits("restored");
 }
 
 static void
@@ -481,24 +481,24 @@ wrpart(Edit *edit)
 
 	disk = edit->disk;
 
-	memset(secbuf, 0, disk->secsize);
+	jehanne_memset(secbuf, 0, disk->secsize);
 	n = 0;
 	for(i=0; i<edit->npart; i++)
-		n += snprint(secbuf+n, disk->secsize-n, "part %s %lld %lld\n", 
+		n += jehanne_snprint(secbuf+n, disk->secsize-n, "part %s %lld %lld\n", 
 			edit->part[i]->name, edit->part[i]->start, edit->part[i]->end);
 
 	if(seek(disk->wfd, disk->secsize, 0) != disk->secsize){
-		fprint(2, "error seeking %d %lld on disk: %r\n", disk->wfd, disk->secsize);
-		exits("seek");
+		jehanne_fprint(2, "error seeking %d %lld on disk: %r\n", disk->wfd, disk->secsize);
+		jehanne_exits("seek");
 	}
 
 	if(write(disk->wfd, secbuf, disk->secsize) != disk->secsize){
-		fprint(2, "error writing partition table to disk\n");
+		jehanne_fprint(2, "error writing partition table to disk\n");
 		restore(edit, -1);
 	}
 
 	if(ctldiff(edit, disk->ctlfd) < 0)
-		fprint(2, "?warning: partitions could not be updated in devsd\n");
+		jehanne_fprint(2, "?warning: partitions could not be updated in devsd\n");
 }
 
 /*
@@ -518,11 +518,11 @@ checkfat(Disk *disk)
 	if(buf[0] != 0xEB || buf[1] != 0x3C || buf[2] != 0x90)
 		return;
 
-	fprint(2, 
+	jehanne_fprint(2, 
 		"there's a fat partition where the\n"
 		"plan9 partition table would go.\n"
 		"if you really want to overwrite it, zero\n"
 		"the second sector of the disk and try again\n");
 
-	exits("fat partition");
+	jehanne_exits("fat partition");
 }

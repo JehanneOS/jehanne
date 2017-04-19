@@ -1,6 +1,6 @@
 /* Future Technology Devices International serial ports */
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 #include <thread.h>
 #include <9P2000.h>
 #include <9p.h>

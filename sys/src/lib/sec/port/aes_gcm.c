@@ -86,8 +86,8 @@ ghashn(AESGCMstate *s, uint8_t *dat, uint32_t len, uint32_t Y[4])
 		dat += 16, len -= 16;
 	}
 	if(len > 0){
-		memmove(tmp, dat, len);
-		memset(tmp+len, 0, 16-len);
+		jehanne_memmove(tmp, dat, len);
+		jehanne_memset(tmp+len, 0, 16-len);
 		load128(tmp, X);
 		ghash1(s, X, Y);
 	}
@@ -113,7 +113,7 @@ aesxctrn(AESstate *s, uint8_t *dat, uint32_t len)
 	uint8_t ctr[AESbsize];
 	uint32_t i;
 
-	memmove(ctr, s->ivec, AESbsize);
+	jehanne_memmove(ctr, s->ivec, AESbsize);
 	while(len > 0){
 		for(i=AESbsize-1; i>=AESbsize-4; i--)
 			if(++ctr[i] != 0)
@@ -130,8 +130,8 @@ void
 aesgcm_setiv(AESGCMstate *s, uint8_t *iv, int ivlen)
 {
 	if(ivlen == 96/8){
-		memmove(s->ivec, iv, ivlen);
-		memset(s->ivec+ivlen, 0, AESbsize-ivlen);
+		jehanne_memmove(s->ivec, iv, ivlen);
+		jehanne_memset(s->ivec+ivlen, 0, AESbsize-ivlen);
 		s->ivec[AESbsize-1] = 1;
 	} else {
 		uint32_t L[4], Y[4] = {0};
@@ -150,7 +150,7 @@ setupAESGCMstate(AESGCMstate *s, uint8_t *key, int keylen, uint8_t *iv, int ivle
 {
 	setupAESstate(s, key, keylen, nil);
 
-	memset(s->mackey, 0, AESbsize);
+	jehanne_memset(s->mackey, 0, AESbsize);
 	aes_encrypt(s->ekey, s->rounds, s->mackey, s->mackey);
 	load128(s->mackey, s->H);
 	prepareM(s->H, s->M);

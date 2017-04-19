@@ -3,7 +3,7 @@
 
 /* 
  *  use the X917 random number generator to create random
- *  numbers (faster than truerand() but not as random).
+ *  numbers (faster than jehanne_truerand() but not as random).
  */
 uint32_t
 fastrand(void)

@@ -143,7 +143,7 @@ awakekproc(void* v)
 				}
 			}
 			tail = toAwake->next;
-			free(toAwake);
+			jehanne_free(toAwake);
 			toAwake = tail;
 		}
 
@@ -193,7 +193,7 @@ clearnext:
 	w = freelist;
 	while(w != nil) {
 		freelist = w->next;
-		free(w);
+		jehanne_free(w);
 		w = freelist;
 	}
 }
@@ -221,7 +221,7 @@ wakeupafter(int64_t ms)
 	int64_t when;
 
 	when = ms2tk(ms) + sys->ticks + 2; /* +2 against round errors and cpu's clocks misalignment */
-	new = mallocz(sizeof(PendingWakeup), 1);
+	new = jehanne_mallocz(sizeof(PendingWakeup), 1);
 	if(new == nil)
 		return 0;
 	new->p = up;
@@ -271,7 +271,7 @@ forgivewakeup(int64_t time)
 	--up->wakeups;
 	qunlock(&l);
 
-	free(w);
+	jehanne_free(w);
 
 	return -time;
 }

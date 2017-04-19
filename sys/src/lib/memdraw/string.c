@@ -28,7 +28,7 @@ memimagestring(Memimage *b, Point p, Memimage *color, Point cp, Memsubfont *f,
 		if(c < Runeself)
 			s++;
 		else{
-			w = chartorune(&c, (char*)s);
+			w = jehanne_chartorune(&c, (char*)s);
 			if(w == 0){
 				s++;
 				continue;
@@ -61,7 +61,7 @@ memsubfontwidth(Memsubfont *f, char *cs)
 		if(c < Runeself)
 			s++;
 		else{
-			w = chartorune(&c, (char*)s);
+			w = jehanne_chartorune(&c, (char*)s);
 			if(w == 0){
 				s++;
 				continue;

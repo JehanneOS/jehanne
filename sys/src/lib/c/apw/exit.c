@@ -21,6 +21,6 @@ void
 exit(int status)
 {
 	if(status == EXIT_SUCCESS)
-		exits(nil);
-	exits(smprint(__POSIX_EXIT_PREFIX "%d", status));
+		jehanne_exits(nil);
+	jehanne_exits(jehanne_smprint(__POSIX_EXIT_PREFIX "%d", status));
 }

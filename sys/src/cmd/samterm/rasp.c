@@ -31,8 +31,8 @@ rclear(Rasp *r)
 
 	for(s=r->sect; s; s=ns){
 		ns = s->next;
-		free(s->text);
-		free(s);
+		jehanne_free(s->text);
+		jehanne_free(s);
 	}
 	r->sect = 0;
 }
@@ -81,8 +81,8 @@ rsdelete(Rasp *r, Section *s)
 			t->next = s->next;
 	Free:
 			if(s->text)
-				free(s->text);
-			free(s);
+				jehanne_free(s->text);
+			jehanne_free(s);
 			return;
 		}
 	panic("rsdelete 2");
@@ -155,7 +155,7 @@ rdata(Rasp *r, long p0, long p1, Rune *cp)
 	p1 -= p0;
 	s = rsinsert(r, t);
 	s->text = alloc(RUNESIZE*(TBLOCKSIZE+1));
-	memmove(s->text, cp, RUNESIZE*p1);
+	jehanne_memmove(s->text, cp, RUNESIZE*p1);
 	s->text[p1] = 0;
 	s->nrunes = p1;
 }
@@ -206,7 +206,7 @@ rload(Rasp *r, uint32_t p0, uint32_t p1, uint32_t *nrp)
 			n = s->nrunes-(p0-p);
 			if(n>p1-p0)	/* all in this section */
 				n = p1-p0;
-			memmove(scratch+nb, s->text+(p0-p), n*RUNESIZE);
+			jehanne_memmove(scratch+nb, s->text+(p0-p), n*RUNESIZE);
 			nb += n;
 			scratch[nb] = 0;
 		}
@@ -268,7 +268,7 @@ Strgrow(Rune **s, long *n, int want)	/* can always toss the old data when called
 {
 	if(*n >= want)
 		return;
-	free(*s);
+	jehanne_free(*s);
 	*s = alloc(RUNESIZE*want);
 	*n = want;
 }

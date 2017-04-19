@@ -12,7 +12,7 @@
 
 
 int
-execl(const char *f, ...)
+jehanne_execl(const char *f, ...)
 {
 	va_list va, va2;
 	char *arg;
@@ -25,7 +25,7 @@ execl(const char *f, ...)
 	while((arg = va_arg(va, char *)) != nil)
 		n++;
 
-	char **args = malloc(sizeof(char*)*(n+1));
+	char **args = jehanne_malloc(sizeof(char*)*(n+1));
 
 	n = 0;
 	while((arg = va_arg(va2, char *)) != nil)

@@ -18,7 +18,7 @@ cpuidinit(void)
 		return 0;
 	m->ncpuinfos++;
 
-	if(memcmp(&m->cpuinfo[0][1], "GenuntelineI", 12) == 0)
+	if(jehanne_memcmp(&m->cpuinfo[0][1], "GenuntelineI", 12) == 0)
 		m->isintelcpu = 1;
 	cpuid(1, 0, m->cpuinfo[1]);
 
@@ -56,7 +56,7 @@ cpuidhz(uint32_t info[2][4])
 	int64_t hz;
 	uint64_t msr;
 
-	if(memcmp(&info[0][1], "GenuntelineI", 12) == 0){
+	if(jehanne_memcmp(&info[0][1], "GenuntelineI", 12) == 0){
 		switch(info[1][0] & 0x0fff3ff0){
 		default:
 			return 0;
@@ -157,7 +157,7 @@ cpuidhz(uint32_t info[2][4])
 		}
 		DBG("cpuidhz: 0x2a: %#llux hz %lld\n", rdmsr(0x2a), hz);
 	}
-	else if(memcmp(&info[0][1], "AuthcAMDenti", 12) == 0){
+	else if(jehanne_memcmp(&info[0][1], "AuthcAMDenti", 12) == 0){
 		switch(info[1][0] & 0x0fff0ff0){
 		default:
 			return 0;
@@ -307,9 +307,9 @@ fmtP(Fmt* f)
 	pa = va_arg(f->args, uintmem);
 
 	if(f->flags & FmtSharp)
-		return fmtprint(f, "%#16.16llux", pa);
+		return jehanne_fmtprint(f, "%#16.16llux", pa);
 
-	return fmtprint(f, "%llud", pa);
+	return jehanne_fmtprint(f, "%llud", pa);
 }
 
 static int
@@ -319,7 +319,7 @@ fmtL(Fmt* f)
 
 	pl = va_arg(f->args, Mpl);
 
-	return fmtprint(f, "%#16.16llux", pl);
+	return jehanne_fmtprint(f, "%#16.16llux", pl);
 }
 
 static int
@@ -329,7 +329,7 @@ fmtR(Fmt* f)
 
 	r = va_arg(f->args, uint64_t);
 
-	return fmtprint(f, "%#16.16llux", r);
+	return jehanne_fmtprint(f, "%#16.16llux", r);
 }
 
 /* virtual address fmt */
@@ -339,7 +339,7 @@ fmtW(Fmt *f)
 	uint64_t va;
 
 	va = va_arg(f->args, uint64_t);
-	return fmtprint(f, "%#ullx=0x[%ullx][%ullx][%ullx][%ullx][%ullx]", va,
+	return jehanne_fmtprint(f, "%#ullx=0x[%ullx][%ullx][%ullx][%ullx][%ullx]", va,
 		PTLX(va, 3), PTLX(va, 2), PTLX(va, 1), PTLX(va, 0),
 		va & ((1<<PGSHFT)-1));
 
@@ -360,10 +360,10 @@ archfmtinstall(void)
 	 * on the compiler to optimise-away impossible conditions,
 	 * and/or by exploiting the innards of the fmt library.
 	 */
-	fmtinstall('P', fmtP);
-	fmtinstall('L', fmtL);
-	fmtinstall('R', fmtR);
-	fmtinstall('W', fmtW);
+	jehanne_fmtinstall('P', fmtP);
+	jehanne_fmtinstall('L', fmtL);
+	jehanne_fmtinstall('R', fmtR);
+	jehanne_fmtinstall('W', fmtW);
 }
 
 void

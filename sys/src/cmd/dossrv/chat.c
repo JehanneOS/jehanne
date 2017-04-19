@@ -25,7 +25,7 @@ chat(char *fmt, ...)
 	if (!chatty)
 		return;
 	va_start(arg, fmt);
-	vfprint(2, fmt, arg);
+	jehanne_vfprint(2, fmt, arg);
 	va_end(arg);
 }
 
@@ -34,12 +34,12 @@ panic(char *fmt, ...)
 {
 	va_list arg;
 
-	fprint(2, "%s %d: panic ", argv0, getpid());
+	jehanne_fprint(2, "%s %d: panic ", argv0, jehanne_getpid());
 	va_start(arg, fmt);
-	vfprint(2, fmt, arg);
+	jehanne_vfprint(2, fmt, arg);
 	va_end(arg);
-	fprint(2, ": %r\n");
+	jehanne_fprint(2, ": %r\n");
 	if(doabort)
 		abort();
-	exits("panic");
+	jehanne_exits("panic");
 }

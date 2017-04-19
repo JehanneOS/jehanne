@@ -11,7 +11,7 @@
 #include	<libc.h>
 
 void*
-memmove(void *a1, const void *a2, size_t n)
+jehanne_memmove(void *a1, const void *a2, size_t n)
 {
 	char *s1;
 	const char *s2;
@@ -39,7 +39,7 @@ back:
 }
 
 void*
-memcpy(void *a1, const void *a2, size_t n)
+jehanne_memcpy(void *a1, const void *a2, size_t n)
 {
-	return memmove(a1, a2, n);
+	return jehanne_memmove(a1, a2, n);
 }

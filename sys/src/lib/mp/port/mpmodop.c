@@ -11,7 +11,7 @@ modarg(mpint *a, mpint *m)
 		mpbits(a, Dbits*(m->top+1));
 		a->top = m->top;
 	} else if(a->top < m->top){
-		memset(&a->p[a->top], 0, (m->top - a->top)*Dbytes);
+		jehanne_memset(&a->p[a->top], 0, (m->top - a->top)*Dbytes);
 	}
 	return a;
 }

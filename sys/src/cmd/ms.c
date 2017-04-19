@@ -11,7 +11,7 @@
  * Count bytes within runes, if it fits in a uint64_t, and other things.
  */
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 static int packetsize = 3;
 void
 main(int argc, char *argv[])

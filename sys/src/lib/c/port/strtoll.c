@@ -14,7 +14,7 @@
 #define VLONG_MIN	(1LL<<63)
 
 int64_t
-strtoll(const char *nptr, char **endptr, int base)
+jehanne_strtoll(const char *nptr, char **endptr, int base)
 {
 	const char *p;
 	int64_t n, nn, m;

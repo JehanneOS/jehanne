@@ -15,7 +15,7 @@
 #define	NANSIGN	(1<<31)
 
 double
-NaN(void)
+jehanne_NaN(void)
 {
 	FPdbleword a;
 
@@ -25,18 +25,18 @@ NaN(void)
 }
 
 int
-isNaN(double d)
+jehanne_isNaN(double d)
 {
 	FPdbleword a;
 
 	a.x = d;
 	if((a.hi & NANMASK) != NANEXP)
 		return 0;
-	return !isInf(d, 0);
+	return !jehanne_isInf(d, 0);
 }
 
 double
-Inf(int sign)
+jehanne_Inf(int sign)
 {
 	FPdbleword a;
 
@@ -48,7 +48,7 @@ Inf(int sign)
 }
 
 int
-isInf(double d, int sign)
+jehanne_isInf(double d, int sign)
 {
 	FPdbleword a;
 

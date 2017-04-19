@@ -8,7 +8,7 @@
  */
 
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 #include <bio.h>
 
 #define	DEF	22	/* lines in chunk: 3*DEF == 66, #lines per nroff page */

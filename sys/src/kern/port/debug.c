@@ -48,7 +48,7 @@ peekAtExecFaults(uintptr_t addr)
 		return;
 	if (__onExecFaultBreakForPID && up->pid == __onExecFaultBreakForPID)
 		brk = 1;
-	if (__onExecFaultBreakForCMD[0] && strcmp(__onExecFaultBreakForCMD, up->text) == 0)
+	if (__onExecFaultBreakForCMD[0] && jehanne_strcmp(__onExecFaultBreakForCMD, up->text) == 0)
 		brk = 1;
 	if (brk > 10)
 		brk = 1;
@@ -60,11 +60,11 @@ rdmsr(uint32_t reg)
 	extern uint64_t _rdmsr(uint32_t reg);
 	uint64_t res;
 #ifdef LOGMSR
-	print("rdmsr(%#p)", reg);
+	jehanne_print("rdmsr(%#p)", reg);
 #endif
 	res = _rdmsr(reg);
 #ifdef LOGMSR
-	print(" = %#P", res);
+	jehanne_print(" = %#P", res);
 #endif
 	return res;
 }
@@ -74,7 +74,7 @@ wrmsr(uint32_t reg, uint64_t val)
 {
 	extern void _wrmsr(uint32_t reg, uint64_t val);
 #ifdef LOGMSR
-	print("wrmsr(%#p, %#P)", reg, val);
+	jehanne_print("wrmsr(%#p, %#P)", reg, val);
 #endif
 	_wrmsr(reg, val);
 }

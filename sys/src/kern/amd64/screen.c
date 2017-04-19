@@ -71,7 +71,7 @@ screensize(int x, int y, int z, uint32_t chan)
 		int width = (x*z)/BI2WD;
 		void *p;
 
-		p = malloc(width*BY2WD*y);
+		p = jehanne_malloc(width*BY2WD*y);
 		if(p == nil)
 			error("no memory for vga soft screen");
 		gscreendata.bdata = softscreen = p;
@@ -103,7 +103,7 @@ screensize(int x, int y, int z, uint32_t chan)
 	unlock(&vgascreenlock);
 	poperror();
 	if(oldsoft)
-		free(oldsoft);
+		jehanne_free(oldsoft);
 
 	memimagedraw(gscreen, gscreen->r, memblack, ZP, nil, ZP, S);
 	flushmemscreen(gscreen->r);
@@ -137,7 +137,7 @@ screenaperture(int size, int align)
 	 * The driver will tell the card to use it.
 	 */
 	size = ROUNDUP(sizeof(size), 4*KiB);
-	scr->paddr = (uint64_t)malloc(size);
+	scr->paddr = (uint64_t)jehanne_malloc(size);
 	if(scr->paddr == 0)
 		return -1;
 	scr->vaddr = vmap(scr->paddr, size);
@@ -217,7 +217,7 @@ flushmemscreen(Rectangle r)
 	scr->dev->page(scr, page);
 	for(y = r.min.y; y < r.max.y; y++) {
 		if(sdisp + incs < edisp) {
-			memmove(sdisp, sp, len);
+			jehanne_memmove(sdisp, sp, len);
 			sp += incs;
 			sdisp += incs;
 		}
@@ -226,13 +226,13 @@ flushmemscreen(Rectangle r)
 			page++;
 			if(off <= len){
 				if(off > 0)
-					memmove(sdisp, sp, off);
+					jehanne_memmove(sdisp, sp, off);
 				scr->dev->page(scr, page);
 				if(len - off > 0)
-					memmove(disp, sp+off, len - off);
+					jehanne_memmove(disp, sp+off, len - off);
 			}
 			else {
-				memmove(sdisp, sp, len);
+				jehanne_memmove(sdisp, sp, len);
 				scr->dev->page(scr, page);
 			}
 			sp += incs;
@@ -705,7 +705,7 @@ swcursorinit(void)
 
 	if(scr->dev == nil || scr->dev->linear == nil){
 		if(!warned){
-			print("cannot use software cursor on non-linear vga screen\n");
+			jehanne_print("cannot use software cursor on non-linear vga screen\n");
 			warned = 1;
 		}
 		return;
@@ -725,7 +725,7 @@ swcursorinit(void)
 	swimg = allocmemimage(Rect(0,0,16,16), GREY8);
 	swimg1 = allocmemimage(Rect(0,0,16,16), GREY1);
 	if(swback==nil || swmask==nil || swmask1==nil || swimg==nil || swimg1 == nil){
-		print("software cursor: allocmemimage fails");
+		jehanne_print("software cursor: allocmemimage fails");
 		return;
 	}
 

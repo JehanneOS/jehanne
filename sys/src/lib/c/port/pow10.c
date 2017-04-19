@@ -40,7 +40,7 @@ double	tab[] =
 };
 
 double
-pow10(int n)
+jehanne_pow10(int n)
 {
 	int m;
 
@@ -49,10 +49,10 @@ pow10(int n)
 		if(n < sizeof(tab)/sizeof(tab[0]))
 			return 1/tab[n];
 		m = n/2;
-		return 1/(pow10(m) * pow10(n-m));
+		return 1/(jehanne_pow10(m) * jehanne_pow10(n-m));
 	}
 	if(n < sizeof(tab)/sizeof(tab[0]))
 		return tab[n];
 	m = n/2;
-	return pow10(m) * pow10(n-m);
+	return jehanne_pow10(m) * jehanne_pow10(n-m);
 }

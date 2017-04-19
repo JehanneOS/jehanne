@@ -83,7 +83,7 @@ devgen(Chan *c, char *name, Dirtab *tab, int ntab, int i, Dir *dp)
 		/* nothing */
 	}else if(name){
 		for(i=1; i<ntab; i++)
-			if(strcmp(tab[i].name, name) == 0)
+			if(jehanne_strcmp(tab[i].name, name) == 0)
 				break;
 		if(i==ntab)
 			return -1;
@@ -132,11 +132,11 @@ devattach(int dc, char *spec)
 	c->dev = devtabget(dc, 0);
 	if(spec == nil)
 		spec = "";
-	n = 1+UTFmax+strlen(spec)+1;
+	n = 1+UTFmax+jehanne_strlen(spec)+1;
 	buf = smalloc(n);
-	snprint(buf, n, "#%C%s", dc, spec);
+	jehanne_snprint(buf, n, "#%C%s", dc, spec);
 	c->path = newpath(buf);
-	free(buf);
+	jehanne_free(buf);
 	return c;
 }
 
@@ -184,7 +184,7 @@ devwalk(Chan *c, Chan *nc, char **name, int nname, Dirtab *tab, int ntab, Devgen
 	if(waserror()){
 		if(alloc && wq->clone!=nil)
 			cclose(wq->clone);
-		free(wq);
+		jehanne_free(wq);
 		return nil;
 	}
 	if(nc == nil){
@@ -203,18 +203,18 @@ devwalk(Chan *c, Chan *nc, char **name, int nname, Dirtab *tab, int ntab, Devgen
 			goto Done;
 		}
 		n = name[j];
-		if(strcmp(n, ".") == 0){
+		if(jehanne_strcmp(n, ".") == 0){
     Accept:
 			wq->qid[wq->nqid++] = nc->qid;
 			continue;
 		}
-		if(strcmp(n, "..") == 0){
+		if(jehanne_strcmp(n, "..") == 0){
 			/*
 			 * Use c->dev->name in the error because
 			 * nc->dev should be nil here.
 			 */
 			if((*gen)(nc, nil, tab, ntab, DEVDOTDOT, &dir) != 1){
-				print("devgen walk .. in dev%s %#llux broken\n",
+				jehanne_print("devgen walk .. in dev%s %#llux broken\n",
 					c->dev->name, nc->qid.path);
 				error("broken devgen");
 			}
@@ -242,7 +242,7 @@ devwalk(Chan *c, Chan *nc, char **name, int nname, Dirtab *tab, int ntab, Devgen
 			case 0:
 				continue;
 			case 1:
-				if(strcmp(n, dir.name) == 0){
+				if(jehanne_strcmp(n, dir.name) == 0){
 					nc->qid = dir.qid;
 					goto Accept;
 				}
@@ -286,14 +286,14 @@ devstat(Chan *c, uint8_t *db, long n, Dirtab *tab, int ntab, Devgen *gen)
 			if(c->qid.type & QTDIR){
 				if(c->path == nil)
 					elem = "???";
-				else if(strcmp(c->path->s, "/") == 0)
+				else if(jehanne_strcmp(c->path->s, "/") == 0)
 					elem = "/";
 				else
 					for(elem=p=c->path->s; *p; p++)
 						if(*p == '/')
 							elem = p+1;
 				devdir(c, c->qid, elem, 0, eve, DMDIR|0555, &dir);
-				n = convD2M(&dir, db, n);
+				n = jehanne_convD2M(&dir, db, n);
 				if(n == 0)
 					error(Ebadarg);
 				return n;
@@ -306,7 +306,7 @@ devstat(Chan *c, uint8_t *db, long n, Dirtab *tab, int ntab, Devgen *gen)
 			if(c->qid.path == dir.qid.path) {
 				if(c->flag&CMSG)
 					dir.mode |= DMMOUNT;
-				n = convD2M(&dir, db, n);
+				n = jehanne_convD2M(&dir, db, n);
 				if(n == 0)
 					error(Ebadarg);
 				return n;
@@ -331,7 +331,7 @@ devdirread(Chan *c, char *d, long n, Dirtab *tab, int ntab, Devgen *gen)
 			break;
 
 		case 1:
-			dsz = convD2M(&dir, (uint8_t*)d, n-m);
+			dsz = jehanne_convD2M(&dir, (uint8_t*)d, n-m);
 			if(dsz <= BIT16SZ){	/* <= not < because this isn't stat; read is stuck */
 				if(m == 0)
 					error(Eshort);
@@ -355,7 +355,7 @@ devpermcheck(char *fileuid, int perm, int omode)
 	int required;
 	static int access[] = { 0000, 0400, 0200, 0600, 0100, 0xff, 0xff, 0xff };
 
-	if(strcmp(up->user, fileuid) == 0)
+	if(jehanne_strcmp(up->user, fileuid) == 0)
 		perm <<= 0;
 	else if(ingroup(up->user, eve))
 		perm <<= 3;

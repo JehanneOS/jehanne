@@ -2,7 +2,7 @@
 #include <libsec.h>
 
 /*
- * timing safe memcmp()
+ * timing safe jehanne_memcmp()
  */
 int
 tsmemcmp(void *a1, void *a2, uint32_t n)

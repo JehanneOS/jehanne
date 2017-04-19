@@ -12,7 +12,7 @@ itomp(int i, mpint *b)
 {
 	if(b == nil){
 		b = mpnew(0);
-		setmalloctag(b, getcallerpc());
+		jehanne_setmalloctag(b, jehanne_getcallerpc());
 	}
 	b->sign = (i >> (sizeof(i)*8 - 1)) | 1;
 	i *= b->sign;

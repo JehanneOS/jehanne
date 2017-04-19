@@ -659,8 +659,8 @@ extern void	v4tov6(uint8_t *v6, uint8_t *v4);
 extern int	v6tov4(uint8_t *v4, uint8_t *v6);
 extern int	eipfmt(Fmt*);
 
-#define	ipmove(x, y) memmove(x, y, IPaddrlen)
-#define	ipcmp(x, y) ( (x)[IPaddrlen-1] != (y)[IPaddrlen-1] || memcmp(x, y, IPaddrlen) )
+#define	ipmove(x, y) jehanne_memmove(x, y, IPaddrlen)
+#define	ipcmp(x, y) ( (x)[IPaddrlen-1] != (y)[IPaddrlen-1] || jehanne_memcmp(x, y, IPaddrlen) )
 
 extern uint8_t IPv4bcast[IPaddrlen];
 extern uint8_t IPv4bcastobs[IPaddrlen];

@@ -1,5 +1,5 @@
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 #include <bio.h>
 #include <ndb.h>
 #include <ip.h>
@@ -49,7 +49,7 @@ addarea(DN *dp, RR *rp, Ndbtuple *t)
 	Area *s;
 	Area **l;
 
-	lock(&dnlock);
+	jehanne_lock(&dnlock);
 	if(t->val[0])
 		l = &delegated;
 	else
@@ -57,7 +57,7 @@ addarea(DN *dp, RR *rp, Ndbtuple *t)
 
 	for (s = *l; s != nil; s = s->next)
 		if(s->soarr->owner == dp) {
-			unlock(&dnlock);
+			jehanne_unlock(&dnlock);
 			return;		/* we've already got one */
 		}
 
@@ -81,7 +81,7 @@ addarea(DN *dp, RR *rp, Ndbtuple *t)
 
 	s->next = *l;
 	*l = s;
-	unlock(&dnlock);
+	jehanne_unlock(&dnlock);
 }
 
 void
@@ -89,14 +89,14 @@ freearea(Area **l)
 {
 	Area *s;
 
-	lock(&dnlock);
+	jehanne_lock(&dnlock);
 	while(s = *l){
 		*l = s->next;
 		rrfree(s->soarr);
 		memset(s, 0, sizeof *s);	/* cause trouble */
 		free(s);
 	}
-	unlock(&dnlock);
+	jehanne_unlock(&dnlock);
 }
 
 /*

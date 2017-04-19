@@ -8,7 +8,7 @@
  */
 
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 
 #define U(x) (x<<6)
 #define G(x) (x<<3)

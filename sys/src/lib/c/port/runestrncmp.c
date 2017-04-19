@@ -11,7 +11,7 @@
 #include <libc.h>
 
 int
-runestrncmp(const Rune *s1, const Rune *s2, int32_t n)
+jehanne_runestrncmp(const Rune *s1, const Rune *s2, int32_t n)
 {
 	Rune c1, c2;
 

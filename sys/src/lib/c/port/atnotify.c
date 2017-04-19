@@ -29,7 +29,7 @@ notifier(void *v, char *s)
 }
 
 int
-atnotify(int (*f)(void*, char*), int in)
+jehanne_atnotify(int (*f)(void*, char*), int in)
 {
 	int i, n, ret;
 	static int init;
@@ -39,7 +39,7 @@ atnotify(int (*f)(void*, char*), int in)
 		init = 1;		/* assign = */
 	}
 	ret = 0;
-	lock(&onnotlock);
+	jehanne_lock(&onnotlock);
 	if(in){
 		for(i=0; i<NFN; i++)
 			if(onnot[i] == 0) {
@@ -62,6 +62,6 @@ atnotify(int (*f)(void*, char*), int in)
 			notify(0);
 		}
 	}
-	unlock(&onnotlock);
+	jehanne_unlock(&onnotlock);
 	return ret;
 }

@@ -1,5 +1,5 @@
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 #include <libsec.h>
 #include <authsrv.h>
 #include <ctype.h>

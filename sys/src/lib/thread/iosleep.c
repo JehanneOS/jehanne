@@ -18,7 +18,7 @@ _iosleep(va_list *arg)
 	int32_t n;
 
 	n = va_arg(*arg, int32_t);
-	sleep(n);
+	jehanne_sleep(n);
 
 	return 0;
 }

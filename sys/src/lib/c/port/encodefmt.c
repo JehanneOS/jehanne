@@ -12,7 +12,7 @@
 #include <ctype.h>
 
 int
-encodefmt(Fmt *f)
+jehanne_encodefmt(Fmt *f)
 {
 	char *out;
 	char *buf;
@@ -29,7 +29,7 @@ encodefmt(Fmt *f)
 
 	b = va_arg(f->args, uint8_t*);
 	if(b == 0)
-		return fmtstrcpy(f, "<nil>");
+		return jehanne_fmtstrcpy(f, "<nil>");
 
 	ilen = f->prec;
 	f->prec = 0;
@@ -49,7 +49,7 @@ encodefmt(Fmt *f)
 	}
 
 	if(len > sizeof(obuf)){
-		buf = malloc(len);
+		buf = jehanne_malloc(len);
 		if(buf == nil)
 			goto error;
 	} else
@@ -59,16 +59,16 @@ encodefmt(Fmt *f)
 	out = buf;
 	switch(f->r){
 	case '<':
-		rv = enc32(out, len, b, ilen);
+		rv = jehanne_enc32(out, len, b, ilen);
 		break;
 	case '[':
-		rv = enc64(out, len, b, ilen);
+		rv = jehanne_enc64(out, len, b, ilen);
 		break;
 	case 'H':
-		rv = enc16(out, len, b, ilen);
+		rv = jehanne_enc16(out, len, b, ilen);
 		if(rv >= 0 && (f->flags & FmtLong))
 			for(p = buf; *p; p++)
-				*p = tolower(*p);
+				*p = jehanne_tolower(*p);
 		break;
 	default:
 		rv = -1;
@@ -77,13 +77,13 @@ encodefmt(Fmt *f)
 	if(rv < 0)
 		goto error;
 
-	fmtstrcpy(f, buf);
+	jehanne_fmtstrcpy(f, buf);
 	if(buf != obuf)
-		free(buf);
+		jehanne_free(buf);
 	return 0;
 
 error:
 	if(out != nil)
-		free(out);
-	return fmtstrcpy(f, "<encodefmt>");
+		jehanne_free(out);
+	return jehanne_fmtstrcpy(f, "<encodefmt>");
 }

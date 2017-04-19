@@ -261,8 +261,8 @@ mouseread(Chan *c, void *va, long n, int64_t off)
 		lock(&cursor.l);
 		BPLONG(p+0, curs.offset.x);
 		BPLONG(p+4, curs.offset.y);
-		memmove(p+8, curs.clr, 2*16);
-		memmove(p+40, curs.set, 2*16);
+		jehanne_memmove(p+8, curs.clr, 2*16);
+		jehanne_memmove(p+40, curs.set, 2*16);
 		unlock(&cursor.l);
 		return n;
 
@@ -301,7 +301,7 @@ mouseread(Chan *c, void *va, long n, int64_t off)
 				b = 16;
 			else if (b == 16)
 				b = 8;
-		snprint(buf, sizeof buf, "m%11d %11d %11d %11lud ",
+		jehanne_snprint(buf, sizeof buf, "m%11d %11d %11d %11lud ",
 			m.xy.x, m.xy.y,
 			b,
 			m.msec);
@@ -312,7 +312,7 @@ mouseread(Chan *c, void *va, long n, int64_t off)
 			mouse.lastresize = mouse.resize;
 			buf[0] = 'r';
 		}
-		memmove(va, buf, n);
+		jehanne_memmove(va, buf, n);
 		return n;
 	}
 	return 0;
@@ -348,7 +348,7 @@ setbuttonmap(char* map)
 	if(map[i])
 		error(Ebadarg);
 
-	memset(buttonmap, 0, 8);
+	jehanne_memset(buttonmap, 0, 8);
 	for(i = 0; i < 8; i++){
 		x = 0;
 		if(i & 1)
@@ -385,8 +385,8 @@ mousewrite(Chan *c, void *va, long n, int64_t r)
 			n = 2*4+2*2*16;
 			curs.offset.x = BGLONG(p+0);
 			curs.offset.y = BGLONG(p+4);
-			memmove(curs.clr, p+8, 2*16);
-			memmove(curs.set, p+40, 2*16);
+			jehanne_memmove(curs.clr, p+8, 2*16);
+			jehanne_memmove(curs.set, p+40, 2*16);
 			Cursortocursor(&curs);
 		}
 		qlock(&mouse.ql);
@@ -399,7 +399,7 @@ mousewrite(Chan *c, void *va, long n, int64_t r)
 	case Qmousectl:
 		cb = parsecmd(va, n);
 		if(waserror()){
-			free(cb);
+			jehanne_free(cb);
 			nexterror();
 		}
 
@@ -430,24 +430,24 @@ mousewrite(Chan *c, void *va, long n, int64_t r)
 			break;
 		}
 
-		free(cb);
+		jehanne_free(cb);
 		poperror();
 		return n;
 
 	case Qmousein:
 		if(n > sizeof buf-1)
 			n = sizeof buf -1;
-		memmove(buf, va, n);
+		jehanne_memmove(buf, va, n);
 		buf[n] = 0;
 		p = 0;
-		pt.x = strtol(buf+1, &p, 0);
+		pt.x = jehanne_strtol(buf+1, &p, 0);
 		if(p == 0)
 			error(Eshort);
-		pt.y = strtol(p, &p, 0);
+		pt.y = jehanne_strtol(p, &p, 0);
 		if(p == 0)
 			error(Eshort);
-		b = strtol(p, &p, 0);
-		msec = strtol(p, &p, 0);
+		b = jehanne_strtol(p, &p, 0);
+		msec = jehanne_strtol(p, &p, 0);
 		if(msec == 0)
 			msec = TK2MS(sys->ticks);
 		mousetrack(pt.x, pt.y, b, msec);
@@ -456,13 +456,13 @@ mousewrite(Chan *c, void *va, long n, int64_t r)
 	case Qmouse:
 		if(n > sizeof buf-1)
 			n = sizeof buf -1;
-		memmove(buf, va, n);
+		jehanne_memmove(buf, va, n);
 		buf[n] = 0;
 		p = 0;
-		pt.x = strtoul(buf+1, &p, 0);
+		pt.x = jehanne_strtoul(buf+1, &p, 0);
 		if(p == 0)
 			error(Eshort);
-		pt.y = strtoul(p, 0, 0);
+		pt.y = jehanne_strtoul(p, 0, 0);
 		qlock(&mouse.ql);
 		if(ptinrect(pt, gscreen->r)){
 			mouse.xy = pt;
@@ -503,7 +503,7 @@ void
 Cursortocursor(Cursor *c)
 {
 	lock(&cursor.l);
-	memmove(&cursor.c, c, sizeof(Cursor));
+	jehanne_memmove(&cursor.c, c, sizeof(Cursor));
 	setcursor(c);
 	unlock(&cursor.l);
 }

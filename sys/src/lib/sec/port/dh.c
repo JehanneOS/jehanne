@@ -8,7 +8,7 @@ dh_new(DHstate *dh, mpint *p, mpint *q, mpint *g)
 	mpint *pm1;
 	int n;
 
-	memset(dh, 0, sizeof(*dh));
+	jehanne_memset(dh, 0, sizeof(*dh));
 	if(mpcmp(g, mpone) <= 0)
 		return nil;
 
@@ -69,6 +69,6 @@ Out:
 	mpfree(dh->g);
 	mpfree(dh->x);
 	mpfree(dh->y);
-	memset(dh, 0, sizeof(*dh));
+	jehanne_memset(dh, 0, sizeof(*dh));
 	return k;
 }

@@ -26,7 +26,7 @@ threadexits(char *exitstr)
 	t->moribund = 1;
 	if(exitstr==nil)
 		exitstr="";
-	utfecpy(p->exitstr, p->exitstr+ERRMAX, exitstr);
+	jehanne_utfecpy(p->exitstr, p->exitstr+ERRMAX, exitstr);
 	_sched();
 }
 
@@ -41,7 +41,7 @@ threadexitsall(char *exitstr)
 		exitstr = "";
 	_threadexitsallstatus = exitstr;
 	_threaddebug(DBGSCHED, "_threadexitsallstatus set to %p", _threadexitsallstatus);
-	mypid = getpid();
+	mypid = jehanne_getpid();
 
 	/*
 	 * signal others.
@@ -52,7 +52,7 @@ threadexitsall(char *exitstr)
 	 * call threadexitsall...
 	 */
 	for(;;){
-		lock(&_threadpq.lock);
+		jehanne_lock(&_threadpq.lock);
 		npid = 0;
 		for(p = _threadpq.head; p && npid < nelem(pid); p=p->next){
 			if(p->threadint == 0 && p->pid != mypid){
@@ -60,15 +60,15 @@ threadexitsall(char *exitstr)
 				p->threadint = 1;
 			}
 		}
-		unlock(&_threadpq.lock);
+		jehanne_unlock(&_threadpq.lock);
 		if(npid == 0)
 			break;
 		for(i=0; i<npid; i++)
-			postnote(PNPROC, pid[i], "threadint");
+			jehanne_postnote(PNPROC, pid[i], "threadint");
 	}
 
 	/* leave */
-	exits(exitstr);
+	jehanne_exits(exitstr);
 }
 
 Channel*

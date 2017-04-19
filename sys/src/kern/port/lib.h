@@ -8,29 +8,29 @@
 /*
  * mem routines
  */
-extern	void*	memccpy(void*, void*, int, uint32_t);
-extern	void*	memset(void*, int, uint32_t);
-extern	int	memcmp(void*, void*, uint32_t);
-extern	void*	memmove(void*, void*, uint32_t);
-extern	void*	memchr(void*, int, uint32_t);
+extern	void*	jehanne_memccpy(void*, void*, int, uint32_t);
+extern	void*	jehanne_memset(void*, int, uint32_t);
+extern	int	jehanne_memcmp(void*, void*, uint32_t);
+extern	void*	jehanne_memmove(void*, void*, uint32_t);
+extern	void*	jehanne_memchr(void*, int, uint32_t);
 
 /*
  * string routines
  */
-extern	char*	strcat(char*, char*);
-extern	char*	strchr(char*, int);
-extern	int	strcmp(char*, char*);
-extern	char*	strcpy(char*, char*);
-extern	char*	strecpy(char*, char*, char*);
-extern	char*	strncat(char*, char*, long);
-extern	char*	strncpy(char*, char*, long);
-extern	int	strncmp(char*, char*, long);
-extern	char*	strrchr(char*, int);
-extern	long	strlen(char*);
-extern	char*	strstr(char*, char*);
-extern	int	cistrncmp(char*, char*, int);
-extern	int	cistrcmp(char*, char*);
-extern	int	tokenize(char*, char**, int);
+extern	char*	jehanne_strcat(char*, char*);
+extern	char*	jehanne_strchr(char*, int);
+extern	int	jehanne_strcmp(char*, char*);
+extern	char*	jehanne_strcpy(char*, char*);
+extern	char*	jehanne_strecpy(char*, char*, char*);
+extern	char*	jehanne_strncat(char*, char*, long);
+extern	char*	jehanne_strncpy(char*, char*, long);
+extern	int	jehanne_strncmp(char*, char*, long);
+extern	char*	jehanne_strrchr(char*, int);
+extern	long	jehanne_strlen(char*);
+extern	char*	jehanne_strstr(char*, char*);
+extern	int	jehanne_cistrncmp(char*, char*, int);
+extern	int	jehanne_cistrcmp(char*, char*);
+extern	int	jehanne_tokenize(char*, char**, int);
 
 enum
 {
@@ -45,27 +45,25 @@ enum
 /*
  * rune routines
  */
-extern	int	runetochar(char*, Rune*);
-extern	int	chartorune(Rune*, char*);
-extern	int	runelen(long);
-extern	int	fullrune(char*, int);
-extern	int	utflen(char*);
-extern	int	utfnlen(char*, long);
-extern	char*	utfrune(char*, long);
+extern	int	jehanne_runetochar(char*, Rune*);
+extern	int	jehanne_chartorune(Rune*, char*);
+extern	int	jehanne_runelen(long);
+extern	int	jehanne_fullrune(char*, int);
+extern	int	jehanne_utflen(char*);
+extern	int	jehanne_utfnlen(char*, long);
+extern	char*	jehanne_utfrune(char*, long);
 
 /*
  * malloc
  */
-extern	void*	malloc(usize);
-extern	void*	mallocz(usize, int);
-extern	void	free(void*);
-extern	uint32_t	msize(void*);
-extern	void*	mallocalign(usize, uint32_t, long, uint32_t);
-extern	void*	realloc(void*, usize);
-extern	void	setmalloctag(void*, uint32_t);
-extern	void	setrealloctag(void*, uint32_t);
-extern	uint32_t	getmalloctag(void*);
-extern	uint32_t	getrealloctag(void*);
+extern	void*	jehanne_malloc(usize);
+extern	void*	jehanne_mallocz(usize, int);
+extern	void	jehanne_free(void*);
+extern	uint32_t	jehanne_msize(void*);
+extern	void*	jehanne_mallocalign(usize, uint32_t, long, uint32_t);
+extern	void*	jehanne_realloc(void*, usize);
+extern	void	jehanne_setmalloctag(void*, uint32_t);
+extern	uint32_t	jehanne_getmalloctag(void*);
 
 /*
  * print routines
@@ -104,12 +102,12 @@ enum {
 	FmtFlag		= FmtByte<<1
 };
 
-extern	int	print(char*, ...);
-extern	char*	seprint(char*, char*, char*, ...);
-extern	char*	vseprint(char*, char*, char*, va_list);
-extern	int	snprint(char*, int, char*, ...);
-extern	int	vsnprint(char*, int, char*, va_list);
-extern	int	sprint(char*, char*, ...);
+extern	int	jehanne_print(char*, ...);
+extern	char*	jehanne_seprint(char*, char*, char*, ...);
+extern	char*	jehanne_vseprint(char*, char*, char*, va_list);
+extern	int	jehanne_snprint(char*, int, char*, ...);
+extern	int	jehanne_vsnprint(char*, int, char*, va_list);
+extern	int	jehanne_sprint(char*, char*, ...);
 
 #pragma	varargck	argpos	fmtprint	2
 #pragma	varargck	argpos	print		1
@@ -145,16 +143,16 @@ extern	int	sprint(char*, char*, ...);
 #pragma varargck	type	"H"	void*
 #pragma varargck	type	"lH"	void*
 
-extern	int	fmtinstall(int, int (*)(Fmt*));
-extern	int	fmtprint(Fmt*, char*, ...);
-extern	int	fmtstrcpy(Fmt*, char*);
-extern	char*	fmtstrflush(Fmt*);
-extern	int	fmtstrinit(Fmt*);
+extern	int	jehanne_fmtinstall(int, int (*)(Fmt*));
+extern	int	jehanne_fmtprint(Fmt*, char*, ...);
+extern	int	jehanne_fmtstrcpy(Fmt*, char*);
+extern	char*	jehanne_fmtstrflush(Fmt*);
+extern	int	jehanne_fmtstrinit(Fmt*);
 
 /*
  * quoted strings
  */
-extern	void	quotefmtinstall(void);
+extern	void	jehanne_quotefmtinstall(void);
 
 /*
  * Time-of-day
@@ -164,22 +162,21 @@ extern	void	cycles(uint64_t*);	/* 64-bit value of the cycle counter if there is 
 /*
  * one-of-a-kind
  */
-extern	int	abs(int);
-extern	int	atoi(char*);
-extern	char*	cleanname(char*);
-extern	int	dec16(uint8_t*, int, char*, int);
-extern	int	enc16(char*, int, uint8_t*, int);
-extern	int	encodefmt(Fmt*);
-extern	int	dec64(uint8_t*, int, char*, int);
-//extern	uintptr_t	getcallerpc(void);
+extern	int	jehanne_abs(int);
+extern	int	jehanne_atoi(char*);
+extern	char*	jehanne_cleanname(char*);
+extern	int	jehanne_dec16(uint8_t*, int, char*, int);
+extern	int	jehanne_enc16(char*, int, uint8_t*, int);
+extern	int	jehanne_encodefmt(Fmt*);
+extern	int	jehanne_dec64(uint8_t*, int, char*, int);
 #define	getcallerpc()	((uintptr_t)__builtin_return_address(0))
-extern	int	getfields(char*, char**, int, int, char*);
-extern	int	gettokens(char *, char **, int, char *);
-extern	void	qsort(void*, long, long, int (*)(void*, void*));
-extern	long	strtol(char*, char**, int);
-extern	uint32_t	strtoul(char*, char**, int);
-extern	int64_t	strtoll(char*, char**, int);
-extern	uint64_t	strtoull(char*, char**, int);
+extern	int	jehanne_getfields(char*, char**, int, int, char*);
+extern	int	jehanne_gettokens(char *, char **, int, char *);
+extern	void	jehanne_qsort(void*, long, long, int (*)(void*, void*));
+extern	long	jehanne_strtol(char*, char**, int);
+extern	uint32_t	jehanne_strtoul(char*, char**, int);
+extern	int64_t	jehanne_strtoll(char*, char**, int);
+extern	uint64_t	jehanne_strtoull(char*, char**, int);
 
 /*
  * Syscall data structures
@@ -283,13 +280,13 @@ extern	char	etext[];
 extern	char	edata[];
 extern	char	end[];
 
-extern	char*	smprint(char*, ...);
-extern	char*	strdup(char*);
+extern	char*	jehanne_smprint(char*, ...);
+extern	char*	jehanne_strdup(char*);
 
 
-extern unsigned int	convM2D(uint8_t*, uint, Dir*, char*);
-extern unsigned int	convD2M(Dir*, uint8_t*, uint);
-extern unsigned int	sizeD2M(Dir*);
+extern unsigned int	jehanne_convM2D(uint8_t*, uint, Dir*, char*);
+extern unsigned int	jehanne_convD2M(Dir*, uint8_t*, uint);
+extern unsigned int	jehanne_sizeD2M(Dir*);
 extern int		dirfmt(Fmt*);
-extern int		dirmodefmt(Fmt*);
+extern int		jehanne_dirmodefmt(Fmt*);
 #pragma	varargck	type	"D"	Dir*

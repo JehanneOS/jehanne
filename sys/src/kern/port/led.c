@@ -32,7 +32,7 @@ name2led(char *s)
 	int i;
 
 	for(i = 0; i < nelem(ibpinames); i++)
-		if(strcmp(ibpinames[i], s) == 0)
+		if(jehanne_strcmp(ibpinames[i], s) == 0)
 			return i;
 	return -1;
 }
@@ -42,7 +42,7 @@ ledr(Ledport *p, Chan* _, void *a, int32_t n, int64_t off)
 {
 	char buf[64];
 
-	snprint(buf, sizeof buf, "%s\n", ledname(p->led));
+	jehanne_snprint(buf, sizeof buf, "%s\n", ledname(p->led));
 	return readstr(off, a, n, buf);
 }
 
@@ -54,7 +54,7 @@ ledw(Ledport *p, Chan* _, void *a, int32_t n, int64_t __)
 
 	cb = parsecmd(a, n);
 	i = cb->nf < 1 ? -1 : name2led(cb->f[0]);
-	free(cb);
+	jehanne_free(cb);
 	if(i == -1)
 		error(Ebadarg);
 	p->led = i;

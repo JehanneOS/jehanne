@@ -11,7 +11,7 @@
 #include <libc.h>
 
 Rune*
-runefmtstrflush(Fmt *f)
+jehanne_runefmtstrflush(Fmt *f)
 {
 	if(f->start == nil)
 		return nil;

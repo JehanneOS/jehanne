@@ -12,6 +12,7 @@
 		],
 		"Program": "hoc",
 		"SourceFiles": [
+			"/sys/src/lib/c/lib9.c",
 			"code.c",
 			"init.c",
 			"math.c",

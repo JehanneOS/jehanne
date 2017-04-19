@@ -12,7 +12,7 @@
 // (All other EKE protocols are patented as well, by Lucent or others.)
 #define PORTABLE_SYSCALLS
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 #include <mp.h>
 #include <libsec.h>
 #include "SConn.h"

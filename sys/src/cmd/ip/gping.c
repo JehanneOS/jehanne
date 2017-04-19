@@ -8,7 +8,7 @@
  */
 
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 #include <ctype.h>
 #include <auth.h>
 #include <9P2000.h>
@@ -511,7 +511,7 @@ pingsend(Machine *m)
 	ip->seq[1] = m->seq>>8;
 	r->seq = m->seq;
 	r->next = nil;
-	lock(m);
+	jehanne_lock(m);
 	pingclean(m, -1, nsec(), 0);
 	if(m->first == nil)
 		m->first = r;
@@ -519,7 +519,7 @@ pingsend(Machine *m)
 		m->last->next = r;
 	m->last = r;
 	r->time = nsec();
-	unlock(m);
+	jehanne_unlock(m);
 	if(write(m->pingfd, buf, MSGLEN) < MSGLEN){
 		errstr(err, sizeof err);
 		if(strstr(err, "unreach")||strstr(err, "exceed"))
@@ -558,9 +558,9 @@ pingrcv(void *arg)
 		x = (ip->seq[1]<<8) | ip->seq[0];
 		if(ip->type != EchoReply || ip->code != 0)
 			continue;
-		lock(m);
+		jehanne_lock(m);
 		pingclean(m, x, now, ip4->ttl);
-		unlock(m);
+		jehanne_unlock(m);
 	}
 }
 

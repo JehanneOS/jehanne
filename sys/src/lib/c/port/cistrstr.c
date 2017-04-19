@@ -11,7 +11,7 @@
 #include <libc.h>
 
 char*
-cistrstr(const char *s, const char *sub)
+jehanne_cistrstr(const char *s, const char *sub)
 {
 	int c, csub, n;
 
@@ -21,11 +21,11 @@ cistrstr(const char *s, const char *sub)
 	if(csub >= 'A' && csub <= 'Z')
 		csub -= 'A' - 'a';
 	sub++;
-	n = strlen(sub);
+	n = jehanne_strlen(sub);
 	for(; c = *s; s++){
 		if(c >= 'A' && c <= 'Z')
 			c -= 'A' - 'a';
-		if(c == csub && cistrncmp(s+1, sub, n) == 0)
+		if(c == csub && jehanne_cistrncmp(s+1, sub, n) == 0)
 			return (char*)s;
 	}
 	return nil;

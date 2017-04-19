@@ -48,7 +48,7 @@ boot(int argc, char *argv[])
 	open("/dev/cons", OWRITE);
 	open("/dev/cons", OWRITE);
 
-	fmtinstall('r', errfmt);
+	jehanne_fmtinstall('r', jehanne_errfmt);
 
 	bindBoot();
 
@@ -56,7 +56,7 @@ boot(int argc, char *argv[])
 	 *  start /dev/cons
 	 */
 	if(readfile("#ec/console", buf, sizeof(cputype)) >= 0
-	&& strcmp("comconsole", buf) == 0){
+	&& jehanne_strcmp("comconsole", buf) == 0){
 		if(startcomconsole() < 0)
 			fatal("no console found");
 	} else if(startconsole() < 0){
@@ -73,12 +73,12 @@ boot(int argc, char *argv[])
 	bind("#s", "/srv", MREPL|MCREATE);
 	bind("#p", "/proc", MREPL|MCREATE);
 	bind("#σ", "/shr", MREPL);
-	print("Diex vos sait! Je m'appelle Jehanne O:-)\n");
+	jehanne_print("Diex vos sait! Je m'appelle Jehanne O:-)\n");
 #ifdef DEBUG
-	print("argc=%d\n", argc);
+	jehanne_print("argc=%d\n", argc);
 	for(fd = 0; fd < argc; fd++)
-		print("%#p %s ", argv[fd], argv[fd]);
-	print("\n");
+		jehanne_print("%#p %s ", argv[fd], argv[fd]);
+	jehanne_print("\n");
 #endif //DEBUG
 
 	ARGBEGIN{
@@ -106,8 +106,8 @@ boot(int argc, char *argv[])
 		fatal("no boot methods");
 	mp = rootserver(argc ? *argv : 0);
 	(*mp->config)(mp);
-	islocal = strcmp(mp->name, "local") == 0;
-	ishybrid = strcmp(mp->name, "hybrid") == 0;
+	islocal = jehanne_strcmp(mp->name, "local") == 0;
+	ishybrid = jehanne_strcmp(mp->name, "hybrid") == 0;
 
 	/*
 	 *  load keymap if it is there.
@@ -119,7 +119,7 @@ boot(int argc, char *argv[])
 	 */
 	authentication(cpuflag);
 
-print("connect...");
+jehanne_print("connect...");
 	/*
 	 *  connect to the root file system
 	 */
@@ -130,15 +130,15 @@ print("connect...");
 		if(cfs)
 			fd = (*cfs)(fd);
 	}
-print("\n");
+jehanne_print("\n");
 
-	print("version...");
+	jehanne_print("version...");
 	buf[0] = '\0';
 	n = fversion(fd, 0, buf, sizeof buf);
 	if(n < 0)
 		fatal("can't init 9P");
 
-	if(access("#s/boot", AEXIST) < 0)
+	if(jehanne_access("#s/boot", AEXIST) < 0)
 		srvcreate("boot", fd);
 
 	unbindBoot();
@@ -148,7 +148,7 @@ print("\n");
 	 */
 	if(bind("/", "/", MREPL) < 0)
 		fatal("bind /");
-	rp = getenv("rootspec");
+	rp = jehanne_getenv("rootspec");
 	if(rp == nil)
 		rp = "";
 
@@ -156,25 +156,25 @@ print("\n");
 	if(afd >= 0){
 		ai = auth_proxy(afd, auth_getkey, "proto=p9any role=client");
 		if(ai == nil)
-			print("authentication failed (%r), trying mount anyways\n");
+			jehanne_print("authentication failed (%r), trying mount anyways\n");
 	}
 	if(mount(fd, afd, "/root", MREPL|MCREATE, rp, '9') < 0)
 		fatal("mount /");
 	rsp = rp;
-	rp = getenv("rootdir");
+	rp = jehanne_getenv("rootdir");
 	if(rp == nil)
 		rp = rootdir;
 	if(bind(rp, "/", MAFTER|MCREATE) < 0){
-		if(strncmp(rp, "/root", 5) == 0){
-			fprint(2, "boot: couldn't bind $rootdir=%s to root: %r\n", rp);
+		if(jehanne_strncmp(rp, "/root", 5) == 0){
+			jehanne_fprint(2, "boot: couldn't bind $rootdir=%s to root: %r\n", rp);
 			fatal("second bind /");
 		}
-		snprint(rootbuf, sizeof rootbuf, "/root/%s", rp);
+		jehanne_snprint(rootbuf, sizeof rootbuf, "/root/%s", rp);
 		rp = rootbuf;
 		if(bind(rp, "/", MAFTER|MCREATE) < 0){
-			fprint(2, "boot: couldn't bind $rootdir=%s to root: %r\n", rp);
-			if(strcmp(rootbuf, "/root//plan9") == 0){
-				fprint(2, "**** warning: remove rootdir=/plan9 entry from plan9.ini\n");
+			jehanne_fprint(2, "boot: couldn't bind $rootdir=%s to root: %r\n", rp);
+			if(jehanne_strcmp(rootbuf, "/root//plan9") == 0){
+				jehanne_fprint(2, "**** warning: remove rootdir=/plan9 entry from plan9.ini\n");
 				rp = "/root";
 				if(bind(rp, "/", MAFTER|MCREATE) < 0)
 					fatal("second bind /");
@@ -191,17 +191,17 @@ print("\n");
 	if(afd > 0)
 		close(afd);
 
-	cmd = getenv("init");
+	cmd = jehanne_getenv("init");
 	if(cmd == nil){
-		sprint(cmdbuf, "/arch/%s/cmd/init -%s%s", cputype,
+		jehanne_sprint(cmdbuf, "/arch/%s/cmd/init -%s%s", cputype,
 			cpuflag ? "c" : "t", mflag ? "m" : "");
 		cmd = cmdbuf;
 	}
-	iargc = tokenize(cmd, iargv, nelem(iargv)-1);
+	iargc = jehanne_tokenize(cmd, iargv, nelem(iargv)-1);
 	cmd = iargv[0];
 
 	/* make iargv[0] basename(iargv[0]) */
-	if(iargv[0] = strrchr(iargv[0], '/'))
+	if(iargv[0] = jehanne_strrchr(iargv[0], '/'))
 		iargv[0]++;
 	else
 		iargv[0] = cmd;
@@ -219,16 +219,16 @@ findmethod(char *a)
 	int i, j;
 	char *cp;
 
-	if((i = strlen(a)) == 0)
+	if((i = jehanne_strlen(a)) == 0)
 		return nil;
-	cp = strchr(a, '!');
+	cp = jehanne_strchr(a, '!');
 	if(cp)
 		i = cp - a;
 	for(mp = method; mp->name; mp++){
-		j = strlen(mp->name);
+		j = jehanne_strlen(mp->name);
 		if(j > i)
 			j = i;
-		if(strncmp(a, mp->name, j) == 0)
+		if(jehanne_strncmp(a, mp->name, j) == 0)
 			break;
 	}
 	if(mp->name)
@@ -255,28 +255,28 @@ rootserver(char *arg)
 		mp = findmethod(reply);
 		if(mp)
 			goto HaveMethod;
-		print("boot method %s not found\n", reply);
+		jehanne_print("boot method %s not found\n", reply);
 		reply[0] = 0;
 	}
 
 	/* make list of methods */
 	mp = method;
-	n = sprint(prompt, "root is from (%s", mp->name);
+	n = jehanne_sprint(prompt, "root is from (%s", mp->name);
 	for(mp++; mp->name; mp++)
-		n += sprint(prompt+n, ", %s", mp->name);
-	sprint(prompt+n, ")");
+		n += jehanne_sprint(prompt+n, ", %s", mp->name);
+	jehanne_sprint(prompt+n, ")");
 
 	/* create default reply */
 	readfile("#ec/bootargs", reply, sizeof(reply));
 	if(reply[0] == 0 && arg != 0)
-		strcpy(reply, arg);
+		jehanne_strcpy(reply, arg);
 	if(reply[0]){
 		mp = findmethod(reply);
 		if(mp == 0)
 			reply[0] = 0;
 	}
 	if(reply[0] == 0)
-		strcpy(reply, method->name);
+		jehanne_strcpy(reply, method->name);
 
 	/* parse replies */
 	do{
@@ -285,11 +285,11 @@ rootserver(char *arg)
 	}while(mp == nil);
 
 HaveMethod:
-	bargc = tokenize(reply, bargv, Nbarg-2);
+	bargc = jehanne_tokenize(reply, bargv, Nbarg-2);
 	bargv[bargc] = nil;
-	cp = strchr(reply, '!');
+	cp = jehanne_strchr(reply, '!');
 	if(cp)
-		strcpy(sys, cp+1);
+		jehanne_strcpy(sys, cp+1);
 	return mp;
 }
 
@@ -300,36 +300,36 @@ usbinit(void)
 	static char *argv[] = {"usbrc", nil};
 	int pid;
 
-	if (access(usbrcPath, AEXIST) < 0) {
-		print("usbinit: no %s\n", usbrcPath);
+	if (jehanne_access(usbrcPath, AEXIST) < 0) {
+		jehanne_print("usbinit: no %s\n", usbrcPath);
 		return;
 	}
 
-	switch(pid = fork()){
+	switch(pid = jehanne_fork()){
 	case -1:
-		print("usbinit: fork failed: %r\n");
+		jehanne_print("usbinit: fork failed: %r\n");
 	case 0:
 		exec(usbrcPath, (const char**)argv);
 		fatal("can't exec usbd");
 	default:
 		break;
 	}
-	print("usbinit: waiting usbrc...");
+	jehanne_print("usbinit: waiting usbrc...");
 	for(;;){
-		w = wait();
+		w = jehanne_wait();
 		if(w != nil && w->pid == pid){
 			if(w->msg[0] != 0)
 				fatal(w->msg);
-			free(w);
+			jehanne_free(w);
 			break;
 		} else if(w == nil) {
 			fatal("configuring usbinit");
 		} else if(w->msg[0] != 0){
-			print("usbinit: wait: %d %s\n", w->pid, w->msg);
+			jehanne_print("usbinit: wait: %d %s\n", w->pid, w->msg);
 		}
-		free(w);
+		jehanne_free(w);
 	}
-	print("done\n");
+	jehanne_print("done\n");
 }
 
 static int
@@ -338,8 +338,8 @@ startconsole(void)
 	char *dbgfile, *argv[16], **av;
 	int i;
 
-	if(access(screenconsolePath, AEXEC) < 0){
-		print("cannot find screenconsole: %r\n");
+	if(jehanne_access(screenconsolePath, AEXEC) < 0){
+		jehanne_print("cannot find screenconsole: %r\n");
 		return -1;
 	}
 
@@ -347,12 +347,12 @@ startconsole(void)
 	i = 0;
 	av = argv;
 	av[i++] = "screenconsole";
-	if(dbgfile = getenv("debugconsole")){
+	if(dbgfile = jehanne_getenv("debugconsole")){
 		av[i++] = "-d";
 		av[i++] = dbgfile;
 	}
 	av[i] = 0;
-	switch(fork()){
+	switch(jehanne_fork()){
 	case -1:
 		fatal("starting screenconsole");
 	case 0:
@@ -363,8 +363,8 @@ startconsole(void)
 	}
 
 	/* wait for agent to really be there */
-	while(access("#s/screenconsole", AEXIST) < 0){
-		sleep(250);
+	while(jehanne_access("#s/screenconsole", AEXIST) < 0){
+		jehanne_sleep(250);
 	}
 	/* replace 0, 1 and 2 */
 	if((i = open("#s/screenconsole", ORDWR)) < 0)
@@ -373,16 +373,16 @@ startconsole(void)
 		fatal("mount /dev");
 	if((i = open("/dev/cons", OREAD))<0)
 		fatal("open /dev/cons, OREAD");
-	if(dup(i, 0) != 0)
-		fatal("dup(i, 0)");
+	if(jehanne_dup(i, 0) != 0)
+		fatal("jehanne_dup(i, 0)");
 	close(i);
 	if((i = open("/dev/cons", OWRITE))<0)
 		fatal("open /dev/cons, OWRITE");
-	if(dup(i, 1) != 1)
-		fatal("dup(i, 1)");
+	if(jehanne_dup(i, 1) != 1)
+		fatal("jehanne_dup(i, 1)");
 	close(i);
-	if(dup(1, 2) != 2)
-		fatal("dup(1, 2)");
+	if(jehanne_dup(1, 2) != 2)
+		fatal("jehanne_dup(1, 2)");
 	return 0;
 }
 
@@ -392,8 +392,8 @@ startcomconsole(void)
 	char *dbgfile, *argv[16], **av;
 	int i;
 
-	if(access(comconsolePath, AEXEC) < 0){
-		print("cannot find comconsole: %r\n");
+	if(jehanne_access(comconsolePath, AEXEC) < 0){
+		jehanne_print("cannot find comconsole: %r\n");
 		return -1;
 	}
 
@@ -401,7 +401,7 @@ startcomconsole(void)
 	i = 0;
 	av = argv;
 	av[i++] = "comconsole";
-	if(dbgfile = getenv("debugconsole")){
+	if(dbgfile = jehanne_getenv("debugconsole")){
 		av[i++] = "-d";
 		av[i++] = dbgfile;
 	}
@@ -409,7 +409,7 @@ startcomconsole(void)
 	av[i++] = "comconsole";
 	av[i++] = "#t/eia0";
 	av[i] = 0;
-	switch(fork()){
+	switch(jehanne_fork()){
 	case -1:
 		fatal("starting comconsole");
 	case 0:
@@ -420,8 +420,8 @@ startcomconsole(void)
 	}
 
 	/* wait for agent to really be there */
-	while(access("#s/comconsole", AEXIST) < 0){
-		sleep(250);
+	while(jehanne_access("#s/comconsole", AEXIST) < 0){
+		jehanne_sleep(250);
 	}
 	/* replace 0, 1 and 2 */
 	if((i = open("#s/comconsole", ORDWR)) < 0)
@@ -430,16 +430,16 @@ startcomconsole(void)
 		fatal("mount /dev");
 	if((i = open("/dev/cons", OREAD))<0)
 		fatal("open /dev/cons, OREAD");
-	if(dup(i, 0) != 0)
-		fatal("dup(i, 0)");
+	if(jehanne_dup(i, 0) != 0)
+		fatal("jehanne_dup(i, 0)");
 	close(i);
 	if((i = open("/dev/cons", OWRITE))<0)
 		fatal("open /dev/cons, OWRITE");
-	if(dup(i, 1) != 1)
-		fatal("dup(i, 1)");
+	if(jehanne_dup(i, 1) != 1)
+		fatal("jehanne_dup(i, 1)");
 	close(i);
-	if(dup(1, 2) != 2)
-		fatal("dup(1, 2)");
+	if(jehanne_dup(1, 2) != 2)
+		fatal("jehanne_dup(1, 2)");
 	return 0;
 }
 
@@ -478,7 +478,7 @@ kbmap(void)
 	int n, in, out;
 	char buf[1024];
 
-	f = getenv("kbmap");
+	f = jehanne_getenv("kbmap");
 	if(f == nil)
 		return;
 	if(bind("#κ", "/dev", MAFTER) < 0){

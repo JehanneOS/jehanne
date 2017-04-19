@@ -11,14 +11,14 @@
 #include <libc.h>
 
 char*
-smprint(const char *fmt, ...)
+jehanne_smprint(const char *fmt, ...)
 {
 	va_list args;
 	char *p;
 
 	va_start(args, fmt);
-	p = vsmprint(fmt, args);
+	p = jehanne_vsmprint(fmt, args);
 	va_end(args);
-	setmalloctag(p, getcallerpc());
+	jehanne_setmalloctag(p, jehanne_getcallerpc());
 	return p;
 }

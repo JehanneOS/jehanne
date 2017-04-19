@@ -33,7 +33,7 @@ char	hostdomain[DOMLEN];
 int
 iseve(void)
 {
-	return strcmp(eve, up->user) == 0;
+	return jehanne_strcmp(eve, up->user) == 0;
 }
 
 int
@@ -50,7 +50,7 @@ sysfversion(int fd, int msize, char *version, int nversion)
 
 	version = validaddr(version, nversion, 1);
 	/* check there's a NUL in the version string */
-	if(nversion == 0 || memchr(version, 0, nversion) == nil)
+	if(nversion == 0 || jehanne_memchr(version, 0, nversion) == nil)
 		error(Ebadarg);
 
 	c = fdtochan(fd, ORDWR, 0, 1);
@@ -75,7 +75,7 @@ sysfauth(int fd, char *aname)
 	aname = validaddr(aname, 1, 0);
 	aname = validnamedup(aname, 1);
 	if(waserror()){
-		free(aname);
+		jehanne_free(aname);
 		nexterror();
 	}
 	c = fdtochan(fd, ORDWR, 0, 1);
@@ -88,7 +88,7 @@ sysfauth(int fd, char *aname)
 	/* at this point ac is responsible for keeping c alive */
 	cclose(c);
 	poperror();	/* c */
-	free(aname);
+	jehanne_free(aname);
 	poperror();	/* aname */
 
 	if(waserror()){
@@ -115,7 +115,7 @@ sysfauth(int fd, char *aname)
 long
 userwrite(char* a, long n)
 {
-	if(n != 4 || strncmp(a, "none", 4) != 0)
+	if(n != 4 || jehanne_strncmp(a, "none", 4) != 0)
 		error(Eperm);
 	kstrdup(&up->user, "none");
 	up->basepri = PriNormal;
@@ -137,7 +137,7 @@ hostownerwrite(char* a, long n)
 		error(Eperm);
 	if(n <= 0 || n >= sizeof buf)
 		error(Ebadarg);
-	memmove(buf, a, n);
+	jehanne_memmove(buf, a, n);
 	buf[n] = 0;
 
 	renameuser(eve, buf);
@@ -159,11 +159,11 @@ hostdomainwrite(char* a, long n)
 		error(Eperm);
 	if(n >= DOMLEN)
 		error(Ebadarg);
-	memset(buf, 0, DOMLEN);
-	strncpy(buf, a, n);
+	jehanne_memset(buf, 0, DOMLEN);
+	jehanne_strncpy(buf, a, n);
 	if(buf[0] == 0)
 		error(Ebadarg);
-	memmove(hostdomain, buf, DOMLEN);
+	jehanne_memmove(hostdomain, buf, DOMLEN);
 
 	return n;
 }

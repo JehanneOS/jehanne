@@ -1,6 +1,6 @@
 /* readyuv.c - read an Abekas A66 style image file.   Steve Simon, 2003 */
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 #include <bio.h>
 #include <draw.h>
 #include <ctype.h>

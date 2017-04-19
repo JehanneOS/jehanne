@@ -30,7 +30,7 @@ _syslogopen(void)
 
 	if(sl.fd >= 0)
 		close(sl.fd);
-	snprint(buf, sizeof(buf), "/sys/log/%s", sl.name);
+	jehanne_snprint(buf, sizeof(buf), "/sys/log/%s", sl.name);
 	sl.fd = open(buf, OWRITE|OCEXEC);
 }
 
@@ -49,7 +49,7 @@ eqdirdev(Dir *a, Dir *b)
  * If cons or log file can't be opened, print on the system console, too.
  */
 void
-syslog(int cons, const char *logname, const char *fmt, ...)
+jehanne_syslog(int cons, const char *logname, const char *fmt, ...)
 {
 	char buf[1024];
 	char *ctim, *p;
@@ -60,55 +60,55 @@ syslog(int cons, const char *logname, const char *fmt, ...)
 
 	err[0] = '\0';
 	errstr(err, sizeof err);
-	lock(&sl);
+	jehanne_lock(&sl);
 
 	/*
 	 *  paranoia makes us stat to make sure a fork+close
 	 *  hasn't broken our fd's
 	 */
-	d = dirfstat(sl.fd);
-	if(sl.fd < 0 || sl.name == nil || strcmp(sl.name, logname) != 0 ||
+	d = jehanne_dirfstat(sl.fd);
+	if(sl.fd < 0 || sl.name == nil || jehanne_strcmp(sl.name, logname) != 0 ||
 	   !eqdirdev(d, sl.d)){
-		free(sl.name);
-		sl.name = strdup(logname);
+		jehanne_free(sl.name);
+		sl.name = jehanne_strdup(logname);
 		if(sl.name == nil)
 			cons = 1;
 		else{
-			free(sl.d);
+			jehanne_free(sl.d);
 			sl.d = nil;
 			_syslogopen();
 			if(sl.fd < 0)
 				cons = 1;
 			else
-				sl.d = dirfstat(sl.fd);
+				sl.d = jehanne_dirfstat(sl.fd);
 		}
 	}
-	free(d);
+	jehanne_free(d);
 	if(cons){
-		d = dirfstat(sl.consfd);
+		d = jehanne_dirfstat(sl.consfd);
 		if(sl.consfd < 0 || !eqdirdev(d, sl.consd)){
-			free(sl.consd);
+			jehanne_free(sl.consd);
 			sl.consd = nil;
 			sl.consfd = open("#c/cons", OWRITE|OCEXEC);
 			if(sl.consfd >= 0)
-				sl.consd = dirfstat(sl.consfd);
+				sl.consd = jehanne_dirfstat(sl.consfd);
 		}
-		free(d);
+		jehanne_free(d);
 	}
 
 	if(fmt == nil){
-		unlock(&sl);
+		jehanne_unlock(&sl);
 		return;
 	}
 
-	ctim = ctime(time(0));
-	p = buf + snprint(buf, sizeof(buf)-1, "%s ", sysname());
-	strncpy(p, ctim+4, 15);
+	ctim = jehanne_ctime(jehanne_time(0));
+	p = buf + jehanne_snprint(buf, sizeof(buf)-1, "%s ", jehanne_sysname());
+	jehanne_strncpy(p, ctim+4, 15);
 	p += 15;
 	*p++ = ' ';
 	errstr(err, sizeof err);
 	va_start(arg, fmt);
-	p = vseprint(p, buf+sizeof(buf)-1, fmt, arg);
+	p = jehanne_vseprint(p, buf+sizeof(buf)-1, fmt, arg);
 	va_end(arg);
 	*p++ = '\n';
 	n = p - buf;
@@ -121,5 +121,5 @@ syslog(int cons, const char *logname, const char *fmt, ...)
 	if(cons && sl.consfd >=0)
 		write(sl.consfd, buf, n);
 
-	unlock(&sl);
+	jehanne_unlock(&sl);
 }

@@ -284,7 +284,7 @@ static void MDfinish(uint32_t *MDbuf, uint8_t *strptr, uint32_t lswlen, uint32_t
    unsigned int i;                                 /* counter       */
    uint32_t        X[16];                             /* message words */
 
-   memset(X, 0, 16*sizeof(uint32_t));
+   jehanne_memset(X, 0, 16*sizeof(uint32_t));
 
    /* put bytes from strptr into X */
    for (i=0; i<(lswlen&63); i++) {
@@ -298,7 +298,7 @@ static void MDfinish(uint32_t *MDbuf, uint8_t *strptr, uint32_t lswlen, uint32_t
    if ((lswlen & 63) > 55) {
       /* length goes to next block */
       compress(MDbuf, X);
-      memset(X, 0, 16*sizeof(uint32_t));
+      jehanne_memset(X, 0, 16*sizeof(uint32_t));
    }
 
    /* append length in bits*/
@@ -316,10 +316,10 @@ ripemd160(uint8_t *p, uint32_t len, uint8_t *digest, DigestState *s)
 	int i, j, k;
 
 	if(s == nil){
-		s = malloc(sizeof(*s));
+		s = jehanne_malloc(sizeof(*s));
 		if(s == nil)
 			return nil;
-		memset(s, 0, sizeof(*s));
+		jehanne_memset(s, 0, sizeof(*s));
 		s->malloced = 1;
 	}
 
@@ -333,7 +333,7 @@ ripemd160(uint8_t *p, uint32_t len, uint8_t *digest, DigestState *s)
 		i = 64 - s->blen;
 		if(len < i)
 			i = len;
-		memmove(s->buf + s->blen, p, i);
+		jehanne_memmove(s->buf + s->blen, p, i);
 		len -= i;
 		s->blen += i;
 		p += i;
@@ -362,7 +362,7 @@ ripemd160(uint8_t *p, uint32_t len, uint8_t *digest, DigestState *s)
 	/* save the left overs if not last call */
 	if(digest == 0){
 		if(len){
-			memmove(s->buf, p, len);
+			jehanne_memmove(s->buf, p, len);
 			s->blen += len;
 		}
 		return s;
@@ -377,7 +377,7 @@ ripemd160(uint8_t *p, uint32_t len, uint8_t *digest, DigestState *s)
 
 	}
 	if(s->malloced == 1)
-		free(s);
+		jehanne_free(s);
 	return nil;
 
 }

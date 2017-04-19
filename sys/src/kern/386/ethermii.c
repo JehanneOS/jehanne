@@ -40,7 +40,7 @@ mii(Mii* mii, int mask)
 		if(oui == 0xFFFFF || oui == 0)
 			continue;
 
-		if((miiphy = malloc(sizeof(MiiPhy))) == nil)
+		if((miiphy = jehanne_malloc(sizeof(MiiPhy))) == nil)
 			continue;
 
 		miiphy->mii = mii;
@@ -175,13 +175,13 @@ miistatus(Mii* mii)
 	 */
 	bmsr = mii->mir(mii, phyno, Bmsr);
 	if(!(bmsr & (BmsrAnc|BmsrAna))) {
-		// print("miistatus: auto-neg incomplete\n");
+		// jehanne_print("miistatus: auto-neg incomplete\n");
 		return -1;
 	}
 
 	bmsr = mii->mir(mii, phyno, Bmsr);
 	if(!(bmsr & BmsrLs)){
-		// print("miistatus: link down\n");
+		// jehanne_print("miistatus: link down\n");
 		phy->link = 0;
 		return -1;
 	}
@@ -214,7 +214,7 @@ miistatus(Mii* mii)
 			phy->speed = 10;
 	}
 	if(phy->speed == 0) {
-		// print("miistatus: phy speed 0\n");
+		// jehanne_print("miistatus: phy speed 0\n");
 		return -1;
 	}
 

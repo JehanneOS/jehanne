@@ -8,7 +8,7 @@
  */
 
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 
 #define	BIG	((1UL<<31)-1)
 #define VBIG	((1ULL<<63)-1)

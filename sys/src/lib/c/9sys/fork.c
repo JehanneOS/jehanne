@@ -11,7 +11,7 @@
 #include <libc.h>
 
 int
-fork(void)
+jehanne_fork(void)
 {
 	return rfork(RFPROC|RFFDG|RFREND);
 }

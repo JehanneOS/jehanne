@@ -14,7 +14,7 @@
 #define LONG_MIN	-2147483648L
 
 int32_t
-strtol(const char *nptr, char **endptr, int base)
+jehanne_strtol(const char *nptr, char **endptr, int base)
 {
 	const char *p;
 	int32_t n, nn, m;

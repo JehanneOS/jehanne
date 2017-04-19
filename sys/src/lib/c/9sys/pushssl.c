@@ -17,7 +17,7 @@
  */
 
 int
-pushssl(int fd, const char *alg, const char *secin, const char *secout, int *cfd)
+jehanne_pushssl(int fd, const char *alg, const char *secin, const char *secout, int *cfd)
 {
 	char buf[8];
 	char dname[64];
@@ -30,14 +30,14 @@ pushssl(int fd, const char *alg, const char *secin, const char *secout, int *cfd
 	if(n < 0)
 		goto error;
 	buf[n] = 0;
-	sprint(dname, "#D/ssl/%s/data", buf);
+	jehanne_sprint(dname, "#D/ssl/%s/data", buf);
 	data = open(dname, ORDWR);
 	if(data < 0)
 		goto error;
-	if(fprint(ctl, "fd %d", fd) < 0 ||
-	   fprint(ctl, "secretin %s", secin) < 0 ||
-	   fprint(ctl, "secretout %s", secout) < 0 ||
-	   fprint(ctl, "alg %s", alg) < 0){
+	if(jehanne_fprint(ctl, "fd %d", fd) < 0 ||
+	   jehanne_fprint(ctl, "secretin %s", secin) < 0 ||
+	   jehanne_fprint(ctl, "secretout %s", secout) < 0 ||
+	   jehanne_fprint(ctl, "alg %s", alg) < 0){
 		close(data);
 		goto error;
 	}

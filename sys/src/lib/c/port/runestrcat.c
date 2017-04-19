@@ -11,9 +11,9 @@
 #include <libc.h>
 
 Rune*
-runestrcat(Rune *s1, const Rune *s2)
+jehanne_runestrcat(Rune *s1, const Rune *s2)
 {
 
-	runestrcpy(runestrchr(s1, 0), s2);
+	jehanne_runestrcpy(jehanne_runestrchr(s1, 0), s2);
 	return s1;
 }

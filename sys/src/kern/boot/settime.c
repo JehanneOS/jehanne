@@ -29,7 +29,7 @@ setlocaltime(char* timebuf, int s){
 		}
 		close(f);
 	}else do{
-		strcpy(timebuf, "yymmddhhmm[ss]");
+		jehanne_strcpy(timebuf, "yymmddhhmm[ss]");
 		outin("\ndate/time ", timebuf, s);
 	}while((t=lusertime(timebuf)) <= 0);
 	return t;
@@ -44,7 +44,7 @@ settime(int islocal, int afd, char *rp)
 	Dir dir[2];
 	char timebuf[64];
 
-	print("time...");
+	jehanne_print("time...");
 	timeset = 0;
 	if(islocal){
 		/*
@@ -66,22 +66,22 @@ settime(int islocal, int afd, char *rp)
 				return;
 		} else {
 			close(f);
-			if(stat("/tmp", statbuf, sizeof statbuf) < 0)
+			if(jehanne_stat("/tmp", statbuf, sizeof statbuf) < 0)
 				fatal("stat");
-			convM2D(statbuf, sizeof statbuf, &dir[0], (char*)&dir[1]);
-			sprint(timebuf, "%ld", dir[0].atime);
+			jehanne_convM2D(statbuf, sizeof statbuf, &dir[0], (char*)&dir[1]);
+			jehanne_sprint(timebuf, "%ld", dir[0].atime);
 			unmount(0, "/tmp");
 		}
 	}
 
-	if((!islocal) && (strcmp(timebuf,"0")==0))
+	if((!islocal) && (jehanne_strcmp(timebuf,"0")==0))
 		setlocaltime(timebuf, sizeof(timebuf));
 
 	f = open("#c/time", OWRITE);
-	if(write(f, timebuf, strlen(timebuf)) < 0)
+	if(write(f, timebuf, jehanne_strlen(timebuf)) < 0)
 		warning("can't set #c/time");
 	close(f);
-	print("\n");
+	jehanne_print("\n");
 }
 
 #define SEC2MIN 60L
@@ -135,7 +135,7 @@ lusertime(char *argbuf)
 	int *d2m;
 
 	buf = argbuf;
-	i = strlen(buf);
+	i = jehanne_strlen(buf);
 	if(i != 10 && i != 12)
 		return -1;
 	secs = 0;
@@ -167,6 +167,6 @@ lusertime(char *argbuf)
 	if(*buf)
 		secs += g2(&buf);
 
-	sprint(argbuf, "%ld", secs);
+	jehanne_sprint(argbuf, "%ld", secs);
 	return secs;
 }

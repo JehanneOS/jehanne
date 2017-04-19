@@ -23,7 +23,7 @@ envlookup(Egrp *eg, char *name, uint32_t qidpath)
 
 	for(i=0; i<eg->nent; i++){
 		e = eg->ent[i];
-		if(e->qid.path == qidpath || (name && e->name[0]==name[0] && strcmp(e->name, name) == 0))
+		if(e->qid.path == qidpath || (name && e->name[0]==name[0] && jehanne_strcmp(e->name, name) == 0))
 			return e;
 	}
 	return nil;
@@ -47,7 +47,7 @@ envgen(Chan *c, char *name, Dirtab* _1, int _2, int s, Dir *dp)
 	else if(s < eg->nent)
 		e = eg->ent[s];
 
-	if(e == nil || name != nil && (strlen(e->name) >= sizeof(up->genbuf))) {
+	if(e == nil || name != nil && (jehanne_strlen(e->name) >= sizeof(up->genbuf))) {
 		runlock(&eg->rwl);
 		return -1;
 	}
@@ -65,7 +65,7 @@ envattach(Chan *c, Chan *ac, char *spec, int flags)
 	Egrp *egrp = nil;
 
 	if(spec && *spec) {
-		if(strcmp(spec, "c") != 0)
+		if(jehanne_strcmp(spec, "c") != 0)
 			error(Ebadarg);
 		egrp = &confegrp;
 	}
@@ -119,7 +119,7 @@ envopen(Chan *c, unsigned long omode)
 		}
 		if(trunc && e->value) {
 			e->qid.vers++;
-			free(e->value);
+			jehanne_free(e->value);
 			e->value = nil;
 			e->len = 0;
 		}
@@ -159,15 +159,15 @@ envcreate(Chan *c, char *name, unsigned long omode, unsigned long _1)
 		error(Eexist);
 
 	e = smalloc(sizeof(Evalue));
-	e->name = smalloc(strlen(name)+1);
-	strcpy(e->name, name);
+	e->name = smalloc(jehanne_strlen(name)+1);
+	jehanne_strcpy(e->name, name);
 
 	if(eg->nent == eg->ment){
 		eg->ment += 32;
 		ent = smalloc(sizeof(eg->ent[0])*eg->ment);
 		if(eg->nent)
-			memmove(ent, eg->ent, sizeof(eg->ent[0])*eg->nent);
-		free(eg->ent);
+			jehanne_memmove(ent, eg->ent, sizeof(eg->ent[0])*eg->nent);
+		jehanne_free(eg->ent);
 		eg->ent = ent;
 	}
 	e->qid.path = ++eg->path;
@@ -215,9 +215,9 @@ envremove(Chan *c)
 	wunlock(&eg->rwl);
 	if(e == nil)
 		error(Enonexist);
-	free(e->name);
-	free(e->value);
-	free(e);
+	jehanne_free(e->name);
+	jehanne_free(e->value);
+	jehanne_free(e);
 }
 
 static void
@@ -264,7 +264,7 @@ envread(Chan *c, void *a, long n, int64_t off)
 	if(n <= 0)
 		n = 0;
 	else
-		memmove(a, e->value+offset, n);
+		jehanne_memmove(a, e->value+offset, n);
 	runlock(&eg->rwl);
 	return n;
 }
@@ -295,13 +295,13 @@ envwrite(Chan *c, void *a, long n, int64_t off)
 	if(len > e->len) {
 		s = smalloc(len);
 		if(e->value){
-			memmove(s, e->value, e->len);
-			free(e->value);
+			jehanne_memmove(s, e->value, e->len);
+			jehanne_free(e->value);
 		}
 		e->value = s;
 		e->len = len;
 	}
-	memmove(e->value+offset, a, n);
+	jehanne_memmove(e->value+offset, a, n);
 	e->qid.vers++;
 	eg->vers++;
 	wunlock(&eg->rwl);
@@ -341,11 +341,11 @@ envcpy(Egrp *to, Egrp *from)
 	for(i=0; i<from->nent; i++){
 		e = from->ent[i];
 		ne = smalloc(sizeof(Evalue));
-		ne->name = smalloc(strlen(e->name)+1);
-		strcpy(ne->name, e->name);
+		ne->name = smalloc(jehanne_strlen(e->name)+1);
+		jehanne_strcpy(ne->name, e->name);
 		if(e->value){
 			ne->value = smalloc(e->len);
-			memmove(ne->value, e->value, e->len);
+			jehanne_memmove(ne->value, e->value, e->len);
 			ne->len = e->len;
 		}
 		ne->qid.path = ++to->path;
@@ -364,12 +364,12 @@ closeegrp(Egrp *eg)
 	if(decref(&eg->r) == 0 && eg != &confegrp){
 		for(i=0; i<eg->nent; i++){
 			e = eg->ent[i];
-			free(e->name);
-			free(e->value);
-			free(e);
+			jehanne_free(e->name);
+			jehanne_free(e->value);
+			jehanne_free(e);
 		}
-		free(eg->ent);
-		free(eg);
+		jehanne_free(eg->ent);
+		jehanne_free(eg);
 	}
 }
 
@@ -396,9 +396,9 @@ ksetenv(char *ename, char *eval, int conf)
 	Chan *c;
 	char buf[2*KNAMELEN];
 
-	snprint(buf, sizeof(buf), "#e%s/%s", conf?"c":"", ename);
+	jehanne_snprint(buf, sizeof(buf), "#e%s/%s", conf?"c":"", ename);
 	c = namec(buf, Acreate, OWRITE, 0600);
-	c->dev->write(c, eval, strlen(eval), 0);
+	c->dev->write(c, eval, jehanne_strlen(eval), 0);
 	cclose(c);
 }
 
@@ -425,20 +425,20 @@ getconfenv(void)
 	n = 0;
 	for(i=0; i<eg->nent; i++){
 		e = eg->ent[i];
-		n += strlen(e->name) + e->len + 2;
+		n += jehanne_strlen(e->name) + e->len + 2;
 	}
-	p = malloc(n + 1);
+	p = jehanne_malloc(n + 1);
 	if(p == nil)
 		error(Enomem);
 	q = p;
 	for(i=0; i<eg->nent; i++){
 		e = eg->ent[i];
-		strcpy(q, e->name);
-		q += strlen(q) + 1;
-		memmove(q, e->value, e->len);
+		jehanne_strcpy(q, e->name);
+		q += jehanne_strlen(q) + 1;
+		jehanne_memmove(q, e->value, e->len);
 		q[e->len] = 0;
 		/* move up to the first null */
-		q += strlen(q) + 1;
+		q += jehanne_strlen(q) + 1;
 	}
 	*q = 0;
 

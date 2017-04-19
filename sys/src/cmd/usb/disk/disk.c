@@ -5,7 +5,7 @@
  */
 
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 #include <ctype.h>
 #include <9P2000.h>
 #include <thread.h>

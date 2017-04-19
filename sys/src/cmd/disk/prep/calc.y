@@ -55,7 +55,7 @@ expr:	NUMBER
 
 %%
 
-#include <libc.h>
+#include <lib9.h>
 #include <ctype.h>
 #include "disk.h"
 #include "edit.h"

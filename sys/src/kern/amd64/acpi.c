@@ -57,9 +57,9 @@ sigscan(uint8_t* addr, int len, char* signature)
 	uint8_t *e, *p;
 
 	e = addr+len;
-	sl = strlen(signature);
+	sl = jehanne_strlen(signature);
 	for(p = addr; p+sl < e; p += 16)
-		if(memcmp(p, signature, sl) == 0)
+		if(jehanne_memcmp(p, signature, sl) == 0)
 			return p;
 	return nil;
 }
@@ -98,7 +98,7 @@ sigsearch(char* signature)
 	 *    (but will actually check 0xe0000 to 0xfffff).
 	 */
 	bda = KADDR(0x400);
-	if(memcmp(KADDR(0xfffd9), "EISA", 4) == 0){
+	if(jehanne_memcmp(KADDR(0xfffd9), "EISA", 4) == 0){
 		if((p = (bda[0x0f]<<8)|bda[0x0e]) != 0){
 			if((r = sigscan(KADDR(p<<4), 1024, signature)) != nil)
 				return r;
@@ -159,7 +159,7 @@ acpigettbl(void *sig)
 {
 	int i;
 	for(i=0; i<ntblmap; i++)
-		if(memcmp(tblmap[i]->sig, sig, 4) == 0)
+		if(jehanne_memcmp(tblmap[i]->sig, sig, 4) == 0)
 			return tblmap[i];
 	return nil;
 }
@@ -204,15 +204,15 @@ acpimaptbl(uint64_t xpa)
 
 	p = (uint8_t*)t;
 	e = p + l;
-	if(memcmp("RSDT", t->sig, 4) == 0){
+	if(jehanne_memcmp("RSDT", t->sig, 4) == 0){
 		for(p = t->data; p+3 < e; p += 4)
 			acpimaptbl(get32(p));
 	}
-	else if(memcmp("XSDT", t->sig, 4) == 0){
+	else if(jehanne_memcmp("XSDT", t->sig, 4) == 0){
 		for(p = t->data; p+7 < e; p += 8)
 			acpimaptbl(get64(p));
 	}
-	else if(memcmp("FACP", t->sig, 4) == 0){
+	else if(jehanne_memcmp("FACP", t->sig, 4) == 0){
 		if(l < 44)
 			return;
 		acpimaptbl(get32(p + 40));
@@ -229,9 +229,9 @@ rsdscan(uint8_t* addr, int len, char* signature)
 	uint8_t *e, *p;
 
 	e = addr+len;
-	sl = strlen(signature);
+	sl = jehanne_strlen(signature);
 	for(p = addr; p+sl < e; p += 16){
-		if(memcmp(p, signature, sl))
+		if(jehanne_memcmp(p, signature, sl))
 			continue;
 		return p;
 	}
@@ -251,7 +251,7 @@ rsdsearch(char* signature)
 	 * 1) in the first KB of the EBDA;
 	 * 2) in the BIOS ROM between 0xE0000 and 0xFFFFF.
 	 */
-	if(strncmp((char*)KADDR(0xFFFD9), "EISA", 4) == 0){
+	if(jehanne_strncmp((char*)KADDR(0xFFFD9), "EISA", 4) == 0){
 		bda = BIOSSEG(0x40);
 		if((p = (bda[0x0F]<<8)|bda[0x0E])){
 			if(rsd = rsdscan(KADDR(p), 1024, signature))
@@ -307,30 +307,30 @@ apicmkintr(uint32_t src, uint32_t inttype, int polarity, int trigger, uint32_t a
 	 */
 	if(apicno != 0xff){
 		if(Napic < 256 && apicno >= Napic){
-			print("apic: id out-of-range: %d\n", apicno);
+			jehanne_print("apic: id out-of-range: %d\n", apicno);
 			return 0;
 		}
 		switch(src){
 		default:
-			print("apic: intin botch: %d\n", intin);
+			jehanne_print("apic: intin botch: %d\n", intin);
 			return 0;
 		case Iointr:
 			if((ioapic = ioapiclookup(apicno)) == nil){
-				print("ioapic%d: ioapic unusable\n", apicno);
+				jehanne_print("ioapic%d: ioapic unusable\n", apicno);
 				return 0;
 			}
 			if(intin >= ioapic->nrdt){
-				print("ioapic%d: intin %d >= nrdt %d\n", apicno, intin, ioapic->nrdt);
+				jehanne_print("ioapic%d: intin %d >= nrdt %d\n", apicno, intin, ioapic->nrdt);
 				return 0;
 			}
 			break;
 		case Lintr:
 			if((lapic = lapiclookup(apicno)) == nil){
-				print("lapic%d: lapic unusable\n", apicno);
+				jehanne_print("lapic%d: lapic unusable\n", apicno);
 				return 0;
 			}
 			if(intin >= nelem(lapic->lvt)){
-				print("lapic%d: intin beyond lvt: %d\n", apicno, intin);
+				jehanne_print("lapic%d: intin beyond lvt: %d\n", apicno, intin);
 				return 0;
 			}
 			USED(lapic);
@@ -349,7 +349,7 @@ apicmkintr(uint32_t src, uint32_t inttype, int polarity, int trigger, uint32_t a
 	v = Im;
 	switch(inttype){
 	default:
-		print("apic: bad irq type %d\n", inttype);
+		jehanne_print("apic: bad irq type %d\n", inttype);
 		return 0;
 	case MTint:				/* INT (fake type, same as fixed) */
 		v |= polarity | trigger;
@@ -423,7 +423,7 @@ addirq(int gsi, int bustype, int busno, int irq, int flags)
 	polarity = flagstopolarity(bustype, flags);
 	trigger = flagstotrigger(bustype, flags);
 	if(polarity == -1 || trigger == -1){
-		print("addirq: bad polarity: gsi %d %s busno %d irq %d flags %.8ux\n",
+		jehanne_print("addirq: bad polarity: gsi %d %s busno %d irq %d flags %.8ux\n",
 			gsi, bustype == BusPCI? "pci": "isa", busno, irq, flags);
 		return;
 	}
@@ -471,7 +471,7 @@ pcibusno(void *dot)
 		return -1;
 	adr = amlint(p);
 	/* if root bridge, then we are done here */
-	if(id != nil && (strcmp(id, "PNP0A03")==0 || strcmp(id, "PNP0A08")==0))
+	if(id != nil && (jehanne_strcmp(id, "PNP0A03")==0 || jehanne_strcmp(id, "PNP0A08")==0))
 		return adr;
 	x = amlwalk(dot, "^");
 	if(x == nil || x == dot)
@@ -494,7 +494,7 @@ getirqs(void *d, uint8_t pmask[32], int *pflags)
 	uint8_t *p;
 
 	*pflags = 0;
-	memset(pmask, 0, 32);
+	jehanne_memset(pmask, 0, 32);
 	if(amltag(d) != 'b')
 		return -1;
 	p = amlval(d);
@@ -528,7 +528,7 @@ setirq(void *d, uint32_t irq)
 	if(amltag(d) != 'b')
 		return nil;
 	p = amlnew('b', amllen(d));
-	memmove(p, d, amllen(p));
+	jehanne_memmove(p, d, amllen(p));
 	if(p[0] == 0x22 || p[0] == 0x23)
 		put16(p, 1<<irq);
 	if(p[0] == 0x89){
@@ -638,7 +638,7 @@ loadtbls(char *name, int all)
 
 	for(i = 0; i < ntblmap; i++){
 		t = tblmap[i];
-		if(memcmp(t->sig, name, 4) == 0){
+		if(jehanne_memcmp(t->sig, name, 4) == 0){
 			amlload(t->data, tbldlen(t));
 			if(!all)
 				break;
@@ -666,7 +666,7 @@ readtbls(Chan* _1, void *v, long n, int64_t o)
 		m = l - o;
 		if(m > n)
 			m = n;
-		memmove(p, (uint8_t*)t + o, m);
+		jehanne_memmove(p, (uint8_t*)t + o, m);
 		p += m;
 		n -= m;
 		o = 0;
@@ -719,7 +719,7 @@ parseapic(Tbl *t, Parsedat *dat)
 			addirq(get32(p+4), BusISA, 0, p[3], get16(p+8));
 			break;
 		case 0x03:	/* NMI Source */
-			print("acpi: ignoring nmi source\n");
+			jehanne_print("acpi: ignoring nmi source\n");
 			break;
 		case 0x04:	/* Local APIC NMI */
 			DBG("acpi: lapic nmi %.2ux flags %.4ux lint# %d (ignored)\n",
@@ -733,7 +733,7 @@ parseapic(Tbl *t, Parsedat *dat)
 		case 0x0A:	/* x2APIC NMI */
 		case 0x0B:	/* GIC */
 		case 0x0C:	/* GICD */
-			print("acpi: ignoring entry: %.2ux\n", *p);
+			jehanne_print("acpi: ignoring entry: %.2ux\n", *p);
 			break;
 		}
 	}
@@ -769,7 +769,7 @@ parsesrat(Tbl *t, Parsedat* _1)
 				lapicsetdom(get32(p+8), get32(p+4));
 			break;
 		default:
-			print("acpi: SRAT type %.2ux unknown\n", p[0]);
+			jehanne_print("acpi: SRAT type %.2ux unknown\n", p[0]);
 			break;
 		}
 	}
@@ -794,25 +794,25 @@ Gfmt(Fmt* f)
 	case CmosSpace:
 	case PcibarSpace:
 	case IpmiSpace:
-		fmtprint(f, "[%s", regnames[g->spc]);
+		jehanne_fmtprint(f, "[%s", regnames[g->spc]);
 		break;
 	case PcicfgSpace:
-		fmtprint(f, "[pci %T", (int)g->addr);
+		jehanne_fmtprint(f, "[pci %T", (int)g->addr);
 		break;
 //	case FixedhwSpace:		// undeclared
-//		fmtprint(f, "[hw");
+//		jehanne_fmtprint(f, "[hw");
 //		break;
 	default:
-		fmtprint(f, "[%#ux", g->spc);
+		jehanne_fmtprint(f, "[%#ux", g->spc);
 		break;
 	}
-	fmtprint(f, " %#llux", g->addr);
+	jehanne_fmtprint(f, " %#llux", g->addr);
 	if(g->off != 0)
-		fmtprint(f, "+%d", g->off);
-	fmtprint(f, " len %d", g->len);
+		jehanne_fmtprint(f, "+%d", g->off);
+	jehanne_fmtprint(f, " len %d", g->len);
 	if(g->accsz != 0)
-		fmtprint(f, " accsz %d", g->accsz);
-	return fmtprint(f, "]");
+		jehanne_fmtprint(f, " accsz %d", g->accsz);
+	return jehanne_fmtprint(f, "]");
 }
 
 static void
@@ -840,68 +840,68 @@ readfadt(Chan* _1, void *a, long n, int64_t o)
 
 	s = smalloc(READSTR);
 	if(waserror()){
-		free(s);
+		jehanne_free(s);
 		nexterror();
 	}
 	p = s;
 	e = s+READSTR;
 	f = &fadt;
 
-	p = seprint(p, e, "facs %#ux\n", f->facs);
-	p = seprint(p, e, "dsdt %#ux\n", f->dsdt);
-	p = seprint(p, e, "pmprofile %#ux\n", f->pmprofile);
-	p = seprint(p, e, "sciint %d\n", f->sciint);
-	p = seprint(p, e, "smicmd %#ux\n", f->smicmd);
-	p = seprint(p, e, "acpienable %#ux\n", f->acpienable);
-	p = seprint(p, e, "acpidisable %#ux\n", f->acpidisable);
-	p = seprint(p, e, "s4biosreq %#ux\n", f->s4biosreq);
-	p = seprint(p, e, "pstatecnt %#ux\n", f->pstatecnt);
-	p = seprint(p, e, "pm1aevtblk %#ux\n", f->pm1aevtblk);
-	p = seprint(p, e, "pm1bevtblk %#ux\n", f->pm1bevtblk);
-	p = seprint(p, e, "pm1acntblk %#ux\n", f->pm1acntblk);
-	p = seprint(p, e, "pm1bcntblk %#ux\n", f->pm1bcntblk);
-	p = seprint(p, e, "pm2cntblk %#ux\n", f->pm2cntblk);
-	p = seprint(p, e, "pmtmrblk %#ux\n", f->pmtmrblk);
-	p = seprint(p, e, "gpe0blk %#ux\n", f->gpe0blk);
-	p = seprint(p, e, "gpe1blk %#ux\n", f->gpe1blk);
-	p = seprint(p, e, "pm1evtlen %#ux\n", f->pm1evtlen);
-	p = seprint(p, e, "pm1cntlen %#ux\n", f->pm1cntlen);
-	p = seprint(p, e, "pm2cntlen %#ux\n", f->pm2cntlen);
-	p = seprint(p, e, "pmtmrlen %#ux\n", f->pmtmrlen);
-	p = seprint(p, e, "gpe0blklen %#ux\n", f->gpe0blklen);
-	p = seprint(p, e, "gpe1blklen %#ux\n", f->gpe1blklen);
-	p = seprint(p, e, "gp1base %#ux\n", f->gp1base);
-	p = seprint(p, e, "cstcnt %#ux\n", f->cstcnt);
-	p = seprint(p, e, "plvl2lat %#ux\n", f->plvl2lat);
-	p = seprint(p, e, "plvl3lat %#ux\n", f->plvl3lat);
-	p = seprint(p, e, "flushsz %#ux\n", f->flushsz);
-	p = seprint(p, e, "flushstride %#ux\n", f->flushstride);
-	p = seprint(p, e, "dutyoff %#ux\n", f->dutyoff);
-	p = seprint(p, e, "dutywidth %#ux\n", f->dutywidth);
-	p = seprint(p, e, "dayalrm %#ux\n", f->dayalrm);
-	p = seprint(p, e, "monalrm %#ux\n", f->monalrm);
-	p = seprint(p, e, "century %#ux\n", f->century);
-	p = seprint(p, e, "iapcbootarch %#ux\n", f->iapcbootarch);
-	p = seprint(p, e, "flags %#ux\n", f->flags);
-	p = seprint(p, e, "resetreg %G\n", &f->resetreg);
+	p = jehanne_seprint(p, e, "facs %#ux\n", f->facs);
+	p = jehanne_seprint(p, e, "dsdt %#ux\n", f->dsdt);
+	p = jehanne_seprint(p, e, "pmprofile %#ux\n", f->pmprofile);
+	p = jehanne_seprint(p, e, "sciint %d\n", f->sciint);
+	p = jehanne_seprint(p, e, "smicmd %#ux\n", f->smicmd);
+	p = jehanne_seprint(p, e, "acpienable %#ux\n", f->acpienable);
+	p = jehanne_seprint(p, e, "acpidisable %#ux\n", f->acpidisable);
+	p = jehanne_seprint(p, e, "s4biosreq %#ux\n", f->s4biosreq);
+	p = jehanne_seprint(p, e, "pstatecnt %#ux\n", f->pstatecnt);
+	p = jehanne_seprint(p, e, "pm1aevtblk %#ux\n", f->pm1aevtblk);
+	p = jehanne_seprint(p, e, "pm1bevtblk %#ux\n", f->pm1bevtblk);
+	p = jehanne_seprint(p, e, "pm1acntblk %#ux\n", f->pm1acntblk);
+	p = jehanne_seprint(p, e, "pm1bcntblk %#ux\n", f->pm1bcntblk);
+	p = jehanne_seprint(p, e, "pm2cntblk %#ux\n", f->pm2cntblk);
+	p = jehanne_seprint(p, e, "pmtmrblk %#ux\n", f->pmtmrblk);
+	p = jehanne_seprint(p, e, "gpe0blk %#ux\n", f->gpe0blk);
+	p = jehanne_seprint(p, e, "gpe1blk %#ux\n", f->gpe1blk);
+	p = jehanne_seprint(p, e, "pm1evtlen %#ux\n", f->pm1evtlen);
+	p = jehanne_seprint(p, e, "pm1cntlen %#ux\n", f->pm1cntlen);
+	p = jehanne_seprint(p, e, "pm2cntlen %#ux\n", f->pm2cntlen);
+	p = jehanne_seprint(p, e, "pmtmrlen %#ux\n", f->pmtmrlen);
+	p = jehanne_seprint(p, e, "gpe0blklen %#ux\n", f->gpe0blklen);
+	p = jehanne_seprint(p, e, "gpe1blklen %#ux\n", f->gpe1blklen);
+	p = jehanne_seprint(p, e, "gp1base %#ux\n", f->gp1base);
+	p = jehanne_seprint(p, e, "cstcnt %#ux\n", f->cstcnt);
+	p = jehanne_seprint(p, e, "plvl2lat %#ux\n", f->plvl2lat);
+	p = jehanne_seprint(p, e, "plvl3lat %#ux\n", f->plvl3lat);
+	p = jehanne_seprint(p, e, "flushsz %#ux\n", f->flushsz);
+	p = jehanne_seprint(p, e, "flushstride %#ux\n", f->flushstride);
+	p = jehanne_seprint(p, e, "dutyoff %#ux\n", f->dutyoff);
+	p = jehanne_seprint(p, e, "dutywidth %#ux\n", f->dutywidth);
+	p = jehanne_seprint(p, e, "dayalrm %#ux\n", f->dayalrm);
+	p = jehanne_seprint(p, e, "monalrm %#ux\n", f->monalrm);
+	p = jehanne_seprint(p, e, "century %#ux\n", f->century);
+	p = jehanne_seprint(p, e, "iapcbootarch %#ux\n", f->iapcbootarch);
+	p = jehanne_seprint(p, e, "flags %#ux\n", f->flags);
+	p = jehanne_seprint(p, e, "resetreg %G\n", &f->resetreg);
 	if(f->rev >= 3){
-		p = seprint(p, e, "resetval %#ux\n", f->resetval);
-		p = seprint(p, e, "xfacs %#llux\n", f->xfacs);
-		p = seprint(p, e, "xdsdt %#llux\n", f->xdsdt);
-		p = seprint(p, e, "xpm1aevtblk %G\n", &f->xpm1aevtblk);
-		p = seprint(p, e, "xpm1bevtblk %G\n", &f->xpm1bevtblk);
-		p = seprint(p, e, "xpm1acntblk %G\n", &f->xpm1acntblk);
-		p = seprint(p, e, "xpm1bcntblk %G\n", &f->xpm1bcntblk);
-		p = seprint(p, e, "xpm2cntblk %G\n", &f->xpm2cntblk);
-		p = seprint(p, e, "xpmtmrblk %G\n", &f->xpmtmrblk);
-		p = seprint(p, e, "xgpe0blk %G\n", &f->xgpe0blk);
-		p = seprint(p, e, "xgpe1blk %G\n", &f->xgpe1blk);
+		p = jehanne_seprint(p, e, "resetval %#ux\n", f->resetval);
+		p = jehanne_seprint(p, e, "xfacs %#llux\n", f->xfacs);
+		p = jehanne_seprint(p, e, "xdsdt %#llux\n", f->xdsdt);
+		p = jehanne_seprint(p, e, "xpm1aevtblk %G\n", &f->xpm1aevtblk);
+		p = jehanne_seprint(p, e, "xpm1bevtblk %G\n", &f->xpm1bevtblk);
+		p = jehanne_seprint(p, e, "xpm1acntblk %G\n", &f->xpm1acntblk);
+		p = jehanne_seprint(p, e, "xpm1bcntblk %G\n", &f->xpm1bcntblk);
+		p = jehanne_seprint(p, e, "xpm2cntblk %G\n", &f->xpm2cntblk);
+		p = jehanne_seprint(p, e, "xpmtmrblk %G\n", &f->xpmtmrblk);
+		p = jehanne_seprint(p, e, "xgpe0blk %G\n", &f->xgpe0blk);
+		p = jehanne_seprint(p, e, "xgpe1blk %G\n", &f->xgpe1blk);
 	}
 	USED(p);
 
 	n = readstr(o, a, n, s);
 	poperror();
-	free(s);
+	jehanne_free(s);
 	return n;
 }
 
@@ -1028,7 +1028,7 @@ parsemcfg(Tbl *t, Parsedat* _1)
 		mc->pciseg = get16(p+8);
 		mc->start = p[10];
 		mc->end = p[11];
-print("MCFG: %d-%d %d %#P\n", mc->start, mc->end, mc->pciseg, mc->base);
+jehanne_print("MCFG: %d-%d %d %#P\n", mc->start, mc->end, mc->pciseg, mc->base);
 	}
 }
 
@@ -1090,16 +1090,16 @@ parsetables(Parsedat *dat)
 	Tbl *t;
 	Ptab *p;
 
-	print("acpi parse: ");
+	jehanne_print("acpi parse: ");
 	for(i = 0; i < nelem(ptab); i++){
 		p = ptab + i;
 		if((t = acpigettbl(p->sig)) != nil){
 			p->parse(t, dat);
-			print("%s ", p->sig);
+			jehanne_print("%s ", p->sig);
 		}else if(p->required)
 			panic("acpi: parsetables: no %s table\n", p->sig);
 	}
-	print("\n");
+	jehanne_print("\n");
 }
 
 int
@@ -1116,7 +1116,7 @@ checkpnpid(void *dot, char *pnpid)
 			id = eisaid(p);
 	if(id == nil)
 		return -1;
-	return strcmp(id, pnpid);
+	return jehanne_strcmp(id, pnpid);
 }
 
 enum {
@@ -1151,7 +1151,7 @@ evalini(void *dot)
 		return -1;
 	if((x = amlwalk(dot, "_INI")) != nil){
 		if(amleval(x, "", &p) == 0)
-			print("eval _INI → %V\n", p);
+			jehanne_print("eval _INI → %V\n", p);
 	}
 	return 0;
 }
@@ -1164,9 +1164,9 @@ cfgpwerb(void)
 	dot = amlwalk(amlroot, "\\_SB_.PWRB");
 	if(checkpnpid(dot, "PNP0C0C") != 0)
 		return 0;
-//	print("PWRB %V\n", dot);
+//	jehanne_print("PWRB %V\n", dot);
 	if(evalini(dot) == -1){
-		print("PWRB evalini fails\n");
+		jehanne_print("PWRB evalini fails\n");
 		return 0;
 	}
 	return 1;
@@ -1187,7 +1187,7 @@ cfgsleep(void)
 	/* look for the proper ones */
 	for(i = 0; i < 6; i++){
 		t = acpicfg.sval[i];
-		snprint(buf, sizeof buf, "\\_S%d_", i);
+		jehanne_snprint(buf, sizeof buf, "\\_S%d_", i);
 		v = amlval(amlwalk(amlroot, buf));
 		if(v != nil && amltag(v) == 'p' && amllen(v) == 4){
 			t[0] = amlint(v[0]);
@@ -1202,14 +1202,14 @@ acpiinit(int maxmach)
 	int i;
 	Parsedat dat;
 
-	print("acpiinit\n");
-	fmtinstall('G', Gfmt);
+	jehanne_print("acpiinit\n");
+	jehanne_fmtinstall('G', Gfmt);
 	maptables();
 	amlinit();
 	loadtbls("DSDT", 0);
 	loadtbls("SSDT", 1);
 
-	memset(&dat, 0, sizeof dat);
+	jehanne_memset(&dat, 0, sizeof dat);
 	dat.maxmach = maxmach;
 	parsetables(&dat);
 	if(fadt.smicmd != 0)
@@ -1224,10 +1224,10 @@ acpiinit(int maxmach)
 	addarchfile("acpifadt", 0444, readfadt, nil);		/* hack */
 	addarchfile("acpitbls", 0444, readtbls, nil);
 	if(1||DBGFLG){
-		print("acpi load: ");
+		jehanne_print("acpi load: ");
 		for(i = 0; i < ntblmap; i++)
-			print("%.4s ", (char*)tblmap[i]->sig);
-		print("\n");
+			jehanne_print("%.4s ", (char*)tblmap[i]->sig);
+		jehanne_print("\n");
 	}
 	lapicdump();
 	iordtdump();

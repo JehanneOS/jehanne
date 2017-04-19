@@ -11,14 +11,14 @@
 #include <libc.h>
 
 Rune*
-runestrdup(const Rune *s)
+jehanne_runestrdup(const Rune *s)
 {  
 	Rune *ns;
 
-	ns = malloc(sizeof(Rune)*(runestrlen(s) + 1));
+	ns = jehanne_malloc(sizeof(Rune)*(jehanne_runestrlen(s) + 1));
 	if(ns == 0)
 		return 0;
-	setmalloctag(ns, getcallerpc());
+	jehanne_setmalloctag(ns, jehanne_getcallerpc());
 
-	return runestrcpy(ns, s);
+	return jehanne_runestrcpy(ns, s);
 }

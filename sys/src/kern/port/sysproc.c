@@ -101,13 +101,13 @@ sysrfork(uint32_t flag)
 
 	p->trace = up->trace;
 	p->scallnr = up->scallnr;
-	memmove(p->arg, up->arg, sizeof(up->arg));
+	jehanne_memmove(p->arg, up->arg, sizeof(up->arg));
 	p->nerrlab = 0;
 	p->slash = up->slash;
 	p->dot = up->dot;
 	incref(&p->dot->r);
 
-	memmove(p->note, up->note, sizeof(p->note));
+	jehanne_memmove(p->note, up->note, sizeof(p->note));
 	p->privatemem = up->privatemem;
 	p->nnote = up->nnote;
 	p->notified = 0;
@@ -127,11 +127,11 @@ sysrfork(uint32_t flag)
 			}
 			--i;
 		}
-		memset(p->seg, 0, NSEG*sizeof(ProcSegment*));
+		jehanne_memset(p->seg, 0, NSEG*sizeof(ProcSegment*));
 		runlock(&up->seglock);
 		nexterror();
 	}
-	memmove(p->seg, up->seg, NSEG*sizeof(ProcSegment*));
+	jehanne_memmove(p->seg, up->seg, NSEG*sizeof(ProcSegment*));
 	if(flag & RFMEM){
 		for(i = 0; i < NSEG; i++){
 			s = p->seg[i];
@@ -218,7 +218,7 @@ sysrfork(uint32_t flag)
 		p->noteid = up->noteid;
 
 	pid = p->pid;
-	memset(p->time, 0, sizeof(p->time));
+	jehanne_memset(p->time, 0, sizeof(p->time));
 	p->time[TReal] = sys->ticks;
 
 	kstrdup(&p->text, up->text);
@@ -237,7 +237,7 @@ sysrfork(uint32_t flag)
 	if(wm)
 		procwired(p, wm->machno);
 	if(p->trace && (pt = proctrace) != nil){
-		strncpy((char*)&ptarg, p->text, sizeof ptarg);
+		jehanne_strncpy((char*)&ptarg, p->text, sizeof ptarg);
 		pt(p, SName, 0, ptarg);
 	}
 	ready(p);
@@ -272,7 +272,7 @@ sysexec(char* p, char **argv)
 	file = validnamedup(p, 1);
 	MLG("file %d", file);
 	if(waserror()){
-		free(file);
+		jehanne_free(file);
 		nexterror();
 	}
 	chan = namec(file, Aopen, OEXEC, 0);
@@ -280,7 +280,7 @@ sysexec(char* p, char **argv)
 		if(chan)
 			cclose(chan);
 		if(elem != nil)
-			free(elem);
+			jehanne_free(elem);
 		nexterror();
 	}
 	kstrdup(&elem, up->genbuf);
@@ -298,11 +298,11 @@ sysexec(char* p, char **argv)
 	argc = 0;
 	progargc = 0;
 	if(line[0] == '#' && line[1] == '!'){
-		p = memchr(line, '\n', MIN(sizeof line, hdrsz));
+		p = jehanne_memchr(line, '\n', MIN(sizeof line, hdrsz));
 		if(p == nil)
 			error(Ebadexec);
 		*p = '\0';
-		argc = tokenize(line+2, progarg, nelem(progarg));
+		argc = jehanne_tokenize(line+2, progarg, nelem(progarg));
 		if(argc == 0)
 			error(Ebadexec);
 
@@ -331,7 +331,7 @@ sysexec(char* p, char **argv)
 	 */
 	nldseg = elf64ldseg(chan, &entry, &ldseg, cputype, PGSZ);
 	if(nldseg != 2){
-//		print("exec: elf64ldseg returned %d segs!\n", nldseg);
+//		jehanne_print("exec: elf64ldseg returned %d segs!\n", nldseg);
 		error(Ebadexec);
 	}
 
@@ -363,7 +363,7 @@ sysexec(char* p, char **argv)
 
 	/* 	start with arguments found from a #! header. */
 	for(i = 0; i < argc; i++)
-		argsize += strlen(progarg[i]) + 1 + sizeof(char*);
+		argsize += jehanne_strlen(progarg[i]) + 1 + sizeof(char*);
 
 	/* 	then size strings pointed to by the syscall argument
 	 * 	argv verifing that both argv and the strings it
@@ -385,7 +385,7 @@ sysexec(char* p, char **argv)
 		if(argc > 0 && i == 0)
 			continue;
 		argsize += n + sizeof(char*);
-//print("argv[%d] = %s, argsize %d, n %d\n", argc, a, argsize, n);
+//jehanne_print("argv[%d] = %s, argsize %d, n %d\n", argc, a, argsize, n);
 		argc++;
 	}
 	if(argc < 1)
@@ -412,7 +412,7 @@ sysexec(char* p, char **argv)
 			error(Enovmem);
 	}
 
-//print("argsize %d, first stack page %d\n", argsize, stack);
+//jehanne_print("argsize %d, first stack page %d\n", argsize, stack);
 
 	/* Step 2: Copy arguments into pages in descending order */
 
@@ -444,17 +444,17 @@ sysexec(char* p, char **argv)
 	 * 	from a #! header.
 	 */
 	for(i = 0; i < progargc; i++){
-		n = strlen(progarg[i])+1;
+		n = jehanne_strlen(progarg[i])+1;
 CopyProgArgument:
 		if(sbottom <= stack-n){
 			a = pmem+((stack-n)&(PGSZ-1));
-			memmove(a, progarg[i], n);
+			jehanne_memmove(a, progarg[i], n);
 			stack -= n;
 		} else {
 			/* the current argument cross multiple pages */
 			if(stack&(PGSZ-1)){
 				/* fill the rest of the current page */
-				memmove(pmem, progarg[i]+n-1-(stack&(PGSZ-1)), (stack&(PGSZ-1))-1);
+				jehanne_memmove(pmem, progarg[i]+n-1-(stack&(PGSZ-1)), (stack&(PGSZ-1))-1);
 				*(pmem+(stack&(PGSZ-1))-1) = 0;
 				n -= (stack&(PGSZ-1));
 				stack -= (stack&(PGSZ-1));
@@ -468,7 +468,7 @@ CopyProgArgument:
 				pmem = page_kmap(page);
 				if(n > PGSZ){
 					/* fill one full page */
-					memmove(pmem, progarg[i]+n-PGSZ, PGSZ);
+					jehanne_memmove(pmem, progarg[i]+n-PGSZ, PGSZ);
 					n -= PGSZ;
 					stack -= PGSZ;
 				}
@@ -491,18 +491,18 @@ CopyProgArgument:
 	 */
 	for(; i < argc; i++){
 		j = i - progargc;
-		n = strlen(argv[j])+1;
+		n = jehanne_strlen(argv[j])+1;
 
 CopyExecArgument:
 		if(sbottom <= stack-n){
 			a = pmem+((stack-n)&(PGSZ-1));
-			memmove(a, argv[j], n);
+			jehanne_memmove(a, argv[j], n);
 			stack -= n;
 		} else {
 			/* the current argument cross multiple pages */
 			if(stack&(PGSZ-1)){
 				/* fill the rest of the current page */
-				memmove(pmem, argv[j]+n-1-(stack&(PGSZ-1)), (stack&(PGSZ-1))-1);
+				jehanne_memmove(pmem, argv[j]+n-1-(stack&(PGSZ-1)), (stack&(PGSZ-1))-1);
 				*(pmem+(stack&(PGSZ-1))-1) = 0;
 				n -= (stack&(PGSZ-1));
 				stack -= (stack&(PGSZ-1));
@@ -516,7 +516,7 @@ CopyExecArgument:
 				pmem = page_kmap(page);
 				if(n > PGSZ){
 					/* fill one full page */
-					memmove(pmem, argv[j]+n-PGSZ, PGSZ);
+					jehanne_memmove(pmem, argv[j]+n-PGSZ, PGSZ);
 					n -= PGSZ;
 					stack -= PGSZ;
 				}
@@ -574,7 +574,7 @@ CopyExecArgument:
 		tmp))
 		error(Enovmem);
 
-	free(ldseg);	/* free elf segments */
+	jehanne_free(ldseg);	/* free elf segments */
 
 	/*
 	 * Close on exec
@@ -604,7 +604,7 @@ CopyExecArgument:
 	}
 
 	if(up->trace && (pt = proctrace) != nil){
-		strncpy((char*)&ptarg, elem, sizeof ptarg);
+		jehanne_strncpy((char*)&ptarg, elem, sizeof ptarg);
 		pt(up, SName, 0, ptarg);
 	}
 
@@ -624,11 +624,11 @@ CopyExecArgument:
 	poperror();	/* img */
 	image_release(img);
 
-	free(up->text);
+	jehanne_free(up->text);
 	up->text = elem;
 	elem = nil;
 	if(up->setargs)	/* setargs == 0 => args in stack from sysexec */
-		free(up->args);
+		jehanne_free(up->args);
 	up->args = argvcopy;
 	up->nargs = argc;
 	up->setargs = 0;
@@ -656,7 +656,7 @@ CopyExecArgument:
 	poperror();				/* chan, elem */
 	cclose(chan);
 	poperror();		/* file */
-	free(file);
+	jehanne_free(file);
 
 	qlock(&up->debug);
 	up->nnote = 0;
@@ -701,7 +701,7 @@ sys_exits(char *status)
 		else{
 			status = validaddr(status, 1, 0);
 			if(vmemchr(status, 0, ERRMAX) == 0){
-				memmove(buf, status, ERRMAX);
+				jehanne_memmove(buf, status, ERRMAX);
 				buf[ERRMAX-1] = 0;
 				status = buf;
 			}
@@ -730,7 +730,7 @@ sysawait(char *p, int n)
 	if(pid < 0)
 		return -1;
 
-	i = snprint(p, n, "%d %lud %lud %lud %q",
+	i = jehanne_snprint(p, n, "%d %lud %lud %lud %q",
 		w.pid,
 		w.time[TUser], w.time[TSys], w.time[TReal],
 		w.msg);
@@ -739,7 +739,7 @@ sysawait(char *p, int n)
 }
 
 void
-werrstr(char *fmt, ...)
+jehanne_werrstr(char *fmt, ...)
 {
 	va_list va;
 
@@ -747,7 +747,7 @@ werrstr(char *fmt, ...)
 		return;
 
 	va_start(va, fmt);
-	vseprint(up->syserrstr, up->syserrstr+ERRMAX, fmt, va);
+	jehanne_vseprint(up->syserrstr, up->syserrstr+ERRMAX, fmt, va);
 	va_end(va);
 }
 
@@ -761,13 +761,13 @@ generrstr(char *buf, int n)
 	p = validaddr(buf, n, 1);
 	if(n > sizeof tmp)
 		n = sizeof tmp;
-	memmove(tmp, p, n);
+	jehanne_memmove(tmp, p, n);
 
 	/* make sure it's NUL-terminated */
 	tmp[n-1] = '\0';
-	memmove(p, up->syserrstr, n);
+	jehanne_memmove(p, up->syserrstr, n);
 	p[n-1] = '\0';
-	memmove(up->syserrstr, tmp, n);
+	jehanne_memmove(up->syserrstr, tmp, n);
 }
 
 int
@@ -950,7 +950,7 @@ rendezvousDone:
 static void
 semqueue(ProcSegment* s, int* addr, Sema* p)
 {
-	memset(p, 0, sizeof *p);
+	jehanne_memset(p, 0, sizeof *p);
 	p->addr = addr;
 
 	lock(&s->sema.rend.l);	/* uses s->sema.Rendez.Lock, but no one else is */

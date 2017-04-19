@@ -672,7 +672,7 @@ i82563ifstat(Ether *edev, void *a, long n, usize offset)
 
 	ctlr = edev->ctlr;
 	qlock(&ctlr->slock);
-	p = s = malloc(READSTR);
+	p = s = jehanne_malloc(READSTR);
 	e = p + READSTR;
 
 	for(i = 0; i < Nstatistics; i++){
@@ -693,7 +693,7 @@ i82563ifstat(Ether *edev, void *a, long n, usize offset)
 				continue;
 			ctlr->statistics[i] = tuvl;
 			ctlr->statistics[i+1] = tuvl >> 32;
-			p = seprint(p, e, "%s: %llud %llud\n", stat, tuvl, ruvl);
+			p = jehanne_seprint(p, e, "%s: %llud %llud\n", stat, tuvl, ruvl);
 			i++;
 			break;
 
@@ -701,35 +701,35 @@ i82563ifstat(Ether *edev, void *a, long n, usize offset)
 			ctlr->statistics[i] += r;
 			if(ctlr->statistics[i] == 0)
 				continue;
-			p = seprint(p, e, "%s: %ud %ud\n", stat,
+			p = jehanne_seprint(p, e, "%s: %ud %ud\n", stat,
 				ctlr->statistics[i], r);
 			break;
 		}
 	}
 
-	p = seprint(p, e, "lintr: %ud %ud\n", ctlr->lintr, ctlr->lsleep);
-	p = seprint(p, e, "rintr: %ud %ud\n", ctlr->rintr, ctlr->rsleep);
-	p = seprint(p, e, "tintr: %ud %ud\n", ctlr->tintr, ctlr->txdw);
-	p = seprint(p, e, "ixcs: %ud %ud %ud\n", ctlr->ixsm, ctlr->ipcs, ctlr->tcpcs);
-	p = seprint(p, e, "rdtr: %ud\n", ctlr->rdtr);
-	p = seprint(p, e, "radv: %ud\n", ctlr->radv);
-	p = seprint(p, e, "ctrl: %.8ux\n", csr32r(ctlr, Ctrl));
-	p = seprint(p, e, "ctrlext: %.8ux\n", csr32r(ctlr, Ctrlext));
-	p = seprint(p, e, "status: %.8ux\n", csr32r(ctlr, Status));
-	p = seprint(p, e, "txcw: %.8ux\n", csr32r(ctlr, Txcw));
-	p = seprint(p, e, "txdctl: %.8ux\n", csr32r(ctlr, Txdctl));
-	p = seprint(p, e, "pba: %.8ux\n", ctlr->pba);
+	p = jehanne_seprint(p, e, "lintr: %ud %ud\n", ctlr->lintr, ctlr->lsleep);
+	p = jehanne_seprint(p, e, "rintr: %ud %ud\n", ctlr->rintr, ctlr->rsleep);
+	p = jehanne_seprint(p, e, "tintr: %ud %ud\n", ctlr->tintr, ctlr->txdw);
+	p = jehanne_seprint(p, e, "ixcs: %ud %ud %ud\n", ctlr->ixsm, ctlr->ipcs, ctlr->tcpcs);
+	p = jehanne_seprint(p, e, "rdtr: %ud\n", ctlr->rdtr);
+	p = jehanne_seprint(p, e, "radv: %ud\n", ctlr->radv);
+	p = jehanne_seprint(p, e, "ctrl: %.8ux\n", csr32r(ctlr, Ctrl));
+	p = jehanne_seprint(p, e, "ctrlext: %.8ux\n", csr32r(ctlr, Ctrlext));
+	p = jehanne_seprint(p, e, "status: %.8ux\n", csr32r(ctlr, Status));
+	p = jehanne_seprint(p, e, "txcw: %.8ux\n", csr32r(ctlr, Txcw));
+	p = jehanne_seprint(p, e, "txdctl: %.8ux\n", csr32r(ctlr, Txdctl));
+	p = jehanne_seprint(p, e, "pba: %.8ux\n", ctlr->pba);
 
 	b = rbtab + ctlr->pool;
-	p = seprint(p, e, "pool: fast %ud slow %ud nstarve %ud nwakey %ud starve %ud\n",
+	p = jehanne_seprint(p, e, "pool: fast %ud slow %ud nstarve %ud nwakey %ud starve %ud\n",
 		b->nfast, b->nslow, b->nstarve, b->nwakey, b->starve);
-	p = seprint(p, e, "speeds: 10:%ud 100:%ud 1000:%ud ?:%ud\n",
+	p = jehanne_seprint(p, e, "speeds: 10:%ud 100:%ud 1000:%ud ?:%ud\n",
 		ctlr->speeds[0], ctlr->speeds[1], ctlr->speeds[2], ctlr->speeds[3]);
-	p = seprint(p, e, "type: %s\n", cname(ctlr));
+	p = jehanne_seprint(p, e, "type: %s\n", cname(ctlr));
 
 	USED(p);
 	n = readstr(offset, a, n, s);
-	free(s);
+	jehanne_free(s);
 	qunlock(&ctlr->slock);
 
 	return n;
@@ -930,7 +930,7 @@ newpool(void)
 	if(seq == nelem(freetab))
 		return -1;
 	if(freetab[seq] == nil){
-		print("82563: bad freetab\n");
+		jehanne_print("82563: bad freetab\n");
 		return -1;
 	}
 	return seq++;
@@ -969,7 +969,7 @@ i82563txinit(Ctlr *ctlr)
 			ctlr->tb[i] = nil;
 			freeb(b);
 		}
-		memset(&ctlr->tdba[i], 0, sizeof(Td));
+		jehanne_memset(&ctlr->tdba[i], 0, sizeof(Td));
 	}
 	csr32w(ctlr, Tidv, 128);
 	csr32w(ctlr, Tadv, 64);
@@ -1075,7 +1075,7 @@ i82563replenish(Ctlr *ctlr, int maysleep)
 		if(bp == nil){
 			if(rdt - ctlr->rdh >= 16)
 				break;
-			print("%s: pool %d: no rx buffers\n", cname(ctlr), ctlr->pool);
+			jehanne_print("%s: pool %d: no rx buffers\n", cname(ctlr), ctlr->pool);
 			if(maysleep == 0)
 				return -1;
 			ilock(p);
@@ -1296,7 +1296,7 @@ phyread0(Ctlr *c, int phyno, int reg)
 		microdelay(1);
 	}
 	if((phy & (MDIe|MDIready)) != MDIready){
-		print("%s: phy %d wedged %.8ux\n", cttab[c->type].name, phyno, phy);
+		jehanne_print("%s: phy %d wedged %.8ux\n", cttab[c->type].name, phyno, phy);
 		return ~0;
 	}
 	return phy & 0xffff;
@@ -1306,7 +1306,7 @@ static uint32_t
 phyread(Ctlr *c, uint32_t phyno, uint32_t reg)
 {
 	if(setpage(c, phyno, reg>>8, reg & 0xff) == ~0){
-		print("%s: phyread: bad phy page %d\n", cname(c), reg>>8);
+		jehanne_print("%s: phyread: bad phy page %d\n", cname(c), reg>>8);
 		return ~0;
 	}
 	return phyread0(c, phyno, reg & 0xff);
@@ -1345,7 +1345,7 @@ phyerrata(Ether *e, Ctlr *c, uint32_t phyno)
 		if(c->phyerrata == 0){
 			c->phyerrata++;
 			phywrite(c, phyno, Phyprst, Prst);	/* try a port reset */
-			print("ether%d: %s: phy port reset\n", e->ctlrno, cname(c));
+			jehanne_print("ether%d: %s: phy port reset\n", e->ctlrno, cname(c));
 		}
 	else
 		c->phyerrata = 0;
@@ -1519,7 +1519,7 @@ i82563attach(Ether *edev)
 
 	ctlr->nrd = Nrd;
 	ctlr->ntd = Ntd;
-	ctlr->alloc = malloc(ctlr->nrd*sizeof(Rd)+ctlr->ntd*sizeof(Td) + 255);
+	ctlr->alloc = jehanne_malloc(ctlr->nrd*sizeof(Rd)+ctlr->ntd*sizeof(Td) + 255);
 	if(ctlr->alloc == nil){
 		qunlock(&ctlr->alock);
 		error(Enomem);
@@ -1527,19 +1527,19 @@ i82563attach(Ether *edev)
 	ctlr->rdba = (Rd*)ROUNDUP((uintptr_t)ctlr->alloc, 256);
 	ctlr->tdba = (Td*)(ctlr->rdba + ctlr->nrd);
 
-	ctlr->rb = malloc(ctlr->nrd * sizeof(Block*));
-	ctlr->tb = malloc(ctlr->ntd * sizeof(Block*));
+	ctlr->rb = jehanne_malloc(ctlr->nrd * sizeof(Block*));
+	ctlr->tb = jehanne_malloc(ctlr->ntd * sizeof(Block*));
 
 	if(waserror()){
 		while(bp = i82563rballoc(rbtab + ctlr->pool)){
 			bp->free = nil;
 			freeb(bp);
 		}
-		free(ctlr->tb);
+		jehanne_free(ctlr->tb);
 		ctlr->tb = nil;
-		free(ctlr->rb);
+		jehanne_free(ctlr->rb);
 		ctlr->rb = nil;
-		free(ctlr->alloc);
+		jehanne_free(ctlr->alloc);
 		ctlr->alloc = nil;
 		qunlock(&ctlr->alock);
 		nexterror();
@@ -1551,7 +1551,7 @@ i82563attach(Ether *edev)
 		freeb(bp);
 	}
 
-	snprint(name, sizeof name, "#l%dl", edev->ctlrno);
+	jehanne_snprint(name, sizeof name, "#l%dl", edev->ctlrno);
 	if(csr32r(ctlr, Status) & Tbimode)
 		kproc(name, serdeslproc, edev);		/* mac based serdes */
 	else if((csr32r(ctlr, Ctrlext) & Linkmode) == Serdes)
@@ -1561,10 +1561,10 @@ i82563attach(Ether *edev)
 	else
 		kproc(name, phylproc, edev);
 
-	snprint(name, sizeof name, "#l%dr", edev->ctlrno);
+	jehanne_snprint(name, sizeof name, "#l%dr", edev->ctlrno);
 	kproc(name, i82563rproc, edev);
 
-	snprint(name, sizeof name, "#l%dt", edev->ctlrno);
+	jehanne_snprint(name, sizeof name, "#l%dt", edev->ctlrno);
 	kproc(name, i82563tproc, edev);
 
 	qunlock(&ctlr->alock);
@@ -1784,7 +1784,7 @@ defaultea(Ctlr *ctlr, uint8_t *ra)
 	uint64_t u;
 	static uint8_t nilea[Eaddrlen];
 
-	if(memcmp(ra, nilea, Eaddrlen) != 0)
+	if(jehanne_memcmp(ra, nilea, Eaddrlen) != 0)
 		return;
 	if(cttab[ctlr->type].flag & Fflashea){
 		/* intel mb bug */
@@ -1792,7 +1792,7 @@ defaultea(Ctlr *ctlr, uint8_t *ra)
 		for(i = 0; i < Eaddrlen; i++)
 			ra[i] = u >> 8*i;
 	}
-	if(memcmp(ra, nilea, Eaddrlen) != 0)
+	if(jehanne_memcmp(ra, nilea, Eaddrlen) != 0)
 		return;
 	for(i = 0; i < Eaddrlen/2; i++){
 		ra[2*i] = ctlr->eeprom[Ea+i];
@@ -1815,7 +1815,7 @@ i82563reset(Ctlr *ctlr)
 	else
 		r = eeload(ctlr);
 	if(r != 0 && r != 0xbaba){
-		print("%s: bad eeprom checksum - %#.4ux\n",
+		jehanne_print("%s: bad eeprom checksum - %#.4ux\n",
 			cname(ctlr), r);
 		return -1;
 	}
@@ -1828,7 +1828,7 @@ i82563reset(Ctlr *ctlr)
 		csr32w(ctlr, Ral+i*8, 0);
 		csr32w(ctlr, Rah+i*8, 0);
 	}
-	memset(ctlr->mta, 0, sizeof(ctlr->mta));
+	jehanne_memset(ctlr->mta, 0, sizeof(ctlr->mta));
 	for(i = 0; i < 128; i++)
 		csr32w(ctlr, Mta + i*4, 0);
 	csr32w(ctlr, Fcal, 0x00C28001);
@@ -1871,21 +1871,21 @@ i82563ctl(Ether *edev, void *buf, long n)
 
 	cb = parsecmd(buf, n);
 	if(waserror()){
-		free(cb);
+		jehanne_free(cb);
 		nexterror();
 	}
 
 	ct = lookupcmd(cb, i82563ctlmsg, nelem(i82563ctlmsg));
 	switch(ct->index){
 	case CMrdtr:
-		v = strtoul(cb->f[1], &p, 0);
+		v = jehanne_strtoul(cb->f[1], &p, 0);
 		if(*p || v > 0xffff)
 			error(Ebadarg);
 		ctlr->rdtr = v;
 		csr32w(ctlr, Rdtr, v);
 		break;
 	case CMradv:
-		v = strtoul(cb->f[1], &p, 0);
+		v = jehanne_strtoul(cb->f[1], &p, 0);
 		if(*p || v > 0xffff)
 			error(Ebadarg);
 		ctlr->radv = v;
@@ -1898,7 +1898,7 @@ i82563ctl(Ether *edev, void *buf, long n)
 		csr32w(ctlr, Ctrl, csr32r(ctlr, Ctrl) | Lrst | Phyrst);
 		break;
 	}
-	free(cb);
+	jehanne_free(cb);
 	poperror();
 
 	return n;
@@ -2024,7 +2024,7 @@ i82563pci(void)
 		hbafixup(p);
 		if((type = didtype(p->did)) == -1)
 			continue;
-		c = malloc(sizeof *c);
+		c = jehanne_malloc(sizeof *c);
 		c->type = type;
 		c->pcidev = p;
 		c->rbsz = cttab[type].mtu;
@@ -2040,13 +2040,13 @@ setup(Ctlr *ctlr)
 	Pcidev *p;
 
 	if((ctlr->pool = newpool()) == -1){
-		print("%s: no pool\n", cname(ctlr));
+		jehanne_print("%s: no pool\n", cname(ctlr));
 		return -1;
 	}
 	p = ctlr->pcidev;
 	ctlr->nic = vmap(ctlr->port, p->mem[0].size);
 	if(ctlr->nic == nil){
-		print("%s: can't map %#P\n", cname(ctlr), ctlr->port);
+		jehanne_print("%s: can't map %#P\n", cname(ctlr), ctlr->port);
 		return -1;
 	}
 	if(i82563reset(ctlr)){
@@ -2081,7 +2081,7 @@ pnp(Ether *edev, int type)
 			continue;
 		if(ethercfgmatch(edev, ctlr->pcidev, ctlr->port) == 0){
 			ctlr->active = 1;
-			memmove(ctlr->ra, edev->ea, Eaddrlen);
+			jehanne_memmove(ctlr->ra, edev->ea, Eaddrlen);
 			if(setup(ctlr) == 0)
 				break;
 		}
@@ -2093,7 +2093,7 @@ pnp(Ether *edev, int type)
 	edev->tbdf = ctlr->pcidev->tbdf;
 	edev->netif.mbps = 1000;
 	edev->maxmtu = ctlr->rbsz;
-	memmove(edev->ea, ctlr->ra, Eaddrlen);
+	jehanne_memmove(edev->ea, ctlr->ra, Eaddrlen);
 
 	/*
 	 * Linkage to the generic ethernet driver.

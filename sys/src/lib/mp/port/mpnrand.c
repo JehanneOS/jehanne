@@ -17,7 +17,7 @@ mpnrand(mpint *n, void (*gen)(uint8_t*, int), mpint *b)
 
 	if(b == nil){
 		b = mpnew(bits);
-		setmalloctag(b, getcallerpc());
+		jehanne_setmalloctag(b, jehanne_getcallerpc());
 	}
 
 	/* m = m - (m % n) */

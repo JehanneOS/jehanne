@@ -1,5 +1,5 @@
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 #include <ip.h>
 #include <ctype.h>
 #include "dns.h"
@@ -193,19 +193,19 @@ dnlookup(char *name, int class, int enter)
 	DN *dp;
 
 	l = &ht[dnhash(name)];
-	lock(&dnlock);
+	jehanne_lock(&dnlock);
 	for(dp = *l; dp; dp = dp->next) {
 		assert(dp->magic == DNmagic);
 		if(dp->class == class && cistrcmp(dp->name, name) == 0){
 			dp->referenced = now;
-			unlock(&dnlock);
+			jehanne_unlock(&dnlock);
 			return dp;
 		}
 		l = &dp->next;
 	}
 
 	if(!enter){
-		unlock(&dnlock);
+		jehanne_unlock(&dnlock);
 		return 0;
 	}
 	dnvars.names++;
@@ -218,7 +218,7 @@ dnlookup(char *name, int class, int enter)
 	/* add new DN to tail of the hash list.  *l points to last next ptr. */
 	dp->next = nil;
 	*l = dp;
-	unlock(&dnlock);
+	jehanne_unlock(&dnlock);
 
 	return dp;
 }
@@ -285,9 +285,9 @@ dnstats(char *file)
 	fprint(fd, "# negative answers cached\t%lud\n", stats.negcached);
 	qunlock(&stats);
 
-	lock(&dnlock);
+	jehanne_lock(&dnlock);
 	fprint(fd, "\n# domain names %lud target %lud\n", dnvars.names, target);
-	unlock(&dnlock);
+	jehanne_unlock(&dnlock);
 	close(fd);
 }
 
@@ -305,7 +305,7 @@ dndump(char *file)
 	if(fd < 0)
 		return;
 
-	lock(&dnlock);
+	jehanne_lock(&dnlock);
 	for(i = 0; i < HTLEN; i++)
 		for(dp = ht[i]; dp; dp = dp->next){
 			fprint(fd, "%s\n", dp->name);
@@ -317,7 +317,7 @@ dndump(char *file)
 					fprint(fd, "*** duplicate:\n");
 			}
 		}
-	unlock(&dnlock);
+	jehanne_unlock(&dnlock);
 	close(fd);
 }
 
@@ -331,7 +331,7 @@ dnpurge(void)
 	RR *rp, *srp;
 	int i;
 
-	lock(&dnlock);
+	jehanne_lock(&dnlock);
 
 	for(i = 0; i < HTLEN; i++)
 		for(dp = ht[i]; dp; dp = dp->next){
@@ -342,7 +342,7 @@ dnpurge(void)
 			rrfreelist(srp);
 		}
 
-	unlock(&dnlock);
+	jehanne_unlock(&dnlock);
 }
 
 /*
@@ -398,7 +398,7 @@ dnagenever(DN *dp)
 {
 	RR *rp;
 
-	lock(&dnlock);
+	jehanne_lock(&dnlock);
 
 	/* mark all referenced domain names */
 	MARK(dp);
@@ -453,7 +453,7 @@ dnagenever(DN *dp)
 		}
 	}
 
-	unlock(&dnlock);
+	jehanne_unlock(&dnlock);
 }
 
 #define REF(dp)	{ if (dp) (dp)->mark |= 1; }
@@ -488,7 +488,7 @@ dnageall(int doit)
 	else
 		nextage = now + (uint32_t)agefreq;
 
-	lock(&dnlock);
+	jehanne_lock(&dnlock);
 
 	/* time out all old entries (and set refs to 0) */
 	for(i = 0; i < HTLEN; i++)
@@ -571,7 +571,7 @@ dnageall(int doit)
 		}
 	}
 
-	unlock(&dnlock);
+	jehanne_unlock(&dnlock);
 }
 
 /*
@@ -584,7 +584,7 @@ dnagedb(void)
 	int i;
 	RR *rp;
 
-	lock(&dnlock);
+	jehanne_lock(&dnlock);
 
 	/* time out all database entries */
 	for(i = 0; i < HTLEN; i++)
@@ -595,7 +595,7 @@ dnagedb(void)
 					rp->expire = 0;
 		}
 
-	unlock(&dnlock);
+	jehanne_unlock(&dnlock);
 }
 
 /*
@@ -611,7 +611,7 @@ dnauthdb(void)
 	DN *dp;
 	RR *rp, **l;
 
-	lock(&dnlock);
+	jehanne_lock(&dnlock);
 
 	/* time out all database entries */
 	for(i = 0; i < HTLEN; i++)
@@ -635,7 +635,7 @@ dnauthdb(void)
 			}
 		}
 
-	unlock(&dnlock);
+	jehanne_unlock(&dnlock);
 }
 
 /*
@@ -650,22 +650,22 @@ getactivity(Request *req, int recursive)
 	if(traceactivity)
 		dnslog("get: %d active by pid %d from %p",
 			dnvars.active, getpid(), getcallerpc());
-	lock(&dnvars);
+	jehanne_lock(&dnvars);
 	/*
 	 * can't block here if we're already holding one
 	 * of the dnvars.active (recursive).  will deadlock.
 	 */
 	while(!recursive && dnvars.mutex){
-		unlock(&dnvars);
+		jehanne_unlock(&dnvars);
 		sleep(100);			/* tune; was 200 */
-		lock(&dnvars);
+		jehanne_lock(&dnvars);
 	}
 	rv = ++dnvars.active;
 	now = time(nil);
 	nowns = nsec();
 	req->id = ++dnvars.id;
 	req->aux = nil;
-	unlock(&dnvars);
+	jehanne_unlock(&dnvars);
 
 	return rv;
 }
@@ -675,7 +675,7 @@ putactivity(int recursive)
 	if(traceactivity)
 		dnslog("put: %d active by pid %d",
 			dnvars.active, getpid());
-	lock(&dnvars);
+	jehanne_lock(&dnvars);
 	dnvars.active--;
 	assert(dnvars.active >= 0); /* "dnvars.active %d", dnvars.active */
 
@@ -686,18 +686,18 @@ putactivity(int recursive)
 	 */
 	if (recursive || dnvars.mutex ||
 	    (needrefresh == 0 && dnvars.active > 0)){
-		unlock(&dnvars);
+		jehanne_unlock(&dnvars);
 		return;
 	}
 
 	/* wait till we're alone */
 	dnvars.mutex = 1;
 	while(dnvars.active > 0){
-		unlock(&dnvars);
+		jehanne_unlock(&dnvars);
 		sleep(100);		/* tune; was 100 */
-		lock(&dnvars);
+		jehanne_lock(&dnvars);
 	}
-	unlock(&dnvars);
+	jehanne_unlock(&dnvars);
 
 	db2cache(needrefresh);
 
@@ -838,7 +838,7 @@ rrattach(RR *rp, int auth)
 	RR *next;
 	DN *dp;
 
-	lock(&dnlock);
+	jehanne_lock(&dnlock);
 	for(; rp; rp = next){
 		next = rp->next;
 		rp->next = nil;
@@ -849,7 +849,7 @@ rrattach(RR *rp, int auth)
 		else
 			rrattach1(rp, auth);
 	}
-	unlock(&dnlock);
+	jehanne_unlock(&dnlock);
 }
 
 RR**
@@ -958,7 +958,7 @@ rrlookup(DN *dp, int type, int flag)
 
 	first = nil;
 	last = &first;
-	lock(&dnlock);
+	jehanne_lock(&dnlock);
 
 	/* try for an authoritative db entry */
 	for(rp = dp->rr; rp; rp = rp->next){
@@ -1016,7 +1016,7 @@ rrlookup(DN *dp, int type, int flag)
 		}
 
 out:
-	unlock(&dnlock);
+	jehanne_unlock(&dnlock);
 	unique(first);
 	return first;
 }

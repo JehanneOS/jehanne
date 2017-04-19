@@ -1,5 +1,5 @@
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 
 int32_t nprocs = 32;
 int32_t nloops = 10000;

@@ -57,12 +57,12 @@ yrsize(int y)
  * and convert to our timezone.
  */
 int32_t
-tm2sec(Tm *tm)
+jehanne_tm2sec(Tm *tm)
 {
 	int32_t secs;
 	int i, yday, year, *d2m;
 
-	if(strcmp(tm->zone, "GMT") != 0 && timezone.stname[0] == 0)
+	if(jehanne_strcmp(tm->zone, "GMT") != 0 && timezone.stname[0] == 0)
 		readtimezone();
 	secs = 0;
 
@@ -100,9 +100,9 @@ tm2sec(Tm *tm)
 	 * Only handles zones mentioned in /env/timezone,
 	 * but things get too ambiguous otherwise.
 	 */
-	if(strcmp(tm->zone, timezone.stname) == 0)
+	if(jehanne_strcmp(tm->zone, timezone.stname) == 0)
 		secs -= timezone.stdiff;
-	else if(strcmp(tm->zone, timezone.dlname) == 0)
+	else if(jehanne_strcmp(tm->zone, timezone.dlname) == 0)
 		secs -= timezone.dldiff;
 	if(secs < 0)
 		secs = 0;
@@ -116,7 +116,7 @@ readtimezone(void)
 	char buf[TZSIZE*11+30], *p;
 	int i;
 
-	memset(buf, 0, sizeof(buf));
+	jehanne_memset(buf, 0, sizeof(buf));
 	i = open("/env/timezone", OREAD);
 	if(i < 0)
 		goto error;
@@ -143,7 +143,7 @@ readtimezone(void)
 
 error:
 	timezone.stdiff = 0;
-	strcpy(timezone.stname, "GMT");
+	jehanne_strcpy(timezone.stname, "GMT");
 	timezone.dlpairs[0] = 0;
 }
 

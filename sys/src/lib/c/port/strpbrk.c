@@ -12,12 +12,12 @@
 #define	N	256
 
 char*
-strpbrk(const char *cs, const char *cb)
+jehanne_strpbrk(const char *cs, const char *cb)
 {
 	char map[N];
 	uint8_t *s=(uint8_t*)cs, *b=(uint8_t*)cb;
 
-	memset(map, 0, N);
+	jehanne_memset(map, 0, N);
 	for(;;) {
 		map[*b] = 1;
 		if(*b++ == 0)

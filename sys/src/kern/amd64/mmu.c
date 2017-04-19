@@ -7,7 +7,7 @@
 #include "amd64.h"
 
 //#undef DBG
-//#define DBG(...)	print(__VA_ARGS__)
+//#define DBG(...)	jehanne_print(__VA_ARGS__)
 
 #define PDMAP		(0xffffffffff800000ull)
 #define PDPX(v)		PTLX((v), 2)
@@ -44,7 +44,7 @@ void
 mmuflushtlb(uint64_t _1)
 {
 	if(m->pml4->ptoff){
-		memset(m->pml4->pte, 0, m->pml4->ptoff*sizeof(PTE));
+		jehanne_memset(m->pml4->pte, 0, m->pml4->ptoff*sizeof(PTE));
 		m->pml4->ptoff = 0;
 	}
 	cr3put(m->pml4->pa);
@@ -74,7 +74,7 @@ mmuptpfree(Proc* proc, int clear)
 			continue;
 		for(; (page = *last) != nil; last = &page->next){
 			if(l <= 2 && clear)
-				memset(page->pte, 0, PTSZ);
+				jehanne_memset(page->pte, 0, PTSZ);
 			pte = page->parent->pte;
 			pte[page->ptoff] = 0;
 			proc->nptpbusy--;
@@ -106,7 +106,7 @@ mmuptpalloc(void)
 	}
 	if(page != nil){
 		page->next = nil;
-memset(page->pte, 0, PTSZ);
+		jehanne_memset(page->pte, 0, PTSZ);
 		return page;
 	}
 	pa = physalloc(PTSZ);
@@ -115,7 +115,7 @@ memset(page->pte, 0, PTSZ);
 		panic("mmuptpalloc");
 	}
 	DBG("ptp %#P\n", pa);
-	page = mallocz(sizeof(*page), 0);
+	page = jehanne_mallocz(sizeof(*page), 0);
 	if(page == nil)
 		panic("mmuptpalloc 2");
 	page->pte = KADDR(pa);
@@ -123,7 +123,7 @@ memset(page->pte, 0, PTSZ);
 	page->next = nil;
 	page->parent = nil;
 	page->ptoff = 0;
-	memset(page->pte, 0, PTSZ);
+	jehanne_memset(page->pte, 0, PTSZ);
 	return page;
 }
 
@@ -139,7 +139,7 @@ mmuswitch(Proc* proc)
 	}
 
 	if(m->pml4->ptoff){
-		memset(m->pml4->pte, 0, m->pml4->ptoff*sizeof(PTE));
+		jehanne_memset(m->pml4->pte, 0, m->pml4->ptoff*sizeof(PTE));
 		m->pml4->ptoff = 0;
 	}
 
@@ -186,7 +186,7 @@ mmurelease(Proc* proc)
 	}
 
 	if(proc->nptpbusy)
-		print("%ud: ptpbusy %s %d\n", proc->pid, proc->text, proc->nptpbusy);
+		jehanne_print("%ud: ptpbusy %s %d\n", proc->pid, proc->text, proc->nptpbusy);
 	proc->nptpbusy = 0;
 
 	tssrsp0(STACKALIGN(m->stack+MACHSTKSZ));
@@ -325,8 +325,8 @@ pdmap(uintmem pa, int attr, uintptr_t va, usize size)
 				if(pdpa == 0)
 					panic("pdmap");
 				*pde = pdpa|PteRW|PteP;
-//print("*pde %#llux va %#p\n", *pde, va);
-				memset(pt, 0, PTSZ);
+//jehanne_print("*pde %#llux va %#p\n", *pde, va);
+				jehanne_memset(pt, 0, PTSZ);
 			}
 
 			pte = &pt[PTX(va)];
@@ -444,7 +444,7 @@ vmap(uintptr_t pa, usize size)
 	sz = ROUNDUP(size+o, PGSZ);
 
 	if(pa == 0){
-		print("vmap(0, %lud) pc=%#p\n", size, getcallerpc());
+		jehanne_print("vmap(0, %lud) pc=%#p\n", size, getcallerpc());
 		return nil;
 	}
 	ilock(&vmaplock);
@@ -506,11 +506,11 @@ mmuwalk(uintptr_t va, int level, PTE** ret, uint64_t (*alloc)(usize))
 			pa = alloc(PTSZ);
 			if(pa == ~(uintmem)0 || pa == 0)
 				return -1;
-if(pa & 0xfffull) print("mmuwalk pa %#llux\n", pa);
+if(pa & 0xfffull) jehanne_print("mmuwalk pa %#llux\n", pa);
 			*pte = pa|PteRW|PteP;
 			if((ptp = mmuptpget(va, l-1)) == nil)
 				panic("mmuwalk: mmuptpget(%#p, %d)", va, l-1);
-			memset(ptp, 0, PTSZ);
+			jehanne_memset(ptp, 0, PTSZ);
 		}
 		else if(*pte & PtePS)
 			break;
@@ -566,13 +566,13 @@ mmuinit(void)
 		 */
 		p = UINT2PTR(m->stack);
 		p += MACHSTKSZ;
-		memmove(p, mach0pml4.pte, PTSZ);
+		jehanne_memmove(p, mach0pml4.pte, PTSZ);
 		m->pml4 = &m->pml4kludge;
 		m->pml4->pte = (PTE*)p;
 		m->pml4->pa = PADDR(p);
 		m->pml4->ptoff = mach0pml4.ptoff;	/* # of user mappings in pml4 */
 		if(m->pml4->ptoff){
-			memset(p, 0, m->pml4->ptoff*sizeof(PTE));
+			jehanne_memset(p, 0, m->pml4->ptoff*sizeof(PTE));
 			m->pml4->ptoff = 0;
 		}
 pte = (PTE*)p;
@@ -612,7 +612,7 @@ pte[PTLX(KSEG1PML4, 3)] = m->pml4->pa|PteRW|PteP;
 	 */
 	o = sys->pmstart;
 	sz = ROUNDUP(o+128*KiB, 4*MiB) - o;	/* add extra 128k for initial pt/pd allocations */
-print("mmuinit: rmapalloc: %#P pmstart=%#llux\n", o, sys->pmstart);
+jehanne_print("mmuinit: rmapalloc: %#P pmstart=%#llux\n", o, sys->pmstart);
 	pa = rmapalloc(&rmapram, o, sz, 0);
 	if(pa != o)
 		panic("mmuinit: pa %#llux memstart %#llux\n", pa, o);
@@ -622,7 +622,7 @@ print("mmuinit: rmapalloc: %#P pmstart=%#llux\n", o, sys->pmstart);
 	sys->vmunused = sys->vmstart + ROUNDUP(o, 4*KiB);
 	sys->vmunmapped = sys->vmstart + o + sz;
 
-	print("mmuinit: vmstart %#p vmunused %#p vmunmapped %#p\n",
+	jehanne_print("mmuinit: vmstart %#p vmunused %#p vmunmapped %#p\n",
 		sys->vmstart, sys->vmunused, sys->vmunmapped);
 
 	/*
@@ -634,7 +634,7 @@ print("mmuinit: rmapalloc: %#P pmstart=%#llux\n", o, sys->pmstart);
 	 * map below.
 	 */
 	sys->pd[PDX(PDMAP)] = sys->pdp[PDPX(PDMAP)] & ~(PteD|PteA);
-	print("sys->pd %#p %#p\n", sys->pd[PDX(PDMAP)], sys->pdp[PDPX(PDMAP)]);
+	jehanne_print("sys->pd %#p %#p\n", sys->pd[PDX(PDMAP)], sys->pdp[PDPX(PDMAP)]);
 
 	assert((pdeget(PDMAP) & ~(PteD|PteA)) == (PADDR(sys->pd)|PteRW|PteP));
 
@@ -650,13 +650,13 @@ print("mmuinit: rmapalloc: %#P pmstart=%#llux\n", o, sys->pmstart);
 	cr3put(m->pml4->pa);
 
 	if((l = mmuwalk(KZERO, 3, &pte, nil)) >= 0)
-		print("l %d %#p %llux\n", l, pte, *pte);
+		jehanne_print("l %d %#p %llux\n", l, pte, *pte);
 	if((l = mmuwalk(KZERO, 2, &pte, nil)) >= 0)
-		print("l %d %#p %llux\n", l, pte, *pte);
+		jehanne_print("l %d %#p %llux\n", l, pte, *pte);
 	if((l = mmuwalk(KZERO, 1, &pte, nil)) >= 0)
-		print("l %d %#p %llux\n", l, pte, *pte);
+		jehanne_print("l %d %#p %llux\n", l, pte, *pte);
 	if((l = mmuwalk(KZERO, 0, &pte, nil)) >= 0)
-		print("l %d %#p %llux\n", l, pte, *pte);
+		jehanne_print("l %d %#p %llux\n", l, pte, *pte);
 
 	mmuphysaddr(PTR2UINT(end));
 }
@@ -669,10 +669,10 @@ mmudump(Proc *p)
 
 	for(l = 3; l >= 0; l--){
 		for(ptp = p->mmuptp[l]; ptp != nil; ptp = ptp->next){
-			print("pid %d level %d ptp %#p\n", p->pid, l, ptp);
+			jehanne_print("pid %d level %d ptp %#p\n", p->pid, l, ptp);
 			for(i = 0; i < PTSZ/sizeof(PTE); i++)
 				if(ptp->pte[i])
-					print("%.4d %#P\n", i, ptp->pte[i]);
+					jehanne_print("%.4d %#P\n", i, ptp->pte[i]);
 		}
 	}
 }
@@ -688,7 +688,7 @@ checkmmu(uintptr_t va, uintmem pa)
 
 	mpa = mmuphysaddr(va);
 	if(mpa != ~(uintmem)0 && (mpa & (PteNX-1)) != pa)
-		print("***%d %s: mmu mismatch va=%#p pa=%#P mmupa=%#P\n",
+		jehanne_print("***%d %s: mmu mismatch va=%#p pa=%#P mmupa=%#P\n",
 			up->pid, up->text, va, pa, mpa);
 }
 
@@ -698,7 +698,7 @@ tabs(int n)
 	int i;
 
 	for(i = 0; i < n; i++)
-		print("  ");
+		jehanne_print("  ");
 }
 
 void
@@ -712,12 +712,12 @@ dumpptepg(int lvl, uintmem pa)
 	for(i = 0; i < PTSZ/sizeof(PTE); i++)
 		if(pte[i] & PteP){
 			tabs(tab);
-			print("l%d %#p[%#05x]: %#llux\n", lvl, pa, i, pte[i]);
+			jehanne_print("l%d %#p[%#05x]: %#llux\n", lvl, pa, i, pte[i]);
 
 			/* skip kernel mappings */
 			if((pte[i]&PteU) == 0){
 				tabs(tab+1);
-				print("...kern...\n");
+				jehanne_print("...kern...\n");
 				continue;
 			}
 			if(lvl > 2)
@@ -731,15 +731,15 @@ dumpmmu(Proc *p)
 	int i;
 	Ptpage *pt;
 
-	print("proc %#p\n", p);
+	jehanne_print("proc %#p\n", p);
 	for(i = 3; i >= 0; i--){
-		print("mmuptp[%d]:\n", i);
+		jehanne_print("mmuptp[%d]:\n", i);
 		for(pt = p->mmuptp[i]; pt != nil; pt = pt->next)
-			print("\tpt %#p = va %#p pa %#P"
+			jehanne_print("\tpt %#p = va %#p pa %#P"
 				" ptoff %#ux next %#p parent %#p\n",
 				pt, pt->pte, pt->pa, pt->ptoff, pt->next, pt->parent);
 	}
-	print("pml4 %#P\n", m->pml4->pa);
+	jehanne_print("pml4 %#P\n", m->pml4->pa);
 	if(0)dumpptepg(4, m->pml4->pa);
 }
 
@@ -750,13 +750,13 @@ dumpmmuwalk(uintmem addr)
 	PTE *pte;
 
 	if((l = mmuwalk(addr, 3, &pte, nil)) >= 0)
-		print("cpu%d: mmu l%d pte %#p = %llux\n", m->machno, l, pte, *pte);
+		jehanne_print("cpu%d: mmu l%d pte %#p = %llux\n", m->machno, l, pte, *pte);
 	if((l = mmuwalk(addr, 2, &pte, nil)) >= 0)
-		print("cpu%d: mmu l%d pte %#p = %llux\n", m->machno, l, pte, *pte);
+		jehanne_print("cpu%d: mmu l%d pte %#p = %llux\n", m->machno, l, pte, *pte);
 	if((l = mmuwalk(addr, 1, &pte, nil)) >= 0)
-		print("cpu%d: mmu l%d pte %#p = %llux\n", m->machno, l, pte, *pte);
+		jehanne_print("cpu%d: mmu l%d pte %#p = %llux\n", m->machno, l, pte, *pte);
 	if((l = mmuwalk(addr, 0, &pte, nil)) >= 0)
-		print("cpu%d: mmu l%d pte %#p = %llux\n", m->machno, l, pte, *pte);
+		jehanne_print("cpu%d: mmu l%d pte %#p = %llux\n", m->machno, l, pte, *pte);
 }
 #ifdef DO_mmuptpcheck
 static void

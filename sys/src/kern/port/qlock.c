@@ -39,9 +39,9 @@ qlock(QLock *q)
 	void (*pt)(Proc*, int, int64_t, int64_t);
 
 	if(m->ilockdepth != 0)
-		print("qlock: %#p: ilockdepth %d", getcallerpc(), m->ilockdepth);
+		jehanne_print("qlock: %#p: ilockdepth %d", getcallerpc(), m->ilockdepth);
 	if(up != nil && up->nlocks)
-		print("qlock: %#p: nlocks %d", getcallerpc(), up->nlocks);
+		jehanne_print("qlock: %#p: nlocks %d", getcallerpc(), up->nlocks);
 
 	lock(&q->use);
 	rwstats.qlock++;
@@ -92,7 +92,7 @@ qunlock(QLock *q)
 
 	lock(&q->use);
 	if (q->locked == 0)
-		print("qunlock called with qlock not held, from %#p\n",
+		jehanne_print("qunlock called with qlock not held, from %#p\n",
 			getcallerpc());
 	p = q->head;
 	if(p){
@@ -115,9 +115,9 @@ priqlock(QLock *q)
 	void (*pt)(Proc*, int, int64_t, int64_t);
 
 	if(m->ilockdepth != 0)
-		print("priqlock: %#p: ilockdepth %d\n", getcallerpc(), m->ilockdepth);
+		jehanne_print("priqlock: %#p: ilockdepth %d\n", getcallerpc(), m->ilockdepth);
 	if(up != nil && up->nlocks)
-		print("priqlock: %#p: nlocks %d\n", getcallerpc(), up->nlocks);
+		jehanne_print("priqlock: %#p: nlocks %d\n", getcallerpc(), up->nlocks);
 
 	lock(&q->use);
 	if(!q->locked) {

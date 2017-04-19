@@ -12,16 +12,16 @@ mprand(int bits, void (*gen)(uint8_t*, int), mpint *b)
 	n = DIGITS(bits);
 	if(b == nil){
 		b = mpnew(bits);
-		setmalloctag(b, getcallerpc());
+		jehanne_setmalloctag(b, jehanne_getcallerpc());
 	}else
 		mpbits(b, bits);
 
-	p = malloc(n*Dbytes);
+	p = jehanne_malloc(n*Dbytes);
 	if(p == nil)
-		sysfatal("mprand: %r");
+		jehanne_sysfatal("mprand: %r");
 	(*gen)(p, n*Dbytes);
 	betomp(p, n*Dbytes, b);
-	free(p);
+	jehanne_free(p);
 
 	// make sure we don't give too many bits
 	m = bits%Dbits;

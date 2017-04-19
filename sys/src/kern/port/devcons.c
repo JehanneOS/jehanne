@@ -280,12 +280,12 @@ kmesgputs(char *str, int n)
 	if(nn + n >= sizeof kmesg.buf){
 		d = nn + n - sizeof kmesg.buf;
 		if(d)
-			memmove(kmesg.buf, kmesg.buf+d, sizeof kmesg.buf-d);
+			jehanne_memmove(kmesg.buf, kmesg.buf+d, sizeof kmesg.buf-d);
 		nn -= d;
 	}
 
 	/* copy the data in */
-	memmove(kmesg.buf+nn, str, n);
+	jehanne_memmove(kmesg.buf+nn, str, n);
 	nn += n;
 	kmesg.n = nn;
 	iunlock(&kmesg.lk);
@@ -331,7 +331,7 @@ putstrn0(char *str, int n, int usewrite)
 		while(len > 0){
 			t = nil;
 			if((c->flags&Cntorn) && !kbd.raw)
-				t = memchr(s, '\n', len);
+				t = jehanne_memchr(s, '\n', len);
 			if(t != nil && !kbd.raw){
 				m = t-s;
 				consdevputs(c, s, m, usewrite);
@@ -352,15 +352,21 @@ putstrn(char *str, int n)
 	putstrn0(str, n, 0);
 }
 
+void
+jehanne__assert(const char *s)
+{
+	panic("assert failed at %#p: %s\n", getcallerpc(), s);
+}
+
 int
-print(char *fmt, ...)
+jehanne_print(char *fmt, ...)
 {
 	int n;
 	va_list arg;
 	char buf[PRINTSIZE];
 
 	va_start(arg, fmt);
-	n = vseprint(buf, buf+sizeof(buf), fmt, arg) - buf;
+	n = jehanne_vseprint(buf, buf+sizeof(buf), fmt, arg) - buf;
 	va_end(arg);
 	putstrn(buf, n);
 
@@ -400,7 +406,7 @@ iprint(char *fmt, ...)
 
 	s = splhi();
 	va_start(arg, fmt);
-	n = vseprint(buf, buf+sizeof(buf), fmt, arg) - buf;
+	n = jehanne_vseprint(buf, buf+sizeof(buf), fmt, arg) - buf;
 	va_end(arg);
 	mlocked = malloclocked();
 	locked = iprintcanlock(&iprintlock);
@@ -437,9 +443,9 @@ panic(char *fmt, ...)
 	consdevs[1].q = nil;	/* don't try to write to /dev/kprint */
 
 	splhi();
-	strcpy(buf, "panic: ");
+	jehanne_strcpy(buf, "panic: ");
 	va_start(arg, fmt);
-	n = vseprint(buf+strlen(buf), buf+sizeof(buf), fmt, arg) - buf;
+	n = jehanne_vseprint(buf+jehanne_strlen(buf), buf+sizeof(buf), fmt, arg) - buf;
 	va_end(arg);
 	iprint("%s\n", buf);
 	if(consdebug)
@@ -464,7 +470,7 @@ sysfatal(char *fmt, ...)
 	va_list arg;
 
 	va_start(arg, fmt);
-	vseprint(err, err + sizeof err, fmt, arg);
+	jehanne_vseprint(err, err + sizeof err, fmt, arg);
 	va_end(arg);
 	panic("sysfatal: %s", err);
 }
@@ -489,9 +495,9 @@ pprint(char *fmt, ...)
 	c = up->fgrp->fd[2];
 	if(c==0 || (c->mode!=OWRITE && c->mode!=ORDWR))
 		return 0;
-	n = snprint(buf, sizeof buf, "%s %d: ", up->text, up->pid);
+	n = jehanne_snprint(buf, sizeof buf, "%s %d: ", up->text, up->pid);
 	va_start(arg, fmt);
-	n = vseprint(buf+n, buf+sizeof(buf), fmt, arg) - buf;
+	n = jehanne_vseprint(buf+n, buf+sizeof(buf), fmt, arg) - buf;
 	va_end(arg);
 
 	if(waserror())
@@ -556,7 +562,7 @@ echo(char *buf, int n)
 				consdebug = rdb;
 			else
 				consdebug = nil;
-			print("consdebug now %#p\n", consdebug);
+			jehanne_print("consdebug now %#p\n", consdebug);
 			return;
 		case 'D':
 			if(consdebug == nil)
@@ -625,7 +631,7 @@ kbdputc(Queue* _1, int ch)
 
 	ilock(&kbd.lockputc);		/* just a mutex */
 	r = ch;
-	n = runetochar(buf, &r);
+	n = jehanne_runetochar(buf, &r);
 	for(i = 0; i < n; i++){
 		next = kbd.iw+1;
 		if(next >= kbd.ie)
@@ -718,13 +724,13 @@ readnum(uint32_t off, char *buf, uint32_t n, uint32_t val, int size)
 {
 	char tmp[64];
 
-	snprint(tmp, sizeof(tmp), "%*lud", size-1, val);
+	jehanne_snprint(tmp, sizeof(tmp), "%*lud", size-1, val);
 	tmp[size-1] = ' ';
 	if(off >= size)
 		return 0;
 	if(off+n > size)
 		n = size-off;
-	memmove(buf, tmp+off, n);
+	jehanne_memmove(buf, tmp+off, n);
 	return n;
 }
 
@@ -733,12 +739,12 @@ readstr(long offset, char *buf, long n, char *str)
 {
 	long size;
 
-	size = strlen(str);
+	size = jehanne_strlen(str);
 	if(offset >= size)
 		return 0;
 	if(offset+n > size)
 		n = size-offset;
-	memmove(buf, str+offset, n);
+	jehanne_memmove(buf, str+offset, n);
 	return n;
 }
 
@@ -877,7 +883,7 @@ consread(Chan *c, void *buf, long n, int64_t off)
 					break;
 				case 0x15:	/* ^U */
 					kbd.x = 0;
-					print("\b^U\n");
+					jehanne_print("\b^U\n");
 					break;
 				case '\n':
 				case 0x04:	/* ^D */
@@ -922,7 +928,7 @@ consread(Chan *c, void *buf, long n, int64_t off)
 		else{
 			if(off+n > kmesg.n)
 				n = kmesg.n - off;
-			memmove(buf, kmesg.buf+off, n);
+			jehanne_memmove(buf, kmesg.buf+off, n);
 		}
 		return n;
 
@@ -950,7 +956,7 @@ consread(Chan *c, void *buf, long n, int64_t off)
 			n = readstr(offset, buf, n, b);
 			poperror();
 		}
-		free(b);
+		jehanne_free(b);
 		return n;
 
 //	case Qconfig:
@@ -989,17 +995,17 @@ consread(Chan *c, void *buf, long n, int64_t off)
 			*bp++ = '\n';
 		}
 		if(waserror()){
-			free(b);
+			jehanne_free(b);
 			nexterror();
 		}
 		n = readstr(offset, buf, n, b);
-		free(b);
+		jehanne_free(b);
 		poperror();
 		return n;
 
 	case Qswap:
 		memory_stats(&mstats);
-		snprint(tmp, sizeof tmp,
+		jehanne_snprint(tmp, sizeof tmp,
 			"%llud memory\n"
 			"%llud pagesize\n"
 			"%lud kernel\n"
@@ -1026,7 +1032,7 @@ consread(Chan *c, void *buf, long n, int64_t off)
 		return readstr(offset, buf, n, "2000");
 
 	default:
-		print("consread %#llux\n", c->qid.path);
+		jehanne_print("consread %#llux\n", c->qid.path);
 		error(Egreg);
 	}
 	return -1;		/* never reached */
@@ -1068,7 +1074,7 @@ conswrite(Chan *c, void *va, long n, int64_t off)
 			bp = l;
 			if(bp > sizeof buf)
 				bp = sizeof buf;
-			memmove(buf, a, bp);
+			jehanne_memmove(buf, a, bp);
 			putstrn0(buf, bp, 1);
 			a += bp;
 			l -= bp;
@@ -1078,22 +1084,22 @@ conswrite(Chan *c, void *va, long n, int64_t off)
 	case Qconsctl:
 		if(n >= sizeof(buf))
 			n = sizeof(buf)-1;
-		strncpy(buf, a, n);
+		jehanne_strncpy(buf, a, n);
 		buf[n] = 0;
 		for(a = buf; a;){
-			if(strncmp(a, "rawon", 5) == 0){
+			if(jehanne_strncmp(a, "rawon", 5) == 0){
 				kbd.raw = 1;
 				/* clumsy hack - wake up reader */
 				ch = 0;
 				qwrite(kbdq, &ch, 1);
 			}
-			else if(strncmp(a, "rawoff", 6) == 0)
+			else if(jehanne_strncmp(a, "rawoff", 6) == 0)
 				kbd.raw = 0;
-			else if(strncmp(a, "ctlpon", 6) == 0)
+			else if(jehanne_strncmp(a, "ctlpon", 6) == 0)
 				kbd.ctlpoff = 0;
-			else if(strncmp(a, "ctlpoff", 7) == 0)
+			else if(jehanne_strncmp(a, "ctlpoff", 7) == 0)
 				kbd.ctlpoff = 1;
-			if(a = strchr(a, ' '))
+			if(a = jehanne_strchr(a, ' '))
 				a++;
 		}
 		break;
@@ -1130,7 +1136,7 @@ conswrite(Chan *c, void *va, long n, int64_t off)
 		cb = parsecmd(a, n);
 
 		if(waserror()) {
-			free(cb);
+			jehanne_free(cb);
 			nexterror();
 		}
 		ct = lookupcmd(cb, rebootmsg, nelem(rebootmsg));
@@ -1146,7 +1152,7 @@ conswrite(Chan *c, void *va, long n, int64_t off)
 			panic("/dev/reboot");
 		}
 		poperror();
-		free(cb);
+		jehanne_free(cb);
 		break;
 
 	case Qsysstat:
@@ -1171,7 +1177,7 @@ conswrite(Chan *c, void *va, long n, int64_t off)
 			error(Ebadarg);
 		if(n <= 0 || n >= sizeof buf)
 			error(Ebadarg);
-		strncpy(buf, a, n);
+		jehanne_strncpy(buf, a, n);
 		buf[n] = 0;
 		if(buf[n-1] == '\n')
 			buf[n-1] = 0;
@@ -1179,7 +1185,7 @@ conswrite(Chan *c, void *va, long n, int64_t off)
 		break;
 
 	default:
-		print("conswrite: %#llux\n", c->qid.path);
+		jehanne_print("conswrite: %#llux\n", c->qid.path);
 		error(Egreg);
 	}
 	return n;
@@ -1309,7 +1315,7 @@ readtime(uint32_t off, char *buf, int n)
 	if(fasthz == 0LL)
 		fastticks((uint64_t*)&fasthz);
 	sec = nsec/1000000000ULL;
-	snprint(str, sizeof(str), "%*lud %*llud %*llud %*llud ",
+	jehanne_snprint(str, sizeof(str), "%*lud %*llud %*llud %*llud ",
 		NUMSIZE-1, sec,
 		VLNUMSIZE-1, nsec,
 		VLNUMSIZE-1, ticks,
@@ -1329,9 +1335,9 @@ writetime(char *buf, int n)
 
 	if(n >= sizeof(b))
 		error(Ebadtimectl);
-	strncpy(b, buf, n);
+	jehanne_strncpy(b, buf, n);
 	b[n] = 0;
-	i = strtol(b, 0, 0);
+	i = jehanne_strtol(b, 0, 0);
 	if(i <= 0)
 		error(Ebadtimectl);
 	now = i*1000000000LL;

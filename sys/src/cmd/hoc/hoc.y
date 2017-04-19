@@ -1,6 +1,6 @@
 %{
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 #define YYSIZE_T size_t
 
 void yyerror(char* s);	/* report compile-time error */

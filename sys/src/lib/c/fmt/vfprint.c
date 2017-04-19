@@ -28,16 +28,16 @@ _fmtFdFlush(Fmt *f)
 }
 
 int
-vfprint(int fd, const char *fmt, va_list args)
+jehanne_vfprint(int fd, const char *fmt, va_list args)
 {
 	Fmt f;
 	char buf[256];
 	int n;
 
-	fmtfdinit(&f, fd, buf, sizeof(buf));
+	jehanne_fmtfdinit(&f, fd, buf, sizeof(buf));
 	//f.args = args;
 	va_copy(f.args,args);
-	n = dofmt(&f, fmt);
+	n = jehanne_dofmt(&f, fmt);
 	va_end(f.args);
 	if(n > 0 && _fmtFdFlush(&f) == 0)
 		return -1;

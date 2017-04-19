@@ -12,7 +12,7 @@
 static char t16e[] = "0123456789ABCDEF";
 
 int
-dec16(uint8_t *out, int lim, const char *in, int n)
+jehanne_dec16(uint8_t *out, int lim, const char *in, int n)
 {
 	int c, w = 0, i = 0;
 	uint8_t *start = out;
@@ -43,7 +43,7 @@ exhausted:
 }
 
 int
-enc16(char *out, int lim, const uint8_t *in, int n)
+jehanne_enc16(char *out, int lim, const uint8_t *in, int n)
 {
 	uint32_t c;
 	char *eout = out + lim;

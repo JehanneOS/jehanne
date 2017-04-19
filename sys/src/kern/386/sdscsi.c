@@ -13,7 +13,7 @@ static int
 scsitest(SDreq* r)
 {
 	r->write = 0;
-	memset(r->cmd, 0, sizeof(r->cmd));
+	jehanne_memset(r->cmd, 0, sizeof(r->cmd));
 	r->cmd[1] = r->lun<<5;
 	r->clen = 6;
 	r->data = nil;
@@ -32,16 +32,16 @@ scsiverify(SDunit* unit)
 	int i, status;
 	uint8_t *inquiry;
 
-	if((r = malloc(sizeof(SDreq))) == nil)
+	if((r = jehanne_malloc(sizeof(SDreq))) == nil)
 		return 0;
 	if((inquiry = sdmalloc(sizeof(unit->inquiry))) == nil){
-		free(r);
+		jehanne_free(r);
 		return 0;
 	}
 	r->unit = unit;
 	r->lun = 0;		/* ??? */
 
-	memset(unit->inquiry, 0, sizeof(unit->inquiry));
+	jehanne_memset(unit->inquiry, 0, sizeof(unit->inquiry));
 	r->write = 0;
 	r->cmd[0] = 0x12;
 	r->cmd[1] = r->lun<<5;
@@ -53,11 +53,11 @@ scsiverify(SDunit* unit)
 
 	r->status = ~0;
 	if(unit->dev->ifc->rio(r) != SDok){
-		free(r);
+		jehanne_free(r);
 		return 0;
 	}
-	memmove(unit->inquiry, inquiry, r->dlen);
-	free(inquiry);
+	jehanne_memmove(unit->inquiry, inquiry, r->dlen);
+	jehanne_free(inquiry);
 
 	SET(status);
 	for(i = 0; i < 3; i++){
@@ -94,7 +94,7 @@ scsiverify(SDunit* unit)
 		 * Don't wait for completion, ignore the result.
 		 */
 		if((unit->inquiry[0] & 0x1F) == 0){
-			memset(r->cmd, 0, sizeof(r->cmd));
+			jehanne_memset(r->cmd, 0, sizeof(r->cmd));
 			r->write = 0;
 			r->cmd[0] = 0x1B;
 			r->cmd[1] = (r->lun<<5)|0x01;
@@ -108,7 +108,7 @@ scsiverify(SDunit* unit)
 			unit->dev->ifc->rio(r);
 		}
 	}
-	free(r);
+	jehanne_free(r);
 
 	if(status == SDok || status == SDcheck)
 		return 1;
@@ -254,10 +254,10 @@ scsionline(SDunit* unit)
 	int ok, retries;
 	void (*cap)(SDreq*);
 
-	if((r = malloc(sizeof *r)) == nil)
+	if((r = jehanne_malloc(sizeof *r)) == nil)
 		return 0;
 	if((p = sdmalloc(32)) == nil){
-		free(r);
+		jehanne_free(r);
 		return 0;
 	}
 
@@ -275,7 +275,7 @@ scsionline(SDunit* unit)
 		r->write = 0;
 		r->data = p;
 		r->flags = 0;
-		memset(r->cmd, 0, sizeof r->cmd);
+		jehanne_memset(r->cmd, 0, sizeof r->cmd);
 		cap(r);
 
 		r->status = ~0;
@@ -298,8 +298,8 @@ scsionline(SDunit* unit)
 		}
 		break;
 	}
-	free(p);
-	free(r);
+	jehanne_free(p);
+	jehanne_free(r);
 
 	if(ok)
 		return ok+retries;
@@ -313,12 +313,12 @@ scsiexec(SDunit* unit, int write, uint8_t* cmd, int clen, void* data, int* dlen)
 	SDreq *r;
 	int status;
 
-	if((r = malloc(sizeof(SDreq))) == nil)
+	if((r = jehanne_malloc(sizeof(SDreq))) == nil)
 		return SDmalloc;
 	r->unit = unit;
 	r->lun = cmd[1]>>5;		/* ??? */
 	r->write = write;
-	memmove(r->cmd, cmd, clen);
+	jehanne_memmove(r->cmd, cmd, clen);
 	r->clen = clen;
 	r->data = data;
 	if(dlen)
@@ -415,7 +415,7 @@ scsibio(SDunit* unit, int lun, int write, void* data, long nb, uint64_t bno)
 	SDreq *r;
 	long rlen;
 
-	if((r = malloc(sizeof(SDreq))) == nil)
+	if((r = jehanne_malloc(sizeof(SDreq))) == nil)
 		error(Enomem);
 	r->unit = unit;
 	r->lun = lun;
@@ -445,7 +445,7 @@ again:
 		default:
 			break;
 		case 0x01:		/* recovered error */
-			print("%s: recovered error at sector %llud\n",
+			jehanne_print("%s: recovered error at sector %llud\n",
 				unit->name, bno);
 			rlen = r->rlen;
 			break;
@@ -471,7 +471,7 @@ again:
 		}
 		break;
 	}
-	free(r);
+	jehanne_free(r);
 
 	return rlen;
 }

@@ -22,7 +22,7 @@ ncmdfield(char *p, int n)
 	ep = p+n;
 	white = 1;	/* first text will start field */
 	while(p < ep){
-		nwhite = (strchr(" \t\r\n", *p++ & 0xFF) != 0);	/* UTF is irrelevant */
+		nwhite = (jehanne_strchr(" \t\r\n", *p++ & 0xFF) != 0);	/* UTF is irrelevant */
 		if(white && !nwhite)	/* beginning of field */
 			nf++;
 		white = nwhite;
@@ -49,10 +49,10 @@ parsecmd(char *p, int n)
 	cb->buf = (char*)(&cb->f[nf]);
 
 	if(up!=nil && waserror()){
-		free(cb);
+		jehanne_free(cb);
 		nexterror();
 	}
-	memmove(cb->buf, p, n);
+	jehanne_memmove(cb->buf, p, n);
 	if(up != nil)
 		poperror();
 
@@ -61,7 +61,7 @@ parsecmd(char *p, int n)
 		n--;
 	cb->buf[n] = '\0';
 
-	cb->nf = tokenize(cb->buf, cb->f, nf-1);
+	cb->nf = jehanne_tokenize(cb->buf, cb->f, nf-1);
 	cb->f[cb->nf] = nil;
 
 	return cb;
@@ -78,13 +78,13 @@ cmderror(Cmdbuf *cb, char *s)
 
 	p = up->genbuf;
 	e = p+ERRMAX-10;
-	p = seprint(p, e, "%s \"", s);
+	p = jehanne_seprint(p, e, "%s \"", s);
 	for(i=0; i<cb->nf; i++){
 		if(i > 0)
-			p = seprint(p, e, " ");
-		p = seprint(p, e, "%q", cb->f[i]);
+			p = jehanne_seprint(p, e, " ");
+		p = jehanne_seprint(p, e, "%q", cb->f[i]);
 	}
-	strcpy(p, "\"");
+	jehanne_strcpy(p, "\"");
 	error(up->genbuf);
 }
 
@@ -101,8 +101,8 @@ lookupcmd(Cmdbuf *cb, Cmdtab *ctab, int nctab)
 		error("empty control message");
 
 	for(ct = ctab, i=0; i<nctab; i++, ct++){
-		if(strcmp(ct->cmd, "*") !=0)	/* wildcard always matches */
-		if(strcmp(ct->cmd, cb->f[0]) != 0)
+		if(jehanne_strcmp(ct->cmd, "*") !=0)	/* wildcard always matches */
+		if(jehanne_strcmp(ct->cmd, cb->f[0]) != 0)
 			continue;
 		if(ct->narg != 0 && ct->narg != cb->nf)
 			cmderror(cb, Ecmdargs);

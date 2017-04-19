@@ -15,11 +15,11 @@
 void
 incref(Ref *r)
 {
-	ainc(&r->ref);
+	jehanne_ainc(&r->ref);
 }
 
 int32_t
 decref(Ref *r)
 {
-	return adec(&r->ref);
+	return jehanne_adec(&r->ref);
 }

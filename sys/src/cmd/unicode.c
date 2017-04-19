@@ -8,7 +8,7 @@
  */
 
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 #include <bio.h>
 
 char	usage[] = "unicode { [-t] hex hex ... | hexmin-hexmax ... | [-n] char ... }";

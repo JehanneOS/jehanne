@@ -38,7 +38,7 @@ cnreduce(Mfield *m, mpint *a, mpint *r)
 
 	/* q = hi(r) */
 	qn = r->top - k;
-	memmove(q, r->p+k, qn*Dbytes);
+	jehanne_memmove(q, r->p+k, qn*Dbytes);
 
 	/* r = lo(r) */
 	r->top = k;
@@ -47,13 +47,13 @@ cnreduce(Mfield *m, mpint *a, mpint *r)
 	do {
 		/* t = q*c */
 		tn = qn+1;
-		memset(t, 0, tn*Dbytes);
+		jehanne_memset(t, 0, tn*Dbytes);
 		mpvecdigmuladd(q, qn, f->c, t);
 
 		/* q = hi(t) */
 		qn = tn - k;
 		if(qn <= 0) qn = 0;
-		else memmove(q, t+k, qn*Dbytes);
+		else jehanne_memmove(q, t+k, qn*Dbytes);
 
 		/* r += lo(t) */
 		if(tn > k)
@@ -95,7 +95,7 @@ cnfield(mpint *N)
 	mpsub(C, M, C);
 	if(C->top != 1)
 		goto out;
-	f = mallocz(sizeof(CNfield) + M->top*sizeof(mpdigit), 1);
+	f = jehanne_mallocz(sizeof(CNfield) + M->top*sizeof(mpdigit), 1);
 	if(f == nil)
 		goto out;
 	f->s = s;

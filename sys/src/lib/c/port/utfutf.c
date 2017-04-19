@@ -16,20 +16,20 @@
  * 0 if none
  */
 char*
-utfutf(const char *s1, const char *s2)
+jehanne_utfutf(const char *s1, const char *s2)
 {
 	const char *p;
 	int32_t f, n1, n2;
 	Rune r;
 
-	n1 = chartorune(&r, s2);
+	n1 = jehanne_chartorune(&r, s2);
 	f = r;
 	if(f <= Runesync)		/* represents self */
-		return strstr(s1, s2);
+		return jehanne_strstr(s1, s2);
 
-	n2 = strlen(s2);
-	for(p=s1; p=utfrune(p, f); p+=n1)
-		if(strncmp(p, s2, n2) == 0)
+	n2 = jehanne_strlen(s2);
+	for(p=s1; p=jehanne_utfrune(p, f); p+=n1)
+		if(jehanne_strncmp(p, s2, n2) == 0)
 			return (char*)p;
 	return 0;
 }

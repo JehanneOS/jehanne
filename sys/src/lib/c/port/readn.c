@@ -11,7 +11,7 @@
 #include <libc.h>
 
 int32_t
-readn(int f, void *av, int32_t n)
+jehanne_readn(int f, void *av, int32_t n)
 {
 	char *a;
 	int32_t m, t;

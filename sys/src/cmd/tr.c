@@ -8,7 +8,7 @@
  */
 
 #include 	<u.h>
-#include 	<libc.h>
+#include 	<lib9.h>
 
 typedef struct PCB	/* Control block controlling specification parse */
 {

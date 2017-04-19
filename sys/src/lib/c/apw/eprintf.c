@@ -20,6 +20,6 @@
 void
 __eprintf(const char *format, const char *file, unsigned int line, const char *expression)
 {
-	fprint(2, format, file, line, expression);
+	jehanne_fprint(2, format, file, line, expression);
 	abort();
 }

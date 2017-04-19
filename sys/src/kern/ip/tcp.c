@@ -406,7 +406,7 @@ tcpsetstate(Conv *s, uint8_t newstate)
 		tpriv->stats[CurrEstab]++;
 
 	/**
-	print( "%d/%d %s->%s CurrEstab=%d\n", s->lport, s->rport,
+	jehanne_print( "%d/%d %s->%s CurrEstab=%d\n", s->lport, s->rport,
 		tcpstates[oldstate], tcpstates[newstate], tpriv->tstats.tcpCurrEstab );
 	**/
 
@@ -453,7 +453,7 @@ tcpstate(Conv *c, char *state, int n)
 
 	s = (Tcpctl*)(c->ptcl);
 
-	return snprint(state, n,
+	return jehanne_snprint(state, n,
 		"%s qin %d qout %d srtt %d mdev %d cwin %lud swin %lud>>%d rwin %lud>>%d timer.start %d timer.count %d rerecv %d katimer.start %d katimer.count %d\n",
 		tcpstates[s->state],
 		c->rq ? qlen(c->rq) : 0,
@@ -745,7 +745,7 @@ localclose(Conv *s, char *reason)	/* called with tcb locked */
 	for(rp = tcb->reseq; rp != nil; rp = rp1) {
 		rp1 = rp->next;
 		freeblist(rp->bp);
-		free(rp);
+		jehanne_free(rp);
 	}
 	tcb->reseq = nil;
 
@@ -807,7 +807,7 @@ inittcpctl(Conv *s, int mode)
 
 	tcb = (Tcpctl*)s->ptcl;
 
-	memset(tcb, 0, sizeof(Tcpctl));
+	jehanne_memset(tcb, 0, sizeof(Tcpctl));
 
 	tcb->ssthresh = 65535;
 	tcb->srtt = tcp_irtt<<LOGAGAIN;
@@ -835,7 +835,7 @@ inittcpctl(Conv *s, int mode)
 		switch(s->ipversion){
 		case V4:
 			h4 = &tcb->protohdr.tcp4hdr;
-			memset(h4, 0, sizeof(*h4));
+			jehanne_memset(h4, 0, sizeof(*h4));
 			h4->proto = IP_TCPPROTO;
 			hnputs(h4->tcpsport, s->lport);
 			hnputs(h4->tcpdport, s->rport);
@@ -844,7 +844,7 @@ inittcpctl(Conv *s, int mode)
 			break;
 		case V6:
 			h6 = &tcb->protohdr.tcp6hdr;
-			memset(h6, 0, sizeof(*h6));
+			jehanne_memset(h6, 0, sizeof(*h6));
 			h6->proto = IP_TCPPROTO;
 			hnputs(h6->tcpsport, s->lport);
 			hnputs(h6->tcpdport, s->rport);
@@ -884,7 +884,7 @@ tcpstart(Conv *s, int mode)
 	if(tpriv->ackprocstarted == 0){
 		qlock(&tpriv->apl);
 		if(tpriv->ackprocstarted == 0){
-			sprint(kpname, "#I%dtcpack", s->p->f->dev);
+			jehanne_sprint(kpname, "#I%dtcpack", s->p->f->dev);
 			kproc(kpname, tcpackproc, s->p);
 			tpriv->ackprocstarted = 1;
 		}
@@ -919,19 +919,19 @@ tcpflag(uint16_t flag)
 {
 	static char buf[128];
 
-	sprint(buf, "%d", flag>>10);	/* Head len */
+	jehanne_sprint(buf, "%d", flag>>10);	/* Head len */
 	if(flag & URG)
-		strcat(buf, " URG");
+		jehanne_strcat(buf, " URG");
 	if(flag & ACK)
-		strcat(buf, " ACK");
+		jehanne_strcat(buf, " ACK");
 	if(flag & PSH)
-		strcat(buf, " PSH");
+		jehanne_strcat(buf, " PSH");
 	if(flag & RST)
-		strcat(buf, " RST");
+		jehanne_strcat(buf, " RST");
 	if(flag & SYN)
-		strcat(buf, " SYN");
+		jehanne_strcat(buf, " SYN");
 	if(flag & FIN)
-		strcat(buf, " FIN");
+		jehanne_strcat(buf, " FIN");
 
 	return buf;
 }
@@ -974,7 +974,7 @@ htontcp6(Tcp *tcph, Block *data, Tcp6hdr *ph, Tcpctl *tcb)
 
 	/* copy in pseudo ip header plus port numbers */
 	h = (Tcp6hdr *)(data->rp);
-	memmove(h, ph, TCP6_TCBPHDRSZ);
+	jehanne_memmove(h, ph, TCP6_TCBPHDRSZ);
 
 	/* compose pseudo tcp header, do cksum calculation */
 	hnputl(h->vcf, hdrlen + dlen);
@@ -994,7 +994,7 @@ htontcp6(Tcp *tcph, Block *data, Tcp6hdr *ph, Tcpctl *tcb)
 			*opt++ = MSSOPT;
 			*opt++ = MSS_LENGTH;
 			hnputs(opt, tcph->mss);
-//			print("our outgoing mss %d\n", tcph->mss);
+//			jehanne_print("our outgoing mss %d\n", tcph->mss);
 			opt += 2;
 		}
 		if(tcph->ws != 0){
@@ -1014,7 +1014,7 @@ htontcp6(Tcp *tcph, Block *data, Tcp6hdr *ph, Tcpctl *tcb)
 	}
 
 	/* move from pseudo header back to normal ip header */
-	memset(h->vcf, 0, 4);
+	jehanne_memset(h->vcf, 0, 4);
 	h->vcf[0] = IP_VER6;
 	hnputs(h->ploadlen, hdrlen+dlen);
 	h->proto = ph->proto;
@@ -1059,7 +1059,7 @@ htontcp4(Tcp *tcph, Block *data, Tcp4hdr *ph, Tcpctl *tcb)
 
 	/* copy in pseudo ip header plus port numbers */
 	h = (Tcp4hdr *)(data->rp);
-	memmove(h, ph, TCP4_TCBPHDRSZ);
+	jehanne_memmove(h, ph, TCP4_TCBPHDRSZ);
 
 	/* copy in variable bits */
 	hnputs(h->tcplen, hdrlen + dlen);
@@ -1209,7 +1209,7 @@ ntohtcp4(Tcp *tcph, Block **bpp)
 		case MSSOPT:
 			if(optlen == MSS_LENGTH) {
 				tcph->mss = nhgets(optr+2);
-//				print("new incoming mss %d\n", tcph->mss);
+//				jehanne_print("new incoming mss %d\n", tcph->mss);
 			}
 			break;
 		case WSOPT:
@@ -1267,7 +1267,7 @@ sndrst(Proto *tcp, uint8_t *source, uint8_t *dest, uint16_t length, Tcp *seg, ui
 	/* make pseudo header */
 	switch(version) {
 	case V4:
-		memset(&ph4, 0, sizeof(ph4));
+		jehanne_memset(&ph4, 0, sizeof(ph4));
 		ph4.vihl = IP_VER4;
 		v6tov4(ph4.tcpsrc, dest);
 		v6tov4(ph4.tcpdst, source);
@@ -1277,7 +1277,7 @@ sndrst(Proto *tcp, uint8_t *source, uint8_t *dest, uint16_t length, Tcp *seg, ui
 		hnputs(ph4.tcpdport, seg->source);
 		break;
 	case V6:
-		memset(&ph6, 0, sizeof(ph6));
+		jehanne_memset(&ph6, 0, sizeof(ph6));
 		ph6.vcf[0] = IP_VER6;
 		ipmove(ph6.tcpsrc, dest);
 		ipmove(ph6.tcpdst, source);
@@ -1347,7 +1347,7 @@ tcphangup(Conv *s)
 		return up->errstr;
 	if(ipcmp(s->raddr, IPnoaddr) != 0) {
 		if(!waserror()){
-			memset(&seg, 0, sizeof seg);
+			jehanne_memset(&seg, 0, sizeof seg);
 			seg.flags = RST | ACK;
 			seg.ack = tcb->rcv.nxt;
 			tcb->rcv.una = 0;
@@ -1393,7 +1393,7 @@ sndsynack(Proto *tcp, Limbo *lp)
 	/* make pseudo header */
 	switch(lp->version) {
 	case V4:
-		memset(&ph4, 0, sizeof(ph4));
+		jehanne_memset(&ph4, 0, sizeof(ph4));
 		ph4.vihl = IP_VER4;
 		v6tov4(ph4.tcpsrc, lp->laddr);
 		v6tov4(ph4.tcpdst, lp->raddr);
@@ -1403,7 +1403,7 @@ sndsynack(Proto *tcp, Limbo *lp)
 		hnputs(ph4.tcpdport, lp->rport);
 		break;
 	case V6:
-		memset(&ph6, 0, sizeof(ph6));
+		jehanne_memset(&ph6, 0, sizeof(ph6));
 		ph6.vcf[0] = IP_VER6;
 		ipmove(ph6.tcpsrc, lp->laddr);
 		ipmove(ph6.tcpdst, lp->raddr);
@@ -1416,7 +1416,7 @@ sndsynack(Proto *tcp, Limbo *lp)
 		panic("sndrst: version %d", lp->version);
 	}
 
-	memset(&seg, 0, sizeof seg);
+	jehanne_memset(&seg, 0, sizeof seg);
 	seg.seq = lp->iss;
 	seg.ack = lp->irs+1;
 	seg.flags = SYN|ACK;
@@ -1492,7 +1492,7 @@ limbo(Conv *s, uint8_t *source, uint8_t *dest, Tcp *seg, int version)
 			tpriv->lht[h] = lp->next;
 			lp->next = nil;
 		} else {
-			lp = malloc(sizeof(*lp));
+			lp = jehanne_malloc(sizeof(*lp));
 			if(lp == nil)
 				return;
 			tpriv->nlimbo++;
@@ -1512,7 +1512,7 @@ limbo(Conv *s, uint8_t *source, uint8_t *dest, Tcp *seg, int version)
 	if(sndsynack(s->p, lp) < 0){
 		*l = lp->next;
 		tpriv->nlimbo--;
-		free(lp);
+		jehanne_free(lp);
 	}
 }
 
@@ -1545,7 +1545,7 @@ limborexmit(Proto *tcp)
 			if(++(lp->rexmits) > 5){
 				tpriv->nlimbo--;
 				*l = lp->next;
-				free(lp);
+				jehanne_free(lp);
 				continue;
 			}
 
@@ -1556,7 +1556,7 @@ limborexmit(Proto *tcp)
 			if(sndsynack(tcp, lp) < 0){
 				tpriv->nlimbo--;
 				*l = lp->next;
-				free(lp);
+				jehanne_free(lp);
 				continue;
 			}
 
@@ -1595,7 +1595,7 @@ limborst(Conv *s, Tcp *segp, uint8_t *src, uint8_t *dst, uint8_t version)
 		if(segp->seq == lp->irs+1){
 			tpriv->nlimbo--;
 			*l = lp->next;
-			free(lp);
+			jehanne_free(lp);
 		}
 		break;
 	}
@@ -1658,7 +1658,7 @@ tcpincoming(Conv *s, Tcp *segp, uint8_t *src, uint8_t *dst, uint8_t version)
 	if(new == nil)
 		return nil;
 
-	memmove(new->ptcl, s->ptcl, sizeof(Tcpctl));
+	jehanne_memmove(new->ptcl, s->ptcl, sizeof(Tcpctl));
 	tcb = (Tcpctl*)new->ptcl;
 	tcb->flags &= ~CLONE;
 	tcb->timer.arg = new;
@@ -1702,13 +1702,13 @@ tcpincoming(Conv *s, Tcp *segp, uint8_t *src, uint8_t *dst, uint8_t version)
 	tcb->sndsyntime = lp->lastsend+lp->rexmits*SYNACK_RXTIMER;
 	tcpsynackrtt(new);
 
-	free(lp);
+	jehanne_free(lp);
 
 	/* set up proto header */
 	switch(version){
 	case V4:
 		h4 = &tcb->protohdr.tcp4hdr;
-		memset(h4, 0, sizeof(*h4));
+		jehanne_memset(h4, 0, sizeof(*h4));
 		h4->proto = IP_TCPPROTO;
 		hnputs(h4->tcpsport, new->lport);
 		hnputs(h4->tcpdport, new->rport);
@@ -1717,7 +1717,7 @@ tcpincoming(Conv *s, Tcp *segp, uint8_t *src, uint8_t *dst, uint8_t version)
 		break;
 	case V6:
 		h6 = &tcb->protohdr.tcp6hdr;
-		memset(h6, 0, sizeof(*h6));
+		jehanne_memset(h6, 0, sizeof(*h6));
 		h6->proto = IP_TCPPROTO;
 		hnputs(h6->tcpsport, new->lport);
 		hnputs(h6->tcpdport, new->rport);
@@ -1916,7 +1916,7 @@ update(Conv *s, Tcp *seg)
 				if(tcb->srtt <= 0)
 					tcb->srtt = 1;
 
-				delta = abs(delta) - (tcb->mdev>>LOGDGAIN);
+				delta = jehanne_abs(delta) - (tcb->mdev>>LOGDGAIN);
 				tcb->mdev += delta;
 				if(tcb->mdev <= 0)
 					tcb->mdev = 1;
@@ -1968,7 +1968,7 @@ tcpiput(Proto *tcp, Ipifc* _1, Block *bp)
 
 	h4 = (Tcp4hdr*)(bp->rp);
 	h6 = (Tcp6hdr*)(bp->rp);
-	memset(&seg, 0, sizeof seg);
+	jehanne_memset(&seg, 0, sizeof seg);
 
 	if((h4->vihl&0xF0)==IP_VER4) {
 		version = V4;
@@ -2169,7 +2169,7 @@ reset:
 	if(tcb->state != Syn_received && (seg.flags & RST) == 0){
 		if(tcpporthogdefense
 		&& seq_within(seg.ack, tcb->snd.una-(1<<31), tcb->snd.una-(1<<29))){
-			print("stateless hog %I.%d->%I.%d f %ux %lux - %lux - %lux\n",
+			jehanne_print("stateless hog %I.%d->%I.%d f %ux %lux - %lux - %lux\n",
 				source, seg.source, dest, seg.dest, seg.flags,
 				tcb->snd.una-(1<<31), seg.ack, tcb->snd.una-(1<<29));
 			localclose(s, "stateless hog");
@@ -2213,7 +2213,7 @@ reset:
 	if(length != 0 || (seg.flags & (SYN|FIN))) {
 		update(s, &seg);
 		if(addreseq(tcb, tpriv, &seg, bp, length) < 0)
-			print("reseq %I.%d -> %I.%d\n", s->raddr, s->rport, s->laddr, s->lport);
+			jehanne_print("reseq %I.%d -> %I.%d\n", s->raddr, s->rport, s->laddr, s->lport);
 		tcb->flags |= FORCE;
 		goto output;
 	}
@@ -2227,7 +2227,7 @@ reset:
 			if(tcb->state == Established) {
 				tpriv->stats[EstabResets]++;
 				if(tcb->rcv.nxt != seg.seq)
-					print("out of order RST rcvd: %I.%d -> %I.%d, rcv.nxt %lux seq %lux\n", s->raddr, s->rport, s->laddr, s->lport, tcb->rcv.nxt, seg.seq);
+					jehanne_print("out of order RST rcvd: %I.%d -> %I.%d, rcv.nxt %lux seq %lux\n", s->raddr, s->rport, s->laddr, s->lport, tcb->rcv.nxt, seg.seq);
 			}
 			localclose(s, Econrefused);
 			goto raise;
@@ -2454,7 +2454,7 @@ tcpoutput(Conv *s)
 	f = s->p->f;
 	tpriv = s->p->priv;
 	version = s->ipversion;
-	memset(&seg, 0, sizeof seg);
+	jehanne_memset(&seg, 0, sizeof seg);
 
 	for(msgs = 0; msgs < 100; msgs++) {
 		tcb = (Tcpctl*)s->ptcl;
@@ -2667,7 +2667,7 @@ tcpsendka(Conv *s)
 	tcb = (Tcpctl*)s->ptcl;
 
 	dbp = nil;
-	memset(&seg, 0, sizeof seg);
+	jehanne_memset(&seg, 0, sizeof seg);
 	seg.urg = 0;
 	seg.source = s->lport;
 	seg.dest = s->rport;
@@ -2763,7 +2763,7 @@ tcpstartka(Conv *s, char **f, int n)
 	if(tcb->state != Established)
 		return "connection must be in Establised state";
 	if(n > 1){
-		x = atoi(f[1]);
+		x = jehanne_atoi(f[1]);
 		if(x >= MSPTICK)
 			tcb->katimer.start = x/MSPTICK;
 	}
@@ -2782,7 +2782,7 @@ tcpsetchecksum(Conv *s, char **f, int _1)
 	Tcpctl *tcb;
 
 	tcb = (Tcpctl*)s->ptcl;
-	tcb->nochecksum = !atoi(f[1]);
+	tcb->nochecksum = !jehanne_atoi(f[1]);
 
 	return nil;
 }
@@ -2895,7 +2895,7 @@ addreseq(Tcpctl *tcb, Tcppriv *tpriv, Tcp *seg, Block *bp, uint16_t length)
 	Reseq *rp, *rp1;
 	int i, rqlen, qmax;
 
-	rp = malloc(sizeof(Reseq));
+	rp = jehanne_malloc(sizeof(Reseq));
 	if(rp == nil){
 		freeblist(bp);	/* bp always consumed by add_reseq */
 		return 0;
@@ -2929,13 +2929,13 @@ addreseq(Tcpctl *tcb, Tcppriv *tpriv, Tcp *seg, Block *bp, uint16_t length)
 	}
 	qmax = QMAX<<tcb->rcv.scale;
 	if(rqlen > qmax){
-		print("resequence queue > window: %d > %d\n", rqlen, qmax);
+		jehanne_print("resequence queue > window: %d > %d\n", rqlen, qmax);
 		i = 0;
 		for(rp1 = tcb->reseq; rp1 != nil; rp1 = rp1->next){
-			print("%#lux %#lux %#ux\n", rp1->seg.seq,
+			jehanne_print("%#lux %#lux %#ux\n", rp1->seg.seq,
 				rp1->seg.ack, rp1->seg.flags);
 			if(i++ > 10){
-				print("...\n");
+				jehanne_print("...\n");
 				break;
 			}
 		}
@@ -2947,7 +2947,7 @@ addreseq(Tcpctl *tcb, Tcppriv *tpriv, Tcp *seg, Block *bp, uint16_t length)
 		for(rp = tcb->reseq; rp != nil; rp = rp1){
 			rp1 = rp->next;
 			freeblist(rp->bp);
-			free(rp);
+			jehanne_free(rp);
 		}
 		tcb->reseq = nil;
 
@@ -2971,7 +2971,7 @@ getreseq(Tcpctl *tcb, Tcp *seg, Block **bp, uint16_t *length)
 	*bp = rp->bp;
 	*length = rp->length;
 
-	free(rp);
+	jehanne_free(rp);
 }
 
 static int
@@ -3101,9 +3101,9 @@ tcpadvise(Proto *tcp, Block *bp, char *msg)
 static char*
 tcpporthogdefensectl(char *val)
 {
-	if(strcmp(val, "on") == 0)
+	if(jehanne_strcmp(val, "on") == 0)
 		tcpporthogdefense = 1;
-	else if(strcmp(val, "off") == 0)
+	else if(jehanne_strcmp(val, "off") == 0)
 		tcpporthogdefense = 0;
 	else
 		return "unknown value for tcpporthogdefense";
@@ -3114,13 +3114,13 @@ tcpporthogdefensectl(char *val)
 static char*
 tcpctl(Conv* c, char** f, int n)
 {
-	if(n == 1 && strcmp(f[0], "hangup") == 0)
+	if(n == 1 && jehanne_strcmp(f[0], "hangup") == 0)
 		return tcphangup(c);
-	if(n >= 1 && strcmp(f[0], "keepalive") == 0)
+	if(n >= 1 && jehanne_strcmp(f[0], "keepalive") == 0)
 		return tcpstartka(c, f, n);
-	if(n >= 1 && strcmp(f[0], "checksum") == 0)
+	if(n >= 1 && jehanne_strcmp(f[0], "checksum") == 0)
 		return tcpsetchecksum(c, f, n);
-	if(n >= 1 && strcmp(f[0], "tcpporthogdefense") == 0)
+	if(n >= 1 && jehanne_strcmp(f[0], "tcpporthogdefense") == 0)
 		return tcpporthogdefensectl(f[1]);
 	return "unknown control request";
 }
@@ -3136,7 +3136,7 @@ tcpstats(Proto *tcp, char *buf, int len)
 	p = buf;
 	e = p+len;
 	for(i = 0; i < Nstats; i++)
-		p = seprint(p, e, "%s: %llud\n", statnames[i], priv->stats[i]);
+		p = jehanne_seprint(p, e, "%s: %llud\n", statnames[i], priv->stats[i]);
 	return p - buf;
 }
 

@@ -11,12 +11,12 @@
 #include <libc.h>
 
 void
-rerrstr(char *buf, uint32_t nbuf)
+jehanne_rerrstr(char *buf, uint32_t nbuf)
 {
 	char tmp[ERRMAX];
 
 	tmp[0] = 0;
 	errstr(tmp, sizeof tmp);
-	utfecpy(buf, buf+nbuf, tmp);
+	jehanne_utfecpy(buf, buf+nbuf, tmp);
 	errstr(tmp, sizeof tmp);
 }

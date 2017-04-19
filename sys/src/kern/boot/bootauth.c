@@ -22,7 +22,7 @@ authentication(int cpuflag)
 	char *argv[16], **av;
 	int ac;
 
-	if(access(factotumPath, AEXEC) < 0 || getenv("user") != nil){
+	if(jehanne_access(factotumPath, AEXEC) < 0 || jehanne_getenv("user") != nil){
 		glenda();
 		return;
 	}
@@ -31,7 +31,7 @@ authentication(int cpuflag)
 	ac = 0;
 	av = argv;
 	av[ac++] = "factotum";
-	if(getenv("debugfactotum"))
+	if(jehanne_getenv("debugfactotum"))
 		av[ac++] = "-p";
 //	av[ac++] = "-d";		/* debug traces */
 //	av[ac++] = "-D";		/* 9p messages */
@@ -45,7 +45,7 @@ authentication(int cpuflag)
 		av[ac++] = authaddr;
 	}
 	av[ac] = 0;
-	switch(fork()){
+	switch(jehanne_fork()){
 	case -1:
 		fatal("starting factotum");
 	case 0:
@@ -56,8 +56,8 @@ authentication(int cpuflag)
 	}
 
 	/* wait for agent to really be there */
-	while(access("/mnt/factotum", AEXIST) < 0)
-		sleep(250);
+	while(jehanne_access("/mnt/factotum", AEXIST) < 0)
+		jehanne_sleep(250);
 
 	if(cpuflag)
 		return;
@@ -69,15 +69,15 @@ glenda(void)
 	int fd;
 	char *s;
 
-	s = getenv("user");
+	s = jehanne_getenv("user");
 	if(s == nil)
 		s = "glenda";
 
 	fd = open("#c/hostowner", OWRITE);
 	if(fd >= 0){
-		if(write(fd, s, strlen(s)) != strlen(s))
-			fprint(2, "setting #c/hostowner to %s: %r\n", s);
+		if(write(fd, s, jehanne_strlen(s)) != jehanne_strlen(s))
+			jehanne_fprint(2, "setting #c/hostowner to %s: %r\n", s);
 		close(fd);
 	}
-	fprint(2, "Set hostowner to %s\n", s);
+	jehanne_fprint(2, "Set hostowner to %s\n", s);
 }

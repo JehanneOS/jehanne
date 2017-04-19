@@ -11,7 +11,7 @@
 #include	<libc.h>
 
 int
-rand(void)
+jehanne_rand(void)
 {
-	return lrand() & 0x7fff;
+	return jehanne_lrand() & 0x7fff;
 }

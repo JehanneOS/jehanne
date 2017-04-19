@@ -1,6 +1,6 @@
 
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 
 enum {
 	Njmps = 10000

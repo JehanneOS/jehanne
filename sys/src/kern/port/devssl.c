@@ -166,7 +166,7 @@ sslgen(Chan *c, char* _1, Dirtab *d, int nd, int s, Dir *dp)
 				nm = ds->user;
 			else
 				nm = eve;
-			snprint(up->genbuf, sizeof(up->genbuf), "%d", s);
+			jehanne_snprint(up->genbuf, sizeof(up->genbuf), "%d", s);
 			devdir(c, q, up->genbuf, 0, nm, 0555, dp);
 			return 1;
 		}
@@ -304,7 +304,7 @@ sslopen(Chan *c, unsigned long omode)
 			dsnew(c, pp);
 		else {
 			if((perm & (s->perm>>6)) != perm
-			   && (strcmp(up->user, s->user) != 0
+			   && (jehanne_strcmp(up->user, s->user) != 0
 			     || (perm & s->perm) != perm))
 				error(Eperm);
 
@@ -335,13 +335,13 @@ sslwstat(Chan *c, uint8_t *db, long n)
 	s = dstate[CONV(c->qid)];
 	if(s == 0)
 		error(Ebadusefd);
-	if(strcmp(s->user, up->user) != 0)
+	if(jehanne_strcmp(s->user, up->user) != 0)
 		error(Eperm);
 
 	dir = smalloc(sizeof(Dir)+n);
-	l = convM2D(db, n, &dir[0], (char*)&dir[1]);
+	l = jehanne_convM2D(db, n, &dir[0], (char*)&dir[1]);
 	if(l == 0){
-		free(dir);
+		jehanne_free(dir);
 		error(Eshortstat);
 	}
 
@@ -350,7 +350,7 @@ sslwstat(Chan *c, uint8_t *db, long n)
 	if(dir->mode != (uint32_t)~0UL)
 		s->perm = dir->mode;
 
-	free(dir);
+	jehanne_free(dir);
 	return l;
 }
 
@@ -382,19 +382,19 @@ sslclose(Chan *c)
 		unlock(&dslock);
 
 		if(s->user != nil)
-			free(s->user);
+			jehanne_free(s->user);
 		sslhangup(s);
 		if(s->c)
 			cclose(s->c);
 		if(s->in.secret)
-			free(s->in.secret);
+			jehanne_free(s->in.secret);
 		if(s->out.secret)
-			free(s->out.secret);
+			jehanne_free(s->out.secret);
 		if(s->in.state)
-			free(s->in.state);
+			jehanne_free(s->in.state);
 		if(s->out.state)
-			free(s->out.state);
-		free(s);
+			jehanne_free(s->out.state);
+		jehanne_free(s);
 
 	}
 }
@@ -447,7 +447,7 @@ consume(Block **l, uint8_t *p, int n)
 		i = BLEN(b);
 		if(i > n)
 			i = n;
-		memmove(p, b->rp, i);
+		jehanne_memmove(p, b->rp, i);
 		b->rp += i;
 		p += i;
 		if(BLEN(b) < 0)
@@ -471,13 +471,13 @@ regurgitate(Dstate *s, uint8_t *p, int n)
 	b = s->unprocessed;
 	if(s->unprocessed == nil || b->rp - b->base < n) {
 		b = allocb(n);
-		memmove(b->wp, p, n);
+		jehanne_memmove(b->wp, p, n);
 		b->wp += n;
 		b->next = s->unprocessed;
 		s->unprocessed = b;
 	} else {
 		b->rp -= n;
-		memmove(b->rp, p, n);
+		jehanne_memmove(b->rp, p, n);
 	}
 }
  */
@@ -511,7 +511,7 @@ qtake(Block **l, int n, int discard)
 				*l = 0;
 			} else {
 				nb = allocb(i);
-				memmove(nb->wp, b->rp+n, i);
+				jehanne_memmove(nb->wp, b->rp+n, i);
 				nb->wp += i;
 				b->wp -= i;
 				nb->next = b->next;
@@ -577,7 +577,7 @@ sslbread(Chan *c, long n, int64_t _1)
 			len = ((p[0] & 0x3f)<<8) | p[1];
 			pad = p[2];
 			if(pad > len){
-				print("pad %d buf len %d\n", pad, len);
+				jehanne_print("pad %d buf len %d\n", pad, len);
 				error("bad pad in ssl message");
 			}
 			toconsume = 3;
@@ -591,7 +591,7 @@ sslbread(Chan *c, long n, int64_t _1)
 		b = qtake(&s->unprocessed, len, 0);
 
 		if(blocklen(b) != len)
-			print("devssl: sslbread got wrong count %d != %d", blocklen(b), len);
+			jehanne_print("devssl: sslbread got wrong count %d != %d", blocklen(b), len);
 
 		if(waserror()){
 			qunlock(&s->in.ctlq);
@@ -666,7 +666,7 @@ sslread(Chan *c, void *a, long n, int64_t off)
 		error(Ebadusefd);
 	case Qctl:
 		ft = CONV(c->qid);
-		sprint(buf, "%d", ft);
+		jehanne_sprint(buf, "%d", ft);
 		return readstr(offset, a, n, buf);
 	case Qdata:
 		b = sslbread(c, n, offset);
@@ -688,7 +688,7 @@ sslread(Chan *c, void *a, long n, int64_t off)
 	va = a;
 	for(nb = b; nb; nb = nb->next){
 		i = BLEN(nb);
-		memmove(va+n, nb->rp, i);
+		jehanne_memmove(va+n, nb->rp, i);
 		n += i;
 	}
 
@@ -755,7 +755,7 @@ sslput(Dstate *s, Block * volatile b)
 
 	if(waserror()){
 		if(b != nil)
-			free(b);
+			jehanne_free(b);
 		nexterror();
 	}
 
@@ -784,7 +784,7 @@ sslput(Dstate *s, Block * volatile b)
 		rv += l;
 		if(l != n){
 			nb = allocb(l + h + pad);
-			memmove(nb->wp + h, b->rp, l);
+			jehanne_memmove(nb->wp + h, b->rp, l);
 			nb->wp += l + h;
 			b->rp += l;
 		} else {
@@ -841,10 +841,10 @@ static void
 setsecret(OneWay *w, uint8_t *secret, int n)
 {
 	if(w->secret)
-		free(w->secret);
+		jehanne_free(w->secret);
 
 	w->secret = smalloc(n);
-	memmove(w->secret, secret, n);
+	jehanne_memmove(w->secret, secret, n);
 	w->slen = n;
 }
 
@@ -852,7 +852,7 @@ static void
 initDESkey(OneWay *w)
 {
 	if(w->state){
-		free(w->state);
+		jehanne_free(w->state);
 		w->state = 0;
 	}
 
@@ -875,19 +875,19 @@ initDESkey_40(OneWay *w)
 	uint8_t key[8];
 
 	if(w->state){
-		free(w->state);
+		jehanne_free(w->state);
 		w->state = 0;
 	}
 
 	if(w->slen >= 8){
-		memmove(key, w->secret, 8);
+		jehanne_memmove(key, w->secret, 8);
 		key[0] &= 0x0f;
 		key[2] &= 0x0f;
 		key[4] &= 0x0f;
 		key[6] &= 0x0f;
 	}
 
-	w->state = malloc(sizeof(DESstate));
+	w->state = jehanne_malloc(sizeof(DESstate));
 	if(w->slen >= 16)
 		setupDESstate(w->state, key, w->secret+8);
 	else if(w->slen >= 8)
@@ -900,7 +900,7 @@ static void
 initRC4key(OneWay *w)
 {
 	if(w->state){
-		free(w->state);
+		jehanne_free(w->state);
 		w->state = 0;
 	}
 
@@ -916,14 +916,14 @@ static void
 initRC4key_40(OneWay *w)
 {
 	if(w->state){
-		free(w->state);
+		jehanne_free(w->state);
 		w->state = 0;
 	}
 
 	if(w->slen > 5)
 		w->slen = 5;
 
-	w->state = malloc(sizeof(RC4state));
+	w->state = jehanne_malloc(sizeof(RC4state));
 	setupRC4state(w->state, w->secret, w->slen);
 }
 
@@ -935,14 +935,14 @@ static void
 initRC4key_128(OneWay *w)
 {
 	if(w->state){
-		free(w->state);
+		jehanne_free(w->state);
 		w->state = 0;
 	}
 
 	if(w->slen > 16)
 		w->slen = 16;
 
-	w->state = malloc(sizeof(RC4state));
+	w->state = jehanne_malloc(sizeof(RC4state));
 	setupRC4state(w->state, w->secret, w->slen);
 }
 
@@ -970,7 +970,7 @@ parsehashalg(char *p, Dstate *s)
 	Hashalg *ha;
 
 	for(ha = hashtab; ha->name; ha++){
-		if(strcmp(p, ha->name) == 0){
+		if(jehanne_strcmp(p, ha->name) == 0){
 			s->hf = ha->hf;
 			s->diglen = ha->diglen;
 			s->state &= ~Sclear;
@@ -1022,7 +1022,7 @@ parseencryptalg(char *p, Dstate *s)
 	Encalg *ea;
 
 	for(ea = encrypttab; ea->name; ea++){
-		if(strcmp(p, ea->name) == 0){
+		if(jehanne_strcmp(p, ea->name) == 0){
 			s->encryptalg = ea->alg;
 			s->blocklen = ea->blocklen;
 			(*ea->keyinit)(&s->in);
@@ -1072,7 +1072,7 @@ sslwrite(Chan *c, void *a, long n, int64_t _1)
 				freeb(b);
 				nexterror();
 			}
-			memmove(b->wp, p, l);
+			jehanne_memmove(b->wp, p, l);
 			poperror();
 			b->wp += l;
 
@@ -1110,16 +1110,16 @@ sslwrite(Chan *c, void *a, long n, int64_t _1)
 
 	if(n >= sizeof(buf))
 		error("arg too long");
-	strncpy(buf, a, n);
+	jehanne_strncpy(buf, a, n);
 	buf[n] = 0;
-	p = strchr(buf, '\n');
+	p = jehanne_strchr(buf, '\n');
 	if(p)
 		*p = 0;
-	p = strchr(buf, ' ');
+	p = jehanne_strchr(buf, ' ');
 	if(p)
 		*p++ = 0;
 
-	if(strcmp(buf, "fd") == 0){
+	if(jehanne_strcmp(buf, "fd") == 0){
 		s->c = buftochan(p);
 
 		/* default is clear (msg delimiters only) */
@@ -1129,7 +1129,7 @@ sslwrite(Chan *c, void *a, long n, int64_t _1)
 		s->maxpad = s->max = (1<<15) - s->diglen - 1;
 		s->in.mid = 0;
 		s->out.mid = 0;
-	} else if(strcmp(buf, "alg") == 0 && p != 0){
+	} else if(jehanne_strcmp(buf, "alg") == 0 && p != 0){
 		s->blocklen = 1;
 		s->diglen = 0;
 
@@ -1138,7 +1138,7 @@ sslwrite(Chan *c, void *a, long n, int64_t _1)
 
 		s->state = Sclear;
 		s->maxpad = s->max = (1<<15) - s->diglen - 1;
-		if(strcmp(p, "clear") == 0){
+		if(jehanne_strcmp(p, "clear") == 0){
 			goto out;
 		}
 
@@ -1154,7 +1154,7 @@ sslwrite(Chan *c, void *a, long n, int64_t _1)
 		s->blocklen = 1;
 
 		for(;;){
-			np = strchr(p, ' ');
+			np = jehanne_strchr(p, ' ');
 			if(np)
 				*np++ = 0;
 
@@ -1177,18 +1177,18 @@ sslwrite(Chan *c, void *a, long n, int64_t _1)
 			s->maxpad -= s->maxpad % s->blocklen;
 		} else
 			s->maxpad = s->max = (1<<15) - s->diglen - 1;
-	} else if(strcmp(buf, "secretin") == 0 && p != 0) {
-		l = (strlen(p)*3)/2;
+	} else if(jehanne_strcmp(buf, "secretin") == 0 && p != 0) {
+		l = (jehanne_strlen(p)*3)/2;
 		x = smalloc(l);
-		t = dec64(x, l, p, strlen(p));
+		t = jehanne_dec64(x, l, p, jehanne_strlen(p));
 		setsecret(&s->in, x, t);
-		free(x);
-	} else if(strcmp(buf, "secretout") == 0 && p != 0) {
-		l = (strlen(p)*3)/2 + 1;
+		jehanne_free(x);
+	} else if(jehanne_strcmp(buf, "secretout") == 0 && p != 0) {
+		l = (jehanne_strlen(p)*3)/2 + 1;
 		x = smalloc(l);
-		t = dec64(x, l, p, strlen(p));
+		t = jehanne_dec64(x, l, p, jehanne_strlen(p));
 		setsecret(&s->out, x, t);
-		free(x);
+		jehanne_free(x);
 	} else
 		error(Ebadarg);
 
@@ -1209,11 +1209,11 @@ sslinit(void)
 
 	n = 1;
 	for(e = encrypttab; e->name != nil; e++)
-		n += strlen(e->name) + 1;
+		n += jehanne_strlen(e->name) + 1;
 	cp = encalgs = smalloc(n);
 	for(e = encrypttab;;){
-		strcpy(cp, e->name);
-		cp += strlen(e->name);
+		jehanne_strcpy(cp, e->name);
+		cp += jehanne_strlen(e->name);
 		e++;
 		if(e->name == nil)
 			break;
@@ -1223,11 +1223,11 @@ sslinit(void)
 
 	n = 1;
 	for(h = hashtab; h->name != nil; h++)
-		n += strlen(h->name) + 1;
+		n += jehanne_strlen(h->name) + 1;
 	cp = hashalgs = smalloc(n);
 	for(h = hashtab;;){
-		strcpy(cp, h->name);
-		cp += strlen(h->name);
+		jehanne_strcpy(cp, h->name);
+		cp += jehanne_strlen(h->name);
 		h++;
 		if(h->name == nil)
 			break;
@@ -1279,7 +1279,7 @@ encryptb(Dstate *s, Block *b, int offset)
 			for(eip = ip+8; ip < eip; )
 				*p2++ ^= *ip++;
 			block_cipher(ds->expanded, p, 0);
-			memmove(ds->ivec, p, 8);
+			jehanne_memmove(ds->ivec, p, 8);
 		}
 		break;
 	case RC4:
@@ -1323,7 +1323,7 @@ decryptb(Dstate *s, Block *bin)
 			ds = s->in.state;
 			ep = b->rp + BLEN(b);
 			for(p = b->rp; p < ep;){
-				memmove(tmp, p, 8);
+				jehanne_memmove(tmp, p, 8);
 				block_cipher(ds->expanded, p, 1);
 				tp = tmp;
 				ip = ds->ivec;
@@ -1352,7 +1352,7 @@ digestb(Dstate *s, Block *b, int offset)
 
 	w = &s->out;
 
-	memset(&ss, 0, sizeof(ss));
+	jehanne_memset(&ss, 0, sizeof(ss));
 	h = s->diglen + offset;
 	n = BLEN(b) - h;
 
@@ -1385,7 +1385,7 @@ checkdigestb(Dstate *s, Block *bin)
 
 	w = &s->in;
 
-	memset(&ss, 0, sizeof(ss));
+	jehanne_memset(&ss, 0, sizeof(ss));
 
 	/* hash secret */
 	(*s->hf)(w->secret, w->slen, 0, &ss);
@@ -1409,7 +1409,7 @@ checkdigestb(Dstate *s, Block *bin)
 	*p = n;
 	(*s->hf)(msgid, 4, digest, &ss);
 
-	if(memcmp(digest, bin->rp, s->diglen) != 0)
+	if(jehanne_memcmp(digest, bin->rp, s->diglen) != 0)
 		error("bad digest");
 }
 
@@ -1422,7 +1422,7 @@ buftochan(char *p)
 
 	if(p == 0)
 		error(Ebadarg);
-	fd = strtoul(p, 0, 0);
+	fd = jehanne_strtoul(p, 0, 0);
 	if(fd < 0)
 		error(Ebadarg);
 	c = fdtochan(fd, -1, 0, 1);	/* error check and inc ref */
@@ -1482,12 +1482,12 @@ dsnew(Chan *ch, Dstate **pp)
 	Dstate *s;
 	int t;
 
-	*pp = s = malloc(sizeof(*s));
+	*pp = s = jehanne_malloc(sizeof(*s));
 	if(!s)
 		error(Enomem);
 	if(pp - dstate >= dshiwat)
 		dshiwat++;
-	memset(s, 0, sizeof(*s));
+	jehanne_memset(s, 0, sizeof(*s));
 	s->state = Sincomplete;
 	s->ref = 1;
 	kstrdup(&s->user, up->user);

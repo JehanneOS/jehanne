@@ -2,7 +2,7 @@
  * ipconfig - configure parameters of an ip stack
  */
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 #include <ip.h>
 #include <bio.h>
 #include <ndb.h>

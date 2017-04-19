@@ -11,7 +11,7 @@
 #include <libc.h>
 
 int32_t
-atol(const char *s)
+jehanne_atol(const char *s)
 {
 	int32_t n;
 	int f, c;
@@ -55,8 +55,8 @@ atol(const char *s)
 }
 
 int
-atoi(const char *s)
+jehanne_atoi(const char *s)
 {
 
-	return atol(s);
+	return jehanne_atol(s);
 }

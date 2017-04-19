@@ -18,7 +18,7 @@ allocmemsubfont(char *name, int n, int height, int ascent,
 {
 	Memsubfont *f;
 
-	f = malloc(sizeof(Memsubfont));
+	f = jehanne_malloc(sizeof(Memsubfont));
 	if(f == 0)
 		return 0;
 	f->n = n;
@@ -27,7 +27,7 @@ allocmemsubfont(char *name, int n, int height, int ascent,
 	f->info = info;
 	f->bits = i;
 	if(name)
-		f->name = strdup(name);
+		f->name = jehanne_strdup(name);
 	else
 		f->name = 0;
 	return f;
@@ -38,7 +38,7 @@ freememsubfont(Memsubfont *f)
 {
 	if(f == 0)
 		return;
-	free(f->info);	/* note: f->info must have been malloc'ed! */
+	jehanne_free(f->info);	/* note: f->info must have been malloc'ed! */
 	freememimage(f->bits);
-	free(f);
+	jehanne_free(f);
 }

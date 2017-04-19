@@ -49,16 +49,16 @@ initio(void)
 	threadsetname("main");
 	mousectl = initmouse(nil, display->image);
 	if(mousectl == nil){
-		fprint(2, "samterm: mouse init failed: %r\n");
+		jehanne_fprint(2, "samterm: mouse init failed: %r\n");
 		threadexitsall("mouse");
 	}
 	mousep = (Mouse *)mousectl;
 	keyboardctl = initkeyboard(nil);
 	if(keyboardctl == nil){
-		fprint(2, "samterm: keyboard init failed: %r\n");
+		jehanne_fprint(2, "samterm: keyboard init failed: %r\n");
 		threadexitsall("kbd");
 	}
-	atexit(closeio);
+	jehanne_atexit(closeio);
 	hoststart();
 	if(plumbstart() < 0)
 		extstart();
@@ -93,10 +93,10 @@ button(int but)
 void
 externload(int i)
 {
-	plumbbase = malloc(plumbbuf[i].n);
+	plumbbase = jehanne_malloc(plumbbuf[i].n);
 	if(plumbbase == 0)
 		return;
-	memmove(plumbbase, plumbbuf[i].data, plumbbuf[i].n);
+	jehanne_memmove(plumbbase, plumbbuf[i].data, plumbbuf[i].n);
 	plumbp = plumbbase;
 	plumbstop = plumbbase + plumbbuf[i].n;
 	got |= 1<<RPlumb;
@@ -214,10 +214,10 @@ externchar(void)
 
     loop:
 	if(got & ((1<<RPlumb) & ~block)){
-		plumbp += chartorune(&r, (char*)plumbp);
+		plumbp += jehanne_chartorune(&r, (char*)plumbp);
 		if(plumbp >= plumbstop){
 			got &= ~(1<<RPlumb);
-			free(plumbbase);
+			jehanne_free(plumbbase);
 		}
 		if(r == 0)
 			goto loop;
@@ -253,7 +253,7 @@ ekbd(void)
 		return c;
 	}
 	if(recv(keyboardctl->c, &r) < 0){
-		fprint(2, "samterm: keybard recv error: %r\n");
+		jehanne_fprint(2, "samterm: keybard recv error: %r\n");
 		panic("kbd");
 	}
 	return r;

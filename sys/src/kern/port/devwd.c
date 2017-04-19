@@ -35,7 +35,7 @@ void
 addwatchdog(Watchdog *wdog)
 {
 	if(wd){
-		print("addwatchdog: watchdog already installed\n");
+		jehanne_print("addwatchdog: watchdog already installed\n");
 		return;
 	}
 	wd = watchdog = wdog;
@@ -77,7 +77,7 @@ wdautostart(void)
 	if (wdautopet || !wd || !wdallowed())
 		return;
 	if (waserror()) {
-		print("watchdog: automatic enable failed\n");
+		jehanne_print("watchdog: automatic enable failed\n");
 		return;
 	}
 	wd->enable();
@@ -162,17 +162,17 @@ wdread(Chan* c, void* a, long n, int64_t off)
 		if(wd == nil || wd->stat == nil)
 			return 0;
 
-		p = malloc(READSTR);
+		p = jehanne_malloc(READSTR);
 		if(p == nil)
 			error(Enomem);
 		if(waserror()){
-			free(p);
+			jehanne_free(p);
 			nexterror();
 		}
 
 		wd->stat(p, p + READSTR);
 		n = readstr(offset, a, n, p);
-		free(p);
+		jehanne_free(p);
 		poperror();
 		return n;
 
@@ -200,20 +200,20 @@ wdwrite(Chan* c, void* a, long n, int64_t off)
 		if(offset || n >= READSTR)
 			error(Ebadarg);
 
-		if((p = strchr(a, '\n')) != nil)
+		if((p = jehanne_strchr(a, '\n')) != nil)
 			*p = 0;
 
-		if(strncmp(a, "enable", n) == 0) {
+		if(jehanne_strncmp(a, "enable", n) == 0) {
 			if (waserror()) {
-				print("watchdog: enable failed\n");
+				jehanne_print("watchdog: enable failed\n");
 				nexterror();
 			}
 			wd->enable();
 			poperror();
 			watchdogon = 1;
-		} else if(strncmp(a, "disable", n) == 0)
+		} else if(jehanne_strncmp(a, "disable", n) == 0)
 			wdshutdown();
-		else if(strncmp(a, "restart", n) == 0)
+		else if(jehanne_strncmp(a, "restart", n) == 0)
 			wd->restart();
 		else
 			error(Ebadarg);

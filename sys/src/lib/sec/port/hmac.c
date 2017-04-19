@@ -21,7 +21,7 @@ hmac_x(uint8_t *p, uint32_t len, uint8_t *key, uint32_t klen, uint8_t *digest, D
 
 	/* first time through */
 	if(s == nil || s->seeded == 0){
-		memset(pad, 0x36, Hmacblksz);
+		jehanne_memset(pad, 0x36, Hmacblksz);
 		pad[Hmacblksz] = 0;
 		for(i = 0; i < klen; i++)
 			pad[i] ^= key[i];
@@ -35,7 +35,7 @@ hmac_x(uint8_t *p, uint32_t len, uint8_t *key, uint32_t klen, uint8_t *digest, D
 		return s;
 
 	/* last time through */
-	memset(pad, 0x5c, Hmacblksz);
+	jehanne_memset(pad, 0x5c, Hmacblksz);
 	pad[Hmacblksz] = 0;
 	for(i = 0; i < klen; i++)
 		pad[i] ^= key[i];

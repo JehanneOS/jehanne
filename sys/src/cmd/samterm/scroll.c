@@ -129,7 +129,7 @@ scroll(Flayer *l, int but)
 	draw(scrback, Rect(0,0,Dx(l->scroll), Dy(l->scroll)), l->f.b, nil, l->scroll.min);
 	do{
 		oin = in;
-		in = (but > 3) || (but == 2) || abs(x-mousep->xy.x)<=FLSCROLLWID/2;
+		in = (but > 3) || (but == 2) || jehanne_abs(x-mousep->xy.x)<=FLSCROLLWID/2;
 		if(oin && !in)
 			scrunmark(l, r);
 		if(in){

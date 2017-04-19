@@ -58,8 +58,8 @@ static int vflag = 1;
 void
 optionsinit(char* s)
 {
-	oargblen = strecpy(oargb, oargb+sizeof(oargb), s) - oargb;
-	oargc = tokenize(oargb, oargv, nelem(oargv)-1);
+	oargblen = jehanne_strecpy(oargb, oargb+sizeof(oargb), s) - oargb;
+	oargc = jehanne_tokenize(oargb, oargv, nelem(oargv)-1);
 	oargv[oargc] = nil;
 }
 
@@ -84,24 +84,24 @@ options(int argc, char* argv[])
 			while(o = *++argv[0]){
 				if(!(o >= 'A' && o <= 'Z') && !(o >= 'a' && o <= 'z'))
 					continue;
-				n = strtol(argv[0]+1, &p, 0);
+				n = jehanne_strtol(argv[0]+1, &p, 0);
 				if(p == argv[0]+1 || n < 1 || n > 127)
 					n = 1;
 				argv[0] = p-1;
 				dbgflg[o] = n;
 			}
-		}else if(strcmp(next, "waitgdb") == 0){
+		}else if(jehanne_strcmp(next, "waitgdb") == 0){
 			waitdebugger();
-		}else if(strcmp(next, "idlespin") == 0){
+		}else if(jehanne_strcmp(next, "idlespin") == 0){
 			onIdleSpin();
 		}else{
-			strncpy(envcopy, next, sizeof(envcopy)-1);
-			gettokens(envcopy, env, 2, "=");
-			if(strcmp(env[0], "maxcores") == 0){
-				maxcores = strtol(env[1], 0, 0);
+			jehanne_strncpy(envcopy, next, sizeof(envcopy)-1);
+			jehanne_gettokens(envcopy, env, 2, "=");
+			if(jehanne_strcmp(env[0], "maxcores") == 0){
+				maxcores = jehanne_strtol(env[1], 0, 0);
 			}
-			if(strcmp(env[0], "numtcs") == 0){
-				numtcs = strtol(env[1], 0, 0);
+			if(jehanne_strcmp(env[0], "numtcs") == 0){
+				numtcs = jehanne_strtol(env[1], 0, 0);
 			}
 		}
 	}
@@ -119,10 +119,10 @@ loadenv(int argc, char* argv[])
 	while(--argc > 0){
 		char* next = *++argv;
 		if(next[0] !='-'){
-			if (gettokens(next, env, 2, "=")  == 2){;
+			if (jehanne_gettokens(next, env, 2, "=")  == 2){;
 				ksetenv(env[0], env[1], 1);
 			}else{
-				print("Ignoring parameter with no value: %s\n", env[0]);
+				jehanne_print("Ignoring parameter with no value: %s\n", env[0]);
 			}
 		}
 	}
@@ -195,7 +195,7 @@ squidboy(int apicno)
 	lapictimerenable();
 	lapicpri(0);
 
-	print("mach%d: online color %d\n", m->machno, m->color);
+	jehanne_print("mach%d: online color %d\n", m->machno, m->color);
 	schedinit();
 
 	panic("squidboy returns (type %d)", m->mode);
@@ -210,7 +210,7 @@ main(uint32_t ax, uint32_t bx)
 	int64_t hz;
 	char *p;
 
-	memset(edata, 0, end - edata);
+	jehanne_memset(edata, 0, end - edata);
 
 	/*
 	 * ilock via i8250enable via i8250console
@@ -218,7 +218,7 @@ main(uint32_t ax, uint32_t bx)
 	 * also 'up' set to nil.
 	 */
 	cgapost(sizeof(uintptr_t)*8);
-	memset(m, 0, sizeof(Mach));
+	jehanne_memset(m, 0, sizeof(Mach));
 	m->machno = 0;
 	m->online = 1;
 	sys->machptr[m->machno] = &sys->mach;
@@ -256,10 +256,10 @@ main(uint32_t ax, uint32_t bx)
 	active.exiting = 0;
 
 	fmtinit();
-	print("\nJehanne Operating System\n");
+	jehanne_print("\nJehanne Operating System\n");
 
 	if(vflag){
-		print("&ax = %#p, ax = %#ux, bx = %#ux\n", &ax, ax, bx);
+		jehanne_print("&ax = %#p, ax = %#ux, bx = %#ux\n", &ax, ax, bx);
 		multiboot(ax, bx, vflag);
 	}
 	e820();
@@ -333,7 +333,7 @@ D('k');
 D('l');
 	p = getconf("*procmax");
 	if(p != nil)
-		procmax = strtoull(p, nil, 0);
+		procmax = jehanne_strtoull(p, nil, 0);
 	if(procmax == 0)
 		procmax = 2000;
 	psinit(procmax);
@@ -400,7 +400,7 @@ init0(void)
 	devtabinit();
 
 	if(!waserror()){
-		snprint(buf, sizeof(buf), "%s %s", "AMD64", conffile);
+		jehanne_snprint(buf, sizeof(buf), "%s %s", "AMD64", conffile);
 		loadenv(oargc, oargv);
 		ksetenv("terminal", buf, 0);
 		ksetenv("cputype", "amd64", 0);
@@ -431,7 +431,7 @@ bootargs(uintptr_t base)
 	 */
 	i = oargblen+1;
 	p = UINT2PTR(STACKALIGN(base + PGSZ - sizeof(up->arg) - i));
-	memmove(p, oargb, i);
+	jehanne_memmove(p, oargb, i);
 
 	/*
 	 * Now push argc and the argv pointers.

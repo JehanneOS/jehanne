@@ -1,5 +1,5 @@
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 
 /*
  *	The whole regression test I am after here is to call qa/kern/args with

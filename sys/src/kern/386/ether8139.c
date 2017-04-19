@@ -311,38 +311,38 @@ rtl8139ifstat(Ether* edev, void* a, long n, uint32_t offset)
 	Ctlr *ctlr;
 
 	ctlr = edev->ctlr;
-	p = malloc(READSTR);
+	p = jehanne_malloc(READSTR);
 	if(p == nil)
 		error(Enomem);
-	l = snprint(p, READSTR, "rcr %#8.8ux\n", ctlr->rcr);
-	l += snprint(p+l, READSTR-l, "multicast %ud\n", ctlr->mcast);
-	l += snprint(p+l, READSTR-l, "ierrs %d\n", ctlr->ierrs);
-	l += snprint(p+l, READSTR-l, "etxth %d\n", ctlr->etxth);
-	l += snprint(p+l, READSTR-l, "taligned %d\n", ctlr->taligned);
-	l += snprint(p+l, READSTR-l, "tunaligned %d\n", ctlr->tunaligned);
+	l = jehanne_snprint(p, READSTR, "rcr %#8.8ux\n", ctlr->rcr);
+	l += jehanne_snprint(p+l, READSTR-l, "multicast %ud\n", ctlr->mcast);
+	l += jehanne_snprint(p+l, READSTR-l, "ierrs %d\n", ctlr->ierrs);
+	l += jehanne_snprint(p+l, READSTR-l, "etxth %d\n", ctlr->etxth);
+	l += jehanne_snprint(p+l, READSTR-l, "taligned %d\n", ctlr->taligned);
+	l += jehanne_snprint(p+l, READSTR-l, "tunaligned %d\n", ctlr->tunaligned);
 	ctlr->dis += csr16r(ctlr, Dis);
-	l += snprint(p+l, READSTR-l, "dis %d\n", ctlr->dis);
+	l += jehanne_snprint(p+l, READSTR-l, "dis %d\n", ctlr->dis);
 	ctlr->fcsc += csr16r(ctlr, Fcsc);
-	l += snprint(p+l, READSTR-l, "fcscnt %d\n", ctlr->fcsc);
+	l += jehanne_snprint(p+l, READSTR-l, "fcscnt %d\n", ctlr->fcsc);
 	ctlr->rec += csr16r(ctlr, Rec);
-	l += snprint(p+l, READSTR-l, "rec %d\n", ctlr->rec);
+	l += jehanne_snprint(p+l, READSTR-l, "rec %d\n", ctlr->rec);
 
-	l += snprint(p+l, READSTR-l, "Tcr %#8.8lux\n", csr32r(ctlr, Tcr));
-	l += snprint(p+l, READSTR-l, "Config0 %#2.2ux\n", csr8r(ctlr, Config0));
-	l += snprint(p+l, READSTR-l, "Config1 %#2.2ux\n", csr8r(ctlr, Config1));
-	l += snprint(p+l, READSTR-l, "Msr %#2.2ux\n", csr8r(ctlr, Msr));
-	l += snprint(p+l, READSTR-l, "Config3 %#2.2ux\n", csr8r(ctlr, Config3));
-	l += snprint(p+l, READSTR-l, "Config4 %#2.2ux\n", csr8r(ctlr, Config4));
+	l += jehanne_snprint(p+l, READSTR-l, "Tcr %#8.8lux\n", csr32r(ctlr, Tcr));
+	l += jehanne_snprint(p+l, READSTR-l, "Config0 %#2.2ux\n", csr8r(ctlr, Config0));
+	l += jehanne_snprint(p+l, READSTR-l, "Config1 %#2.2ux\n", csr8r(ctlr, Config1));
+	l += jehanne_snprint(p+l, READSTR-l, "Msr %#2.2ux\n", csr8r(ctlr, Msr));
+	l += jehanne_snprint(p+l, READSTR-l, "Config3 %#2.2ux\n", csr8r(ctlr, Config3));
+	l += jehanne_snprint(p+l, READSTR-l, "Config4 %#2.2ux\n", csr8r(ctlr, Config4));
 
-	l += snprint(p+l, READSTR-l, "Bmcr %#4.4ux\n", csr16r(ctlr, Bmcr));
-	l += snprint(p+l, READSTR-l, "Bmsr %#4.4ux\n", csr16r(ctlr, Bmsr));
-	l += snprint(p+l, READSTR-l, "Anar %#4.4ux\n", csr16r(ctlr, Anar));
-	l += snprint(p+l, READSTR-l, "Anlpar %#4.4ux\n", csr16r(ctlr, Anlpar));
-	l += snprint(p+l, READSTR-l, "Aner %#4.4ux\n", csr16r(ctlr, Aner));
-	l += snprint(p+l, READSTR-l, "Nwaytr %#4.4ux\n", csr16r(ctlr, Nwaytr));
-	snprint(p+l, READSTR-l, "Cscr %#4.4ux\n", csr16r(ctlr, Cscr));
+	l += jehanne_snprint(p+l, READSTR-l, "Bmcr %#4.4ux\n", csr16r(ctlr, Bmcr));
+	l += jehanne_snprint(p+l, READSTR-l, "Bmsr %#4.4ux\n", csr16r(ctlr, Bmsr));
+	l += jehanne_snprint(p+l, READSTR-l, "Anar %#4.4ux\n", csr16r(ctlr, Anar));
+	l += jehanne_snprint(p+l, READSTR-l, "Anlpar %#4.4ux\n", csr16r(ctlr, Anlpar));
+	l += jehanne_snprint(p+l, READSTR-l, "Aner %#4.4ux\n", csr16r(ctlr, Aner));
+	l += jehanne_snprint(p+l, READSTR-l, "Nwaytr %#4.4ux\n", csr16r(ctlr, Nwaytr));
+	jehanne_snprint(p+l, READSTR-l, "Cscr %#4.4ux\n", csr16r(ctlr, Cscr));
 	n = readstr(offset, a, n, p);
-	free(p);
+	jehanne_free(p);
 
 	return n;
 }
@@ -427,7 +427,7 @@ rtl8139init(Ether* edev)
 	alloc = (uint8_t*)ROUNDUP((uintptr_t)ctlr->alloc, 32);
 	ctlr->rbstart = alloc;
 	alloc += ctlr->rblen+16;
-	memset(ctlr->rbstart, 0, ctlr->rblen+16);
+	jehanne_memset(ctlr->rbstart, 0, ctlr->rblen+16);
 	csr32w(ctlr, Rbstart, PCIWADDR32(ctlr->rbstart));
 	ctlr->rcr = Rxfth256|Rblen|Mrxdmaunlimited|Ab|Am|Apm;
 
@@ -471,18 +471,18 @@ rtl8139attach(Ether* edev)
 	Ctlr *ctlr;
 
 	if(edev == nil) {
-		print("rtl8139attach: nil edev\n");
+		jehanne_print("rtl8139attach: nil edev\n");
 		return;
 	}
 	ctlr = edev->ctlr;
 	if(ctlr == nil) {
-		print("rtl8139attach: nil ctlr for Ether %#p\n", edev);
+		jehanne_print("rtl8139attach: nil ctlr for Ether %#p\n", edev);
 		return;
 	}
 	qlock(&ctlr->alock);
 	if(ctlr->alloc == nil){
 		ctlr->rblen = 1<<((Rblen>>RblenSHIFT)+13);
-		ctlr->alloc = malloc(ctlr->rblen+16 + Ntd*Tdbsz + 32);
+		ctlr->alloc = jehanne_malloc(ctlr->rblen+16 + Ntd*Tdbsz + 32);
 		if(ctlr->alloc == nil) {
 			qunlock(&ctlr->alock);
 			error(Enomem);
@@ -509,7 +509,7 @@ rtl8139txstart(Ether* edev)
 
 		td = &ctlr->td[ctlr->tdh];
 		if(((uintptr_t)bp->rp) & 0x03){
-			memmove(td->data, bp->rp, size);
+			jehanne_memmove(td->data, bp->rp, size);
 			freeb(bp);
 			csr32w(ctlr, td->tsad, PCIWADDR32(td->data));
 			ctlr->tunaligned++;
@@ -605,13 +605,13 @@ rtl8139receive(Ether* edev)
 		if((bp = iallocb(length)) != nil){
 			if(p+length >= ctlr->rbstart+ctlr->rblen){
 				l = ctlr->rbstart+ctlr->rblen - p;
-				memmove(bp->wp, p, l);
+				jehanne_memmove(bp->wp, p, l);
 				bp->wp += l;
 				length -= l;
 				p = ctlr->rbstart;
 			}
 			if(length > 0){
-				memmove(bp->wp, p, length);
+				jehanne_memmove(bp->wp, p, length);
 				bp->wp += length;
 			}
 			bp->wp -= 4;
@@ -634,7 +634,7 @@ rtl8139interrupt(Ureg* _1, void* arg)
 	edev = arg;
 	ctlr = edev->ctlr;
 	if(ctlr == nil) {	/* not attached yet? (shouldn't happen) */
-		print("rtl8139interrupt: interrupt for unattached Ether %#p\n",
+		jehanne_print("rtl8139interrupt: interrupt for unattached Ether %#p\n",
 			edev);
 		return;
 	}
@@ -642,7 +642,7 @@ rtl8139interrupt(Ureg* _1, void* arg)
 	while((isr = csr16r(ctlr, Isr)) != 0){
 		csr16w(ctlr, Isr, isr);
 		if(ctlr->alloc == nil) {
-			print("rtl8139interrupt: interrupt for unattached Ctlr "
+			jehanne_print("rtl8139interrupt: interrupt for unattached Ctlr "
 				"%#p port %#p\n", ctlr, (void *)(int64_t)ctlr->port);
 			return;	/* not attached yet (shouldn't happen) */
 		}
@@ -740,7 +740,7 @@ rtl8139match(Ether* edev, int id)
 			continue;
 
 		if(ioalloc(port, p->mem[0].size, 0, "rtl8139") < 0){
-			print("rtl8139: port %#ux in use\n", port);
+			jehanne_print("rtl8139: port %#ux in use\n", port);
 			continue;
 		}
 
@@ -796,7 +796,7 @@ rtl8139pnp(Ether* edev)
 		while(p = pcimatch(p, 0, 0)){
 			if(p->ccrb != 0x02 || p->ccru != 0)
 				continue;
-			ctlr = malloc(sizeof(Ctlr));
+			ctlr = jehanne_malloc(sizeof(Ctlr));
 			if(ctlr == nil)
 				error(Enomem);
 			ctlr->pcidev = p;
@@ -819,8 +819,8 @@ rtl8139pnp(Ether* edev)
 	 */
 	id = 0;
 	for(i = 0; i < edev->nopt; i++){
-		if(cistrncmp(edev->opt[i], "id=", 3) == 0)
-			id = strtol(&edev->opt[i][3], nil, 0);
+		if(jehanne_cistrncmp(edev->opt[i], "id=", 3) == 0)
+			id = jehanne_strtol(&edev->opt[i][3], nil, 0);
 	}
 
 	ctlr = nil;
@@ -842,8 +842,8 @@ rtl8139pnp(Ether* edev)
 	 * Check if the adapter's station address is to be overridden.
 	 * If not, read it from the device and set in edev->ea.
 	 */
-	memset(ea, 0, Eaddrlen);
-	if(memcmp(ea, edev->ea, Eaddrlen) == 0){
+	jehanne_memset(ea, 0, Eaddrlen);
+	if(jehanne_memcmp(ea, edev->ea, Eaddrlen) == 0){
 		i = csr32r(ctlr, Idr0);
 		edev->ea[0] = i;
 		edev->ea[1] = i>>8;

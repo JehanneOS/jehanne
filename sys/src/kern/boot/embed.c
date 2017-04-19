@@ -37,30 +37,30 @@ connectembed(void)
 	Dir *dir;
 	char **arg, **argp;
 
-	dir = dirstat("/boot/paqfs");
+	dir = jehanne_dirstat("/boot/paqfs");
 	if(dir == nil)
 		return -1;
-	free(dir);
+	jehanne_free(dir);
 
-	dir = dirstat(paqfile);
+	dir = jehanne_dirstat(paqfile);
 	if(dir == nil || dir->mode & DMDIR)
 		return -1;
-	free(dir);
+	jehanne_free(dir);
 
-	print("paqfs...");
+	jehanne_print("paqfs...");
 	if(bind("#0", "/dev", MREPL) < 0)
 		fatal("bind #0");
 	if(bind("#c", "/dev", MAFTER) < 0)
 		fatal("bind #c");
 	if(bind("#p", "/proc", MREPL) < 0)
 		fatal("bind #p");
-	if(pipe(p)<0)
+	if(jehanne_pipe(p)<0)
 		fatal("pipe");
-	switch(fork()){
+	switch(jehanne_fork()){
 	case -1:
 		fatal("fork");
 	case 0:
-		arg = malloc((bargc+5)*sizeof(char*));
+		arg = jehanne_malloc((bargc+5)*sizeof(char*));
 		argp = arg;
 		*argp++ = "/boot/paqfs";
 		*argp++ = "-iv";
@@ -69,10 +69,10 @@ connectembed(void)
 			*argp++ = bargv[i];
 		*argp = 0;
 
-		if(dup(p[0], 0) != 0)
-			fatal("dup(p[0], 0)");
-		if(dup(p[1], 1) != 1)
-			fatal("dup(p[1], 1)");
+		if(jehanne_dup(p[0], 0) != 0)
+			fatal("jehanne_dup(p[0], 0)");
+		if(jehanne_dup(p[1], 1) != 1)
+			fatal("jehanne_dup(p[1], 1)");
 		close(p[0]);
 		close(p[1]);
 		exec("/boot/paqfs", (const char**)arg);
@@ -80,7 +80,7 @@ connectembed(void)
 	default:
 		break;
 	}
-	waitpid();
+	jehanne_waitpid();
 
 	close(p[1]);
 	return p[0];

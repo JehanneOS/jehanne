@@ -27,7 +27,7 @@ mpfactorial(uint32_t n)
 			if((cnt & 1) == 0){
 				s = stk[max];
 				mpbits(r, Dbits*(s->top+1+1));
-				memset(r->p, 0, Dbytes*(s->top+1+1));
+				jehanne_memset(r->p, 0, Dbytes*(s->top+1+1));
 				mpvecmul(s->p, s->top, &p, 1, r->p);
 				r->sign = 1;
 				r->top = s->top+1+1;		/* XXX: norm */
@@ -59,7 +59,7 @@ mpfactorial(uint32_t n)
 	}else{
 		s = stk[max--];
 		mpbits(r, Dbits*(s->top+1+1));
-		memset(r->p, 0, Dbytes*(s->top+1+1));
+		jehanne_memset(r->p, 0, Dbytes*(s->top+1+1));
 		mpvecmul(s->p, s->top, &p, 1, r->p);
 		r->sign = 1;
 		r->top = s->top+1+1;		/* XXX: norm */

@@ -61,7 +61,7 @@ static int maxcache = MAXCACHE;
 static void
 extentfree(Extent* e)
 {
-	free(e->cache);
+	jehanne_free(e->cache);
 	e->cache = nil;
 	lock(&ecache.l);
 	e->next = ecache.head;
@@ -78,7 +78,7 @@ extentalloc(void)
 
 	lock(&ecache.l);
 	if(ecache.head == nil){
-		e = malloc(NEXTENT*sizeof(Extent));
+		e = jehanne_malloc(NEXTENT*sizeof(Extent));
 		if(e == nil){
 			unlock(&ecache.l);
 			return nil;
@@ -94,7 +94,7 @@ extentalloc(void)
 
 	e = ecache.head;
 	ecache.head = e->next;
-	memset(e, 0, sizeof(Extent));
+	jehanne_memset(e, 0, sizeof(Extent));
 	ecache.free--;
 	unlock(&ecache.l);
 
@@ -107,7 +107,7 @@ cinit(void)
 	int i;
 	Mntcache *mc;
 
-	if((cache.head = malloc(sizeof(Mntcache)*NFILE)) == nil)
+	if((cache.head = jehanne_malloc(sizeof(Mntcache)*NFILE)) == nil)
 		panic("cinit: no memory");
 	mc = cache.head;
 
@@ -304,7 +304,7 @@ cread(Chan *c, uint8_t *buf, int len, int64_t off)
 			nexterror();
 		}
 
-		memmove(buf, p+o, l);
+		jehanne_memmove(buf, p+o, l);
 
 		poperror();
 
@@ -337,7 +337,7 @@ cchain(uint8_t *buf, uint32_t offset, int len, Extent **tail)
 		if(e == 0)
 			break;
 
-		p = mallocz(PGSZ, 0);
+		p = jehanne_mallocz(PGSZ, 0);
 		if(p == nil){
 			extentfree(e);
 			break;
@@ -350,7 +350,7 @@ cchain(uint8_t *buf, uint32_t offset, int len, Extent **tail)
 		e->start = offset;
 		e->len = l;
 
-		memmove(p, buf, l);
+		jehanne_memmove(p, buf, l);
 
 		buf += l;
 		offset += l;
@@ -369,11 +369,11 @@ cpgmove(Extent *e, uint8_t *buf, int boff, int len)
 {
 	if(e->cache == nil){
 		/* shouldn't happen */
-		print("CACHE: cpgmove %#p %d %d nil\n", e, boff, len);
+		jehanne_print("CACHE: cpgmove %#p %d %d nil\n", e, boff, len);
 		return 0;
 	}
 
-	memmove(e->cache+boff, buf, len);
+	jehanne_memmove(e->cache+boff, buf, len);
 
 	return 1;
 }
@@ -454,7 +454,7 @@ cupdate(Chan *c, uint8_t *buf, int len, int64_t off)
 			len -= o;
 			offset += o;
 			if(len <= 0) {
-if(f && p->start + p->len > f->start) print("CACHE: p->start=%uld p->len=%d f->start=%uld\n", p->start, p->len, f->start);
+if(f && p->start + p->len > f->start) jehanne_print("CACHE: p->start=%uld p->len=%d f->start=%uld\n", p->start, p->len, f->start);
 				qunlock(mc);
 				return;
 			}

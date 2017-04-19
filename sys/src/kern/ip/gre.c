@@ -221,7 +221,7 @@ grestate(Conv *c, char *state, int n)
 	grec = c->ptcl;
 	p    = state;
 	ep   = p + n;
-	p    = seprint(p, ep, "%s%s%s%shoa %V north %V south %V seq %ulx "
+	p    = jehanne_seprint(p, ep, "%s%s%s%shoa %V north %V south %V seq %ulx "
 	 "pending %uld  %uld buffered dl %uld %uld ul %uld %uld ulkey %.8ulx\n",
 			c->inuse? "Open ": "Closed ",
 			grec->raw? "raw ": "",
@@ -250,9 +250,9 @@ greclose(Conv *c)
 	grec = c->ptcl;
 
 	/* Make sure we don't forward any more packets */
-	memset(grec->hoa, 0, sizeof grec->hoa);
-	memset(grec->north, 0, sizeof grec->north);
-	memset(grec->south, 0, sizeof grec->south);
+	jehanne_memset(grec->hoa, 0, sizeof grec->hoa);
+	jehanne_memset(grec->north, 0, sizeof grec->north);
+	jehanne_memset(grec->south, 0, sizeof grec->south);
 
 	qlock(&grec->lock);
 	while((bp = getring(&grec->dlpending)) != nil)
@@ -311,13 +311,13 @@ grekick(void *x, Block *bp)
 	if(grec->raw == 0){
 		v4tov6(raddr, gre->dst);
 		if(ipcmp(raddr, v4prefix) == 0)
-			memmove(gre->dst, c->raddr + IPv4off, IPv4addrlen);
+			jehanne_memmove(gre->dst, c->raddr + IPv4off, IPv4addrlen);
 		v4tov6(laddr, gre->src);
 		if(ipcmp(laddr, v4prefix) == 0){
 			if(ipcmp(c->laddr, IPnoaddr) == 0)
 				/* pick interface closest to dest */
 				findlocalip(c->p->f, c->laddr, raddr);
-			memmove(gre->src, c->laddr + IPv4off, sizeof gre->src);
+			jehanne_memmove(gre->src, c->laddr + IPv4off, sizeof gre->src);
 		}
 		hnputs(gre->eproto, c->rport);
 	}
@@ -357,7 +357,7 @@ gredownlink(Conv *c, Block *bp)
 	if(flags & GRE_cksum)
 		hdrlen += 2;
 	if(flags & GRE_routing){
-		print("%V routing info present.  Discarding packet", gre->src);
+		jehanne_print("%V routing info present.  Discarding packet", gre->src);
 		freeb(bp);
 		return;
 	}
@@ -375,11 +375,11 @@ gredownlink(Conv *c, Block *bp)
 	if(hdrlen != sizeof(uint32_t)){
 		extra = hdrlen - sizeof(uint32_t);
 		if(extra < 0 && bp->rp - bp->base < -extra){
-			print("gredownlink: cannot add sequence number\n");
+			jehanne_print("gredownlink: cannot add sequence number\n");
 			freeb(bp);
 			return;
 		}
-		memmove(bp->rp + extra, bp->rp, sizeof(GREhdr));
+		jehanne_memmove(bp->rp + extra, bp->rp, sizeof(GREhdr));
 		bp->rp += extra;
 		assert(BLEN(bp) >= sizeof(GREhdr) + sizeof(uint32_t));
 		gre = (GREhdr *)bp->rp;
@@ -434,8 +434,8 @@ restart:
 	 * When we get here, we're not suspended.  Proceed to send the
 	 * packet.
 	 */
-	memmove(gre->src, grec->coa, sizeof gre->dst);
-	memmove(gre->dst, grec->south, sizeof gre->dst);
+	jehanne_memmove(gre->src, grec->coa, sizeof gre->dst);
+	jehanne_memmove(gre->dst, grec->south, sizeof gre->dst);
 
 	/*
 	 * Make sure the packet does not go away.
@@ -470,8 +470,8 @@ greuplink(Conv *c, Block *bp)
 		return;
 
 	grec = c->ptcl;
-	memmove(gre->src, grec->coa, sizeof gre->src);
-	memmove(gre->dst, grec->north, sizeof gre->dst);
+	jehanne_memmove(gre->src, grec->coa, sizeof gre->src);
+	jehanne_memmove(gre->dst, grec->north, sizeof gre->dst);
 
 	/*
 	 * Add a key, if needed.
@@ -479,7 +479,7 @@ greuplink(Conv *c, Block *bp)
 	if(grec->ulkey){
 		flags = nhgets(gre->flags);
 		if(flags & (GRE_cksum|GRE_routing)){
-			print("%V routing info present.  Discarding packet\n",
+			jehanne_print("%V routing info present.  Discarding packet\n",
 				gre->src);
 			freeb(bp);
 			return;
@@ -488,13 +488,13 @@ greuplink(Conv *c, Block *bp)
 		if((flags & GRE_key) == 0){
 			/* Make room for the key */
 			if(bp->rp - bp->base < sizeof(uint32_t)){
-				print("%V can't add key\n", gre->src);
+				jehanne_print("%V can't add key\n", gre->src);
 				freeb(bp);
 				return;
 			}
 
 			bp->rp -= 4;
-			memmove(bp->rp, bp->rp + 4, sizeof(GREhdr));
+			jehanne_memmove(bp->rp, bp->rp + 4, sizeof(GREhdr));
 
 			gre = (GREhdr *)bp->rp;
 			hnputs(gre->flags, flags | GRE_key);
@@ -556,7 +556,7 @@ greiput(Proto *proto, Ipifc * _1, Block *bp)
 	if(flags & GRE_cksum)
 		hdrlen += 2;
 	if(flags & GRE_routing){
-		print("%I routing info present.  Discarding packet\n", raddr);
+		jehanne_print("%I routing info present.  Discarding packet\n", raddr);
 		freeb(bp);
 		return;
 	}
@@ -568,7 +568,7 @@ greiput(Proto *proto, Ipifc * _1, Block *bp)
 		hdrlen += 4;
 
 	if(BLEN(bp) - hdrlen < sizeof(Ip4hdr)){
-		print("greretunnel: packet too short (s=%V d=%V)\n",
+		jehanne_print("greretunnel: packet too short (s=%V d=%V)\n",
 			gre->src, gre->dst);
 		freeb(bp);
 		return;
@@ -591,7 +591,7 @@ greiput(Proto *proto, Ipifc * _1, Block *bp)
 		 * implies that etherread is blocked.
 		 */
 		grec = c->ptcl;
-		if(memcmp(ip->dst, grec->hoa, sizeof ip->dst) == 0){
+		if(jehanne_memcmp(ip->dst, grec->hoa, sizeof ip->dst) == 0){
 			grepdin++;
 			grebdin += BLEN(bp);
 			gredownlink(c, bp);
@@ -599,7 +599,7 @@ greiput(Proto *proto, Ipifc * _1, Block *bp)
 			return;
 		}
 
-		if(memcmp(ip->src, grec->hoa, sizeof ip->src) == 0){
+		if(jehanne_memcmp(ip->src, grec->hoa, sizeof ip->src) == 0){
 			grepuin++;
 			grebuin += BLEN(bp);
 			greuplink(c, bp);
@@ -670,7 +670,7 @@ grestats(Proto *gre, char *buf, int len)
 	GREpriv *gpriv;
 
 	gpriv = gre->priv;
-	return snprint(buf, len,
+	return jehanne_snprint(buf, len,
 		"gre: %llud %llud %llud %llud %llud %llud %llud %llud, lenerrs %llud\n",
 		grepdin, grepdout, grepuin, grepuout,
 		grebdin, grebdout, grebuin, grebuout, gpriv->lenerr);
@@ -703,19 +703,19 @@ grectlretunnel(Conv *c, int _1, char **argv)
 	uint8_t ipaddr[4];
 
 	grec = c->ptcl;
-	if(memcmp(grec->hoa, nulladdr, sizeof grec->hoa))
+	if(jehanne_memcmp(grec->hoa, nulladdr, sizeof grec->hoa))
 		return "tunnel already set up";
 
 	v4parseip(ipaddr, argv[1]);
-	if(memcmp(ipaddr, nulladdr, sizeof ipaddr) == 0)
+	if(jehanne_memcmp(ipaddr, nulladdr, sizeof ipaddr) == 0)
 		return "bad hoa";
-	memmove(grec->hoa, ipaddr, sizeof grec->hoa);
+	jehanne_memmove(grec->hoa, ipaddr, sizeof grec->hoa);
 	v4parseip(ipaddr, argv[2]);
-	memmove(grec->north, ipaddr, sizeof grec->north);
+	jehanne_memmove(grec->north, ipaddr, sizeof grec->north);
 	v4parseip(ipaddr, argv[3]);
-	memmove(grec->south, ipaddr, sizeof grec->south);
+	jehanne_memmove(grec->south, ipaddr, sizeof grec->south);
 	v4parseip(ipaddr, argv[4]);
-	memmove(grec->coa, ipaddr, sizeof grec->coa);
+	jehanne_memmove(grec->coa, ipaddr, sizeof grec->coa);
 	grec->ulsusp = 1;
 	grec->dlsusp = 0;
 
@@ -732,7 +732,7 @@ grectlreport(Conv *c, int _1, char **argv)
 	Metablock *m;
 
 	grec = c->ptcl;
-	seq  = strtoul(argv[1], nil, 0);
+	seq  = jehanne_strtoul(argv[1], nil, 0);
 
 	qlock(&grec->lock);
 	r = &grec->dlpending;
@@ -841,7 +841,7 @@ grectlforward(Conv *c, int _1, char **argv)
 	grec = c->ptcl;
 
 	v4parseip(grec->south, argv[1]);
-	memmove(grec->north, grec->south, sizeof grec->north);
+	jehanne_memmove(grec->north, grec->south, sizeof grec->north);
 
 	qlock(&grec->lock);
 	if(!grec->dlsusp){
@@ -860,8 +860,8 @@ grectlforward(Conv *c, int _1, char **argv)
 		bp->rp = m->rp;
 
 		gre = (GREhdr *)bp->rp;
-		memmove(gre->src, grec->coa, sizeof gre->dst);
-		memmove(gre->dst, grec->south, sizeof gre->dst);
+		jehanne_memmove(gre->src, grec->coa, sizeof gre->dst);
+		jehanne_memmove(gre->dst, grec->south, sizeof gre->dst);
 
 		qunlock(&grec->lock);
 		ipoput4(c->p->f, bp, 0, gre->ttl - 1, gre->tos, nil);
@@ -870,8 +870,8 @@ grectlforward(Conv *c, int _1, char **argv)
 
 	while((bp = getring(&grec->dlbuffered)) != nil){
 		gre = (GREhdr *)bp->rp;
-		memmove(gre->src, grec->coa, sizeof gre->dst);
-		memmove(gre->dst, grec->south, sizeof gre->dst);
+		jehanne_memmove(gre->src, grec->coa, sizeof gre->dst);
+		jehanne_memmove(gre->dst, grec->south, sizeof gre->dst);
 
 		qunlock(&grec->lock);
 		ipoput4(c->p->f, bp, 0, gre->ttl - 1, gre->tos, nil);
@@ -881,8 +881,8 @@ grectlforward(Conv *c, int _1, char **argv)
 	while((bp = getring(&grec->ulbuffered)) != nil){
 		gre = (GREhdr *)bp->rp;
 
-		memmove(gre->src, grec->coa, sizeof gre->dst);
-		memmove(gre->dst, grec->south, sizeof gre->dst);
+		jehanne_memmove(gre->src, grec->coa, sizeof gre->dst);
+		jehanne_memmove(gre->dst, grec->south, sizeof gre->dst);
 
 		qunlock(&grec->lock);
 		ipoput4(c->p->f, bp, 0, gre->ttl - 1, gre->tos, nil);
@@ -898,7 +898,7 @@ grectlulkey(Conv *c, int _1, char **argv)
 	GREconv *grec;
 
 	grec = c->ptcl;
-	grec->ulkey = strtoul(argv[1], nil, 0);
+	grec->ulkey = jehanne_strtoul(argv[1], nil, 0);
 	return nil;
 }
 
@@ -911,7 +911,7 @@ grectl(Conv *c, char **f, int n)
 		return "too few arguments";
 
 	for(i = 0; i < Ncmds; i++)
-		if(strcmp(f[0], grectls[i].cmd) == 0)
+		if(jehanne_strcmp(f[0], grectls[i].cmd) == 0)
 			break;
 
 	if(i == Ncmds)

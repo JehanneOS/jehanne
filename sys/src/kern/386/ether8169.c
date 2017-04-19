@@ -389,7 +389,7 @@ rtl8169mii(Ctlr* ctlr)
 	/*
 	 * Link management.
 	 */
-	if((ctlr->mii = malloc(sizeof(Mii))) == nil)
+	if((ctlr->mii = jehanne_malloc(sizeof(Mii))) == nil)
 		return -1;
 	ctlr->mii->mir = rtl8169miimir;
 	ctlr->mii->miw = rtl8169miimiw;
@@ -420,11 +420,11 @@ rtl8169mii(Ctlr* ctlr)
 	}
 
 	if(mii(ctlr->mii, (1<<1)) == 0 || (phy = ctlr->mii->curphy) == nil){
-		free(ctlr->mii);
+		jehanne_free(ctlr->mii);
 		ctlr->mii = nil;
 		return -1;
 	}
-	print("rtl8169: oui %#ux phyno %d, macv = %#8.8ux phyv = %#4.4ux\n",
+	jehanne_print("rtl8169: oui %#ux phyno %d, macv = %#8.8ux phyv = %#4.4ux\n",
 		phy->oui, phy->phyno, ctlr->macv, ctlr->phyv);
 
 	miireset(ctlr->mii);
@@ -531,7 +531,7 @@ rtl8169ifstat(Ether* edev, void* a, long n, uint32_t offset)
 
 	if(waserror()){
 		qunlock(&ctlr->slock);
-		free(p);
+		jehanne_free(p);
 		nexterror();
 	}
 
@@ -555,56 +555,56 @@ rtl8169ifstat(Ether* edev, void* a, long n, uint32_t offset)
 	if(n == 0){
 		qunlock(&ctlr->slock);
 		poperror();
-		free(p);
+		jehanne_free(p);
 		return 0;
 	}
 
-	l = snprint(p, READSTR, "TxOk: %llud\n", dtcc->txok);
-	l += snprint(p+l, READSTR-l, "RxOk: %llud\n", dtcc->rxok);
-	l += snprint(p+l, READSTR-l, "TxEr: %llud\n", dtcc->txer);
-	l += snprint(p+l, READSTR-l, "RxEr: %ud\n", dtcc->rxer);
-	l += snprint(p+l, READSTR-l, "MissPkt: %ud\n", dtcc->misspkt);
-	l += snprint(p+l, READSTR-l, "FAE: %ud\n", dtcc->fae);
-	l += snprint(p+l, READSTR-l, "Tx1Col: %ud\n", dtcc->tx1col);
-	l += snprint(p+l, READSTR-l, "TxMCol: %ud\n", dtcc->txmcol);
-	l += snprint(p+l, READSTR-l, "RxOkPh: %llud\n", dtcc->rxokph);
-	l += snprint(p+l, READSTR-l, "RxOkBrd: %llud\n", dtcc->rxokbrd);
-	l += snprint(p+l, READSTR-l, "RxOkMu: %ud\n", dtcc->rxokmu);
-	l += snprint(p+l, READSTR-l, "TxAbt: %ud\n", dtcc->txabt);
-	l += snprint(p+l, READSTR-l, "TxUndrn: %ud\n", dtcc->txundrn);
+	l = jehanne_snprint(p, READSTR, "TxOk: %llud\n", dtcc->txok);
+	l += jehanne_snprint(p+l, READSTR-l, "RxOk: %llud\n", dtcc->rxok);
+	l += jehanne_snprint(p+l, READSTR-l, "TxEr: %llud\n", dtcc->txer);
+	l += jehanne_snprint(p+l, READSTR-l, "RxEr: %ud\n", dtcc->rxer);
+	l += jehanne_snprint(p+l, READSTR-l, "MissPkt: %ud\n", dtcc->misspkt);
+	l += jehanne_snprint(p+l, READSTR-l, "FAE: %ud\n", dtcc->fae);
+	l += jehanne_snprint(p+l, READSTR-l, "Tx1Col: %ud\n", dtcc->tx1col);
+	l += jehanne_snprint(p+l, READSTR-l, "TxMCol: %ud\n", dtcc->txmcol);
+	l += jehanne_snprint(p+l, READSTR-l, "RxOkPh: %llud\n", dtcc->rxokph);
+	l += jehanne_snprint(p+l, READSTR-l, "RxOkBrd: %llud\n", dtcc->rxokbrd);
+	l += jehanne_snprint(p+l, READSTR-l, "RxOkMu: %ud\n", dtcc->rxokmu);
+	l += jehanne_snprint(p+l, READSTR-l, "TxAbt: %ud\n", dtcc->txabt);
+	l += jehanne_snprint(p+l, READSTR-l, "TxUndrn: %ud\n", dtcc->txundrn);
 
-	l += snprint(p+l, READSTR-l, "serr: %ud\n", ctlr->serr);
-	l += snprint(p+l, READSTR-l, "fovw: %ud\n", ctlr->fovw);
+	l += jehanne_snprint(p+l, READSTR-l, "serr: %ud\n", ctlr->serr);
+	l += jehanne_snprint(p+l, READSTR-l, "fovw: %ud\n", ctlr->fovw);
 
-	l += snprint(p+l, READSTR-l, "txdu: %ud\n", ctlr->txdu);
-	l += snprint(p+l, READSTR-l, "tcpf: %ud\n", ctlr->tcpf);
-	l += snprint(p+l, READSTR-l, "udpf: %ud\n", ctlr->udpf);
-	l += snprint(p+l, READSTR-l, "ipf: %ud\n", ctlr->ipf);
-	l += snprint(p+l, READSTR-l, "fovf: %ud\n", ctlr->fovf);
-	l += snprint(p+l, READSTR-l, "rer: %ud\n", ctlr->rer);
-	l += snprint(p+l, READSTR-l, "rdu: %ud\n", ctlr->rdu);
-	l += snprint(p+l, READSTR-l, "punlc: %ud\n", ctlr->punlc);
+	l += jehanne_snprint(p+l, READSTR-l, "txdu: %ud\n", ctlr->txdu);
+	l += jehanne_snprint(p+l, READSTR-l, "tcpf: %ud\n", ctlr->tcpf);
+	l += jehanne_snprint(p+l, READSTR-l, "udpf: %ud\n", ctlr->udpf);
+	l += jehanne_snprint(p+l, READSTR-l, "ipf: %ud\n", ctlr->ipf);
+	l += jehanne_snprint(p+l, READSTR-l, "fovf: %ud\n", ctlr->fovf);
+	l += jehanne_snprint(p+l, READSTR-l, "rer: %ud\n", ctlr->rer);
+	l += jehanne_snprint(p+l, READSTR-l, "rdu: %ud\n", ctlr->rdu);
+	l += jehanne_snprint(p+l, READSTR-l, "punlc: %ud\n", ctlr->punlc);
 
-	l += snprint(p+l, READSTR-l, "tcr: %#8.8ux\n", ctlr->tcr);
-	l += snprint(p+l, READSTR-l, "rcr: %#8.8ux\n", ctlr->rcr);
-	l += snprint(p+l, READSTR-l, "multicast: %ud\n", ctlr->mcast);
+	l += jehanne_snprint(p+l, READSTR-l, "tcr: %#8.8ux\n", ctlr->tcr);
+	l += jehanne_snprint(p+l, READSTR-l, "rcr: %#8.8ux\n", ctlr->rcr);
+	l += jehanne_snprint(p+l, READSTR-l, "multicast: %ud\n", ctlr->mcast);
 
 	if(ctlr->mii != nil && ctlr->mii->curphy != nil){
-		l += snprint(p+l, READSTR-l, "phy:   ");
+		l += jehanne_snprint(p+l, READSTR-l, "phy:   ");
 		for(i = 0; i < NMiiPhyr; i++){
 			if(i && ((i & 0x07) == 0))
-				l += snprint(p+l, READSTR-l, "\n       ");
+				l += jehanne_snprint(p+l, READSTR-l, "\n       ");
 			r = miimir(ctlr->mii, i);
-			l += snprint(p+l, READSTR-l, " %4.4ux", r);
+			l += jehanne_snprint(p+l, READSTR-l, " %4.4ux", r);
 		}
-		snprint(p+l, READSTR-l, "\n");
+		jehanne_snprint(p+l, READSTR-l, "\n");
 	}
 
 	n = readstr(offset, a, n, p);
 
 	qunlock(&ctlr->slock);
 	poperror();
-	free(p);
+	jehanne_free(p);
 
 	return n;
 }
@@ -680,7 +680,7 @@ rtl8169init(Ether* edev)
 
 	rtl8169reset(ctlr);
 
-	memset(ctlr->td, 0, sizeof(D)*ctlr->ntd);
+	jehanne_memset(ctlr->td, 0, sizeof(D)*ctlr->ntd);
 	ctlr->tdh = ctlr->tdt = ctlr->ntq = 0;
 	ctlr->td[ctlr->ntd-1].control = Eor;
 	for(i = 0; i < ctlr->ntd; i++)
@@ -689,7 +689,7 @@ rtl8169init(Ether* edev)
 			freeb(bp);
 		}
 
-	memset(ctlr->rd, 0, sizeof(D)*ctlr->nrd);
+	jehanne_memset(ctlr->rd, 0, sizeof(D)*ctlr->nrd);
 	ctlr->rdh = ctlr->rdt = ctlr->nrq = 0;
 	ctlr->rd[ctlr->nrd-1].control = Eor;
 	for(i = 0; i < ctlr->nrd; i++)
@@ -783,22 +783,22 @@ rtl8169attach(Ether* edev)
 	if(!ctlr->init){
 		ctlr->ntd = Ntd;
 		ctlr->nrd = Nrd;
-		ctlr->tb = malloc(ctlr->ntd*sizeof(Block*));
-		ctlr->rb = malloc(ctlr->nrd*sizeof(Block*));
-		ctlr->td = mallocalign(sizeof(D)*ctlr->ntd, 256, 0, 0);
-		ctlr->rd = mallocalign(sizeof(D)*ctlr->nrd, 256, 0, 0);
-		ctlr->dtcc = mallocalign(sizeof(Dtcc), 64, 0, 0);
+		ctlr->tb = jehanne_malloc(ctlr->ntd*sizeof(Block*));
+		ctlr->rb = jehanne_malloc(ctlr->nrd*sizeof(Block*));
+		ctlr->td = jehanne_mallocalign(sizeof(D)*ctlr->ntd, 256, 0, 0);
+		ctlr->rd = jehanne_mallocalign(sizeof(D)*ctlr->nrd, 256, 0, 0);
+		ctlr->dtcc = jehanne_mallocalign(sizeof(Dtcc), 64, 0, 0);
 		if(ctlr->rb == nil || ctlr->rb == nil ||
 		   ctlr->rd == nil || ctlr->rd == nil || ctlr->dtcc == nil){
-			free(ctlr->tb);
+			jehanne_free(ctlr->tb);
 			ctlr->tb = nil;
-			free(ctlr->rb);
+			jehanne_free(ctlr->rb);
 			ctlr->rb = nil;
-			free(ctlr->td);
+			jehanne_free(ctlr->td);
 			ctlr->td = nil;
-			free(ctlr->rd);
+			jehanne_free(ctlr->rd);
 			ctlr->rd = nil;
-			free(ctlr->dtcc);
+			jehanne_free(ctlr->dtcc);
 			ctlr->dtcc = nil;
 			qunlock(&ctlr->alock);
 			error(Enomem);
@@ -1091,12 +1091,12 @@ rtl8169pci(void)
 
 		port = p->mem[0].bar & ~0x01;
 		if(ioalloc(port, p->mem[0].size, 0, "rtl8169") < 0){
-			print("rtl8169: port %#ux in use\n", port);
+			jehanne_print("rtl8169: port %#ux in use\n", port);
 			continue;
 		}
-		ctlr = malloc(sizeof(Ctlr));
+		ctlr = jehanne_malloc(sizeof(Ctlr));
 		if(ctlr == nil){
-			print("rtl8169: can't allocate memory\n");
+			jehanne_print("rtl8169: can't allocate memory\n");
 			iofree(port);
 			continue;
 		}
@@ -1107,8 +1107,8 @@ rtl8169pci(void)
 
 		if(vetmacv(ctlr, &macv) == -1){
 			iofree(port);
-			free(ctlr);
-			print("rtl8169: unknown mac %.4ux %.8ux\n", p->did, macv);
+			jehanne_free(ctlr);
+			jehanne_print("rtl8169: unknown mac %.4ux %.8ux\n", p->did, macv);
 			continue;
 		}
 
@@ -1125,8 +1125,8 @@ rtl8169pci(void)
 
 		if(rtl8169reset(ctlr)){
 			iofree(port);
-			free(ctlr);
-			print("rtl8169: reset failed\n");
+			jehanne_free(ctlr);
+			jehanne_print("rtl8169: reset failed\n");
 			continue;
 		}
 
@@ -1187,8 +1187,8 @@ rtl8169pnp(Ether* edev)
 	 * Check if the adapter's station address is to be overridden.
 	 * If not, read it from the device and set in edev->ea.
 	 */
-	memset(ea, 0, Eaddrlen);
-	if(memcmp(ea, edev->ea, Eaddrlen) == 0){
+	jehanne_memset(ea, 0, Eaddrlen);
+	if(jehanne_memcmp(ea, edev->ea, Eaddrlen) == 0){
 		r = csr32r(ctlr, Idr0);
 		edev->ea[0] = r;
 		edev->ea[1] = r>>8;

@@ -11,7 +11,7 @@
 #include <libc.h>
 
 char*
-strncat(char *s1, const char *s2, int32_t n)
+jehanne_strncat(char *s1, const char *s2, int32_t n)
 {
 	char *os1;
 

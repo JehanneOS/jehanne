@@ -1,5 +1,5 @@
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 #include <mp.h>
 #include <libsec.h>
 #include <authsrv.h>
@@ -27,7 +27,7 @@ authpak_curve(void)
 {
 	static PAKcurve a;
 
-	lock(&a);
+	jehanne_lock(&a);
 	if(a.P == nil){
 		a.P = mpnew(0);
 		a.A = mpnew(0);
@@ -37,7 +37,7 @@ authpak_curve(void)
 		ed448_curve(a.P, a.A, a.D, a.X, a.Y);
 		a.P = mpfield(a.P);
 	}
-	unlock(&a);
+	jehanne_unlock(&a);
 	return &a;
 }
 

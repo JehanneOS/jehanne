@@ -22,28 +22,28 @@ static Lock onexlock;
 Onex onex[NEXIT];
 
 int
-atexit(void (*f)(void))
+jehanne_atexit(void (*f)(void))
 {
 	int i;
 
-	lock(&onexlock);
+	jehanne_lock(&onexlock);
 	for(i=0; i<NEXIT; i++)
 		if(onex[i].f == 0) {
-			onex[i].pid = getpid();
+			onex[i].pid = jehanne_getpid();
 			onex[i].f = f;
-			unlock(&onexlock);
+			jehanne_unlock(&onexlock);
 			return 1;
 		}
-	unlock(&onexlock);
+	jehanne_unlock(&onexlock);
 	return 0;
 }
 
 void
-atexitdont(void (*f)(void))
+jehanne_atexitdont(void (*f)(void))
 {
 	int i, pid;
 
-	pid = getpid();
+	pid = jehanne_getpid();
 	for(i=0; i<NEXIT; i++)
 		if(onex[i].f == f && onex[i].pid == pid)
 			onex[i].f = 0;
@@ -52,13 +52,13 @@ atexitdont(void (*f)(void))
 #pragma profile off
 
 void
-exits(const char *s)
+jehanne_exits(const char *s)
 {
 	void _fini(void);
 	int i, pid;
 	void (*f)(void);
 
-	pid = getpid();
+	pid = jehanne_getpid();
 	for(i = NEXIT-1; i >= 0; i--)
 		if((f = onex[i].f) && pid == onex[i].pid) {
 			onex[i].f = 0;

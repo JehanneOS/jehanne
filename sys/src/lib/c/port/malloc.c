@@ -87,10 +87,10 @@ plock(Pool *p)
 {
 	Private *pv;
 	pv = p->private;
-	lock(&pv->lk);
+	jehanne_lock(&pv->lk);
 	if(pv->pid != 0)
 		abort();
-	pv->pid = getmainpid();
+	pv->pid = jehanne_getmainpid();
 }
 
 static void
@@ -98,10 +98,10 @@ punlock(Pool *p)
 {
 	Private *pv;
 	pv = p->private;
-	if(pv->pid != getmainpid())
+	if(pv->pid != jehanne_getmainpid())
 		abort();
 	pv->pid = 0;
-	unlock(&pv->lk);
+	jehanne_unlock(&pv->lk);
 }
 
 static int
@@ -120,7 +120,7 @@ checkenv(void)
 	if(n >= sizeof buf)
 		n = sizeof(buf)-1;
 	buf[n] = 0;
-	n = atoi(buf);
+	n = jehanne_atoi(buf);
 	if(n == 0)
 		n = -1;
 	return n;
@@ -140,7 +140,7 @@ pprint(Pool *p, char *fmt, ...)
 		pv->printfd = 2;
 
 	va_start(v, fmt);
-	vfprint(pv->printfd, fmt, v);
+	jehanne_vfprint(pv->printfd, fmt, v);
 	va_end(v);
 }
 
@@ -154,7 +154,7 @@ ppanic(Pool *p, char *fmt, ...)
 	Private *pv;
 
 	pv = p->private;
-	assert(canlock(&pv->lk)==0);
+	assert(jehanne_canlock(&pv->lk)==0);
 
 	if(pv->printfd == 0)
 		pv->printfd = checkenv();
@@ -163,7 +163,7 @@ ppanic(Pool *p, char *fmt, ...)
 
 	msg = panicbuf;
 	va_start(v, fmt);
-	n = vseprint(msg, msg+sizeof panicbuf, fmt, v) - msg;
+	n = jehanne_vseprint(msg, msg+sizeof panicbuf, fmt, v) - msg;
 	write(2, "panic: ", 7);
 	write(2, msg, n);
 	write(2, "\n", 1);
@@ -173,12 +173,12 @@ ppanic(Pool *p, char *fmt, ...)
 		write(pv->printfd, "\n", 1);
 	}
 	va_end(v);
-//	unlock(&pv->lk);
+//	jehanne_unlock(&pv->lk);
 	abort();
 }
 
 /* - everything from here down should be the same in libc, libdebugmalloc, and the kernel - */
-/* - except the code for malloc(), which alternately doesn't clear or does. - */
+/* - except the code for jehanne_malloc(), which alternately doesn't clear or does. - */
 
 /*
  * Npadlong is the number of uintptrs to leave at the beginning of 
@@ -201,37 +201,37 @@ enum {
 };
 
 void*
-malloc(size_t size)
+jehanne_malloc(size_t size)
 {
 	void *v;
 
 	v = poolalloc(mainmem, size+Npadlong*sizeof(uintptr_t));
 	if(Npadlong && v != nil) {
 		v = (uintptr_t*)v+Npadlong;
-		setmalloctag(v, getcallerpc());
-		setrealloctag(v, 0);
+		jehanne_setmalloctag(v, jehanne_getcallerpc());
+		jehanne_setrealloctag(v, 0);
 	}
 	return v;
 }
 
 void*
-mallocz(uint32_t size, int clr)
+jehanne_mallocz(uint32_t size, int clr)
 {
 	void *v;
 
 	v = poolalloc(mainmem, size+Npadlong*sizeof(uintptr_t));
 	if(Npadlong && v != nil){
 		v = (uintptr_t*)v+Npadlong;
-		setmalloctag(v, getcallerpc());
-		setrealloctag(v, 0);
+		jehanne_setmalloctag(v, jehanne_getcallerpc());
+		jehanne_setrealloctag(v, 0);
 	}
 	if(clr && v != nil)
-		memset(v, 0, size);
+		jehanne_memset(v, 0, size);
 	return v;
 }
 
 void*
-mallocalign(uint32_t size, uint32_t align, int32_t offset, uint32_t span)
+jehanne_mallocalign(uint32_t size, uint32_t align, int32_t offset, uint32_t span)
 {
 	void *v;
 
@@ -239,26 +239,26 @@ mallocalign(uint32_t size, uint32_t align, int32_t offset, uint32_t span)
 			   offset-Npadlong*sizeof(uintptr_t), span);
 	if(Npadlong && v != nil){
 		v = (uintptr_t*)v+Npadlong;
-		setmalloctag(v, getcallerpc());
-		setrealloctag(v, 0);
+		jehanne_setmalloctag(v, jehanne_getcallerpc());
+		jehanne_setrealloctag(v, 0);
 	}
 	return v;
 }
 
 void
-free(void *v)
+jehanne_free(void *v)
 {
 	if(v != nil)
 		poolfree(mainmem, (uintptr_t*)v-Npadlong);
 }
 
 void*
-realloc(void *v, size_t size)
+jehanne_realloc(void *v, size_t size)
 {
 	void *nv;
 
 	if(size == 0){
-		free(v);
+		jehanne_free(v);
 		return nil;
 	}
 
@@ -268,33 +268,33 @@ realloc(void *v, size_t size)
 
 	if((nv = poolrealloc(mainmem, v, size))){
 		nv = (uintptr_t*)nv+Npadlong;
-		setrealloctag(nv, getcallerpc());
+		jehanne_setrealloctag(nv, jehanne_getcallerpc());
 		if(v == nil)
-			setmalloctag(nv, getcallerpc());
+			jehanne_setmalloctag(nv, jehanne_getcallerpc());
 	}		
 	return nv;
 }
 
 uint32_t
-msize(void *v)
+jehanne_msize(void *v)
 {
 	return poolmsize(mainmem, (uintptr_t*)v-Npadlong)-Npadlong*sizeof(uintptr_t);
 }
 
 void*
-calloc(uint32_t n, size_t szelem)
+jehanne_calloc(uint32_t n, size_t szelem)
 {
 	void *v;
 	
 	if(n > 1 && ((uint64_t)-1)/n < szelem)
 		return nil;
-	if((v = mallocz(n*szelem, 1)))
-		setmalloctag(v, getcallerpc());
+	if((v = jehanne_mallocz(n*szelem, 1)))
+		jehanne_setmalloctag(v, jehanne_getcallerpc());
 	return v;
 }
 
 void
-setmalloctag(void *v, uintptr_t pc)
+jehanne_setmalloctag(void *v, uintptr_t pc)
 {
 	if(Npadlong <= MallocOffset || v == nil)
 		return;
@@ -302,7 +302,7 @@ setmalloctag(void *v, uintptr_t pc)
 }
 
 void
-setrealloctag(void *v, uintptr_t pc)
+jehanne_setrealloctag(void *v, uintptr_t pc)
 {
 	if(Npadlong <= ReallocOffset || v == nil)
 		return;
@@ -310,7 +310,7 @@ setrealloctag(void *v, uintptr_t pc)
 }
 
 uintptr_t
-getmalloctag(void *v)
+jehanne_getmalloctag(void *v)
 {
 	if(Npadlong <= MallocOffset)
 		return ~0;
@@ -318,7 +318,7 @@ getmalloctag(void *v)
 }
 
 uintptr_t
-getrealloctag(void *v)
+jehanne_getrealloctag(void *v)
 {
 	if(Npadlong <= ReallocOffset)
 		return ~0;
@@ -326,7 +326,7 @@ getrealloctag(void *v)
 }
 
 void*
-malloctopoolblock(void *v)
+jehanne_malloctopoolblock(void *v)
 {
 	if(v == nil)
 		return nil;

@@ -32,10 +32,10 @@ dupgen(Chan *c, char * _1, Dirtab* _2, int _3, int s, Dir *dp)
 		return 0;
 	if(s & 1){
 		p = 0400;
-		sprint(up->genbuf, "%dctl", s/2);
+		jehanne_sprint(up->genbuf, "%dctl", s/2);
 	}else{
 		p = perm[f->mode&7];
-		sprint(up->genbuf, "%d", s/2);
+		jehanne_sprint(up->genbuf, "%d", s/2);
 	}
 	mkqid(&q, s+1, 0, QTFILE);
 	devdir(c, q, up->genbuf, 0, eve, p, dp);

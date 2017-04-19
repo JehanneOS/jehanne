@@ -40,7 +40,7 @@
 
 /*
 	xatan evaluates a series valid in the
-	range [-0.414...,+0.414...]. (tan(pi/8))
+	range [-0.414...,+0.414...]. (jehanne_tan(pi/8))
  */
 
 static
@@ -78,7 +78,7 @@ satan(double arg)
  */
 
 double
-atan(double arg)
+jehanne_atan(double arg)
 {
 
 	if(arg > 0)

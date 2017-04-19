@@ -13,12 +13,12 @@
 #define	N	256
 
 int32_t
-strcspn(const char *s, const char *b)
+jehanne_strcspn(const char *s, const char *b)
 {
 	const char *os;
 	char map[N];
 
-	memset(map, 0, N);
+	jehanne_memset(map, 0, N);
 	for(;;) {
 		map[*(uint8_t*)b] = 1;
 		if(*b++ == 0)

@@ -19,7 +19,7 @@ iocall(Ioproc *io, int32_t (*op)(va_list*), ...)
 	Ioproc *msg;
 
 	if(send(io->c, &io) == -1){
-		werrstr("interrupted");
+		jehanne_werrstr("interrupted");
 		return -1;
 	}
 	assert(!io->inuse);
@@ -33,7 +33,7 @@ iocall(Ioproc *io, int32_t (*op)(va_list*), ...)
 		inted = 1;
 	}
 	if(inted){
-		werrstr("interrupted");
+		jehanne_werrstr("interrupted");
 		return -1;
 	}
 

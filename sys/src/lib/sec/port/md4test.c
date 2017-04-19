@@ -23,9 +23,9 @@ main(void)
 
 	for(pp = tests; *pp; pp++){
 		p = (uint8_t*)*pp;
-		md4(p, strlen(*pp), digest, 0);
+		md4(p, jehanne_strlen(*pp), digest, 0);
 		for(i = 0; i < MD5dlen; i++)
-			print("%2.2ux", digest[i]);
-		print("\n");
+			jehanne_print("%2.2ux", digest[i]);
+		jehanne_print("\n");
 	}
 }

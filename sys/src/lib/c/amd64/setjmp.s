@@ -1,7 +1,7 @@
 .text
 
-.globl longjmp
-longjmp:
+.globl jehanne_longjmp
+jehanne_longjmp:
 	movq	%rdi, %r9
 	movq	0(%r9), %rbx
 	movq	8(%r9), %r12
@@ -24,8 +24,8 @@ longjmp:
 
 	jmp	*%r8 
 
-.globl setjmp
-setjmp:
+.globl jehanne_setjmp
+jehanne_setjmp:
 	movq	%rbx, 0(%rdi)
 	movq	%r12, 8(%rdi)
 	movq	%r13, 16(%rdi)

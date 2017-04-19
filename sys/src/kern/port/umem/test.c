@@ -90,7 +90,7 @@ umem_test_raw_memory(void)
 
 	if(!rawmem_lookup(0xfc000000, &name, &pa, &attr, &size, &page))
 		panic("rawmem_lookup: failed 1");
-	if(strcmp(name, "vesascreen") != 0)
+	if(jehanne_strcmp(name, "vesascreen") != 0)
 		panic("rawmem_lookup: failed 2");
 	if(pa != 0xfc000000)
 		panic("rawmem_lookup: failed 3");
@@ -109,23 +109,23 @@ umem_test_raw_memory(void)
 void
 print_type_sizes(void)
 {
-	print("sizeof UserPage %d bytes\n", sizeof(UserPage));
-	print("sizeof PageTableEntry %d bytes\n", sizeof(PageTableEntry));
-	print("sizeof PageTable %d bytes\n", sizeof(PageTable));
-	print("sizeof ElfSegment %d bytes\n", sizeof(ElfSegment));
-	print("sizeof ElfImage %d bytes\n", sizeof(ElfImage));
-	print("sizeof ProcSegment %d bytes\n", sizeof(ProcSegment));
-	print("sizeof RawMemory %d bytes\n", sizeof(RawMemory));
+	jehanne_print("sizeof UserPage %d bytes\n", sizeof(UserPage));
+	jehanne_print("sizeof PageTableEntry %d bytes\n", sizeof(PageTableEntry));
+	jehanne_print("sizeof PageTable %d bytes\n", sizeof(PageTable));
+	jehanne_print("sizeof ElfSegment %d bytes\n", sizeof(ElfSegment));
+	jehanne_print("sizeof ElfImage %d bytes\n", sizeof(ElfImage));
+	jehanne_print("sizeof ProcSegment %d bytes\n", sizeof(ProcSegment));
+	jehanne_print("sizeof RawMemory %d bytes\n", sizeof(RawMemory));
 print("---\n");
-	print("sizeof Page %d bytes\n", sizeof(Page));
-	print("sizeof Pte %d bytes\n", sizeof(Pte));
-	print("sizeof Pages %d bytes\n", sizeof(Pages));
-	print("sizeof Section %d bytes\n", sizeof(Section));
-	print("sizeof Image %d bytes\n", sizeof(Image));
-	print("sizeof Segment %d bytes\n", sizeof(Segment));
-	print("sizeof Physseg %d bytes\n", sizeof(Physseg));
+	jehanne_print("sizeof Page %d bytes\n", sizeof(Page));
+	jehanne_print("sizeof Pte %d bytes\n", sizeof(Pte));
+	jehanne_print("sizeof Pages %d bytes\n", sizeof(Pages));
+	jehanne_print("sizeof Section %d bytes\n", sizeof(Section));
+	jehanne_print("sizeof Image %d bytes\n", sizeof(Image));
+	jehanne_print("sizeof Segment %d bytes\n", sizeof(Segment));
+	jehanne_print("sizeof Physseg %d bytes\n", sizeof(Physseg));
 print("---\n");
-	print("sizeof Proc %d bytes\n", sizeof(Proc));
+	jehanne_print("sizeof Proc %d bytes\n", sizeof(Proc));
 
 }
 

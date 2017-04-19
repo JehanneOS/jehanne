@@ -40,7 +40,7 @@ isdosfs(uint8_t *buf)
 	if(buf[0] == 0xEB && buf[2] == 0x90 /* && buf[1] >= 0x30 */)
 		return 1;
 	if(chatty)
-		fprint(2, "bad sig %.2ux %.2ux %.2uxn", buf[0], buf[1], buf[2]);
+		jehanne_fprint(2, "bad sig %.2ux %.2ux %.2uxn", buf[0], buf[1], buf[2]);
 
 	return 0;
 }
@@ -91,8 +91,8 @@ dosfs(Xfs *xf)
 		return -1;
 	}
 
-	bp = malloc(sizeof(Dosbpb));
-	memset(bp, 0, sizeof(Dosbpb));	/* clear lock */
+	bp = jehanne_malloc(sizeof(Dosbpb));
+	jehanne_memset(bp, 0, sizeof(Dosbpb));	/* clear lock */
 	xf->ptr = bp;
 	xf->fmt = 1;
 
@@ -119,7 +119,7 @@ dosfs(Xfs *xf)
 		if(bp->fatsize == 0){
 			putsect(p);
 			if(chatty)
-				fprint(2, "fatsize 0\n");
+				jehanne_fprint(2, "fatsize 0\n");
 			return -1;
 		}
 		bp->dataaddr = bp->fataddr + bp->nfats*bp->fatsize;
@@ -197,7 +197,7 @@ rootfile(Xfile *f)
 	Dosptr *dp;
 
 	dp = f->ptr;
-	memset(dp, 0, sizeof(Dosptr));
+	jehanne_memset(dp, 0, sizeof(Dosptr));
 	dp->prevaddr = -1;
 }
 
@@ -422,7 +422,7 @@ classifyname(char *buf)
 		else if(c == '.'){
 			dot = p;
 			ndot++;
-		}else if(strchr("+,:;=[] ", c))
+		}else if(jehanne_strchr("+,:;=[] ", c))
 			isextended = 1;
 		else if(!isdos[c])
 			return Invalid;
@@ -451,9 +451,9 @@ mkalias(char *name, char *sname, int id)
 	char *s, *e, sid[10];
 	int i, esuf, v;
 
-	e = strrchr(name, '.');
+	e = jehanne_strrchr(name, '.');
 	if(e == nil)
-		e = strchr(name, '\0');
+		e = jehanne_strchr(name, '\0');
 
 	s = name;
 	i = 0;
@@ -461,14 +461,14 @@ mkalias(char *name, char *sname, int id)
 		if(isdos[(uint8_t)*s])
 			sname[i++] = *s++;
 		else
-			s += chartorune(&r, s);
+			s += jehanne_chartorune(&r, s);
 	}
 
-	v = snprint(sid, 10, "%d", id);
+	v = jehanne_snprint(sid, 10, "%d", id);
 	if(i + 1 + v > 8)
 		i = 8 - 1 - v;
 	sname[i++] = '~';
-	strcpy(&sname[i], sid);
+	jehanne_strcpy(&sname[i], sid);
 	i += v;
 
 	sname[i++] = '.';
@@ -479,7 +479,7 @@ mkalias(char *name, char *sname, int id)
 		if(isdos[(uint8_t)*e])
 			sname[i++] = *e++;
 		else
-			e += chartorune(&r, e);
+			e += jehanne_chartorune(&r, e);
 	}
 	if(sname[i-1] == '.')
 		i--;
@@ -538,9 +538,9 @@ searchdir(Xfile *f, char *name, Dosptr *dp, int cflag, int longtype)
 
 	need = 1;
 	if(longtype!=Short && cflag)
-		need += (utflen(name) + DOSRUNE-1) / DOSRUNE;
+		need += (jehanne_utflen(name) + DOSRUNE-1) / DOSRUNE;
 
-	memset(dp, 0, sizeof(Dosptr));
+	jehanne_memset(dp, 0, sizeof(Dosptr));
 	dp->prevaddr = -1;
 	dp->naddr = -1;
 	dp->paddr = ((Dosptr *)f->ptr)->addr;
@@ -594,7 +594,7 @@ searchdir(Xfile *f, char *name, Dosptr *dp, int cflag, int longtype)
 			}
 			if(d->name[0] == DOSEMPTY){
 				if(chatty)
-					fprint(2, "empty dir\n");
+					jehanne_fprint(2, "empty dir\n");
 
 				have++;
 				if(addr1 == -1){
@@ -619,15 +619,15 @@ searchdir(Xfile *f, char *name, Dosptr *dp, int cflag, int longtype)
 				islong = 0;
 				continue;
 			}
-			if(islong != 1 || sum != aliassum(d) || cistrcmp(bname, name) != 0){
+			if(islong != 1 || sum != aliassum(d) || jehanne_cistrcmp(bname, name) != 0){
 				bname = buf;
 				getname(buf, d);
 			}
 			islong = 0;
-			if(cistrcmp(bname, name) != 0)
+			if(jehanne_cistrcmp(bname, name) != 0)
 				continue;
 			if(chatty)
-				fprint(2, "found\n");
+				jehanne_fprint(2, "found\n");
 			if(cflag){
 				putsect(p);
 				return -1;
@@ -740,7 +740,7 @@ readdir(Xfile *f, void *vbuf, int32_t offset, int32_t count)
 			if(islong == 1 && nameok(name) && sum == aliassum(d))
 				dir.name = name;
 			islong = 0;
-			n = convD2M(&dir, &buf[rcnt], count - rcnt);
+			n = jehanne_convD2M(&dir, &buf[rcnt], count - rcnt);
 			name = nil;
 			if(n <= BIT16SZ){	/* no room for next entry */
 				putsect(p);
@@ -778,7 +778,7 @@ walkup(Xfile *f, Dosptr *ndp)
 
 	bp = f->xf->ptr;
 	dp = f->ptr;
-	memset(ndp, 0, sizeof(Dosptr));
+	jehanne_memset(ndp, 0, sizeof(Dosptr));
 	ndp->prevaddr = -1;
 	ndp->naddr = -1;
 	ndp->addr = dp->paddr;
@@ -960,7 +960,7 @@ readfile(Xfile *f, void *vbuf, int32_t offset, int32_t count)
 		p = getsect(xf, addr);
 		if(p == 0)
 			return -1;
-		memmove(&buf[rcnt], &p->iobuf[o], c);
+		jehanne_memmove(&buf[rcnt], &p->iobuf[o], c);
 		putsect(p);
 		count -= c;
 		rcnt += c;
@@ -999,7 +999,7 @@ writefile(Xfile *f, void *vbuf, int32_t offset, int32_t count)
 			if(p == nil)
 				return -1;
 		}
-		memmove(&p->iobuf[o], &buf[rcnt], c);
+		jehanne_memmove(&p->iobuf[o], &buf[rcnt], c);
 		p->flags |= BMOD;
 		putsect(p);
 		count -= c;
@@ -1149,21 +1149,21 @@ getnamerunes(char *dst, uint8_t *buf, int step)
 	r = 1;
 	for(i = 1; r && i < 11; i += 2){
 		r = buf[i] | (buf[i+1] << 8);
-		d += runetochar(d, &r);
+		d += jehanne_runetochar(d, &r);
 	}
 	for(i = 14; r && i < 26; i += 2){
 		r = buf[i] | (buf[i+1] << 8);
-		d += runetochar(d, &r);
+		d += jehanne_runetochar(d, &r);
 	}
 	for(i = 28; r && i < 32; i += 2){
 		r = buf[i] | (buf[i+1] << 8);
-		d += runetochar(d, &r);
+		d += jehanne_runetochar(d, &r);
 	}
 
 	if(step == 1)
 		dst -= d - dbuf;
 
-	memmove(dst, dbuf, d - dbuf);
+	jehanne_memmove(dst, dbuf, d - dbuf);
 
 	if(step == -1){
 		dst += d - dbuf;
@@ -1222,18 +1222,18 @@ putname(char *p, Dosdir *d)
 {
 	int i;
 
-	memset(d->name, ' ', sizeof d->name+sizeof d->ext);
+	jehanne_memset(d->name, ' ', sizeof d->name+sizeof d->ext);
 	for(i=0; i<sizeof d->name; i++){
 		if(*p == 0 || *p == '.')
 			break;
-		d->name[i] = toupper(*p++);
+		d->name[i] = jehanne_toupper(*p++);
 	}
-	p = strrchr(p, '.');
+	p = jehanne_strrchr(p, '.');
 	if(p){
 		for(i=0; i<sizeof d->ext; i++){
 			if(*++p == 0)
 				break;
-			d->ext[i] = toupper(*p);
+			d->ext[i] = jehanne_toupper(*p);
 		}
 	}
 }
@@ -1245,7 +1245,7 @@ putnamesect(uint8_t *slot, Rune *longname, int curslot, int first, int sum)
 	Dosdir ds;
 	int i, j;
 
-	memset(&ds, 0xff, sizeof ds);
+	jehanne_memset(&ds, 0xff, sizeof ds);
 	ds.attr = 0xf;
 	ds.reserved[0] = 0;
 	ds.reserved[1] = sum;
@@ -1255,7 +1255,7 @@ putnamesect(uint8_t *slot, Rune *longname, int curslot, int first, int sum)
 		ds.name[0] = 0x40 | curslot;
 	else 
 		ds.name[0] = curslot;
-	memmove(slot, &ds, sizeof ds);
+	jehanne_memmove(slot, &ds, sizeof ds);
 
 	j = (curslot-1) * DOSRUNE;
 
@@ -1620,7 +1620,7 @@ makecontig(Xfile *f, int nextra)
 				return -1;
 			wp = getosect(xf, ws);
 			assert(wp != nil);
-			memmove(wp->iobuf, rp->iobuf, bp->sectsize);
+			jehanne_memmove(wp->iobuf, rp->iobuf, bp->sectsize);
 			wp->flags = BMOD;
 			putsect(rp);
 			putsect(wp);
@@ -1688,7 +1688,7 @@ falloc(Xfs *xf)
 	k = clust2sect(bp, n);
 	for(i=0; i<bp->clustsize; i++){
 		p = getosect(xf, k+i);
-		memset(p->iobuf, 0, bp->sectsize);
+		jehanne_memset(p->iobuf, 0, bp->sectsize);
 		p->flags = BMOD;
 		putsect(p);
 	}
@@ -1724,8 +1724,8 @@ puttime(Dosdir *d, int32_t s)
 	uint16_t x;
 
 	if(s == 0)
-		s = time(0);
-	t = localtime(s);
+		s = jehanne_time(0);
+	t = jehanne_localtime(s);
 
 	x = (t->hour<<11) | (t->min<<5) | (t->sec>>1);
 	PSHORT(d->time, x);
@@ -1751,7 +1751,7 @@ gtime(Dosdir *dp)
 	tm.tzoff = 0;
 	tm.yday = 0;
 
-	return tm2sec(&tm);
+	return jehanne_tm2sec(&tm);
 }
 
 /*
@@ -1827,38 +1827,38 @@ bootsecdump32(int fd, Xfs *xf, Dosboot32 *b32)
 	Iosect *p1;
 	int fisec, bsec, res;
 
-	fprint(fd, "\nfat32\n");
+	jehanne_fprint(fd, "\nfat32\n");
 	bootdump32(fd, b32);
 	res = GSHORT(b32->nresrv);
 	bsec = GSHORT(b32->backupboot);
 	if(bsec < res && bsec != 0){
 		p1 = getsect(xf, bsec);
 		if(p1 == nil)
-			fprint(fd, "\ncouldn't get backup boot sector: %r\n");
+			jehanne_fprint(fd, "\ncouldn't get backup boot sector: %r\n");
 		else{
-			fprint(fd, "\nbackup boot\n");
+			jehanne_fprint(fd, "\nbackup boot\n");
 			bootdump32(fd, (Dosboot32*)p1->iobuf);
 			putsect(p1);
 		}
 	}else if(bsec != 0xffff)
-		fprint(fd, "bad backup boot sector: %d reserved %d\n", bsec, res);
+		jehanne_fprint(fd, "bad backup boot sector: %d reserved %d\n", bsec, res);
 	fisec = GSHORT(b32->infospec);
 	if(fisec < res && fisec != 0){
 		p1 = getsect(xf, fisec);
 		if(p1 == nil)
-			fprint(fd, "\ncouldn't get fat info sector: %r\n");
+			jehanne_fprint(fd, "\ncouldn't get fat info sector: %r\n");
 		else{
-			fprint(fd, "\nfat info %d\n", fisec);
+			jehanne_fprint(fd, "\nfat info %d\n", fisec);
 			fi = (Fatinfo*)p1->iobuf;
-			fprint(fd, "sig1: 0x%lux sb 0x%lux\n", GLONG(fi->sig1), FATINFOSIG1);
-			fprint(fd, "sig: 0x%lux sb 0x%lux\n", GLONG(fi->sig), FATINFOSIG);
-			fprint(fd, "freeclust: %lud\n", GLONG(fi->freeclust));
-			fprint(fd, "nextfree: %lud\n", GLONG(fi->nextfree));
-			fprint(fd, "reserved: %lud %lud %lud\n", GLONG(fi->resrv), GLONG(fi->resrv+4), GLONG(fi->resrv+8));
+			jehanne_fprint(fd, "sig1: 0x%lux sb 0x%lux\n", GLONG(fi->sig1), FATINFOSIG1);
+			jehanne_fprint(fd, "sig: 0x%lux sb 0x%lux\n", GLONG(fi->sig), FATINFOSIG);
+			jehanne_fprint(fd, "freeclust: %lud\n", GLONG(fi->freeclust));
+			jehanne_fprint(fd, "nextfree: %lud\n", GLONG(fi->nextfree));
+			jehanne_fprint(fd, "reserved: %lud %lud %lud\n", GLONG(fi->resrv), GLONG(fi->resrv+4), GLONG(fi->resrv+8));
 			putsect(p1);
 		}
 	}else if(fisec != 0xffff)
-		fprint(2, "bad fat info sector: %d reserved %d\n", bsec, res);
+		jehanne_fprint(2, "bad fat info sector: %d reserved %d\n", bsec, res);
 }
 
 void
@@ -1882,27 +1882,27 @@ dirdump(void *vdbuf)
 		name = namebuf + DOSNAMELEN;
 		*--name = '\0';
 		name = getnamerunes(name, dbuf, 1);
-		seprint(buf, ebuf, "\"%s\" %2.2x %2.2ux %2.2ux %d", name, dbuf[0], dbuf[12], dbuf[13], GSHORT(d->start));
+		jehanne_seprint(buf, ebuf, "\"%s\" %2.2x %2.2ux %2.2ux %d", name, dbuf[0], dbuf[12], dbuf[13], GSHORT(d->start));
 	}else{
-		s = seprint(buf, ebuf, "\"%.8s.%.3s\" ", (char*)d->name,
+		s = jehanne_seprint(buf, ebuf, "\"%.8s.%.3s\" ", (char*)d->name,
 				(char*)d->ext);
 		for(i=7; i>=0; i--)
 			*s++ = d->attr&(1<<i) ? attrchar[i] : '-';
 
 		i = GSHORT(d->time);
-		s = seprint(s, ebuf, " %2.2d:%2.2d:%2.2d", i>>11, (i>>5)&63, (i&31)<<1);
+		s = jehanne_seprint(s, ebuf, " %2.2d:%2.2d:%2.2d", i>>11, (i>>5)&63, (i&31)<<1);
 		i = GSHORT(d->date);
-		s = seprint(s, ebuf, " %2.2d.%2.2d.%2.2d", 80+(i>>9), (i>>5)&15, i&31);
+		s = jehanne_seprint(s, ebuf, " %2.2d.%2.2d.%2.2d", 80+(i>>9), (i>>5)&15, i&31);
 
 		i = GSHORT(d->ctime);
-		s = seprint(s, ebuf, " %2.2d:%2.2d:%2.2d", i>>11, (i>>5)&63, (i&31)<<1);
+		s = jehanne_seprint(s, ebuf, " %2.2d:%2.2d:%2.2d", i>>11, (i>>5)&63, (i&31)<<1);
 		i = GSHORT(d->cdate);
-		s = seprint(s, ebuf, " %2.2d.%2.2d.%2.2d", 80+(i>>9), (i>>5)&15, i&31);
+		s = jehanne_seprint(s, ebuf, " %2.2d.%2.2d.%2.2d", 80+(i>>9), (i>>5)&15, i&31);
 
 		i = GSHORT(d->adate);
-		s = seprint(s, ebuf, " %2.2d.%2.2d.%2.2d", 80+(i>>9), (i>>5)&15, i&31);
+		s = jehanne_seprint(s, ebuf, " %2.2d.%2.2d.%2.2d", 80+(i>>9), (i>>5)&15, i&31);
 
-		seprint(s, ebuf, " %d %d", GSHORT(d->start), GSHORT(d->length));
+		jehanne_seprint(s, ebuf, " %d %d", GSHORT(d->start), GSHORT(d->length));
 	}
 	chat("%s\n", buf);
 }
@@ -1941,7 +1941,7 @@ utftorunes(Rune *rr, char *s, int n)
 			*r = c;
 			s++;
 		}else
-			s += chartorune(r, s);
+			s += jehanne_chartorune(r, s);
 		r++;
 		if(r >= re)
 			break;

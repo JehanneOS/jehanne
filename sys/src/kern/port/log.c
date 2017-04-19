@@ -37,7 +37,7 @@ logclose(Log *alog)
 	lock(&alog->l);
 	alog->opens--;
 	if(alog->opens == 0){
-		free(alog->buf);
+		jehanne_free(alog->buf);
 		alog->buf = nil;
 	}
 	unlock(&alog->l);
@@ -80,8 +80,8 @@ logread(Log *alog, void *a, uint32_t _1, long n)
 
 			i = n-d;
 			p = a;
-			memmove(p, rptr, i);
-			memmove(p+i, alog->buf, d);
+			jehanne_memmove(p, rptr, i);
+			jehanne_memmove(p+i, alog->buf, d);
 			break;
 		}
 		else
@@ -105,16 +105,16 @@ logctl(Log *alog, int argc, char *argv[], Logflag *flags)
 	if(argc < 2)
 		return Ebadlogctl;
 
-	if(strcmp("set", argv[0]) == 0)
+	if(jehanne_strcmp("set", argv[0]) == 0)
 		set = 1;
-	else if(strcmp("clear", argv[0]) == 0)
+	else if(jehanne_strcmp("clear", argv[0]) == 0)
 		set = 0;
 	else
 		return Ebadlogctl;
 
 	for(i = 1; i < argc; i++){
 		for(fp = flags; fp->name; fp++)
-			if(strcmp(fp->name, argv[i]) == 0)
+			if(jehanne_strcmp(fp->name, argv[i]) == 0)
 				break;
 		if(fp->name == nil)
 			continue;
@@ -179,7 +179,7 @@ log(Log *alog, int mask, char *fmt, ...)
 		return;
 
 	va_start(arg, fmt);
-	n = vseprint(buf, buf+sizeof(buf), fmt, arg) - buf;
+	n = jehanne_vseprint(buf, buf+sizeof(buf), fmt, arg) - buf;
 	va_end(arg);
 
 	logn(alog, mask, buf, n);

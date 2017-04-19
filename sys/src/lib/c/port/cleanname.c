@@ -17,7 +17,7 @@
  */
 #define SEP(x)	((x)=='/' || (x) == 0)
 char*
-cleanname(char *name)
+jehanne_cleanname(char *name)
 {
 	char *s;	/* source of copy */
 	char *d;	/* destination of copy */
@@ -27,15 +27,15 @@ cleanname(char *name)
 
 	assert(name != nil);
 	if(name[0] == 0)
-		return strcpy(name, ".");
+		return jehanne_strcpy(name, ".");
 	rooted = 0;
 	d0 = name;
 	if(d0[0] == '#'){
 		if(d0[1] == 0)
 			return d0;
-		d0  += 1 + chartorune(&r, d0+1); /* ignore slash: #/ */
+		d0  += 1 + jehanne_chartorune(&r, d0+1); /* ignore slash: #/ */
 		while(!SEP(*d0))
-			d0 += chartorune(&r, d0);
+			d0 += jehanne_chartorune(&r, d0);
 		if(*d0 == 0)
 			return name;
 		d0++;	/* keep / after #<name> */
@@ -104,6 +104,6 @@ cleanname(char *name)
 	if(d-1 > name && d[-1] == '/')	/* thanks to #/ */
 		*--d = 0;
 	if(name[0] == 0)
-		strcpy(name, ".");
+		jehanne_strcpy(name, ".");
 	return name;
 }

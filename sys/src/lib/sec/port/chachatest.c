@@ -1,5 +1,5 @@
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 #include <libsec.h>
 
 static void
@@ -8,15 +8,15 @@ printblock(uint8_t *b, usize n)
 	int i;
 
 	for(i=0; i+8<=n; i+=8){
-		print("%#.2ux %#.2ux %#.2ux %#.2ux %#.2ux %#.2ux %#.2ux %#.2ux\n",
+		jehanne_print("%#.2ux %#.2ux %#.2ux %#.2ux %#.2ux %#.2ux %#.2ux %#.2ux\n",
 			b[0], b[1], b[2], b[3], b[4], b[5], b[6], b[7]);
 		b += 8;
 	}
 	if(i < n){
-		print("%#.2ux", *b++);
+		jehanne_print("%#.2ux", *b++);
 		while(++i < n)
-			print(" %#.2ux", *b++);
-		print("\n");
+			jehanne_print(" %#.2ux", *b++);
+		jehanne_print("\n");
 	}
 }
 
@@ -86,91 +86,91 @@ main(int argc, char **argv)
 
 	ARGBEGIN{
 	}ARGEND
-	print("rfc7539:\n");
-	print("key:\n");
+	jehanne_print("rfc7539:\n");
+	jehanne_print("key:\n");
 	printblock(rfckey, sizeof(rfckey));
-	n = strlen(rfctext);
+	n = jehanne_strlen(rfctext);
 	setupChachastate(&s, rfckey, sizeof(rfckey), rfcnonce, sizeof(rfcnonce), 0);
 	chacha_setblock(&s, rfccount);
-	print("rfc in:\n");
+	jehanne_print("rfc in:\n");
 	printblock((uint8_t*)rfctext, n);
 	chacha_encrypt2((uint8_t*)rfctext, rfcout, n, &s);
-	print("rfc out:\n");
+	jehanne_print("rfc out:\n");
 	printblock(rfcout, n);
-	if(memcmp(rfcout, rfcref, sizeof(rfcref)) != 0){
-		print("failure of vision\n");
-		exits("wrong");
+	if(jehanne_memcmp(rfcout, rfcref, sizeof(rfcref)) != 0){
+		jehanne_print("failure of vision\n");
+		jehanne_exits("wrong");
 	}
-	print("\n");
+	jehanne_print("\n");
 
-	print("ccpoly key:\n");
+	jehanne_print("ccpoly key:\n");
 	printblock(ccpkey, sizeof(ccpkey));
 
-	print("ccpoly iv:\n");
+	jehanne_print("ccpoly iv:\n");
 	printblock(ccpiv, sizeof(ccpiv));
 
 	setupChachastate(&s, ccpkey, sizeof(ccpkey), ccpiv, sizeof(ccpiv), 20);
 
-	memmove(rfcout, rfctext, sizeof(rfctext)-1);
+	jehanne_memmove(rfcout, rfctext, sizeof(rfctext)-1);
 	ccpoly_encrypt(rfcout, sizeof(rfctext)-1, ccpaad, sizeof(ccpaad), tag, &s);
 
-	print("ccpoly cipher:\n");
+	jehanne_print("ccpoly cipher:\n");
 	printblock(rfcout, sizeof(rfctext)-1);
 
-	print("ccpoly tag:\n");
+	jehanne_print("ccpoly tag:\n");
 	printblock(tag, sizeof(tag));
 
-	if(memcmp(tag, ccptag, sizeof(tag)) != 0){
-		print("bad ccpoly tag\n");
-		exits("wrong");
+	if(jehanne_memcmp(tag, ccptag, sizeof(tag)) != 0){
+		jehanne_print("bad ccpoly tag\n");
+		jehanne_exits("wrong");
 	}
 
 	if(ccpoly_decrypt(rfcout, sizeof(rfctext)-1, ccpaad, sizeof(ccpaad), tag, &s) != 0){
-		print("ccpoly decryption failed\n");
-		exits("wrong");
+		jehanne_print("ccpoly decryption failed\n");
+		jehanne_exits("wrong");
 	}
 
-	if(memcmp(rfcout, rfctext, sizeof(rfctext)-1) != 0){
-		print("ccpoly bad decryption\n");
-		exits("wrong");
+	if(jehanne_memcmp(rfcout, rfctext, sizeof(rfctext)-1) != 0){
+		jehanne_print("ccpoly bad decryption\n");
+		jehanne_exits("wrong");
 	}
-	print("\n");
+	jehanne_print("\n");
 
-	print("ccpoly64 key:\n");
+	jehanne_print("ccpoly64 key:\n");
 	printblock(ccp64key, sizeof(ccp64key));
 
-	print("ccpoly64 iv:\n");
+	jehanne_print("ccpoly64 iv:\n");
 	printblock(ccp64iv, sizeof(ccp64iv));
 
 	setupChachastate(&s, ccp64key, sizeof(ccp64key), ccp64iv, sizeof(ccp64iv), 20);
 
-	memmove(rfcout, ccp64inp, sizeof(ccp64inp));
+	jehanne_memmove(rfcout, ccp64inp, sizeof(ccp64inp));
 	ccpoly_encrypt(rfcout, sizeof(ccp64inp), ccp64aad, sizeof(ccp64aad), tag, &s);
 
-	print("ccpoly64 cipher:\n");
+	jehanne_print("ccpoly64 cipher:\n");
 	printblock(rfcout, sizeof(ccp64inp));
 
-	print("ccpoly64 tag:\n");
+	jehanne_print("ccpoly64 tag:\n");
 	printblock(tag, sizeof(tag));
 
-	if(memcmp(rfcout, ccp64out, sizeof(ccp64out)) != 0){
-		print("ccpoly64 bad ciphertext\n");
-		exits("wrong");
+	if(jehanne_memcmp(rfcout, ccp64out, sizeof(ccp64out)) != 0){
+		jehanne_print("ccpoly64 bad ciphertext\n");
+		jehanne_exits("wrong");
 	}
-	if(memcmp(tag, ccp64tag, sizeof(ccp64tag)) != 0){
-		print("ccpoly64 bad encryption tag\n");
-		exits("wrong");
+	if(jehanne_memcmp(tag, ccp64tag, sizeof(ccp64tag)) != 0){
+		jehanne_print("ccpoly64 bad encryption tag\n");
+		jehanne_exits("wrong");
 	}
 
 	if(ccpoly_decrypt(rfcout, sizeof(ccp64inp), ccp64aad, sizeof(ccp64aad), tag, &s) != 0){
-		print("ccpoly64 decryption failed\n");
-		exits("wrong");
+		jehanne_print("ccpoly64 decryption failed\n");
+		jehanne_exits("wrong");
 	}
-	if(memcmp(rfcout, ccp64inp, sizeof(ccp64inp)) != 0){
-		print("ccpoly64 bad decryption\n");
-		exits("wrong");
+	if(jehanne_memcmp(rfcout, ccp64inp, sizeof(ccp64inp)) != 0){
+		jehanne_print("ccpoly64 bad decryption\n");
+		jehanne_exits("wrong");
 	}
 
-	print("passed\n");
-	exits(nil);
+	jehanne_print("passed\n");
+	jehanne_exits(nil);
 }

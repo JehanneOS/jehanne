@@ -86,7 +86,7 @@ netlogopen(Fs *f)
 	}
 	if(f->alog->opens == 0){
 		if(f->alog->buf == nil){
-			f->alog->buf = malloc(Nlog);
+			f->alog->buf = jehanne_malloc(Nlog);
 			if(f->alog->buf == nil)
 				error(Enomem);
 		}
@@ -104,7 +104,7 @@ netlogclose(Fs *f)
 	lock(&f->alog->l);
 	f->alog->opens--;
 	if(f->alog->opens == 0){
-		free(f->alog->buf);
+		jehanne_free(f->alog->buf);
 		f->alog->buf = nil;
 	}
 	unlock(&f->alog->l);
@@ -147,8 +147,8 @@ netlogread(Fs *f, void *a, uint32_t _1, long n)
 
 			i = n-d;
 			p = a;
-			memmove(p, rptr, i);
-			memmove(p+i, f->alog->buf, d);
+			jehanne_memmove(p, rptr, i);
+			jehanne_memmove(p+i, f->alog->buf, d);
 			break;
 		}
 		else
@@ -173,7 +173,7 @@ netlogctl(Fs *f, char* s, int n)
 
 	cb = parsecmd(s, n);
 	if(waserror()){
-		free(cb);
+		jehanne_free(cb);
 		nexterror();
 	}
 
@@ -197,7 +197,7 @@ netlogctl(Fs *f, char* s, int n)
 		else
 			f->alog->iponlyset = 1;
 		poperror();
-		free(cb);
+		jehanne_free(cb);
 		return;
 
 	default:
@@ -207,7 +207,7 @@ netlogctl(Fs *f, char* s, int n)
 
 	for(i = 1; i < cb->nf; i++){
 		for(fp = flags; fp->name; fp++)
-			if(strcmp(fp->name, cb->f[i]) == 0)
+			if(jehanne_strcmp(fp->name, cb->f[i]) == 0)
 				break;
 		if(fp->name == nil)
 			continue;
@@ -218,7 +218,7 @@ netlogctl(Fs *f, char* s, int n)
 	}
 
 	poperror();
-	free(cb);
+	jehanne_free(cb);
 }
 
 void
@@ -235,7 +235,7 @@ netlog(Fs *f, int mask, char *fmt, ...)
 		return;
 
 	va_start(arg, fmt);
-	n = vseprint(buf, buf+sizeof(buf), fmt, arg) - buf;
+	n = jehanne_vseprint(buf, buf+sizeof(buf), fmt, arg) - buf;
 	va_end(arg);
 
 	lock(&f->alog->l);

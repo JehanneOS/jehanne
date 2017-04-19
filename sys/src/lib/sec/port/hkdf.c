@@ -14,7 +14,7 @@ hkdf_x(salt, nsalt, info, ninfo, key, nkey, d, dlen, x, xlen)
 
 	assert(xlen <= sizeof(tmp));
 
-	memset(tmp, 0, xlen);
+	jehanne_memset(tmp, 0, xlen);
 	if(nsalt == 0){
 		salt = tmp;
 		nsalt = xlen;
@@ -27,10 +27,10 @@ hkdf_x(salt, nsalt, info, ninfo, key, nkey, d, dlen, x, xlen)
 			ds = (*x)(info, ninfo, prk, xlen, nil, ds);
 		(*x)(&cnt, 1, prk, xlen, tmp, ds);
 		if(dlen <= xlen){
-			memmove(d, tmp, dlen);
+			jehanne_memmove(d, tmp, dlen);
 			break;
 		}
-		memmove(d, tmp, xlen);
+		jehanne_memmove(d, tmp, xlen);
 		dlen -= xlen;
 		d += xlen;
 		ds = (*x)(tmp, xlen, prk, xlen, nil, nil);

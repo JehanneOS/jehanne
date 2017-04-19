@@ -13,12 +13,12 @@
 #define	N	256
 
 int32_t
-strspn(const char *s, const char *b)
+jehanne_strspn(const char *s, const char *b)
 {
 	const char *os;
 	char map[N];
 
-	memset(map, 0, N);
+	jehanne_memset(map, 0, N);
 	while(*b)
 		map[*(uint8_t *)b++] = 1;
 	os = s;

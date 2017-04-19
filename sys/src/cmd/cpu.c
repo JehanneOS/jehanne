@@ -15,7 +15,7 @@
  */
 
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 #include <bio.h>
 #include <auth.h>
 #include <9P2000.h>
@@ -808,16 +808,16 @@ kick(int fd)
 	int rv;
 
 	for(;;){
-		lock(&nfs);
+		jehanne_lock(&nfs);
 		rp = nfs.rfirst;
 		np = nfs.nfirst;
 		if(rp == nil || np == nil){
-			unlock(&nfs);
+			jehanne_unlock(&nfs);
 			break;
 		}
 		nfs.rfirst = rp->next;
 		nfs.nfirst = np->next;
-		unlock(&nfs);
+		jehanne_unlock(&nfs);
 
 		rp->f.type = Rread;
 		rp->f.count = strlen(np->msg);
@@ -836,17 +836,17 @@ flushreq(int tag)
 {
 	Request **l, *rp;
 
-	lock(&nfs);
+	jehanne_lock(&nfs);
 	for(l = &nfs.rfirst; *l != nil; l = &(*l)->next){
 		rp = *l;
 		if(rp->f.tag == tag){
 			*l = rp->next;
-			unlock(&nfs);
+			jehanne_unlock(&nfs);
 			free(rp);
 			return;
 		}
 	}
-	unlock(&nfs);
+	jehanne_unlock(&nfs);
 }
 
 Fid*
@@ -917,13 +917,13 @@ fsread(int fd, Fid *fid, Fcall *f)
 		if(rp == nil)
 			return -1;
 		rp->f = *f;
-		lock(&nfs);
+		jehanne_lock(&nfs);
 		if(nfs.rfirst == nil)
 			nfs.rfirst = rp;
 		else
 			nfs.rlast->next = rp;
 		nfs.rlast = rp;
-		unlock(&nfs);
+		jehanne_unlock(&nfs);
 		return kick(fd);;
 	}
 }
@@ -1154,13 +1154,13 @@ lclnoteproc(int netfd)
 			np = mallocz(sizeof(Note), 1);
 			if(np != nil){
 				strcpy(np->msg, notebuf);
-				lock(&nfs);
+				jehanne_lock(&nfs);
 				if(nfs.nfirst == nil)
 					nfs.nfirst = np;
 				else
 					nfs.nlast->next = np;
 				nfs.nlast = np;
-				unlock(&nfs);
+				jehanne_unlock(&nfs);
 				kick(pfd[0]);
 			}
 			unlock(&nfs);

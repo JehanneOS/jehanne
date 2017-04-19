@@ -380,27 +380,27 @@ atadumpstate(Drive* drive, uint8_t* cmd, int64_t lba, int count)
 	}
 
 	ctlr = drive->ctlr;
-	print("sdata: command %2.2uX\n", ctlr->command);
-	print("data %8.8p limit %8.8p dlen %d status %uX error %uX\n",
+	jehanne_print("sdata: command %2.2uX\n", ctlr->command);
+	jehanne_print("data %8.8p limit %8.8p dlen %d status %uX error %uX\n",
 		drive->data, drive->limit, drive->dlen,
 		drive->status, drive->error);
 	if(cmd != nil){
-		print("lba %d -> %lld, count %d -> %d (%d)\n",
+		jehanne_print("lba %d -> %lld, count %d -> %d (%d)\n",
 			(cmd[2]<<24)|(cmd[3]<<16)|(cmd[4]<<8)|cmd[5], lba,
 			(cmd[7]<<8)|cmd[8], count, drive->count);
 	}
 	if(!(inb(ctlr->ctlport+As) & Bsy)){
 		for(i = 1; i < 7; i++)
-			print(" 0x%2.2uX", inb(ctlr->cmdport+i));
-		print(" 0x%2.2uX\n", inb(ctlr->ctlport+As));
+			jehanne_print(" 0x%2.2uX", inb(ctlr->cmdport+i));
+		jehanne_print(" 0x%2.2uX\n", inb(ctlr->ctlport+As));
 	}
 	if(drive->command == Cwd || drive->command == Crd){
 		bmiba = ctlr->bmiba;
 		prd = ctlr->prdt;
-		print("bmicx %2.2uX bmisx %2.2uX prdt %8.8p\n",
+		jehanne_print("bmicx %2.2uX bmisx %2.2uX prdt %8.8p\n",
 			inb(bmiba+Bmicx), inb(bmiba+Bmisx), prd);
 		for(;;){
-			print("pa 0x%8.8luX count %8.8uX\n",
+			jehanne_print("pa 0x%8.8luX count %8.8uX\n",
 				prd->pa, prd->count);
 			if(prd->count & PrdEOT)
 				break;
@@ -409,10 +409,10 @@ atadumpstate(Drive* drive, uint8_t* cmd, int64_t lba, int count)
 	}
 	if(ctlr->pcidev && ctlr->pcidev->vid == 0x8086){
 		p = ctlr->pcidev;
-		print("0x40: %4.4uX 0x42: %4.4uX",
+		jehanne_print("0x40: %4.4uX 0x42: %4.4uX",
 			pcicfgr16(p, 0x40), pcicfgr16(p, 0x42));
-		print("0x48: %2.2uX\n", pcicfgr8(p, 0x48));
-		print("0x4A: %4.4uX\n", pcicfgr16(p, 0x4A));
+		jehanne_print("0x48: %2.2uX\n", pcicfgr8(p, 0x48));
+		jehanne_print("0x4A: %4.4uX\n", pcicfgr16(p, 0x4A));
 	}
 }
 
@@ -429,21 +429,21 @@ atadebug(int cmdport, int ctlport, char* fmt, ...)
 	}
 
 	va_start(arg, fmt);
-	n = vseprint(buf, buf+sizeof(buf), fmt, arg) - buf;
+	n = jehanne_vseprint(buf, buf+sizeof(buf), fmt, arg) - buf;
 	va_end(arg);
 
 	if(cmdport){
 		if(buf[n-1] == '\n')
 			n--;
-		n += snprint(buf+n, PRINTSIZE-n, " ataregs 0x%uX:",
+		n += jehanne_snprint(buf+n, PRINTSIZE-n, " ataregs 0x%uX:",
 			cmdport);
 		for(i = Features; i < Command; i++)
-			n += snprint(buf+n, PRINTSIZE-n, " 0x%2.2uX",
+			n += jehanne_snprint(buf+n, PRINTSIZE-n, " 0x%2.2uX",
 				inb(cmdport+i));
 		if(ctlport)
-			n += snprint(buf+n, PRINTSIZE-n, " 0x%2.2uX",
+			n += jehanne_snprint(buf+n, PRINTSIZE-n, " 0x%2.2uX",
 				inb(ctlport+As));
-		n += snprint(buf+n, PRINTSIZE-n, "\n");
+		n += jehanne_snprint(buf+n, PRINTSIZE-n, "\n");
 	}
 	putstrn(buf, n);
 
@@ -609,7 +609,7 @@ ataidentify(int cmdport, int ctlport, int dev, int pkt, void* info)
 	if(as & Err)
 		return as;
 
-	memset(info, 0, 512);
+	jehanne_memset(info, 0, 512);
 	inss(cmdport+Data, info, 256);
 	inb(cmdport+Status);
 
@@ -620,11 +620,11 @@ ataidentify(int cmdport, int ctlport, int dev, int pkt, void* info)
 		sp = (uint16_t*)info;
 		for(i = 0; i < 256; i++){
 			if(i && (i%16) == 0)
-				print("\n");
-			print(" %4.4uX", *sp);
+				jehanne_print("\n");
+			jehanne_print(" %4.4uX", *sp);
 			sp++;
 		}
-		print("\n");
+		jehanne_print("\n");
 	}
 
 	return 0;
@@ -651,10 +651,10 @@ retry:
 		goto retry;
 	}
 
-	if((drive = malloc(sizeof(Drive))) == nil)
+	if((drive = jehanne_malloc(sizeof(Drive))) == nil)
 		return nil;
 	drive->dev = dev;
-	memmove(drive->info, buf, sizeof(drive->info));
+	jehanne_memmove(drive->info, buf, sizeof(drive->info));
 	drive->sense[0] = 0x70;
 	drive->sense[7] = sizeof(drive->sense)-7;
 
@@ -716,15 +716,15 @@ retry:
 	atadmamode(drive);
 
 	if(DEBUG & DbgCONFIG){
-		print("dev %2.2uX port %uX config %4.4uX capabilities %4.4uX",
+		jehanne_print("dev %2.2uX port %uX config %4.4uX capabilities %4.4uX",
 			dev, cmdport, iconfig, drive->info[Icapabilities]);
-		print(" mwdma %4.4uX", drive->info[Imwdma]);
+		jehanne_print(" mwdma %4.4uX", drive->info[Imwdma]);
 		if(drive->info[Ivalid] & 0x04)
-			print(" udma %4.4uX", drive->info[Iudma]);
-		print(" dma %8.8uX rwm %ud", drive->dma, drive->rwm);
+			jehanne_print(" udma %4.4uX", drive->info[Iudma]);
+		jehanne_print(" dma %8.8uX rwm %ud", drive->dma, drive->rwm);
 		if(drive->flags&Lba48)
-			print("\tLLBA sectors %lld", drive->sectors);
-		print("\n");
+			jehanne_print("\tLLBA sectors %lld", drive->sectors);
+		jehanne_print("\n");
 	}
 
 	return drive;
@@ -756,15 +756,15 @@ ataprobe(int cmdport, int ctlport, int irq)
 	static int nonlegacy = 'C';
 
 	if(cmdport == 0) {
-		print("ataprobe: cmdport is 0\n");
+		jehanne_print("ataprobe: cmdport is 0\n");
 		return nil;
 	}
 	if(ioalloc(cmdport, 8, 0, "atacmd") < 0) {
-		print("ataprobe: Cannot allocate %X\n", cmdport);
+		jehanne_print("ataprobe: Cannot allocate %X\n", cmdport);
 		return nil;
 	}
 	if(ioalloc(ctlport+As, 1, 0, "atactl") < 0){
-		print("ataprobe: Cannot allocate %X\n", ctlport + As);
+		jehanne_print("ataprobe: Cannot allocate %X\n", ctlport + As);
 		iofree(cmdport);
 		return nil;
 	}
@@ -860,17 +860,17 @@ tryedd1:
 	 */
 	if((drive = atadrive(cmdport, ctlport, dev)) == nil)
 		goto release;
-	if((ctlr = malloc(sizeof(Ctlr))) == nil){
-		free(drive);
+	if((ctlr = jehanne_malloc(sizeof(Ctlr))) == nil){
+		jehanne_free(drive);
 		goto release;
 	}
-	memset(ctlr, 0, sizeof(Ctlr));
-	if((sdev = malloc(sizeof(SDev))) == nil){
-		free(ctlr);
-		free(drive);
+	jehanne_memset(ctlr, 0, sizeof(Ctlr));
+	if((sdev = jehanne_malloc(sizeof(SDev))) == nil){
+		jehanne_free(ctlr);
+		jehanne_free(drive);
 		goto release;
 	}
-	memset(sdev, 0, sizeof(SDev));
+	jehanne_memset(sdev, 0, sizeof(SDev));
 	drive->ctlr = ctlr;
 	if(dev == Dev0){
 		ctlr->drive[0] = drive;
@@ -933,17 +933,17 @@ ataclear(SDev *sdev)
 	iofree(ctlr->ctlport + As);
 
 	if (ctlr->drive[0])
-		free(ctlr->drive[0]);
+		jehanne_free(ctlr->drive[0]);
 	if (ctlr->drive[1])
-		free(ctlr->drive[1]);
+		jehanne_free(ctlr->drive[1]);
 	if (sdev->name)
-		free(sdev->name);
+		jehanne_free(sdev->name);
 	if (sdev->unitflg)
-		free(sdev->unitflg);
+		jehanne_free(sdev->unitflg);
 	if (sdev->unit)
-		free(sdev->unit);
-	free(ctlr);
-	free(sdev);
+		jehanne_free(sdev->unit);
+	jehanne_free(ctlr);
+	jehanne_free(sdev);
 }
 
 static char *
@@ -951,7 +951,7 @@ atastat(SDev *sdev, char *p, char *e)
 {
 	Ctlr *ctlr = sdev->ctlr;
 
-	return seprint(p, e, "%s ata port %X ctl %X irq %d "
+	return jehanne_seprint(p, e, "%s ata port %X ctl %X irq %d "
 		"intr-ok %lud intr-busy %lud intr-nil-drive %lud\n",
 		sdev->name, ctlr->cmdport, ctlr->ctlport, ctlr->irq,
 		ctlr->intok, ctlr->intbusy, ctlr->intnil);
@@ -966,10 +966,10 @@ ataprobew(DevConf *cf)
 	if (cf->nports != 2)
 		error(Ebadarg);
 
-	memset(&isa, 0, sizeof isa);
+	jehanne_memset(&isa, 0, sizeof isa);
 	isa.port = cf->ports[0].port;
 	isa.irq = cf->intnum;
-	//if((p=strchr(cf->type, '/')) == nil || pcmspecial(p+1, &isa) < 0)
+	//if((p=jehanne_strchr(cf->type, '/')) == nil || pcmspecial(p+1, &isa) < 0)
 	//	error("cannot find controller");
 
 	return ataprobe(cf->ports[0].port, cf->ports[1].port, cf->intnum);
@@ -1008,10 +1008,10 @@ atamodesense(Drive* drive, uint8_t* cmd)
 		return atasetsense(drive, SDcheck, 0x05, 0x1A, 0);
 	if(drive->data == nil || drive->dlen < len)
 		return atasetsense(drive, SDcheck, 0x05, 0x20, 1);
-	memset(drive->data, 0, 8);
+	jehanne_memset(drive->data, 0, 8);
 	drive->data[0] = sizeof(drive->info)>>8;
 	drive->data[1] = (uint8_t)sizeof(drive->info);
-	memmove(drive->data+8, drive->info, sizeof(drive->info));
+	jehanne_memmove(drive->data+8, drive->info, sizeof(drive->info));
 	drive->data += 8+sizeof(drive->info);
 
 	return SDok;
@@ -1122,7 +1122,7 @@ atadmasetup(Drive* drive, int len)
 	prd = ctlr->prdt;
 	if(prd == nil){
 		drive->dmactl = 0;
-		print("disabling dma: not on a busmastering controller\n");
+		jehanne_print("disabling dma: not on a busmastering controller\n");
 		return -1;
 	}
 
@@ -1277,8 +1277,8 @@ atapktio(Drive* drive, uint8_t* cmd, int clen)
 	r = SDok;
 
 	drive->command = Cpkt;
-	memmove(drive->pktcmd, cmd, clen);
-	memset(drive->pktcmd+clen, 0, drive->pkt-clen);
+	jehanne_memmove(drive->pktcmd, cmd, clen);
+	jehanne_memset(drive->pktcmd+clen, 0, drive->pkt-clen);
 	drive->limit = drive->data+drive->dlen;
 
 	ctlr = drive->ctlr;
@@ -1437,7 +1437,7 @@ atageniostart(Drive* drive, uint64_t lba)
 		cmd = cmd48[cmd];
 
 		if(DEBUG & Dbg48BIT)
-			print("using 48-bit commands\n");
+			jehanne_print("using 48-bit commands\n");
 	}
 	else{
 		outb(cmdport+Count, drive->count);
@@ -1482,7 +1482,7 @@ atagenioretry(Drive* drive)
 {
 	if(drive->dmactl){
 		drive->dmactl = 0;
-		print("atagenioretry: disabling dma\n");
+		jehanne_print("atagenioretry: disabling dma\n");
 	}
 	else if(drive->rwmctl)
 		drive->rwmctl = 0;
@@ -1521,7 +1521,7 @@ atagenio(Drive* drive, uint8_t* cmd, int clen)
 		else
 			len = sizeof(drive->sense);
 		if(drive->data && drive->dlen >= len){
-			memmove(drive->data, drive->sense, len);
+			jehanne_memmove(drive->data, drive->sense, len);
 			drive->data += len;
 		}
 		return SDok;
@@ -1532,7 +1532,7 @@ atagenio(Drive* drive, uint8_t* cmd, int clen)
 		else
 			len = sizeof(drive->inquiry);
 		if(drive->data && drive->dlen >= len){
-			memmove(drive->data, drive->inquiry, len);
+			jehanne_memmove(drive->data, drive->inquiry, len);
 			drive->data += len;
 		}
 		return SDok;
@@ -1695,7 +1695,7 @@ atario(SDreq* r)
 	case 0x08:			/* read */
 	case 0x0A:			/* write */
 		cmdp = cmd10;
-		memset(cmdp, 0, sizeof(cmd10));
+		jehanne_memset(cmdp, 0, sizeof(cmd10));
 		cmdp[0] = r->cmd[0]|0x20;
 		cmdp[1] = r->cmd[1] & 0xE0;
 		cmdp[5] = r->cmd[3];
@@ -1725,7 +1725,7 @@ retry:
 		status = atagenio(drive, cmdp, clen);
 	if(status == SDretry){
 		if(DbgDEBUG)
-			print("%s: retry: dma %8.8uX rwm %4.4uX\n",
+			jehanne_print("%s: retry: dma %8.8uX rwm %4.4uX\n",
 				unit->SDperm.name, drive->dmactl, drive->rwmctl);
 		goto retry;
 	}
@@ -1740,7 +1740,7 @@ retry:
 	}
 	else if(status == SDcheck && !(r->flags & SDnosense)){
 		drive->write = 0;
-		memset(cmd10, 0, sizeof(cmd10));
+		jehanne_memset(cmd10, 0, sizeof(cmd10));
 		cmd10[0] = 0x03;
 		cmd10[1] = r->lun<<5;
 		cmd10[4] = sizeof(r->sense)-1;
@@ -1807,7 +1807,7 @@ atainterrupt(Ureg *ureg, void* arg)
 		ctlr->intbusy++;
 		iunlock(&ctlr->l);
 		if(DEBUG & DbgBsy)
-			print("IBsy+");
+			jehanne_print("IBsy+");
 		return;
 	}
 	cmdport = ctlr->cmdport;
@@ -1818,7 +1818,7 @@ atainterrupt(Ureg *ureg, void* arg)
 			ctlr->irqack(ctlr);
 		iunlock(&ctlr->l);
 		if((DEBUG & DbgINL) && ctlr->command != Cedd)
-			print("Inil%2.2uX+", ctlr->command);
+			jehanne_print("Inil%2.2uX+", ctlr->command);
 		return;
 	}
 
@@ -2115,7 +2115,7 @@ atapnp(void)
 				ctlr = sdev->ctlr;
 				if(ispc87415) {
 					ctlr->ienable = pc87415ienable;
-					print("pc87415disable: not yet implemented\n");
+					jehanne_print("pc87415disable: not yet implemented\n");
 				}
 
 				if(head != nil)
@@ -2161,11 +2161,11 @@ ataenable(SDev* sdev)
 #define ALIGN	(4 * 1024)
 		if(ctlr->pcidev != nil)
 			pcisetbme(ctlr->pcidev);
-		ctlr->prdt = mallocalign(Nprd*sizeof(Prd), 4, 0, 4*1024);
+		ctlr->prdt = jehanne_mallocalign(Nprd*sizeof(Prd), 4, 0, 4*1024);
 		if(ctlr->prdt == nil)
 			error(Enomem);
 	}
-	snprint(name, sizeof(name), "%s (%s)", sdev->name, sdev->ifc->name);
+	jehanne_snprint(name, sizeof(name), "%s (%s)", sdev->name, sdev->ifc->name);
 	ctlr->vector = intrenable(ctlr->irq, atainterrupt, ctlr, ctlr->tbdf, name);
 	outb(ctlr->ctlport+Dc, 0);
 	if(ctlr->ienable)
@@ -2184,12 +2184,12 @@ atadisable(SDev *sdev)
 	outb(ctlr->ctlport+Dc, Nien);		/* disable interrupts */
 	if (ctlr->idisable)
 		ctlr->idisable(ctlr);
-	snprint(name, sizeof(name), "%s (%s)", sdev->name, sdev->ifc->name);
+	jehanne_snprint(name, sizeof(name), "%s (%s)", sdev->name, sdev->ifc->name);
 	intrdisable(ctlr->vector);
 	if (ctlr->bmiba) {
 		if (ctlr->pcidev)
 			pciclrbme(ctlr->pcidev);
-		free(ctlr->prdt);
+		jehanne_free(ctlr->prdt);
 	}
 	return 0;
 }
@@ -2206,27 +2206,27 @@ atarctl(SDunit* unit, char* p, int l)
 	drive = ctlr->drive[unit->subno];
 
 	qlock(&drive->ql);
-	n = snprint(p, l, "config %4.4uX capabilities %4.4uX",
+	n = jehanne_snprint(p, l, "config %4.4uX capabilities %4.4uX",
 		drive->info[Iconfig], drive->info[Icapabilities]);
 	if(drive->dma)
-		n += snprint(p+n, l-n, " dma %8.8uX dmactl %8.8uX",
+		n += jehanne_snprint(p+n, l-n, " dma %8.8uX dmactl %8.8uX",
 			drive->dma, drive->dmactl);
 	if(drive->rwm)
-		n += snprint(p+n, l-n, " rwm %ud rwmctl %ud",
+		n += jehanne_snprint(p+n, l-n, " rwm %ud rwmctl %ud",
 			drive->rwm, drive->rwmctl);
 	if(drive->flags&Lba48)
-		n += snprint(p+n, l-n, " lba48always %s",
+		n += jehanne_snprint(p+n, l-n, " lba48always %s",
 			(drive->flags&Lba48always) ? "on" : "off");
-	n += snprint(p+n, l-n, "\n");
-	n += snprint(p+n, l-n, "interrupts read %lud write %lud cmds %lud\n",
+	n += jehanne_snprint(p+n, l-n, "\n");
+	n += jehanne_snprint(p+n, l-n, "interrupts read %lud write %lud cmds %lud\n",
 		drive->intrd, drive->intwr, drive->intcmd);
 	if(drive->sectors){
-		n += snprint(p+n, l-n, "geometry %lld %d",
+		n += jehanne_snprint(p+n, l-n, "geometry %lld %d",
 			drive->sectors, drive->secsize);
 		if(drive->pkt == 0)
-			n += snprint(p+n, l-n, " %d %d %d",
+			n += jehanne_snprint(p+n, l-n, " %d %d %d",
 				drive->c, drive->h, drive->s);
-		n += snprint(p+n, l-n, "\n");
+		n += jehanne_snprint(p+n, l-n, "\n");
 	}
 	qunlock(&drive->ql);
 
@@ -2256,32 +2256,32 @@ atawctl(SDunit* unit, Cmdbuf* cb)
 	 * correctly already either by the BIOS or when
 	 * the drive was initially identified.
 	 */
-	if(strcmp(cb->f[0], "dma") == 0){
+	if(jehanne_strcmp(cb->f[0], "dma") == 0){
 		if(cb->nf != 2 || drive->dma == 0)
 			error(Ebadctl);
-		if(strcmp(cb->f[1], "on") == 0)
+		if(jehanne_strcmp(cb->f[1], "on") == 0)
 			drive->dmactl = drive->dma;
-		else if(strcmp(cb->f[1], "off") == 0)
+		else if(jehanne_strcmp(cb->f[1], "off") == 0)
 			drive->dmactl = 0;
 		else
 			error(Ebadctl);
 	}
-	else if(strcmp(cb->f[0], "rwm") == 0){
+	else if(jehanne_strcmp(cb->f[0], "rwm") == 0){
 		if(cb->nf != 2 || drive->rwm == 0)
 			error(Ebadctl);
-		if(strcmp(cb->f[1], "on") == 0)
+		if(jehanne_strcmp(cb->f[1], "on") == 0)
 			drive->rwmctl = drive->rwm;
-		else if(strcmp(cb->f[1], "off") == 0)
+		else if(jehanne_strcmp(cb->f[1], "off") == 0)
 			drive->rwmctl = 0;
 		else
 			error(Ebadctl);
 	}
-	else if(strcmp(cb->f[0], "standby") == 0){
+	else if(jehanne_strcmp(cb->f[0], "standby") == 0){
 		switch(cb->nf){
 		default:
 			error(Ebadctl);
 		case 2:
-			period = strtol(cb->f[1], 0, 0);
+			period = jehanne_strtol(cb->f[1], 0, 0);
 			if(period && (period < 30 || period > 240*5))
 				error(Ebadctl);
 			period /= 5;
@@ -2290,12 +2290,12 @@ atawctl(SDunit* unit, Cmdbuf* cb)
 		if(atastandby(drive, period) != SDok)
 			error(Ebadctl);
 	}
-	else if(strcmp(cb->f[0], "lba48always") == 0){
+	else if(jehanne_strcmp(cb->f[0], "lba48always") == 0){
 		if(cb->nf != 2 || !(drive->flags&Lba48))
 			error(Ebadctl);
-		if(strcmp(cb->f[1], "on") == 0)
+		if(jehanne_strcmp(cb->f[1], "on") == 0)
 			drive->flags |= Lba48always;
-		else if(strcmp(cb->f[1], "off") == 0)
+		else if(jehanne_strcmp(cb->f[1], "off") == 0)
 			drive->flags &= ~Lba48always;
 		else
 			error(Ebadctl);

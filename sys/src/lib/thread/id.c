@@ -29,19 +29,19 @@ threadpid(int id)
 		return -1;
 	if (id == 0)
 		return _threadgetproc()->pid;
-	lock(&_threadpq.lock);
+	jehanne_lock(&_threadpq.lock);
 	for (p = _threadpq.head; p; p = p->next){
-		lock(&p->lock);
+		jehanne_lock(&p->lock);
 		for (t = p->threads.head; t; t = t->nextt)
 			if (t->id == id){
 				pid = p->pid;
-				unlock(&p->lock);
-				unlock(&_threadpq.lock);
+				jehanne_unlock(&p->lock);
+				jehanne_unlock(&_threadpq.lock);
 				return pid;
 			}
-		unlock(&p->lock);
+		jehanne_unlock(&p->lock);
 	}
-	unlock(&_threadpq.lock);
+	jehanne_unlock(&_threadpq.lock);
 	return -1;
 }
 
@@ -75,14 +75,14 @@ threadsetname(char *fmt, ...)
 	p = _threadgetproc();
 	t = p->thread;
 	if (t->cmdname)
-		free(t->cmdname);
+		jehanne_free(t->cmdname);
 	va_start(arg, fmt);
-	t->cmdname = vsmprint(fmt, arg);
+	t->cmdname = jehanne_vsmprint(fmt, arg);
 	va_end(arg);
 	if(t->cmdname && p->nthreads == 1){
-		snprint(buf, sizeof buf, "#p/%lud/args", getpid());
+		jehanne_snprint(buf, sizeof buf, "#p/%lud/args", jehanne_getpid());
 		if((fd = open(buf, OWRITE)) >= 0){
-			write(fd, t->cmdname, strlen(t->cmdname)+1);
+			write(fd, t->cmdname, jehanne_strlen(t->cmdname)+1);
 			close(fd);
 		}
 	}
@@ -124,14 +124,14 @@ tprivalloc(void)
 {
 	int i;
 
-	lock(&privlock);
+	jehanne_lock(&privlock);
 	for(i=0; i<NPRIV; i++)
 		if(!(privmask&(1<<i))){
 			privmask |= 1<<i;
-			unlock(&privlock);
+			jehanne_unlock(&privlock);
 			return i;
 		}
-	unlock(&privlock);
+	jehanne_unlock(&privlock);
 	return -1;
 }
 
@@ -140,7 +140,7 @@ tprivfree(int i)
 {
 	if(i < 0 || i >= NPRIV)
 		abort();
-	lock(&privlock);
+	jehanne_lock(&privlock);
 	privmask &= ~(1<<i);
 }
 

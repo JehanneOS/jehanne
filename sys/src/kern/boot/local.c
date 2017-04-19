@@ -40,43 +40,43 @@ configlocal(Method *mp)
 	} else {
 		disk = "#s/sdE0/";
 	}
-print("configlocal: disk is %s\n", disk);
+jehanne_print("configlocal: disk is %s\n", disk);
 	/* if we've decided on one, pass it on to all programs */
 	if(disk) {
 		setenv("bootdisk", disk);
-		setenv("nvram", smprint("%s/nvram", disk));
+		setenv("nvram", jehanne_smprint("%s/nvram", disk));
 	}
 
-	if (access(disk, AEXIST) < 0){
-		print("configlocal: cannot access %s\n", disk);
+	if (jehanne_access(disk, AEXIST) < 0){
+		jehanne_print("configlocal: cannot access %s\n", disk);
 		shell("-i", nil);
 	} else {
 		try = 0;
-		path = smprint("%s/plan9", disk);
-		cmd = smprint("%s -p '%s/data' >> '%s/ctl'", fdiskPath, disk, disk);
-		while(access(path, AEXIST) < 0){
+		path = jehanne_smprint("%s/plan9", disk);
+		cmd = jehanne_smprint("%s -p '%s/data' >> '%s/ctl'", fdiskPath, disk, disk);
+		while(jehanne_access(path, AEXIST) < 0){
 			if(try++)
-				print("%s: try %d\n", cmd, try);
+				jehanne_print("%s: try %d\n", cmd, try);
 			if(try > 4)
 				shell("-i", nil);
 			shell("-c", cmd);
-			sleep(250);
+			jehanne_sleep(250);
 		}
-		free(cmd);
-		free(path);
+		jehanne_free(cmd);
+		jehanne_free(path);
 		try = 0;
-		path = smprint("%s/fs", disk);
-		cmd = smprint("%s -p '%s/plan9' >> '%s/ctl'", prepPath, disk, disk);
-		while(access(path, AEXIST) < 0){
+		path = jehanne_smprint("%s/fs", disk);
+		cmd = jehanne_smprint("%s -p '%s/plan9' >> '%s/ctl'", prepPath, disk, disk);
+		while(jehanne_access(path, AEXIST) < 0){
 			if(try++)
-				print("%s: try %d\n", cmd, try);
+				jehanne_print("%s: try %d\n", cmd, try);
 			if(try > 4)
 				shell("-i", nil);
 			shell("-c", cmd);
-			sleep(250);
+			jehanne_sleep(250);
 		}
-		free(cmd);
-		free(path);
+		jehanne_free(cmd);
+		jehanne_free(path);
 	}
 }
 
@@ -84,7 +84,7 @@ print("configlocal: disk is %s\n", disk);
 static int
 print1(int fd, char *s)
 {
-	return write(fd, s, strlen(s));
+	return write(fd, s, jehanne_strlen(s));
 }
 
 void
@@ -110,20 +110,20 @@ connecthjfs(void)
 	char partition[128];
 	char *dev;
 
-	if(access(hjfsPath, AEXEC) < 0){
+	if(jehanne_access(hjfsPath, AEXEC) < 0){
 		return -1;
 	}
 
 	/* look for hjfs partition */
 	dev = disk ? disk : bootdisk;
-	snprint(partition, sizeof partition, "%s/fs", dev);
+	jehanne_snprint(partition, sizeof partition, "%s/fs", dev);
 
 	/* start hjfs */
-	print("hjfs(%s)...", partition);
-	shell("-c", smprint("%s -f '%s' -n 'boot'", hjfsPath, partition));
+	jehanne_print("hjfs(%s)...", partition);
+	shell("-c", jehanne_smprint("%s -f '%s' -n 'boot'", hjfsPath, partition));
 	fd = open("#s/boot", ORDWR);
 	if(fd < 0){
-		print("open #s/boot: %r\n");
+		jehanne_print("open #s/boot: %r\n");
 		return -1;
 	}
 	return fd;

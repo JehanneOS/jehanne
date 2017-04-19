@@ -20,10 +20,10 @@ freeThumbprints(Thumbprint *table)
 	for(hd = table; hd < table+ThumbTab; hd++){
 		for(p = hd->next; p && p != hd; p = q){
 			q = p->next;
-			free(p);
+			jehanne_free(p);
 		}
 	}
-	free(table);
+	jehanne_free(table);
 }
 
 int
@@ -35,7 +35,7 @@ okThumbprint(uint8_t *sum, Thumbprint *table)
 		return 0;
 	hd = tablehead(sum, table);
 	for(p = hd->next; p; p = p->next){
-		if(memcmp(sum, p->sha1, SHA1dlen) == 0)
+		if(jehanne_memcmp(sum, p->sha1, SHA1dlen) == 0)
 			return 1;
 		if(p == hd)
 			break;
@@ -51,23 +51,23 @@ loadThumbprints(char *file, Thumbprint *table, Thumbprint *crltab)
 	uint8_t sum[SHA1dlen];
 	Biobuf *bin;
 
-	if(access(file, AEXIST) < 0)
+	if(jehanne_access(file, AEXIST) < 0)
 		return 0;	/* not an error */
 	if((bin = Bopen(file, OREAD)) == nil)
 		return -1;
-	for(; (line = Brdstr(bin, '\n', 1)) != nil; free(line)){
-		if(tokenize(line, field, nelem(field)) < 2)
+	for(; (line = Brdstr(bin, '\n', 1)) != nil; jehanne_free(line)){
+		if(jehanne_tokenize(line, field, nelem(field)) < 2)
 			continue;
-		if(strcmp(field[0], "#include") == 0){
+		if(jehanne_strcmp(field[0], "#include") == 0){
 			if(loadThumbprints(field[1], table, crltab) < 0)
 				goto err;
 			continue;
 		}
-		if(strcmp(field[0], "x509") != 0 || strncmp(field[1], "sha1=", 5) != 0)
+		if(jehanne_strcmp(field[0], "x509") != 0 || jehanne_strncmp(field[1], "sha1=", 5) != 0)
 			continue;
 		field[1] += 5;
-		if(dec16(sum, SHA1dlen, field[1], strlen(field[1])) != SHA1dlen){
-			werrstr("malformed x509 entry in %s: %s", file, field[1]);
+		if(jehanne_dec16(sum, SHA1dlen, field[1], jehanne_strlen(field[1])) != SHA1dlen){
+			jehanne_werrstr("malformed x509 entry in %s: %s", file, field[1]);
 			goto err;
 		}
 		if(crltab && okThumbprint(sum, crltab))
@@ -76,17 +76,17 @@ loadThumbprints(char *file, Thumbprint *table, Thumbprint *crltab)
 		if(hd->next == nil)
 			entry = hd;
 		else {
-			if((entry = malloc(sizeof(*entry))) == nil)
+			if((entry = jehanne_malloc(sizeof(*entry))) == nil)
 				goto err;
 			entry->next = hd->next;
 		}
 		hd->next = entry;
-		memcpy(entry->sha1, sum, SHA1dlen);
+		jehanne_memcpy(entry->sha1, sum, SHA1dlen);
 	}
 	Bterm(bin);
 	return 0;
 err:
-	free(line);
+	jehanne_free(line);
 	Bterm(bin);
 	return -1;
 }
@@ -98,15 +98,15 @@ initThumbprints(char *ok, char *crl)
 
 	table = crltab = nil;
 	if(crl){
-		if((crltab = malloc(ThumbTab * sizeof(*crltab))) == nil)
+		if((crltab = jehanne_malloc(ThumbTab * sizeof(*crltab))) == nil)
 			goto err;
-		memset(crltab, 0, ThumbTab * sizeof(*crltab));
+		jehanne_memset(crltab, 0, ThumbTab * sizeof(*crltab));
 		if(loadThumbprints(crl, crltab, nil) < 0)
 			goto err;
 	}
-	if((table = malloc(ThumbTab * sizeof(*table))) == nil)
+	if((table = jehanne_malloc(ThumbTab * sizeof(*table))) == nil)
 		goto err;
-	memset(table, 0, ThumbTab * sizeof(*table));
+	jehanne_memset(table, 0, ThumbTab * sizeof(*table));
 	if(loadThumbprints(ok, table, crltab) < 0){
 		freeThumbprints(table);
 		table = nil;

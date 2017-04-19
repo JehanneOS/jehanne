@@ -36,7 +36,7 @@ void
 mpsetminbits(int n)
 {
 	if(n < 0)
-		sysfatal("mpsetminbits: n < 0");
+		jehanne_sysfatal("mpsetminbits: n < 0");
 	if(n == 0)
 		n = 1;
 	mpmindigits = DIGITS(n);
@@ -49,15 +49,15 @@ mpnew(int n)
 	mpint *b;
 
 	if(n < 0)
-		sysfatal("mpsetminbits: n < 0");
+		jehanne_sysfatal("mpsetminbits: n < 0");
 
 	n = DIGITS(n);
 	if(n < mpmindigits)
 		n = mpmindigits;
-	b = mallocz(sizeof(mpint) + n*Dbytes, 1);
+	b = jehanne_mallocz(sizeof(mpint) + n*Dbytes, 1);
 	if(b == nil)
-		sysfatal("mpnew: %r");
-	setmalloctag(b, getcallerpc());
+		jehanne_sysfatal("mpnew: %r");
+	jehanne_setmalloctag(b, jehanne_getcallerpc());
 	b->p = (mpdigit*)&b[1];
 	b->size = n;
 	b->sign = 1;
@@ -78,19 +78,19 @@ mpbits(mpint *b, int m)
 			return;
 	} else {
 		if(b->p == (mpdigit*)&b[1]){
-			b->p = (mpdigit*)mallocz(n*Dbytes, 0);
+			b->p = (mpdigit*)jehanne_mallocz(n*Dbytes, 0);
 			if(b->p == nil)
-				sysfatal("mpbits: %r");
-			memmove(b->p, &b[1], Dbytes*b->top);
-			memset(&b[1], 0, Dbytes*b->size);
+				jehanne_sysfatal("mpbits: %r");
+			jehanne_memmove(b->p, &b[1], Dbytes*b->top);
+			jehanne_memset(&b[1], 0, Dbytes*b->size);
 		} else {
-			b->p = (mpdigit*)realloc(b->p, n*Dbytes);
+			b->p = (mpdigit*)jehanne_realloc(b->p, n*Dbytes);
 			if(b->p == nil)
-				sysfatal("mpbits: %r");
+				jehanne_sysfatal("mpbits: %r");
 		}
 		b->size = n;
 	}
-	memset(&b->p[b->top], 0, Dbytes*(n - b->top));
+	jehanne_memset(&b->p[b->top], 0, Dbytes*(n - b->top));
 	b->top = n;
 	b->flags &= ~MPnorm;
 }
@@ -101,11 +101,11 @@ mpfree(mpint *b)
 	if(b == nil)
 		return;
 	if(b->flags & MPstatic)
-		sysfatal("freeing mp constant");
-	memset(b->p, 0, b->size*Dbytes);
+		jehanne_sysfatal("freeing mp constant");
+	jehanne_memset(b->p, 0, b->size*Dbytes);
 	if(b->p != (mpdigit*)&b[1])
-		free(b->p);
-	free(b);
+		jehanne_free(b->p);
+	jehanne_free(b);
 }
 
 mpint*
@@ -134,11 +134,11 @@ mpcopy(mpint *old)
 	mpint *new;
 
 	new = mpnew(Dbits*old->size);
-	setmalloctag(new, getcallerpc());
+	jehanne_setmalloctag(new, jehanne_getcallerpc());
 	new->sign = old->sign;
 	new->top = old->top;
 	new->flags = old->flags & ~(MPstatic|MPfield);
-	memmove(new->p, old->p, Dbytes*old->top);
+	jehanne_memmove(new->p, old->p, Dbytes*old->top);
 	return new;
 }
 
@@ -153,7 +153,7 @@ mpassign(mpint *old, mpint *new)
 	new->top = old->top;
 	new->flags &= ~MPnorm;
 	new->flags |= old->flags & ~(MPstatic|MPfield);
-	memmove(new->p, old->p, Dbytes*old->top);
+	jehanne_memmove(new->p, old->p, Dbytes*old->top);
 }
 
 // number of significant bits in mantissa

@@ -8,7 +8,7 @@
  */
 
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 
 #define ROTR(x,n)	(((x) >> (n)) | ((x) << (32-(n))))
 #define sigma0(x)	(ROTR((x),7) ^ ROTR((x),18) ^ ((x) >> 3))

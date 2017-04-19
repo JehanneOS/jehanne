@@ -8,7 +8,7 @@
  */
 
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 
 int	copy1(int fdf, int fdt, char *from, char *to);
 void	hardremove(char *);

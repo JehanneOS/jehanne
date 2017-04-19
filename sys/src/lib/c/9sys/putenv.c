@@ -20,7 +20,7 @@
 #include <libc.h>
 
 int
-putenv(const char *name, const char *value)
+jehanne_putenv(const char *name, const char *value)
 {
 	int f;
 	int32_t l;
@@ -30,25 +30,25 @@ putenv(const char *name, const char *value)
 	assert(value != nil);
 	if(name[0]=='\0')
 		goto BadName;
-	if(strcmp(name, ".")==0 || strcmp(name, "..")==0)
+	if(jehanne_strcmp(name, ".")==0 || jehanne_strcmp(name, "..")==0)
 		goto BadName;
-	if(strchr(name, '/')!=nil)
-		goto BadName;
-
-	snprint(path, sizeof path, "/env/%s", name);
-	if(strcmp(path+5, name) != 0)
+	if(jehanne_strchr(name, '/')!=nil)
 		goto BadName;
 
-	f = ocreate(path, OWRITE, 0664);
+	jehanne_snprint(path, sizeof path, "/env/%s", name);
+	if(jehanne_strcmp(path+5, name) != 0)
+		goto BadName;
+
+	f = jehanne_ocreate(path, OWRITE, 0664);
 	if(f < 0){
 		/* try with #e, in case of a previous rfork(RFCNAMEG)
 		 */
-		snprint(path, sizeof path, "#e/%s", name);
-		f = ocreate(path, OWRITE, 0664);
+		jehanne_snprint(path, sizeof path, "#e/%s", name);
+		f = jehanne_ocreate(path, OWRITE, 0664);
 		if(f < 0)
 			return -1;
 	}
-	l = strlen(value);
+	l = jehanne_strlen(value);
 	if(l > 0 && write(f, value, l) != l){
 		close(f);
 		return -1;
@@ -57,6 +57,6 @@ putenv(const char *name, const char *value)
 	return 0;
 
 BadName:
-	werrstr("bad env name: '%s'", name);
+	jehanne_werrstr("bad env name: '%s'", name);
 	return -1;
 }

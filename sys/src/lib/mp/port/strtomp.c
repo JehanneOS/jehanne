@@ -25,10 +25,10 @@ init(void)
 {
 	char *p;
 
-	memset(tab.t64, INVAL, sizeof(tab.t64));
-	memset(tab.t32, INVAL, sizeof(tab.t32));
-	memset(tab.t16, INVAL, sizeof(tab.t16));
-	memset(tab.t10, INVAL, sizeof(tab.t10));
+	jehanne_memset(tab.t64, INVAL, sizeof(tab.t64));
+	jehanne_memset(tab.t32, INVAL, sizeof(tab.t32));
+	jehanne_memset(tab.t16, INVAL, sizeof(tab.t16));
+	jehanne_memset(tab.t10, INVAL, sizeof(tab.t10));
 
 	for(p = set64; *p; p++)
 		tab.t64[(uint8_t)(*p)] = p-set64;
@@ -159,13 +159,13 @@ fromdecx(char *a, mpint *b, uint8_t tab[256], int (*dec)(uint8_t*, int, const ch
 		;
 	n = a-buf;
 	if(n > 0){
-		p = malloc(n);
+		p = jehanne_malloc(n);
 		if(p == nil)
-			sysfatal("malloc: %r");
+			jehanne_sysfatal("malloc: %r");
 		m = (*dec)(p, n, buf, n);
 		if(m > 0)
 			betomp(p, m, b);
-		free(p);
+		jehanne_free(p);
 	}
 	return a;
 }
@@ -178,7 +178,7 @@ strtomp(char *a, char **pp, int base, mpint *b)
 
 	if(b == nil){
 		b = mpnew(0);
-		setmalloctag(b, getcallerpc());
+		jehanne_setmalloctag(b, jehanne_getcallerpc());
 	}
 
 	if(tab.inited == 0)
@@ -230,10 +230,10 @@ strtomp(char *a, char **pp, int base, mpint *b)
 		e = frompow2(a, b, 4);
 		break;
 	case 32:
-		e = fromdecx(a, b, tab.t32, dec32);
+		e = fromdecx(a, b, tab.t32, jehanne_dec32);
 		break;
 	case 64:
-		e = fromdecx(a, b, tab.t64, dec64);
+		e = fromdecx(a, b, tab.t64, jehanne_dec64);
 		break;
 	default:
 		abort();

@@ -11,7 +11,7 @@
  */
 /* RFC2138 */
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 #include <ip.h>
 #include <ctype.h>
 #include <mp.h>

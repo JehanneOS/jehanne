@@ -207,7 +207,7 @@ newIPICMP(int packetlen)
 
 	nbp = allocb(packetlen);
 	nbp->wp += packetlen;
-	memset(nbp->rp, 0, packetlen);
+	jehanne_memset(nbp->rp, 0, packetlen);
 	return nbp;
 }
 
@@ -286,7 +286,7 @@ icmpctl6(Conv *c, char **argv, int argc)
 	Icmpcb6 *icb;
 
 	icb = (Icmpcb6*) c->ptcl;
-	if(argc==1 && strcmp(argv[0], "headers")==0) {
+	if(argc==1 && jehanne_strcmp(argv[0], "headers")==0) {
 		icb->headers = 6;
 		return nil;
 	}
@@ -357,22 +357,22 @@ icmpns(Fs *f, uint8_t* src, int suni, uint8_t* targ, int tuni, uint8_t* mac)
 	np = (Ndpkt*) nbp->rp;
 
 	if(suni == SRC_UNSPEC)
-		memmove(np->src, v6Unspecified, IPaddrlen);
+		jehanne_memmove(np->src, v6Unspecified, IPaddrlen);
 	else
-		memmove(np->src, src, IPaddrlen);
+		jehanne_memmove(np->src, src, IPaddrlen);
 
 	if(tuni == TARG_UNI)
-		memmove(np->dst, targ, IPaddrlen);
+		jehanne_memmove(np->dst, targ, IPaddrlen);
 	else
 		ipv62smcast(np->dst, targ);
 
 	np->type = NbrSolicit;
 	np->code = 0;
-	memmove(np->target, targ, IPaddrlen);
+	jehanne_memmove(np->target, targ, IPaddrlen);
 	if(suni != SRC_UNSPEC) {
 		np->otype = SRC_LLADDR;
 		np->olen = 1;		/* 1+1+6 = 8 = 1 8-octet */
-		memmove(np->lnaddr, mac, sizeof(np->lnaddr));
+		jehanne_memmove(np->lnaddr, mac, sizeof(np->lnaddr));
 	} else
 		nbp->wp -= NDPKTSZ - NDISCSZ;
 
@@ -399,17 +399,17 @@ icmpna(Fs *f, uint8_t* src, uint8_t* dst, uint8_t* targ, uint8_t* mac, uint8_t f
 	nbp = newIPICMP(NDPKTSZ);
 	np = (Ndpkt*)nbp->rp;
 
-	memmove(np->src, src, IPaddrlen);
-	memmove(np->dst, dst, IPaddrlen);
+	jehanne_memmove(np->src, src, IPaddrlen);
+	jehanne_memmove(np->dst, dst, IPaddrlen);
 
 	np->type = NbrAdvert;
 	np->code = 0;
 	np->icmpid[0] = flags;
-	memmove(np->target, targ, IPaddrlen);
+	jehanne_memmove(np->target, targ, IPaddrlen);
 
 	np->otype = TARGET_LLADDR;
 	np->olen = 1;
-	memmove(np->lnaddr, mac, sizeof(np->lnaddr));
+	jehanne_memmove(np->lnaddr, mac, sizeof(np->lnaddr));
 
 	set_cksum(nbp);
 	np = (Ndpkt*) nbp->rp;
@@ -449,10 +449,10 @@ icmphostunr(Fs *f, Ipifc *ifc, Block *bp, int code, int free)
 		goto freebl;
 	}
 
-	memmove(np->dst, p->src, IPaddrlen);
+	jehanne_memmove(np->dst, p->src, IPaddrlen);
 	np->type = UnreachableV6;
 	np->code = code;
-	memmove(nbp->rp + IPICMPSZ, bp->rp, sz - IPICMPSZ);
+	jehanne_memmove(nbp->rp + IPICMPSZ, bp->rp, sz - IPICMPSZ);
 	set_cksum(nbp);
 	np->ttl = HOP_LIMIT;
 	np->vcf[0] = 0x06 << 4;
@@ -496,10 +496,10 @@ icmpttlexceeded6(Fs *f, Ipifc *ifc, Block *bp)
 		return;
 	}
 
-	memmove(np->dst, p->src, IPaddrlen);
+	jehanne_memmove(np->dst, p->src, IPaddrlen);
 	np->type = TimeExceedV6;
 	np->code = 0;
-	memmove(nbp->rp + IPICMPSZ, bp->rp, sz - IPICMPSZ);
+	jehanne_memmove(nbp->rp + IPICMPSZ, bp->rp, sz - IPICMPSZ);
 	set_cksum(nbp);
 	np->ttl = HOP_LIMIT;
 	np->vcf[0] = 0x06 << 4;
@@ -535,11 +535,11 @@ icmppkttoobig6(Fs *f, Ipifc *ifc, Block *bp)
 		return;
 	}
 
-	memmove(np->dst, p->src, IPaddrlen);
+	jehanne_memmove(np->dst, p->src, IPaddrlen);
 	np->type = PacketTooBigV6;
 	np->code = 0;
 	hnputl(np->icmpid, ifc->maxtu - ifc->medium->hsize);
-	memmove(nbp->rp + IPICMPSZ, bp->rp, sz - IPICMPSZ);
+	jehanne_memmove(nbp->rp + IPICMPSZ, bp->rp, sz - IPICMPSZ);
 	set_cksum(nbp);
 	np->ttl = HOP_LIMIT;
 	np->vcf[0] = 0x06 << 4;
@@ -580,7 +580,7 @@ valid(Proto *icmp, Ipifc *ifc, Block *bp, Icmppriv6 *ipriv)
 		netlog(icmp->f, Logicmp, "icmp error: extension header\n");
 		goto err;
 	}
-	memset(packet, 0, 4);
+	jehanne_memset(packet, 0, 4);
 	ttl = p->ttl;
 	p->ttl = p->proto;
 	p->proto = 0;
@@ -763,7 +763,7 @@ icmpiput6(Proto *icmp, Ipifc *ipifc, Block *bp)
 
 	case TimeExceedV6:
 		if(p->code == 0){
-			sprint(m2, "ttl exceeded at %I", p->src);
+			jehanne_sprint(m2, "ttl exceeded at %I", p->src);
 
 			bp->rp += IPICMPSZ;
 			if(blocklen(bp) < 8){
@@ -786,9 +786,9 @@ icmpiput6(Proto *icmp, Ipifc *ipifc, Block *bp)
 	case RouterSolicit:
 		/* using lsrc as a temp, munge hdr for goticmp6 */
 		if (0) {
-			memmove(lsrc, p->src, IPaddrlen);
-			memmove(p->src, p->dst, IPaddrlen);
-			memmove(p->dst, lsrc, IPaddrlen);
+			jehanne_memmove(lsrc, p->src, IPaddrlen);
+			jehanne_memmove(p->src, p->dst, IPaddrlen);
+			jehanne_memmove(p->dst, lsrc, IPaddrlen);
 		}
 		goticmpkt6(icmp, bp, p->type);
 		break;
@@ -863,10 +863,10 @@ icmpstats6(Proto *icmp6, char *buf, int len)
 	p = buf;
 	e = p+len;
 	for(i = 0; i < Nstats6; i++)
-		p = seprint(p, e, "%s: %lud\n", statnames6[i], priv->stats[i]);
+		p = jehanne_seprint(p, e, "%s: %lud\n", statnames6[i], priv->stats[i]);
 	for(i = 0; i <= Maxtype6; i++)
 		if(icmpnames6[i])
-			p = seprint(p, e, "%s: %lud %lud\n", icmpnames6[i],
+			p = jehanne_seprint(p, e, "%s: %lud %lud\n", icmpnames6[i],
 				priv->in[i], priv->out[i]);
 	return p - buf;
 }

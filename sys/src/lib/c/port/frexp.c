@@ -21,16 +21,16 @@
 #define	SIG	52
 
 double
-frexp(double d, int *ep)
+jehanne_frexp(double d, int *ep)
 {
 	FPdbleword x, a;
 
 	*ep = 0;
 	/* order matters: only isNaN can operate on NaN */
-	if(isNaN(d) || isInf(d, 0) || d == 0)
+	if(jehanne_isNaN(d) || jehanne_isInf(d, 0) || d == 0)
 		return d;
 	x.x = d;
-	a.x = fabs(d);
+	a.x = jehanne_fabs(d);
 	if((a.hi >> SHIFT) == 0){	/* normalize subnormal numbers */
 		x.x = (double)(1ULL<<SIG) * d;
 		*ep = -SIG;
@@ -42,7 +42,7 @@ frexp(double d, int *ep)
 }
 
 double
-ldexp(double d, int deltae)
+jehanne_ldexp(double d, int deltae)
 {
 	int e, bits;
 	FPdbleword x;
@@ -56,8 +56,8 @@ ldexp(double d, int deltae)
 		e += deltae;
 		if(e >= MASK){		/* overflow */
 			if(d < 0)
-				return Inf(-1);
-			return Inf(1);
+				return jehanne_Inf(-1);
+			return jehanne_Inf(1);
 		}
 	}else{	/* underflow gracefully */
 		deltae = -deltae;
@@ -93,7 +93,7 @@ ldexp(double d, int deltae)
 }
 
 double
-modf(double d, double *ip)
+jehanne_modf(double d, double *ip)
 {
 	FPdbleword x;
 	int e;
@@ -110,7 +110,7 @@ modf(double d, double *ip)
 	}
 	if(d < 1) {
 		if(d < 0) {
-			x.x = modf(-d, ip);
+			x.x = jehanne_modf(-d, ip);
 			*ip = -*ip;
 			return -x.x;
 		}

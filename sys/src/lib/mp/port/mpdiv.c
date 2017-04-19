@@ -87,7 +87,7 @@ mpdiv(mpint *dividend, mpint *divisor, mpint *quotient, mpint *remainder)
 
 		// D3a: rule out trial divisors 2 greater than real divisor
 		if(vn > 1) for(;;){
-			memset(t->p, 0, 3*Dbytes);	// mpvecdigmuladd adds to what's there
+			jehanne_memset(t->p, 0, 3*Dbytes);	// mpvecdigmuladd adds to what's there
 			mpvecdigmuladd(vp-1, 2, qd, t->p);
 			if(mpveccmp(t->p, 3, up-2, 3) > 0)
 				qd--;

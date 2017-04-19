@@ -34,7 +34,7 @@ configpaq(Method* m)
 	if(fd < 0)
 		fatal("opening flashctl");
 	for(i = 0; i < nelem(fparts); i++)
-		if(fprint(fd, fparts[i]) < 0)
+		if(jehanne_fprint(fd, fparts[i]) < 0)
 			fatal(fparts[i]);
 	close(fd);
 }
@@ -45,14 +45,14 @@ connectpaq(void)
 	int  p[2];
 	char **arg, **argp;
 
-	print("paq...");
-	if(pipe(p)<0)
+	jehanne_print("paq...");
+	if(jehanne_pipe(p)<0)
 		fatal("pipe");
-	switch(fork()){
+	switch(jehanne_fork()){
 	case -1:
 		fatal("fork");
 	case 0:
-		arg = malloc(10*sizeof(char*));
+		arg = jehanne_malloc(10*sizeof(char*));
 		argp = arg;
 		*argp++ = "paqfs";
 		*argp++ = "-v";
@@ -60,10 +60,10 @@ connectpaq(void)
 		*argp++ = "/dev/flash/ramdisk";
 		*argp = 0;
 
-		if(dup(p[0], 0) != 0)
-			fatal("dup(p[0], 0)");
-		if(dup(p[1], 1) != 1)
-			fatal("dup(p[1], 1)");
+		if(jehanne_dup(p[0], 0) != 0)
+			fatal("jehanne_dup(p[0], 0)");
+		if(jehanne_dup(p[1], 1) != 1)
+			fatal("jehanne_dup(p[1], 1)");
 		close(p[0]);
 		close(p[1]);
 		exec("/boot/paqfs", (const char**)arg);
@@ -71,7 +71,7 @@ connectpaq(void)
 	default:
 		break;
 	}
-	waitpid();
+	jehanne_waitpid();
 
 	close(p[1]);
 	return p[0];

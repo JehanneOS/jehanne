@@ -11,7 +11,7 @@ betomp(uint8_t *p, uint32_t n, mpint *b)
 
 	if(b == nil){
 		b = mpnew(0);
-		setmalloctag(b, getcallerpc());
+		jehanne_setmalloctag(b, jehanne_getcallerpc());
 	}
 	mpbits(b, n*8);
 

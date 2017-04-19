@@ -29,17 +29,6 @@ _main:
 	/* set _mainpid */
 	movl	%r12d, _mainpid
 
-	/* setup _privates */
-	movq 	$-(8*16), _privates	/* sizeof(void*) * NPRIVATES */
-	addq	%rsp, _privates
-	movl 	$16, _nprivates		/* NPRIVATES */
-	leaq	-128(%rsp), %rsp	/* space for _privates */
-
-	/* setup _sysargs */
-	movq 	$-(8*6), _sysargs	/* sizeof(long) * MAX SYS ARGS */
-	addq	%rsp, _sysargs
-	leaq	-48(%rsp), %rsp		/* space for _sysargs */
-
 	movq	%rsp, %rbp
 	pushq	%rsi
 	pushq	%rdi
@@ -47,14 +36,6 @@ _main:
 	popq	%rdi
 	popq	%rsi
 
-	call	main
+	call	__jehanne_libc_init
 
-loop:
-	movq	$_exits, %rdi
-	call	exits
-	jmp	loop
 .size _main,.-_main
-
-.data
-_exits:
-	.ascii	"main"

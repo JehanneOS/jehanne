@@ -60,7 +60,7 @@ ioapicisabus(int busno)
 	if(isabusno != -1){
 		if(busno == isabusno)
 			return;
-		print("ioapic: isabus redefined: %d ↛ %d\n", isabusno, busno);
+		jehanne_print("ioapic: isabus redefined: %d ↛ %d\n", isabusno, busno);
 //		return;
 	}
 	DBG("ioapic: isa busno %d\n", busno);
@@ -96,7 +96,7 @@ gsitoapicid(int gsi, uint32_t *intin)
 			return a - xioapic;
 		}
 	}
-//	print("gsitoapicid: no ioapic found for gsi %d\n", gsi);
+//	jehanne_print("gsitoapicid: no ioapic found for gsi %d\n", gsi);
 	return -1;
 }
 
@@ -157,7 +157,7 @@ ioapicintrinit(int bustype, int busno, int apicno, int intin, int devno, uint32_
 	rdt = rdtlookup(apic, intin);
 	if(rdt == nil){
 		if(nrdtarray == nelem(rdtarray)){
-			print("ioapic: intrinit: rdtarray too small\n");
+			jehanne_print("ioapic: intrinit: rdtarray too small\n");
 			return;
 		}
 		rdt = &rdtarray[nrdtarray++];
@@ -170,14 +170,14 @@ ioapicintrinit(int bustype, int busno, int apicno, int intin, int devno, uint32_
 				DBG("override: isa %d %.8ux\n", intin, rdt->lo);
 				return;	/* expected; default was overridden*/
 			}
-			print("multiple irq botch type %d bus %d %d/%d/%d lo %.8ux vs %.8ux\n",
+			jehanne_print("multiple irq botch type %d bus %d %d/%d/%d lo %.8ux vs %.8ux\n",
 				bustype, busno, apicno, intin, devno, lo, rdt->lo);
 			return;
 		}
 		DBG("dup rdt %d %d %d %d %.8ux\n", busno, apicno, intin, devno, lo);
 	}
 	rdt->ref++;
-	rbus = malloc(sizeof(*rbus));
+	rbus = jehanne_malloc(sizeof(*rbus));
 	rbus->rdt = rdt;
 	rbus->bustype = bustype;
 	rbus->devno = devno;
@@ -221,7 +221,7 @@ ioapicinit(int id, int ibase, uintmem pa)
 		return apic;
 
 	if((p = dupaddr(pa)) != nil){
-		print("ioapic%d: same pa as apic%ld\n", id, p-xioapic);
+		jehanne_print("ioapic%d: same pa as apic%ld\n", id, p-xioapic);
 		if(ibase != -1)
 			return nil;		/* mp irqs reference mp apic#s */
 		apic->addr = p->addr;
@@ -229,7 +229,7 @@ ioapicinit(int id, int ibase, uintmem pa)
 	else{
 		//adrmapck(pa, 1024, Ammio, Mfree, Cnone);	/* not in adr? */	/* TO DO */
 		if((apic->addr = vmap(pa, 1024)) == nil){
-			print("ioapic%d: can't vmap %#P\n", id, pa);
+			jehanne_print("ioapic%d: can't vmap %#P\n", id, pa);
 			return nil;
 		}
 	}
@@ -269,10 +269,10 @@ iordtdump(void)
 	for(i = 0; i < Nbus; i++){
 		if((rbus = rdtbus[i]) == nil)
 			continue;
-		print("iointr bus %d:\n", i);
+		jehanne_print("iointr bus %d:\n", i);
 		for(; rbus != nil; rbus = rbus->next){
 			rdt = rbus->rdt;
-			print(" apic %ld devno %#ux (%d %d) intin %d lo %#ux ref %d\n",
+			jehanne_print(" apic %ld devno %#ux (%d %d) intin %d lo %#ux ref %d\n",
 				rdt->apic-xioapic, rbus->devno, rbus->devno>>2,
 				rbus->devno & 0x03, rdt->intin, rdt->lo, rdt->ref);
 		}
@@ -292,13 +292,13 @@ ioapicdump(void)
 		apic = &xioapic[i];
 		if(!apic->useable || apic->addr == 0)
 			continue;
-		print("ioapic %d addr %#p nrdt %d ibase %d\n",
+		jehanne_print("ioapic %d addr %#p nrdt %d ibase %d\n",
 			i, apic->addr, apic->nrdt, apic->gsib);
 		for(n = 0; n < apic->nrdt; n++){
 			lock(apic);
 			rtblget(apic, n, &hi, &lo);
 			unlock(apic);
-			print(" rdt %2.2d %#8.8ux %#8.8ux\n", n, hi, lo);
+			jehanne_print(" rdt %2.2d %#8.8ux %#8.8ux\n", n, hi, lo);
 		}
 	}
 }
@@ -309,12 +309,12 @@ ioapicprint(char *p, char *e, IOapic *a, int i)
 	char *s;
 
 	s = "ioapic";
-	p = seprint(p, e, "%-8s ", s);
-	p = seprint(p, e, "%8ux ", i);
-	p = seprint(p, e, "%6d ", a->gsib);
-	p = seprint(p, e, "%6d ", a->gsib+a->nrdt-1);
-	p = seprint(p, e, "%#P ", a->paddr);
-	p = seprint(p, e, "\n");
+	p = jehanne_seprint(p, e, "%-8s ", s);
+	p = jehanne_seprint(p, e, "%8ux ", i);
+	p = jehanne_seprint(p, e, "%6d ", a->gsib);
+	p = jehanne_seprint(p, e, "%6d ", a->gsib+a->nrdt-1);
+	p = jehanne_seprint(p, e, "%#P ", a->paddr);
+	p = jehanne_seprint(p, e, "\n");
 	return p;
 }
 
@@ -324,7 +324,7 @@ ioapicread(Chan* _1, void *a, long n, int64_t off)
 	char *s, *e, *p;
 	long i, r;
 
-	s = malloc(READSTR);
+	s = jehanne_malloc(READSTR);
 	e = s+READSTR;
 	p = s;
 
@@ -336,7 +336,7 @@ ioapicread(Chan* _1, void *a, long n, int64_t off)
 		r = readstr(off, a, n, s);
 		poperror();
 	}
-	free(s);
+	jehanne_free(s);
 	return r;
 }
 
@@ -356,7 +356,7 @@ ioapiconline(void)
 			unlock(apic);
 		}
 	}
-	print("init ioapic dump\n");
+	jehanne_print("init ioapic dump\n");
 	ioapicdump();
 }
 

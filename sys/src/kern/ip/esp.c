@@ -289,7 +289,7 @@ espconnect(Conv *c, char **argv, int argc)
 		e = "bad args to connect";
 		break;
 	case 2:
-		p = strchr(argv[1], '!');
+		p = jehanne_strchr(argv[1], '!');
 		if(p == nil){
 			e = "malformed address";
 			break;
@@ -302,7 +302,7 @@ espconnect(Conv *c, char **argv, int argc)
 		findlocalip(c->p->f, c->laddr, c->raddr);
 		ecb->incoming = 0;
 		ecb->seq = 0;
-		if(strcmp(p, "*") == 0) {
+		if(jehanne_strcmp(p, "*") == 0) {
 			qlock(c->p);
 			for(;;) {
 				spi = nrand(1<<16) + 256;
@@ -314,7 +314,7 @@ espconnect(Conv *c, char **argv, int argc)
 			ecb->incoming = 1;
 			qhangup(c->wq, nil);
 		} else {
-			spi = strtoul(p, &pp, 10);
+			spi = jehanne_strtoul(p, &pp, 10);
 			if(pp == p) {
 				e = "malformed address";
 				break;
@@ -334,7 +334,7 @@ espconnect(Conv *c, char **argv, int argc)
 static int
 espstate(Conv *c, char *state, int n)
 {
-	return snprint(state, n, "%s", c->inuse?"Open\n":"Closed\n");
+	return jehanne_snprint(state, n, "%s", c->inuse?"Open\n":"Closed\n");
 }
 
 static void
@@ -356,16 +356,16 @@ espclose(Conv *c)
 	ipmove(c->raddr, IPnoaddr);
 
 	ecb = (Espcb*)c->ptcl;
-	free(ecb->espstate);
-	free(ecb->ahstate);
-	memset(ecb, 0, sizeof(Espcb));
+	jehanne_free(ecb->espstate);
+	jehanne_free(ecb->ahstate);
+	jehanne_memset(ecb, 0, sizeof(Espcb));
 }
 
 static int
 convipvers(Conv *c)
 {
-	if((memcmp(c->raddr, v4prefix, IPv4off) == 0 &&
-	    memcmp(c->laddr, v4prefix, IPv4off) == 0) ||
+	if((jehanne_memcmp(c->raddr, v4prefix, IPv4off) == 0 &&
+	    jehanne_memcmp(c->laddr, v4prefix, IPv4off) == 0) ||
 	    ipcmp(c->raddr, IPnoaddr) == 0)
 		return V4;
 	else
@@ -530,7 +530,7 @@ espkick(void *x)
 		payload + pad + Esptaillen, auth);
 
 	qunlock(c);
-	/* print("esp: pass down: %lud\n", BLEN(bp)); */
+	/* jehanne_print("esp: pass down: %lud\n", BLEN(bp)); */
 	if (vers.version == V4)
 		ipoput4(c->p->f, bp, 0, c->ttl, c->tos, c);
 	else
@@ -613,7 +613,7 @@ espiput(Proto *esp, Ipifc*, Block *bp)
 			unsigned len = BLEN(bp), l, b = 128;
 
 			once = 1;
-			fmtinstall('[', encodefmt);
+			jehanne_fmtinstall('[', encodefmt);
 			netlog(f, Logesp, "len %ud\n", len);
 			for (l = 0; l < len; l += b) {
 				netlog(f, Logesp, "%.*[\n",
@@ -641,7 +641,7 @@ espiput(Proto *esp, Ipifc*, Block *bp)
 			unsigned len = BLEN(bp), l, b = 128;
 
 			once = 1;
-			fmtinstall('[', encodefmt);
+			jehanne_fmtinstall('[', encodefmt);
 			netlog(f, Logesp, "len %ud\n", len);
 			for (l = 0; l < len; l += b) {
 				netlog(f, Logesp, "%.*[\n",
@@ -691,7 +691,7 @@ espiput(Proto *esp, Ipifc*, Block *bp)
 		/* assume Userhdrlen < Esp4hdrlen < Esp6hdrlen */
 		bp->rp -= Userhdrlen;
 		uh = (Userhdr*)bp->rp;
-		memset(uh, 0, Userhdrlen);
+		jehanne_memset(uh, 0, Userhdrlen);
 		uh->nexthdr = nexthdr;
 	}
 
@@ -703,7 +703,7 @@ espiput(Proto *esp, Ipifc*, Block *bp)
 		/* 	vers.laddr, vers.spi); */
 		freeblist(bp);
 	}else {
-//		print("esp: pass up: %lud\n", BLEN(bp));
+//		jehanne_print("esp: pass up: %lud\n", BLEN(bp));
 		espstat(esp, InUserOctets, BLEN(bp));
 		espstat(esp, InPackets, 1);
 		if(qpass(c->rq, bp) == -1)
@@ -719,14 +719,14 @@ espctl(Conv *c, char **f, int n)
 	Espcb *ecb = c->ptcl;
 	char *e = nil;
 
-	if(strcmp(f[0], "esp") == 0) {
+	if(jehanne_strcmp(f[0], "esp") == 0) {
 		qsetlimit(c->rq, 3*1024*1024); // 2M had qfull drops
 		e = setalg(ecb, f, n, espalg);
-	} else if(strcmp(f[0], "ah") == 0)
+	} else if(jehanne_strcmp(f[0], "ah") == 0)
 		e = setalg(ecb, f, n, ahalg);
-	else if(strcmp(f[0], "header") == 0)
+	else if(jehanne_strcmp(f[0], "header") == 0)
 		ecb->header = 1;
-	else if(strcmp(f[0], "noheader") == 0)
+	else if(jehanne_strcmp(f[0], "noheader") == 0)
 		ecb->header = 0;
 	else
 		e = "unknown control request";
@@ -766,7 +766,7 @@ espstats(Proto *esp, char *buf, int len)
 	p = buf;
 	e = p+len;
 	for(i = 0; i < Nstats; i++)
-		p = seprint(p, e, "%s: %llud\n", statnames[i], u[i]);
+		p = jehanne_seprint(p, e, "%s: %llud\n", statnames[i], u[i]);
 	return p - buf;
 }
 
@@ -778,9 +778,9 @@ esplocal(Conv *c, char *buf, int len)
 
 	qlock(c);
 	if(ecb->incoming)
-		n = snprint(buf, len, "%I!%lud\n", c->laddr, ecb->spi);
+		n = jehanne_snprint(buf, len, "%I!%lud\n", c->laddr, ecb->spi);
 	else
-		n = snprint(buf, len, "%I\n", c->laddr);
+		n = jehanne_snprint(buf, len, "%I\n", c->laddr);
 	qunlock(c);
 	return n;
 }
@@ -793,9 +793,9 @@ espremote(Conv *c, char *buf, int len)
 
 	qlock(c);
 	if(ecb->incoming)
-		n = snprint(buf, len, "%I\n", c->raddr);
+		n = jehanne_snprint(buf, len, "%I\n", c->raddr);
 	else
-		n = snprint(buf, len, "%I!%lud\n", c->raddr, ecb->spi);
+		n = jehanne_snprint(buf, len, "%I!%lud\n", c->raddr, ecb->spi);
 	qunlock(c);
 	return n;
 }
@@ -827,7 +827,7 @@ setalg(Espcb *ecb, char **f, int n, Algorithm *alg)
 	for(;; alg++)
 		if(alg->name == nil)
 			return "unknown algorithm";
-		else if(strcmp(f[1], alg->name) == 0)
+		else if(jehanne_strcmp(f[1], alg->name) == 0)
 			break;
 
 	nbyte = (alg->keylen + 7) >> 3;
@@ -836,9 +836,9 @@ setalg(Espcb *ecb, char **f, int n, Algorithm *alg)
 		if(n != 3)
 			return "bad format";
 		p = f[2];
-		nchar = strlen(p);
+		nchar = jehanne_strlen(p);
 		if(nchar != nbyte*2){
-			print("nchar %d nbyte %d: [%s]\n", nchar, nbyte, p);
+			jehanne_print("nchar %d nbyte %d: [%s]\n", nchar, nbyte, p);
 			return "bad keylength";
 		}
 		key = smalloc(nbyte);
@@ -851,17 +851,17 @@ setalg(Espcb *ecb, char **f, int n, Algorithm *alg)
 			else if(c >= 'A' && c <= 'F')
 				c -= 'A' - 10;
 			else{
-				free(key);
+				jehanne_free(key);
 				return "bad character in key";
 			}
 			key[i>>1] |= c<<4*(i&1);
 		}
-		/* fmtinstall('[', encodefmt); */
+		/* jehanne_fmtinstall('[', encodefmt); */
 		/* netlog(esp->f, Logesp, "%s key is %.*[\n", */
 		/*        alg->name, nbyte, key); */
 	}
 	alg->init(ecb, alg->name, key, alg->keylen);
-	free(key);
+	jehanne_free(key);
 	return nil;
 }
 
@@ -912,8 +912,8 @@ seanq_hmac_sha1(uint8_t hash[SHA1dlen], uint8_t *t, long tlen, uint8_t *key, lon
 	uint8_t ipad[Hmacblksz+1], opad[Hmacblksz+1], innerhash[SHA1dlen];
 	DigestState *digest;
 
-	memset(ipad, 0x36, Hmacblksz);
-	memset(opad, 0x5c, Hmacblksz);
+	jehanne_memset(ipad, 0x36, Hmacblksz);
+	jehanne_memset(opad, 0x5c, Hmacblksz);
 	ipad[Hmacblksz] = opad[Hmacblksz] = 0;
 	for(i = 0; i < klen; i++){
 		ipad[i] ^= key[i];
@@ -931,10 +931,10 @@ shaauth(Espcb *ecb, uint8_t *t, int tlen, uint8_t *auth)
 	int r;
 	uint8_t hash[SHA1dlen];
 
-	memset(hash, 0, SHA1dlen);
+	jehanne_memset(hash, 0, SHA1dlen);
 	seanq_hmac_sha1(hash, t, tlen, (uint8_t*)ecb->ahstate, BITS2BYTES(128));
-	r = memcmp(auth, hash, ecb->ahlen) == 0;
-	memmove(auth, hash, ecb->ahlen);
+	r = jehanne_memcmp(auth, hash, ecb->ahlen) == 0;
+	jehanne_memmove(auth, hash, ecb->ahlen);
 	return r;
 }
 
@@ -950,7 +950,7 @@ shaahinit(Espcb *ecb, char *name, uint8_t *key, unsigned klen)
 	ecb->ahlen = BITS2BYTES(96);
 	ecb->auth = shaauth;
 	ecb->ahstate = smalloc(klen);
-	memmove(ecb->ahstate, key, klen);
+	jehanne_memmove(ecb->ahstate, key, klen);
 }
 
 
@@ -965,11 +965,11 @@ aesahauth(Espcb *ecb, uint8_t *t, int tlen, uint8_t *auth)
 	int r;
 	uint8_t hash[AESdlen];
 
-	memset(hash, 0, AESdlen);
+	jehanne_memset(hash, 0, AESdlen);
 	ecb->ds = hmac_aes(t, tlen, (uint8_t*)ecb->ahstate, BITS2BYTES(96), hash,
 		ecb->ds);
-	r = memcmp(auth, hash, ecb->ahlen) == 0;
-	memmove(auth, hash, ecb->ahlen);
+	r = jehanne_memcmp(auth, hash, ecb->ahlen) == 0;
+	jehanne_memmove(auth, hash, ecb->ahlen);
 	return r;
 }
 
@@ -985,7 +985,7 @@ aesahinit(Espcb *ecb, char *name, uint8_t *key, unsigned klen)
 	ecb->ahlen = BITS2BYTES(96);
 	ecb->auth = aesahauth;
 	ecb->ahstate = smalloc(klen);
-	memmove(ecb->ahstate, key, klen);
+	jehanne_memmove(ecb->ahstate, key, klen);
 }
 
 static int
@@ -997,12 +997,12 @@ aescbccipher(Espcb *ecb, uint8_t *p, int n)	/* 128-bit blocks */
 
 	ep = p + n;
 	if(ecb->incoming) {
-		memmove(ds->ivec, p, AESbsize);
+		jehanne_memmove(ds->ivec, p, AESbsize);
 		p += AESbsize;
 		while(p < ep){
-			memmove(tmp, p, AESbsize);
+			jehanne_memmove(tmp, p, AESbsize);
 			aes_decrypt(ds->dkey, ds->rounds, p, q);
-			memmove(p, q, AESbsize);
+			jehanne_memmove(p, q, AESbsize);
 			tp = tmp;
 			ip = ds->ivec;
 			for(eip = ip + AESbsize; ip < eip; ){
@@ -1011,15 +1011,15 @@ aescbccipher(Espcb *ecb, uint8_t *p, int n)	/* 128-bit blocks */
 			}
 		}
 	} else {
-		memmove(p, ds->ivec, AESbsize);
+		jehanne_memmove(p, ds->ivec, AESbsize);
 		for(p += AESbsize; p < ep; p += AESbsize){
 			pp = p;
 			ip = ds->ivec;
 			for(eip = ip + AESbsize; ip < eip; )
 				*pp++ ^= *ip++;
 			aes_encrypt(ds->ekey, ds->rounds, p, q);
-			memmove(ds->ivec, q, AESbsize);
-			memmove(p, q, AESbsize);
+			jehanne_memmove(ds->ivec, q, AESbsize);
+			jehanne_memmove(p, q, AESbsize);
 		}
 	}
 	return 1;
@@ -1034,8 +1034,8 @@ aescbcespinit(Espcb *ecb, char *name, uint8_t *k, unsigned n)
 	n = BITS2BYTES(n);
 	if(n > Aeskeysz)
 		n = Aeskeysz;
-	memset(key, 0, sizeof(key));
-	memmove(key, k, n);
+	jehanne_memset(key, 0, sizeof(key));
+	jehanne_memmove(key, k, n);
 	for(i = 0; i < Aeskeysz; i++)
 		ivec[i] = nrand(256);
 	ecb->espalg = name;
@@ -1055,12 +1055,12 @@ aesctrcipher(Espcb *ecb, uint8_t *p, int n)	/* 128-bit blocks */
 
 	ep = p + n;
 	if(ecb->incoming) {
-		memmove(ds->ivec, p, AESbsize);
+		jehanne_memmove(ds->ivec, p, AESbsize);
 		p += AESbsize;
 		while(p < ep){
-			memmove(tmp, p, AESbsize);
+			jehanne_memmove(tmp, p, AESbsize);
 			aes_decrypt(ds->dkey, ds->rounds, p, q);
-			memmove(p, q, AESbsize);
+			jehanne_memmove(p, q, AESbsize);
 			tp = tmp;
 			ip = ds->ivec;
 			for(eip = ip + AESbsize; ip < eip; ){
@@ -1069,15 +1069,15 @@ aesctrcipher(Espcb *ecb, uint8_t *p, int n)	/* 128-bit blocks */
 			}
 		}
 	} else {
-		memmove(p, ds->ivec, AESbsize);
+		jehanne_memmove(p, ds->ivec, AESbsize);
 		for(p += AESbsize; p < ep; p += AESbsize){
 			pp = p;
 			ip = ds->ivec;
 			for(eip = ip + AESbsize; ip < eip; )
 				*pp++ ^= *ip++;
 			aes_encrypt(ds->ekey, ds->rounds, p, q);
-			memmove(ds->ivec, q, AESbsize);
-			memmove(p, q, AESbsize);
+			jehanne_memmove(ds->ivec, q, AESbsize);
+			jehanne_memmove(p, q, AESbsize);
 		}
 	}
 	return 1;
@@ -1092,8 +1092,8 @@ aesctrespinit(Espcb *ecb, char *name, uint8_t *k, unsigned n)
 	n = BITS2BYTES(n);
 	if(n > Aeskeysz)
 		n = Aeskeysz;
-	memset(key, 0, sizeof(key));
-	memmove(key, k, n);
+	jehanne_memset(key, 0, sizeof(key));
+	jehanne_memmove(key, k, n);
 	for(i = 0; i < Aesblk; i++)
 		ivec[i] = nrand(256);
 	ecb->espalg = name;
@@ -1116,8 +1116,8 @@ seanq_hmac_md5(uint8_t hash[MD5dlen], uint8_t *t, long tlen, uint8_t *key, long 
 	uint8_t ipad[Hmacblksz+1], opad[Hmacblksz+1], innerhash[MD5dlen];
 	DigestState *digest;
 
-	memset(ipad, 0x36, Hmacblksz);
-	memset(opad, 0x5c, Hmacblksz);
+	jehanne_memset(ipad, 0x36, Hmacblksz);
+	jehanne_memset(opad, 0x5c, Hmacblksz);
 	ipad[Hmacblksz] = opad[Hmacblksz] = 0;
 	for(i = 0; i < klen; i++){
 		ipad[i] ^= key[i];
@@ -1135,10 +1135,10 @@ md5auth(Espcb *ecb, uint8_t *t, int tlen, uint8_t *auth)
 	uint8_t hash[MD5dlen];
 	int r;
 
-	memset(hash, 0, MD5dlen);
+	jehanne_memset(hash, 0, MD5dlen);
 	seanq_hmac_md5(hash, t, tlen, (uint8_t*)ecb->ahstate, BITS2BYTES(128));
-	r = memcmp(auth, hash, ecb->ahlen) == 0;
-	memmove(auth, hash, ecb->ahlen);
+	r = jehanne_memcmp(auth, hash, ecb->ahlen) == 0;
+	jehanne_memmove(auth, hash, ecb->ahlen);
 	return r;
 }
 
@@ -1153,7 +1153,7 @@ md5ahinit(Espcb *ecb, char *name, uint8_t *key, unsigned klen)
 	ecb->ahlen = BITS2BYTES(96);
 	ecb->auth = md5auth;
 	ecb->ahstate = smalloc(klen);
-	memmove(ecb->ahstate, key, klen);
+	jehanne_memmove(ecb->ahstate, key, klen);
 }
 
 
@@ -1167,10 +1167,10 @@ descipher(Espcb *ecb, uint8_t *p, int n)
 	DESstate *ds = ecb->espstate;
 
 	if(ecb->incoming) {
-		memmove(ds->ivec, p, Desblk);
+		jehanne_memmove(ds->ivec, p, Desblk);
 		desCBCdecrypt(p + Desblk, n - Desblk, ds);
 	} else {
-		memmove(p, ds->ivec, Desblk);
+		jehanne_memmove(p, ds->ivec, Desblk);
 		desCBCencrypt(p + Desblk, n - Desblk, ds);
 	}
 	return 1;
@@ -1182,10 +1182,10 @@ des3cipher(Espcb *ecb, uint8_t *p, int n)
 	DES3state *ds = ecb->espstate;
 
 	if(ecb->incoming) {
-		memmove(ds->ivec, p, Desblk);
+		jehanne_memmove(ds->ivec, p, Desblk);
 		des3CBCdecrypt(p + Desblk, n - Desblk, ds);
 	} else {
-		memmove(p, ds->ivec, Desblk);
+		jehanne_memmove(p, ds->ivec, Desblk);
 		des3CBCencrypt(p + Desblk, n - Desblk, ds);
 	}
 	return 1;
@@ -1200,8 +1200,8 @@ desespinit(Espcb *ecb, char *name, uint8_t *k, unsigned n)
 	n = BITS2BYTES(n);
 	if(n > Desblk)
 		n = Desblk;
-	memset(key, 0, sizeof(key));
-	memmove(key, k, n);
+	jehanne_memset(key, 0, sizeof(key));
+	jehanne_memmove(key, k, n);
 	for(i = 0; i < Desblk; i++)
 		ivec[i] = nrand(256);
 	ecb->espalg = name;
@@ -1222,8 +1222,8 @@ des3espinit(Espcb *ecb, char *name, uint8_t *k, unsigned n)
 	n = BITS2BYTES(n);
 	if(n > Des3keysz)
 		n = Des3keysz;
-	memset(key, 0, sizeof(key));
-	memmove(key, k, n);
+	jehanne_memset(key, 0, sizeof(key));
+	jehanne_memmove(key, k, n);
 	for(i = 0; i < Desblk; i++)
 		ivec[i] = nrand(256);
 	ecb->espalg = name;

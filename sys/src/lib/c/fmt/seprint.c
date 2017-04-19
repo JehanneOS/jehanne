@@ -11,13 +11,13 @@
 #include <libc.h>
 
 char*
-seprint(char *buf, char *e, const char *fmt, ...)
+jehanne_seprint(char *buf, char *e, const char *fmt, ...)
 {
 	char *p;
 	va_list args;
 
 	va_start(args, fmt);
-	p = vseprint(buf, e, fmt, args);
+	p = jehanne_vseprint(buf, e, fmt, args);
 	va_end(args);
 	return p;
 }

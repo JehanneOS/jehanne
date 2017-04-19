@@ -13,7 +13,7 @@ toencx(mpint *b, char *buf, int len, int (*enc)(char*, int, const uint8_t*, int)
 	if(n < 0)
 		return -1;
 	rv = (*enc)(buf, len, p, n);
-	free(p);
+	jehanne_free(p);
 	return rv;
 }
 
@@ -99,7 +99,7 @@ to10(mpint *b, char *buf, int len)
 		return -1;
 	len -= out-buf;
 	if(out != buf)
-		memmove(buf, out, len);
+		jehanne_memmove(buf, out, len);
 	return 0;
 }
 
@@ -144,7 +144,7 @@ Digout:			i -= 3;
 
 	len -= out-buf;
 	if(out != buf)
-		memmove(buf, out, len);
+		jehanne_memmove(buf, out, len);
 	return 0;
 }
 
@@ -157,7 +157,7 @@ mpfmt(Fmt *fmt)
 
 	b = va_arg(fmt->args, mpint*);
 	if(b == nil)
-		return fmtstrcpy(fmt, "*");
+		return jehanne_fmtstrcpy(fmt, "*");
 
 	base = fmt->prec;
 	if(base == 0)
@@ -165,7 +165,7 @@ mpfmt(Fmt *fmt)
 	fmt->flags &= ~FmtPrec;
 	p = mptoa(b, base, nil, 0);
 	if(p == nil)
-		return fmtstrcpy(fmt, "*");
+		return jehanne_fmtstrcpy(fmt, "*");
 	else{
 		if((fmt->flags & FmtSharp) != 0){
 			switch(base){
@@ -182,13 +182,13 @@ mpfmt(Fmt *fmt)
 				x = "";
 			}
 			if(*p == '-')
-				fmtprint(fmt, "-%s%s", x, p + 1);
+				jehanne_fmtprint(fmt, "-%s%s", x, p + 1);
 			else
-				fmtprint(fmt, "%s%s", x, p);
+				jehanne_fmtprint(fmt, "%s%s", x, p);
 		}
 		else
-			fmtstrcpy(fmt, p);
-		free(p);
+			jehanne_fmtstrcpy(fmt, p);
+		jehanne_free(p);
 		return 0;
 	}
 }
@@ -207,7 +207,7 @@ mptoa(mpint *b, int base, char *buf, int len)
 		for(rv=1; (base >> rv) > 1; rv++)
 			;
 		len = 10 + (b->top*Dbits / rv);
-		buf = malloc(len);
+		buf = jehanne_malloc(len);
 		if(buf == nil)
 			return nil;
 		alloced = 1;
@@ -223,10 +223,10 @@ mptoa(mpint *b, int base, char *buf, int len)
 	}
 	switch(base){
 	case 64:
-		rv = toencx(b, out, len, enc64);
+		rv = toencx(b, out, len, jehanne_enc64);
 		break;
 	case 32:
-		rv = toencx(b, out, len, enc32);
+		rv = toencx(b, out, len, jehanne_enc32);
 		break;
 	case 16:
 		rv = topow2(b, out, len, 4);
@@ -249,7 +249,7 @@ mptoa(mpint *b, int base, char *buf, int len)
 	}
 	if(rv < 0){
 		if(alloced)
-			free(buf);
+			jehanne_free(buf);
 		return nil;
 	}
 	return buf;

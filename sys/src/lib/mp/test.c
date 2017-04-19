@@ -1,5 +1,5 @@
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 #include <mp.h>
 #include "dat.h"
 
@@ -9,7 +9,7 @@ void
 prng(uint8_t *p, int n)
 {
 	while(n-- > 0)
-		*p++ = rand();
+		*p++ = jehanne_rand();
 }
 
 void
@@ -19,28 +19,28 @@ testconv(char *str)
 	mpint *b;
 	char *p;
 
-	print("testconv \"%s\":\n", str);
+	jehanne_print("testconv \"%s\":\n", str);
 	b = strtomp(str, nil, 16, nil);
 
 	for(i=0; i<nelem(base); i++){
 		p = mptoa(b, base[i], nil, 0);
-		print("base%d: %s = ", base[i], p);
+		jehanne_print("base%d: %s = ", base[i], p);
 		if(strtomp(p, nil, base[i], b) == nil)
 			abort();
-		free(p);
-		print("%B\n", b, base[i], b);
+		jehanne_free(p);
+		jehanne_print("%B\n", b, base[i], b);
 
 		switch(base[i]){
 		case 2:
 		case 8:
 		case 10:
 		case 16:
-			p = smprint("%#.*B", base[i], b);
-			print("# %s = ", p);
+			p = jehanne_smprint("%#.*B", base[i], b);
+			jehanne_print("# %s = ", p);
 			if(strtomp(p, nil, 0, b) == nil)
 				abort();
-			free(p);
-			print("%#.*B\n", base[i], b);
+			jehanne_free(p);
+			jehanne_print("%#.*B\n", base[i], b);
 			break;
 		}
 
@@ -59,11 +59,11 @@ testshift(char *str)
 	b2 = mpnew(0);
 	for(i = 0; i < 64; i++){
 		mpleft(b1, i, b2);
-		print("%2.2d %B\n", i, b2);
+		jehanne_print("%2.2d %B\n", i, b2);
 	}
 	for(i = 0; i < 64; i++){
 		mpright(b2, i, b1);
-		print("%2.2d %B\n", i, b1);
+		jehanne_print("%2.2d %B\n", i, b1);
 	}
 	mpfree(b1);
 	mpfree(b2);
@@ -79,11 +79,11 @@ testaddsub(char *str)
 	b2 = mpnew(0);
 	for(i = 0; i < 16; i++){
 		mpadd(b1, b2, b2);
-		print("%2.2d %B\n", i, b2);
+		jehanne_print("%2.2d %B\n", i, b2);
 	}
 	for(i = 0; i < 16; i++){
 		mpsub(b2, b1, b2);
-		print("%2.2d %B\n", i, b2);
+		jehanne_print("%2.2d %B\n", i, b2);
 	}
 	mpfree(b1);
 	mpfree(b2);
@@ -100,15 +100,15 @@ testvecdigmuladd(char *str, mpdigit d)
 	b2 = mpnew(0);
 
 	mpbits(b2, (b->top+1)*Dbits);
-	now = nsec();
+	now = jehanne_nsec();
 	for(i = 0; i < loops; i++){
-		memset(b2->p, 0, b2->top*Dbytes);
+		jehanne_memset(b2->p, 0, b2->top*Dbytes);
 		mpvecdigmuladd(b->p, b->top, d, b2->p);
 	}
 	if(loops > 1)
-		print("%lld ns for a %d*%d vecdigmul\n", (nsec()-now)/loops, b->top*Dbits, Dbits);
+		jehanne_print("%lld ns for a %d*%d vecdigmul\n", (jehanne_nsec()-now)/loops, b->top*Dbits, Dbits);
 	mpnorm(b2);
-	print("0 + %B * %ux = %B\n", b, d, b2);
+	jehanne_print("0 + %B * %ux = %B\n", b, d, b2);
 
 	mpfree(b);
 	mpfree(b2);
@@ -125,15 +125,15 @@ testvecdigmulsub(char *str, mpdigit d)
 	b2 = mpnew(0);
 
 	mpbits(b2, (b->top+1)*Dbits);
-	now = nsec();
+	now = jehanne_nsec();
 	for(i = 0; i < loops; i++){
-		memset(b2->p, 0, b2->top*Dbytes);
+		jehanne_memset(b2->p, 0, b2->top*Dbytes);
 		mpvecdigmulsub(b->p, b->top, d, b2->p);
 	}
 	if(loops > 1)
-		print("%lld ns for a %d*%d vecdigmul\n", (nsec()-now)/loops, b->top*Dbits, Dbits);
+		jehanne_print("%lld ns for a %d*%d vecdigmul\n", (jehanne_nsec()-now)/loops, b->top*Dbits, Dbits);
 	mpnorm(b2);
-	print("0 - %B * %ux = %B\n", b, d, b2);
+	jehanne_print("0 - %B * %ux = %B\n", b, d, b2);
 
 	mpfree(b);
 	mpfree(b2);
@@ -150,13 +150,13 @@ testmul(char *str)
 	b1 = mpcopy(b);
 	b2 = mpnew(0);
 
-	now = nsec();
+	now = jehanne_nsec();
 	for(i = 0; i < loops; i++)
 		mpmul(b, b1, b2);
 	if(loops > 1)
-		print("%lld µs for a %d*%d mult\n", (nsec()-now)/(loops*1000),
+		jehanne_print("%lld µs for a %d*%d mult\n", (jehanne_nsec()-now)/(loops*1000),
 			b->top*Dbits, b1->top*Dbits);
-	print("%B * %B = %B\n", b, b1, b2);
+	jehanne_print("%B * %B = %B\n", b, b1, b2);
 
 	mpfree(b);
 	mpfree(b1);
@@ -172,14 +172,14 @@ testmul2(mpint *b, mpint *b1)
 
 	b2 = mpnew(0);
 
-	now = nsec();
+	now = jehanne_nsec();
 	for(i = 0; i < loops; i++)
 		mpmul(b, b1, b2);
 	if(loops > 1)
-		print("%lld µs for a %d*%d mult\n", (nsec()-now)/(loops*1000), b->top*Dbits, b1->top*Dbits);
-	print("%B * ", b);
-	print("%B = ", b1);
-	print("%B\n", b2);
+		jehanne_print("%lld µs for a %d*%d mult\n", (jehanne_nsec()-now)/(loops*1000), b->top*Dbits, b1->top*Dbits);
+	jehanne_print("%B * ", b);
+	jehanne_print("%B = ", b1);
+	jehanne_print("%B\n", b2);
 
 	mpfree(b2);
 }
@@ -193,12 +193,12 @@ testdigdiv(char *str, mpdigit d)
 	int64_t now;
 
 	b = strtomp(str, nil, 16, nil);
-	now = nsec();
+	now = jehanne_nsec();
 	for(i = 0; i < loops; i++)
 		mpdigdiv(b->p, d, &q);
 	if(loops > 1)
-		print("%lld ns for a %d / %d div\n", (nsec()-now)/loops, 2*Dbits, Dbits);
-	print("%B / %ux = %ux\n", b, d, q);
+		jehanne_print("%lld ns for a %d / %d div\n", (jehanne_nsec()-now)/loops, 2*Dbits, Dbits);
+	jehanne_print("%B / %ux = %ux\n", b, d, q);
 	mpfree(b);
 }
 
@@ -211,13 +211,13 @@ testdiv(mpint *x, mpint *y)
 
 	b2 = mpnew(0);
 	b3 = mpnew(0);
-	now = nsec();
+	now = jehanne_nsec();
 	for(i = 0; i < loops; i++)
 		mpdiv(x, y, b2, b3);
 	if(loops > 1)
-		print("%lld µs for a %d/%d div\n", (nsec()-now)/(1000*loops),
+		jehanne_print("%lld µs for a %d/%d div\n", (jehanne_nsec()-now)/(1000*loops),
 			x->top*Dbits, y->top*Dbits);
-	print("%B / %B = %B %B\n", x, y, b2, b3);
+	jehanne_print("%B / %B = %B %B\n", x, y, b2, b3);
 	mpfree(b2);
 	mpfree(b3);
 }
@@ -230,13 +230,13 @@ testmod(mpint *x, mpint *y)
 	int i;
 
 	r = mpnew(0);
-	now = nsec();
+	now = jehanne_nsec();
 	for(i = 0; i < loops; i++)
 		mpmod(x, y, r);
 	if(loops > 1)
-		print("%lld µs for a %d/%d mod\n", (nsec()-now)/(1000*loops),
+		jehanne_print("%lld µs for a %d/%d mod\n", (jehanne_nsec()-now)/(1000*loops),
 			x->top*Dbits, y->top*Dbits);
-	print("%B mod %B = %B\n", x, y, r);
+	jehanne_print("%B mod %B = %B\n", x, y, r);
 	mpfree(r);
 }
 
@@ -250,19 +250,19 @@ testinvert(mpint *x, mpint *y)
 	r = mpnew(0);
 	d1 = mpnew(0);
 	d2 = mpnew(0);
-	now = nsec();
+	now = jehanne_nsec();
 	mpextendedgcd(x, y, r, d1, d2);
 	mpdiv(x, r, x, d1);
 	mpdiv(y, r, y, d1);
 	for(i = 0; i < loops; i++)
 		mpinvert(x, y, r);
 	if(loops > 1)
-		print("%lld µs for a %d in %d invert\n", (nsec()-now)/(1000*loops),
+		jehanne_print("%lld µs for a %d in %d invert\n", (jehanne_nsec()-now)/(1000*loops),
 			x->top*Dbits, y->top*Dbits);
-	print("%B**-1 mod %B = %B\n", x, y, r);
+	jehanne_print("%B**-1 mod %B = %B\n", x, y, r);
 	mpmul(r, x, d1);
 	mpmod(d1, y, d2);
-	print("%B*%B mod %B = %B\n", x, r, y, d2);
+	jehanne_print("%B*%B mod %B = %B\n", x, r, y, d2);
 	mpfree(r);
 	mpfree(d1);
 	mpfree(d2);
@@ -277,7 +277,7 @@ testsub1(char *a, char *b)
 	b2 = strtomp(b, nil, 16, nil);
 	b3 = mpnew(0);
 	mpsub(b1, b2, b3);
-	print("%B - %B = %B\n", b1, b2, b3);
+	jehanne_print("%B - %B = %B\n", b1, b2, b3);
 }
 
 void
@@ -289,7 +289,7 @@ testmul1(char *a, char *b)
 	b2 = strtomp(b, nil, 16, nil);
 	b3 = mpnew(0);
 	mpmul(b1, b2, b3);
-	print("%B * %B = %B\n", b1, b2, b3);
+	jehanne_print("%B * %B = %B\n", b1, b2, b3);
 }
 
 void
@@ -306,16 +306,16 @@ testexp(char *base, char *exp, char *mod)
 		m = strtomp(mod, nil, 16, nil);
 	else
 		m = nil;
-	now = nsec();
+	now = jehanne_nsec();
 	for(i = 0; i < loops; i++)
 		mpexp(b, e, m, res);
 	if(loops > 1)
-		print("%ulldµs for a %d to the %d bit exp\n", (nsec()-now)/(loops*1000),
+		jehanne_print("%ulldµs for a %d to the %d bit exp\n", (jehanne_nsec()-now)/(loops*1000),
 			b->top*Dbits, e->top*Dbits);
 	if(m != nil)
-		print("%B ^ %B mod %B == %B\n", b, e, m, res);
+		jehanne_print("%B ^ %B mod %B == %B\n", b, e, m, res);
 	else
-		print("%B ^ %B == %B\n", b, e, res);
+		jehanne_print("%B ^ %B == %B\n", b, e, res);
 	mpfree(b);
 	mpfree(e);
 	mpfree(res);
@@ -342,24 +342,24 @@ testgcd(void)
 	a = strtomp("4EECAB3E04C4E6BC1F49D438731450396BF272B4D7B08F91C38E88ADCD281699889AFF872E2204C80CCAA8E460797103DE539D5DF8335A9B20C0B44886384F134C517287202FCA914D8A5096446B40CD861C641EF9C2730CB057D7B133F4C2B16BBD3D75FDDBD9151AAF0F9144AAA473AC93CF945DBFE0859FB685D5CBD0A8B3", nil, 16, nil);
 	b = strtomp("C41CFBE4D4846F67A3DF7DE9921A49D3B42DC33728427AB159CEC8CBBDB12B5F0C244F1A734AEB9840804EA3C25036AD1B61AFF3ABBC247CD4B384224567A863A6F020E7EE9795554BCD08ABAD7321AF27E1E92E3DB1C6E7E94FAAE590AE9C48F96D93D178E809401ABE8A534A1EC44359733475A36A70C7B425125062B1142D", nil, 16, nil);
 	mpextendedgcd(a, b, d, x, y);
-	print("gcd %B*%B+%B*%B = %B?\n", a, x, b, y, d);
+	jehanne_print("gcd %B*%B+%B*%B = %B?\n", a, x, b, y, d);
 	mpfree(a);
 	mpfree(b);
 
 	for(i = 0; i < loops; i++){
 		a = mprand(2048, prng, nil);
 		b = mprand(2048, prng, nil);
-		then = nsec();
+		then = jehanne_nsec();
 		mpextendedgcd(a, b, d, x, y);
-		now = nsec();
+		now = jehanne_nsec();
 		etime += now-then;
 		mpmul(a, x, t1);
 		mpmul(b, y, t2);
 		mpadd(t1, t2, t2);
 		if(mpcmp(d, t2) != 0)
-			print("%d gcd %B*%B+%B*%B != %B\n", i, a, x, b, y, d);
+			jehanne_print("%d gcd %B*%B+%B*%B != %B\n", i, a, x, b, y, d);
 //		else
-//			print("%d euclid %B*%B+%B*%B == %B\n", i, a, x, b, y, d);
+//			jehanne_print("%d euclid %B*%B+%B*%B == %B\n", i, a, x, b, y, d);
 		mpfree(a);
 		mpfree(b);
 	}
@@ -371,7 +371,7 @@ testgcd(void)
 	mpfree(t2);
 
 	if(loops > 1)
-		print("binary %llud\n", etime);
+		jehanne_print("binary %llud\n", etime);
 }
 
 extern int _unnormalizedwarning = 1;
@@ -383,13 +383,13 @@ main(int argc, char **argv)
 
 	ARGBEGIN{
 	case 'n':
-		loops = atoi(ARGF());
+		loops = jehanne_atoi(ARGF());
 		break;
 	}ARGEND;
 
-	fmtinstall('B', mpfmt);
-	fmtinstall('Q', mpfmt);
-	srand(0);
+	jehanne_fmtinstall('B', mpfmt);
+	jehanne_fmtinstall('Q', mpfmt);
+	jehanne_srand(0);
 	mpsetminbits(2*Dbits);
 	testshift("1111111111111111");
 	testaddsub("fffffffffffffffff");
@@ -441,6 +441,6 @@ main(int argc, char **argv)
 	testexp("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000");
 #ifdef asdf
 #endif adsf
-	print("done\n");
-	exits(0);
+	jehanne_print("done\n");
+	jehanne_exits(0);
 }

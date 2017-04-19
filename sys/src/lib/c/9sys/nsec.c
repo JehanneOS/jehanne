@@ -20,7 +20,7 @@
 #include <libc.h>
 
 unsigned long
-nsec(void)
+jehanne_nsec(void)
 {
 	long r;
 	r = remove("/dev/time");

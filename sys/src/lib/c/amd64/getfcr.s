@@ -18,8 +18,8 @@
 
 .text
 
-.globl setfcr
-setfcr:
+.globl jehanne_setfcr
+jehanne_setfcr:
 	xor	$(0x3F<<7), %edi
 	and	$0xFFC0, %edi
 	wait
@@ -31,8 +31,8 @@ setfcr:
 	ldmxcsr	-8(%rsp)
 	ret
 
-.globl getfcr
-getfcr:
+.globl jehanne_getfcr
+jehanne_getfcr:
 	wait
 	stmxcsr	-8(%rsp)
 	movzx	-8(%rsp), %ax
@@ -40,15 +40,16 @@ getfcr:
 	xorl	$(0x3F<<7), %eax
 	ret
 
-.globl getfsr
+.globl jehanne_getfsr
+jehanne_getfsr:
 	wait
 	stmxcsr	-8(%rsp)
 	mov	-8(%rsp), %eax
 	and	$0x3F, %eax
 	RET
 
-.globl setfsr
-setfsr:
+.globl jehanne_setfsr
+jehanne_setfsr:
 	and	$0x3F, %edi
 	wait
 	stmxcsr	-8(%rsp)

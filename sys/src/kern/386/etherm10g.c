@@ -23,9 +23,9 @@
 #define MiB		1048576u		/* Mebi 0x0000000000100000 */
 #endif /* KiB */
 
-#define	dprint(...)	if(debug) print(__VA_ARGS__)
+#define	dprint(...)	if(debug) jehanne_print(__VA_ARGS__)
 #define	pcicapdbg(...)
-#define malign(n)	mallocalign((n), 4*KiB, 0, 0)
+#define malign(n)	jehanne_mallocalign((n), 4*KiB, 0, 0)
 
 #include "etherm10g2k.i"
 #include "etherm10g4k.i"
@@ -267,11 +267,11 @@ pciecap(Pcidev *p, int cap)
 	off = 0x100;
 	while(((i = pcicfgr32(p, off))&0xffff) != cap){
 		off = i >> 20;
-		print("pciecap offset = %ud\n",  off);
+		jehanne_print("pciecap offset = %ud\n",  off);
 		if(off < 0x100 || off >= 4*KiB - 1)
 			return 0;
 	}
-	print("pciecap found = %ud\n",  off);
+	jehanne_print("pciecap found = %ud\n",  off);
 	return off;
 }
 
@@ -306,33 +306,33 @@ whichfw(Pcidev *p)
 
 	/* check AERC register.  we need it on.  */
 	off = pciecap(p, PcieAERC);
-	print("%d offset\n", off);
+	jehanne_print("%d offset\n", off);
 	cap = 0;
 	if(off != 0){
 		off += AercCCR;
 		cap = pcicfgr32(p, off);
-		print("%ud cap\n", cap);
+		jehanne_print("%ud cap\n", cap);
 	}
 	ecrc = (cap>>4) & 0xf;
 	/* if we don't like the aerc, kick it here. */
 
-	print("m10g %d lanes; ecrc=%d; ", lanes, ecrc);
+	jehanne_print("m10g %d lanes; ecrc=%d; ", lanes, ecrc);
 	if(s = getconf("myriforce")){
-		i = atoi(s);
+		i = jehanne_atoi(s);
 		if(i != 4*KiB || i != 2*KiB)
 			i = 2*KiB;
-		print("fw=%d [forced]\n", i);
+		jehanne_print("fw=%d [forced]\n", i);
 		return i;
 	}
 	if(lanes <= 4){
-		print("fw = 4096 [lanes]\n");
+		jehanne_print("fw = 4096 [lanes]\n");
 		return 4*KiB;
 	}
 	if(ecrc & 10){
-		print("fw = 4096 [ecrc set]\n");
+		jehanne_print("fw = 4096 [ecrc set]\n");
 		return 4*KiB;
 	}
-	print("fw = 4096 [default]\n");
+	jehanne_print("fw = 4096 [default]\n");
 	return 4*KiB;
 }
 
@@ -346,16 +346,16 @@ parseeprom(Ctlr *c)
 	s = c->eprom;
 	bits = 3;
 	for(i = 0; s[i] && i < Epromsz; i++){
-		l = strlen(s+i);
+		l = jehanne_strlen(s+i);
 		dprint("\t%s\n", s+i);
-		if(strncmp(s+i, "MAC=", 4) == 0 && l == 4+12+5){
+		if(jehanne_strncmp(s+i, "MAC=", 4) == 0 && l == 4+12+5){
 			bits ^= 1;
 			j = i + 4;
 			for(k = 0; k < 6; k++)
-				c->ra[k] = strtoul(s+j+3*k, 0, 16);
-		}else if(strncmp(s+i, "SN=", 3) == 0){
+				c->ra[k] = jehanne_strtoul(s+j+3*k, 0, 16);
+		}else if(jehanne_strncmp(s+i, "SN=", 3) == 0){
 			bits ^= 2;
-			c->serial = atoi(s+i+3);
+			c->serial = jehanne_atoi(s+i+3);
 		}
 		i += l;
 	}
@@ -439,7 +439,7 @@ cmd(Ctlr *c, int type, uint64_t data)
 	qlock(&c->cmdl);
 	cmd = c->cmd;
 	cmd->i[1] = Noconf;
-	memset(buf, 0, sizeof buf);
+	jehanne_memset(buf, 0, sizeof buf);
 	buf[0] = type;
 	buf[1] = data;
 	buf[2] = data >> 32;
@@ -447,7 +447,7 @@ cmd(Ctlr *c, int type, uint64_t data)
 	buf[5] = c->cprt;
 	prepcmd(buf, 6);
 	coherence();
-	memmove(c->ram + Cmdoff, buf, sizeof buf);
+	jehanne_memmove(c->ram + Cmdoff, buf, sizeof buf);
 
 	if(waserror())
 		nexterror();
@@ -478,7 +478,7 @@ maccmd(Ctlr *c, int type, uint8_t *m)
 	qlock(&c->cmdl);
 	cmd = c->cmd;
 	cmd->i[1] = Noconf;
-	memset(buf, 0, sizeof buf);
+	jehanne_memset(buf, 0, sizeof buf);
 	buf[0] = type;
 	buf[1] = m[0]<<24 | m[1]<<16 | m[2]<<8 | m[3];
 	buf[2] = m[4]<< 8 | m[5];
@@ -486,7 +486,7 @@ maccmd(Ctlr *c, int type, uint8_t *m)
 	buf[5] = c->cprt;
 	prepcmd(buf, 6);
 	coherence();
-	memmove(c->ram + Cmdoff, buf, sizeof buf);
+	jehanne_memmove(c->ram + Cmdoff, buf, sizeof buf);
 
 	if(waserror())
 		nexterror();
@@ -519,8 +519,8 @@ dmatestcmd(Ctlr *c, int type, uint64_t addr, int len)
 {
 	uint32_t buf[16], i;
 
-	memset(buf, 0, sizeof buf);
-	memset(c->cmd, Noconf, sizeof *c->cmd);
+	jehanne_memset(buf, 0, sizeof buf);
+	jehanne_memset(c->cmd, Noconf, sizeof *c->cmd);
 	buf[0] = Cdmatest;
 	buf[1] = addr;
 	buf[2] = addr >> 32;
@@ -529,7 +529,7 @@ dmatestcmd(Ctlr *c, int type, uint64_t addr, int len)
 	buf[5] = c->cprt;
 	prepcmd(buf, 6);
 	coherence();
-	memmove(c->ram + Cmdoff, buf, sizeof buf);
+	jehanne_memmove(c->ram + Cmdoff, buf, sizeof buf);
 
 	if(waserror())
 		nexterror();
@@ -552,7 +552,7 @@ rdmacmd(Ctlr *c, int on)
 {
 	uint32_t buf[16], i;
 
-	memset(buf, 0, sizeof buf);
+	jehanne_memset(buf, 0, sizeof buf);
 	c->cmd->i[0] = 0;
 	coherence();
 	buf[0] = c->cprt >> 32;
@@ -562,7 +562,7 @@ rdmacmd(Ctlr *c, int on)
 	buf[4] = c->cprt;
 	buf[5] = on;
 	prepcmd(buf, 6);
-	memmove(c->ram + Rdmaoff, buf, sizeof buf);
+	jehanne_memmove(c->ram + Rdmaoff, buf, sizeof buf);
 
 	if(waserror())
 		nexterror();
@@ -610,7 +610,7 @@ bootfw(Ctlr *c)
 	dprint("bootfw %d bytes ... ", sz);
 	cmd = c->cmd;
 
-	memset(buf, 0, sizeof buf);
+	jehanne_memset(buf, 0, sizeof buf);
 	c->cmd->i[0] = 0;
 	coherence();
 	buf[0] = c->cprt >> 32;	/* upper dma target address */
@@ -622,7 +622,7 @@ bootfw(Ctlr *c)
 	buf[6] = 0;
 	prepcmd(buf, 7);
 	coherence();
-	memmove(c->ram + Fwsubmt, buf, sizeof buf);
+	jehanne_memmove(c->ram + Fwsubmt, buf, sizeof buf);
 
 	for(i = 0; i < 20; i++){
 		if(cmd->i[0] == Noconf)
@@ -631,7 +631,7 @@ bootfw(Ctlr *c)
 	}
 	dprint("[%ux %ux]", gbit32(cmd->c), gbit32(cmd->c+4));
 	if(i == 20){
-		print("m10g: cannot load fw\n");
+		jehanne_print("m10g: cannot load fw\n");
 		return -1;
 	}
 	dprint("\n");
@@ -700,7 +700,7 @@ chkfw(Ctlr *c)
 	off = gbit32(c->ram+0x3c);
 	dprint("firmware %llux\n", (uint64_t)off);
 	if((off&3) || off + sizeof *h > c->ramsz){
-		print("!m10g: bad firmware %llux\n", (uint64_t)off);
+		jehanne_print("!m10g: bad firmware %llux\n", (uint64_t)off);
 		return -1;
 	}
 	h = (Fwhdr*)(c->ram + off);
@@ -709,7 +709,7 @@ chkfw(Ctlr *c)
 	dprint("\t" "vers	%s\n", h->version);
 	dprint("\t" "ramsz	%ux\n", gbit32(h->ramsz));
 	if(type != Teth){
-		print("!m10g: bad card type %s\n", fwtype(type));
+		jehanne_print("!m10g: bad card type %s\n", fwtype(type));
 		return -1;
 	}
 
@@ -722,7 +722,7 @@ reset(Ether *e, Ctlr *c)
 	uint32_t i, sz;
 
 	if(waserror()){
-		print("m10g: reset error\n");
+		jehanne_print("m10g: reset error\n");
 		nexterror();
 		return -1;
 	}
@@ -743,12 +743,12 @@ reset(Ether *e, Ctlr *c)
 	rdmacmd(c, 1);
 	sz = c->tx.segsz;
 	i = dmatestcmd(c, DMAread, c->done.busaddr, sz);
-	print("\t" "read: %ud MB/s\n", ((i>>16)*sz*2)/(i&0xffff));
+	jehanne_print("\t" "read: %ud MB/s\n", ((i>>16)*sz*2)/(i&0xffff));
 	i = dmatestcmd(c, DMAwrite, c->done.busaddr, sz);
-	print("\t" "write: %ud MB/s\n", ((i>>16)*sz*2)/(i&0xffff));
+	jehanne_print("\t" "write: %ud MB/s\n", ((i>>16)*sz*2)/(i&0xffff));
 	i = dmatestcmd(c, DMAwrite|DMAread, c->done.busaddr, sz);
-	print("\t" "r/w: %ud MB/s\n", ((i>>16)*sz*2*2)/(i&0xffff));
-	memset(c->done.entry, 0, c->done.n * sizeof *c->done.entry);
+	jehanne_print("\t" "r/w: %ud MB/s\n", ((i>>16)*sz*2*2)/(i&0xffff));
+	jehanne_memset(c->done.entry, 0, c->done.n * sizeof *c->done.entry);
 
 	maccmd(c, CSmac, c->ra);
 //	cmd(c, Cnopromisc, 0);
@@ -765,13 +765,13 @@ static void
 ctlrfree(Ctlr *c)
 {
 	/* free up all the Block*s, too */
-	free(c->tx.host);
-	free(c->sm.host);
-	free(c->bg.host);
-	free(c->cmd);
-	free(c->done.entry);
-	free(c->stats);
-	free(c);
+	jehanne_free(c->tx.host);
+	jehanne_free(c->sm.host);
+	jehanne_free(c->bg.host);
+	jehanne_free(c->cmd);
+	jehanne_free(c->done.entry);
+	jehanne_free(c->stats);
+	jehanne_free(c);
 }
 
 static int
@@ -790,7 +790,7 @@ setmem(Pcidev *p, Ctlr *c)
 	raddr = p->mem[0].bar & ~0x0F;
 	mem = vmap(raddr, p->mem[0].size);
 	if(mem == nil){
-		print("m10g: can't map %8.8lux\n", p->mem[0].bar);
+		jehanne_print("m10g: can't map %8.8lux\n", p->mem[0].bar);
 		return -1;
 	}
 	dprint("%llux <- vmap(mem[0].size = %ux)\n", raddr, p->mem[0].size);
@@ -804,14 +804,14 @@ setmem(Pcidev *p, Ctlr *c)
 	d->m = d->n - 1;
 	i = d->n * sizeof *d->entry;
 	d->entry = malign(i);
-	memset(d->entry, 0, i);
+	jehanne_memset(d->entry, 0, i);
 	d->busaddr = PCIWADDR64(d->entry);
 
 	c->stats = malign(sizeof *c->stats);
-	memset(c->stats, 0, sizeof *c->stats);
+	jehanne_memset(c->stats, 0, sizeof *c->stats);
 	c->statsprt = PCIWADDR64(c->stats);
 
-	memmove(c->eprom, c->ram + c->ramsz - Epromsz, Epromsz-2);
+	jehanne_memmove(c->eprom, c->ram + c->ramsz - Epromsz, Epromsz-2);
 	return setpcie(p) || parseeprom(c);
 }
 
@@ -882,7 +882,7 @@ replenish(Rx *rx)
 	p = rx->pool;
 	if(p->n < 8)
 		return;
-	memset(buf, 0, sizeof buf);
+	jehanne_memset(buf, 0, sizeof buf);
 	e = (rx->i - rx->cnt) & ~7;
 	e += rx->n;
 	while(p->n >= 8 && e){
@@ -894,13 +894,13 @@ replenish(Rx *rx)
 			rx->host[idx+i] = b;
 			assert(b);
 		}
-		memmove(rx->lanai + 2*idx, buf, sizeof buf);
+		jehanne_memmove(rx->lanai + 2*idx, buf, sizeof buf);
 		coherence();
 		rx->cnt += 8;
 		e -= 8;
 	}
 	if(e && p->n > 7+1)
-		print("should panic? pool->n = %d\n", p->n);
+		jehanne_print("should panic? pool->n = %d\n", p->n);
 }
 
 /*
@@ -930,7 +930,7 @@ emalign(int sz)
 	v = malign(sz);
 	if(v == nil)
 		error(Enomem);
-	memset(v, 0, sz);
+	jehanne_memset(v, 0, sz);
 	return v;
 }
 
@@ -1136,7 +1136,7 @@ submittx(Tx *tx, int n)
 	l = tx->lanai;
 	h = tx->host;
 	for(i = n-1; i >= 0; i--)
-		memmove(l+(i + i0 & m), h+(i + i0 & m), sizeof *h);
+		jehanne_memmove(l+(i + i0 & m), h+(i + i0 & m), sizeof *h);
 	tx->i += n;
 //	coherence();
 }
@@ -1305,9 +1305,9 @@ m10gattach(Ether *e)
 	open0(e, c);
 	if(c->kprocs == 0){
 		c->kprocs++;
-		snprint(name, sizeof name, "#l%drxproc", e->ctlrno);
+		jehanne_snprint(name, sizeof name, "#l%drxproc", e->ctlrno);
 		kproc(name, m10rx, e);
-		snprint(name, sizeof name, "#l%dtxproc", e->ctlrno);
+		jehanne_snprint(name, sizeof name, "#l%dtxproc", e->ctlrno);
 		kproc(name, txproc, e);
 	}
 	c->state = Runed;
@@ -1346,13 +1346,13 @@ m10gifstat(Ether *e, void *v, long n, uint32_t off)
 
 	c = e->ctlr;
 	lim = 2*READSTR-1;
-	p = malloc(lim+1);
+	p = jehanne_malloc(lim+1);
 	l = 0;
 	/* no point in locking this because this is done via dma. */
-	memmove(&s, c->stats, sizeof s);
+	jehanne_memmove(&s, c->stats, sizeof s);
 
 	// l +=
-	snprint(p+l, lim,
+	jehanne_snprint(p+l, lim,
 		"txcnt = %ud\n"	  "linkstat = %ud\n" 	"dlink = %ud\n"
 		"derror = %ud\n"  "drunt = %ud\n" 	"doverrun = %ud\n"
 		"dnosm = %ud\n"	  "dnobg = %ud\n"	"nrdma = %ud\n"
@@ -1376,7 +1376,7 @@ m10gifstat(Ether *e, void *v, long n, uint32_t off)
 		c->tx.segsz, gbit32((uint8_t*)c->coal));
 
 	n = readstr(off, v, n, p);
-	free(p);
+	jehanne_free(p);
 	return n;
 }
 
@@ -1388,21 +1388,21 @@ m10gifstat(Ether *e, void *v, long n, uint32_t off)
 //
 //	if(e == 0)
 //		return;
-//	buf = malloc(n=250);
+//	buf = jehanne_malloc(n=250);
 //	if(buf == 0)
 //		return;
 //
-//	snprint(buf, n, "oq\n");
+//	jehanne_snprint(buf, n, "oq\n");
 //	qsummary(e->netif.oq, buf+3, n-3-1);
 //	iprint("%s", buf);
 //
 //	if(e->f) for(i = 0; e->f[i]; i++){
-//		j = snprint(buf, n, "f%d %d\n", i, e->f[i]->type);
+//		j = jehanne_snprint(buf, n, "f%d %d\n", i, e->f[i]->type);
 //		qsummary(e->f[i]->in, buf+j, n-j-1);
-//		print("%s", buf);
+//		jehanne_print("%s", buf);
 //	}
 //
-//	free(buf);
+//	jehanne_free(buf);
 //}
 
 static void
@@ -1453,16 +1453,16 @@ m10gctl(Ether *e, void *v, long n)
 
 	c = parsecmd(v, n);
 	if(waserror()){
-		free(c);
+		jehanne_free(c);
 		nexterror();
 	}
 	t = lookupcmd(c, ctab, nelem(ctab));
 	switch(t->index){
 	case CMdebug:
-		debug = (strcmp(c->f[1], "on") == 0);
+		debug = (jehanne_strcmp(c->f[1], "on") == 0);
 		break;
 	case CMcoal:
-		i = atoi(c->f[1]);
+		i = jehanne_atoi(c->f[1]);
 		if(i < 0 || i > 1000)
 			error(Ebadarg);
 		*((Ctlr*)e->ctlr)->coal = pbit32(i);
@@ -1482,7 +1482,7 @@ m10gctl(Ether *e, void *v, long n)
 	default:
 		error(Ebadarg);
 	}
-	free(c);
+	jehanne_free(c);
 	poperror();
 	return n;
 }
@@ -1521,7 +1521,7 @@ m10gmulticast(void *v, uint8_t *ea, int on)
 	dprint("m10gmulticast\n");
 	e = v;
 	if((i = maccmd(e->ctlr, mcctab[on], ea)) != 0)
-		print("m10g: can't %s %E: %d\n", mcntab[on], ea, i);
+		jehanne_print("m10g: can't %s %E: %d\n", mcntab[on], ea, i);
 }
 
 static void
@@ -1532,10 +1532,10 @@ m10gpci(void)
 
 	t = 0;
 	for(p = 0; p = pcimatch(p, 0x14c1, 0x0008); ){
-		c = malloc(sizeof *c);
+		c = jehanne_malloc(sizeof *c);
 		if(c == nil)
 			continue;
-		memset(c, 0, sizeof *c);
+		jehanne_memset(c, 0, sizeof *c);
 		c->pcidev = p;
 		c->id = p->did<<16 | p->vid;
 //		c->boot = pcicap(p, PciCapVND);
@@ -1544,8 +1544,8 @@ m10gpci(void)
 //		}
 		pcisetbme(p);
 		if(setmem(p, c) == -1){
-			print("m10g failed\n");
-			free(c);
+			jehanne_print("m10g failed\n");
+			jehanne_free(c);
 			/* cleanup */
 			continue;
 		}
@@ -1579,7 +1579,7 @@ m10gpnp(Ether *e)
 	e->irq = c->pcidev->intl;
 	e->tbdf = c->pcidev->tbdf;
 	e->netif.mbps = 10000;
-	memmove(e->ea, c->ra, Eaddrlen);
+	jehanne_memmove(e->ea, c->ra, Eaddrlen);
 
 	e->attach = m10gattach;
 	e->detach = m10gshutdown;

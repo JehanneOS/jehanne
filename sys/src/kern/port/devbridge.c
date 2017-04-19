@@ -208,7 +208,7 @@ bridgeattach(Chan *c, Chan *ac, char *spec, int flags)
 {
 	int dev;
 
-	dev = atoi(spec);
+	dev = jehanne_atoi(spec);
 	if(dev<0 || dev >= Maxbridge)
 		error("bad specification");
 
@@ -263,7 +263,7 @@ bridgeclose(Chan* c)
 	switch(TYPE(c->qid)) {
 	case Qcache:
 		if(c->flag & COPEN)
-			free(c->aux);
+			jehanne_free(c->aux);
 		break;
 	case Qlog:
 		if(c->flag & COPEN)
@@ -294,7 +294,7 @@ bridgeread(Chan *c, void *a, long n, int64_t off)
 		qlock(&b->ql);
 		port = b->port[PORT(c->qid)];
 		if(port == 0)
-			strcpy(buf, "unbound\n");
+			jehanne_strcpy(buf, "unbound\n");
 		else {
 			i = 0;
 			switch(port->type) {
@@ -302,15 +302,15 @@ bridgeread(Chan *c, void *a, long n, int64_t off)
 				panic("bridgeread: unknown port type: %d",
 					port->type);
 			case Tether:
-				i += snprint(buf+i, sizeof(buf)-i, "ether %s: ", port->name);
+				i += jehanne_snprint(buf+i, sizeof(buf)-i, "ether %s: ", port->name);
 				break;
 			case Ttun:
-				i += snprint(buf+i, sizeof(buf)-i, "tunnel %s: ", port->name);
+				i += jehanne_snprint(buf+i, sizeof(buf)-i, "tunnel %s: ", port->name);
 				break;
 			}
 			ingood = port->in - port->inmulti - port->inunknown;
 			outgood = port->out - port->outmulti - port->outunknown;
-			i += snprint(buf+i, sizeof(buf)-i,
+			i += jehanne_snprint(buf+i, sizeof(buf)-i,
 				"in=%d(%d:%d:%d) out=%d(%d:%d:%d:%d)\n",
 				port->in, ingood, port->inmulti, port->inunknown,
 				port->out, outgood, port->outmulti,
@@ -321,7 +321,7 @@ bridgeread(Chan *c, void *a, long n, int64_t off)
 		qunlock(&b->ql);
 		return n;
 	case Qbctl:
-		snprint(buf, sizeof(buf), "%s tcpmss\ndelay %ld %ld\n",
+		jehanne_snprint(buf, sizeof(buf), "%s tcpmss\ndelay %ld %ld\n",
 			b->tcpmss ? "set" : "clear", b->delay0, b->delayn);
 		n = readstr(off, a, n, buf);
 		return n;
@@ -329,7 +329,7 @@ bridgeread(Chan *c, void *a, long n, int64_t off)
 		n = readstr(off, a, n, c->aux);
 		return n;
 	case Qstats:
-		snprint(buf, sizeof(buf), "hit=%uld miss=%uld copy=%uld\n",
+		jehanne_snprint(buf, sizeof(buf), "hit=%uld miss=%uld copy=%uld\n",
 			b->hit, b->miss, b->copy);
 		n = readstr(off, a, n, buf);
 		return n;
@@ -339,7 +339,7 @@ bridgeread(Chan *c, void *a, long n, int64_t off)
 static void
 bridgeoption(Bridge *b, char *option, int value)
 {
-	if(strcmp(option, "tcpmss") == 0)
+	if(jehanne_strcmp(option, "tcpmss") == 0)
 		b->tcpmss = value;
 	else
 		error("unknown bridge option");
@@ -362,42 +362,42 @@ bridgewrite(Chan *c, void *a, long n, int64_t off)
 		qlock(&b->ql);
 		if(waserror()) {
 			qunlock(&b->ql);
-			free(cb);
+			jehanne_free(cb);
 			nexterror();
 		}
 		if(cb->nf == 0)
 			error("short write");
 		arg0 = cb->f[0];
-		if(strcmp(arg0, "bind") == 0) {
+		if(jehanne_strcmp(arg0, "bind") == 0) {
 			portbind(b, cb->nf-1, cb->f+1);
-		} else if(strcmp(arg0, "unbind") == 0) {
+		} else if(jehanne_strcmp(arg0, "unbind") == 0) {
 			portunbind(b, cb->nf-1, cb->f+1);
-		} else if(strcmp(arg0, "cacheflush") == 0) {
+		} else if(jehanne_strcmp(arg0, "cacheflush") == 0) {
 			log(b, Logcache, "cache flush\n");
-			memset(b->cache, 0, CacheSize*sizeof(Centry));
-		} else if(strcmp(arg0, "set") == 0) {
+			jehanne_memset(b->cache, 0, CacheSize*sizeof(Centry));
+		} else if(jehanne_strcmp(arg0, "set") == 0) {
 			if(cb->nf != 2)
 				error("usage: set option");
 			bridgeoption(b, cb->f[1], 1);
-		} else if(strcmp(arg0, "clear") == 0) {
+		} else if(jehanne_strcmp(arg0, "clear") == 0) {
 			if(cb->nf != 2)
 				error("usage: clear option");
 			bridgeoption(b, cb->f[1], 0);
-		} else if(strcmp(arg0, "delay") == 0) {
+		} else if(jehanne_strcmp(arg0, "delay") == 0) {
 			if(cb->nf != 3)
 				error("usage: delay delay0 delayn");
-			b->delay0 = strtol(cb->f[1], nil, 10);
-			b->delayn = strtol(cb->f[2], nil, 10);
+			b->delay0 = jehanne_strtol(cb->f[1], nil, 10);
+			b->delayn = jehanne_strtol(cb->f[2], nil, 10);
 		} else
 			error("unknown control request");
 		poperror();
 		qunlock(&b->ql);
-		free(cb);
+		jehanne_free(cb);
 		return n;
 	case Qlog:
 		cb = parsecmd(a, n);
 		p = logctl(b, cb->nf, cb->f, logflags);
-		free(cb);
+		jehanne_free(cb);
 		if(p != nil)
 			error(p);
 		return n;
@@ -416,12 +416,12 @@ bridgegen(Chan *c, char* _1, Dirtab* _2, int _3, int s, Dir *dp)
 		switch(TYPE(c->qid)){
 		case Qtopdir:
 		case Qbridgedir:
-			snprint(up->genbuf, sizeof(up->genbuf), "#B%ld", c->devno);
+			jehanne_snprint(up->genbuf, sizeof(up->genbuf), "#B%ld", c->devno);
 			mkqid(&qid, Qtopdir, 0, QTDIR);
 			devdir(c, qid, up->genbuf, 0, eve, 0555, dp);
 			break;
 		case Qportdir:
-			snprint(up->genbuf, sizeof(up->genbuf), "bridge%ld", c->devno);
+			jehanne_snprint(up->genbuf, sizeof(up->genbuf), "bridge%ld", c->devno);
 			mkqid(&qid, Qbridgedir, 0, QTDIR);
 			devdir(c, qid, up->genbuf, 0, eve, 0555, dp);
 			break;
@@ -446,7 +446,7 @@ bridgegen(Chan *c, char* _1, Dirtab* _2, int _3, int s, Dir *dp)
 	case Qtopdir:
 		if(s != 0)
 			return -1;
-		snprint(up->genbuf, sizeof(up->genbuf), "bridge%ld", c->devno);
+		jehanne_snprint(up->genbuf, sizeof(up->genbuf), "bridge%ld", c->devno);
 		mkqid(&qid, QID(0, Qbridgedir), 0, QTDIR);
 		devdir(c, qid, up->genbuf, 0, eve, 0555, dp);
 		return 1;
@@ -460,7 +460,7 @@ bridgegen(Chan *c, char* _1, Dirtab* _2, int _3, int s, Dir *dp)
 		if(s >= b->nport)
 			return -1;
 		mkqid(&qid, QID(s, Qportdir), 0, QTDIR);
-		snprint(up->genbuf, sizeof(up->genbuf), "%d", s);
+		jehanne_snprint(up->genbuf, sizeof(up->genbuf), "%d", s);
 		devdir(c, qid, up->genbuf, 0, eve, 0555, dp);
 		return 1;
 	case Qportdir:
@@ -485,32 +485,32 @@ portbind(Bridge *b, int argc, char *argv[])
 	char buf[100], name[KNAMELEN], path[8*KNAMELEN];
 	static char usage[] = "usage: bind ether|tunnel name ownhash dev [dev2]";
 
-	memset(name, 0, KNAMELEN);
+	jehanne_memset(name, 0, KNAMELEN);
 	if(argc < 4)
 		error(usage);
-	if(strcmp(argv[0], "ether") == 0) {
+	if(jehanne_strcmp(argv[0], "ether") == 0) {
 		if(argc != 4)
 			error(usage);
 		type = Tether;
-		strncpy(name, argv[1], KNAMELEN-1);
+		jehanne_strncpy(name, argv[1], KNAMELEN-1);
 		name[KNAMELEN-1] = 0;
 //		parseaddr(addr, argv[1], Eaddrlen);
-	} else if(strcmp(argv[0], "tunnel") == 0) {
+	} else if(jehanne_strcmp(argv[0], "tunnel") == 0) {
 		if(argc != 5)
 			error(usage);
 		type = Ttun;
-		strncpy(name, argv[1], KNAMELEN-1);
+		jehanne_strncpy(name, argv[1], KNAMELEN-1);
 		name[KNAMELEN-1] = 0;
 //		parseip(addr, argv[1]);
 		dev2 = argv[4];
 	} else
 		error(usage);
-	ownhash = strtoul(argv[2], 0, 0);
+	ownhash = jehanne_strtoul(argv[2], 0, 0);
 	dev = argv[3];
 	for(i=0; i<b->nport; i++) {
 		port = b->port[i];
 		if(port != nil && port->type == type &&
-		    memcmp(port->name, name, KNAMELEN) == 0)
+		    jehanne_memcmp(port->name, name, KNAMELEN) == 0)
 			error("port in use");
 	}
 	for(i=0; i<Maxport; i++)
@@ -528,12 +528,12 @@ portbind(Bridge *b, int argc, char *argv[])
 		nexterror();
 	}
 	port->type = type;
-	memmove(port->name, name, KNAMELEN);
+	jehanne_memmove(port->name, name, KNAMELEN);
 	switch(port->type) {
 	default:
 		panic("portbind: unknown port type: %d", type);
 	case Tether:
-		snprint(path, sizeof(path), "%s/clone", dev);
+		jehanne_snprint(path, sizeof(path), "%s/clone", dev);
 		ctl = namec(path, Aopen, ORDWR, 0);
 		if(waserror()) {
 			cclose(ctl);
@@ -546,15 +546,15 @@ portbind(Bridge *b, int argc, char *argv[])
 		buf[n] = 0;
 		for(p = buf; *p == ' '; p++)
 			;
-		snprint(path, sizeof(path), "%s/%lud/data", dev, strtoul(p, 0, 0));
+		jehanne_snprint(path, sizeof(path), "%s/%lud/data", dev, jehanne_strtoul(p, 0, 0));
 
 		// setup connection to be promiscuous
-		snprint(buf, sizeof(buf), "connect -1");
-		devtab[ctl->qid.type]->write(ctl, buf, strlen(buf), 0);
-		snprint(buf, sizeof(buf), "promiscuous");
-		devtab[ctl->qid.type]->write(ctl, buf, strlen(buf), 0);
-		snprint(buf, sizeof(buf), "bridge");
-		devtab[ctl->qid.type]->write(ctl, buf, strlen(buf), 0);
+		jehanne_snprint(buf, sizeof(buf), "connect -1");
+		devtab[ctl->qid.type]->write(ctl, buf, jehanne_strlen(buf), 0);
+		jehanne_snprint(buf, sizeof(buf), "promiscuous");
+		devtab[ctl->qid.type]->write(ctl, buf, jehanne_strlen(buf), 0);
+		jehanne_snprint(buf, sizeof(buf), "bridge");
+		devtab[ctl->qid.type]->write(ctl, buf, jehanne_strlen(buf), 0);
 
 		// open data port
 		port->data[0] = namec(path, Aopen, ORDWR, 0);
@@ -595,29 +595,29 @@ portunbind(Bridge *b, int argc, char *argv[])
 	Port *port = nil;
 	static char usage[] = "usage: unbind ether|tunnel addr [ownhash]";
 
-	memset(name, 0, KNAMELEN);
+	jehanne_memset(name, 0, KNAMELEN);
 	if(argc < 2 || argc > 3)
 		error(usage);
-	if(strcmp(argv[0], "ether") == 0) {
+	if(jehanne_strcmp(argv[0], "ether") == 0) {
 		type = Tether;
-		strncpy(name, argv[1], KNAMELEN-1);
+		jehanne_strncpy(name, argv[1], KNAMELEN-1);
 		name[KNAMELEN-1] = 0;
 //		parseaddr(addr, argv[1], Eaddrlen);
-	} else if(strcmp(argv[0], "tunnel") == 0) {
+	} else if(jehanne_strcmp(argv[0], "tunnel") == 0) {
 		type = Ttun;
-		strncpy(name, argv[1], KNAMELEN-1);
+		jehanne_strncpy(name, argv[1], KNAMELEN-1);
 		name[KNAMELEN-1] = 0;
 //		parseip(addr, argv[1]);
 	} else
 		error(usage);
 	if(argc == 3)
-		ownhash = strtoul(argv[2], 0, 0);
+		ownhash = jehanne_strtoul(argv[2], 0, 0);
 	else
 		ownhash = 0;
 	for(i=0; i<b->nport; i++) {
 		port = b->port[i];
 		if(port != nil && port->type == type &&
-		    memcmp(port->name, name, KNAMELEN) == 0)
+		    jehanne_memcmp(port->name, name, KNAMELEN) == 0)
 			break;
 	}
 	if(i == b->nport)
@@ -657,7 +657,7 @@ cachelookup(Bridge *b, uint8_t d[Eaddrlen])
 	p = b->cache + h;
 	sec = TK2SEC(m->ticks);
 	for(i=0; i<CacheLook; i++,p++) {
-		if(memcmp(d, p->d, Eaddrlen) == 0) {
+		if(jehanne_memcmp(d, p->d, Eaddrlen) == 0) {
 			p->dst++;
 			if(sec >= p->expire) {
 				log(b, Logcache, "expired cache entry: %E %d\n",
@@ -699,7 +699,7 @@ cacheupdate(Bridge *b, uint8_t d[Eaddrlen], int port)
 
 	// look for oldest entry
 	for(i=0; i<CacheLook; i++,p++) {
-		if(memcmp(p->d, d, Eaddrlen) == 0) {
+		if(jehanne_memcmp(p->d, d, Eaddrlen) == 0) {
 			p->expire = TK2SEC(m->ticks) + CacheTimeout;
 			if(p->port != port) {
 				log(b, Logcache, "NIC changed port %d->%d: %E\n",
@@ -717,7 +717,7 @@ cacheupdate(Bridge *b, uint8_t d[Eaddrlen], int port)
 	if(pp->expire != 0)
 		log(b, Logcache, "bumping from cache: %E %d\n", pp->d, pp->port);
 	pp->expire = TK2SEC(m->ticks) + CacheTimeout;
-	memmove(pp->d, d, Eaddrlen);
+	jehanne_memmove(pp->d, d, Eaddrlen);
 	pp->port = port;
 	pp->src = 1;
 	pp->dst = 0;
@@ -735,7 +735,7 @@ cacheflushport(Bridge *b, int port)
 	for(i=0; i<CacheSize; i++,ce++) {
 		if(ce->port != port)
 			continue;
-		memset(ce, 0, sizeof(Centry));
+		jehanne_memset(ce, 0, sizeof(Centry));
 	}
 }
 
@@ -765,7 +765,7 @@ cachedump(Bridge *b)
 		if(ce->expire == 0)
 			continue;
 		c = (sec < ce->expire)?'v':'e';
-		p += snprint(p, ep-p, "%E %2d %10ld %10ld %10ld %c\n", ce->d,
+		p += jehanne_snprint(p, ep-p, "%E %2d %10ld %10ld %10ld %c\n", ce->d,
 			ce->port, ce->src, ce->dst, ce->expire+off, c);
 	}
 	*p = 0;
@@ -896,7 +896,7 @@ tcpmsshack(Etherpkt *epkt, int n)
 	// fit checksum
 	cksum = nhgets(tcphdr->cksum);
 	if(optr-(uint8_t*)tcphdr & 1) {
-//		print("tcpmsshack: odd alignment!\n");
+//		jehanne_print("tcpmsshack: odd alignment!\n");
 		// odd alignments are a pain
 		cksum += nhgets(optr+1);
 		cksum -= (optr[1]<<8)|(TcpMssMax>>8);
@@ -934,23 +934,23 @@ etherread(void *a)
 		// release lock to read - error means it is time to quit
 		qunlock(&b->ql);
 		if(waserror()) {
-			print("etherread read error: %s\n", up->errstr);
+			jehanne_print("etherread read error: %s\n", up->errstr);
 			qlock(&b->ql);
 			break;
 		}
 		if(0)
-			print("devbridge: etherread: reading\n");
+			jehanne_print("devbridge: etherread: reading\n");
 		bp = devtab[port->data[0]->qid.type]->bread(port->data[0],
 			ETHERMAXTU, 0);
 		if(0)
-			print("devbridge: etherread: blocklen = %d\n",
+			jehanne_print("devbridge: etherread: blocklen = %d\n",
 				blocklen(bp));
 		poperror();
 		qlock(&b->ql);
 		if(bp == nil || port->closed)
 			break;
 		if(waserror()) {
-//			print("etherread bridge error\n");
+//			jehanne_print("etherread bridge error\n");
 			if(bp)
 				freeb(bp);
 			continue;
@@ -997,7 +997,7 @@ etherread(void *a)
 		if(bp)
 			freeb(bp);
 	}
-//	print("etherread: trying to exit\n");
+//	jehanne_print("etherread: trying to exit\n");
 	port->readp = nil;
 	portfree(port);
 	qunlock(&b->ql);
@@ -1069,14 +1069,14 @@ etherwrite(Port *port, Block *bp)
 	xp->rp += offset;
 
 	if(0)
-		print("seglen=%d, dlen=%d, mf=%x, frag=%d\n",
+		jehanne_print("seglen=%d, dlen=%d, mf=%x, frag=%d\n",
 			seglen, dlen, mf, frag);
 	for(fragoff = 0; fragoff < dlen; fragoff += seglen) {
 		nb = allocb(ETHERHDRSIZE+IPHDR+seglen);
 
 		feh = (Iphdr*)(nb->wp+ETHERHDRSIZE);
 
-		memmove(nb->wp, epkt, ETHERHDRSIZE+IPHDR);
+		jehanne_memmove(nb->wp, epkt, ETHERHDRSIZE+IPHDR);
 		nb->wp += ETHERHDRSIZE+IPHDR;
 
 		if((fragoff + seglen) >= dlen) {
@@ -1095,7 +1095,7 @@ etherwrite(Port *port, Block *bp)
 			blklen = chunk;
 			if(BLEN(xp) < chunk)
 				blklen = BLEN(xp);
-			memmove(nb->wp, xp->rp, blklen);
+			jehanne_memmove(nb->wp, xp->rp, blklen);
 			nb->wp += blklen;
 			xp->rp += blklen;
 			chunk -= blklen;
@@ -1130,8 +1130,8 @@ portfree(Port *port)
 		cclose(port->data[0]);
 	if(port->data[1])
 		cclose(port->data[1]);
-	memset(port, 0, sizeof(Port));
-	free(port);
+	jehanne_memset(port, 0, sizeof(Port));
+	jehanne_free(port);
 }
 
 Dev bridgedevtab = {

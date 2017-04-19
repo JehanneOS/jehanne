@@ -51,7 +51,7 @@ getehci(Ctlr* ctlr)
 			delay(10);
 		}
 		if(i == 100)
-			print("ehci %#p: bios timed out\n", ctlr->capio);
+			jehanne_print("ehci %#p: bios timed out\n", ctlr->capio);
 	}
 	pcicfgw32(ctlr->pcidev, off+CLcontrol, 0);	/* no SMIs */
 }
@@ -97,7 +97,7 @@ ehcireset(Ctlr *ctlr)
 			delay(1);
 		}
 		if(i == 100)
-			print("ehci %#p controller reset timed out\n", ctlr->capio);
+			jehanne_print("ehci %#p controller reset timed out\n", ctlr->capio);
 	}
 	opio->cmd |= Citc1;		/* 1 intr. per µframe */
 	coherence();
@@ -142,7 +142,7 @@ shutdown(Hci *hp)
 		delay(1);
 	}
 	if(i >= 100)
-		print("ehci %#p controller reset timed out\n", ctlr->capio);
+		jehanne_print("ehci %#p controller reset timed out\n", ctlr->capio);
 	delay(100);
 	ehcirun(ctlr, 0);
 	opio->frbase = 0;
@@ -177,16 +177,16 @@ scanpci(void)
 			continue;
 		}
 		if(io == 0){
-			print("usbehci: %x %x: failed to map registers\n",
+			jehanne_print("usbehci: %x %x: failed to map registers\n",
 				p->vid, p->did);
 			continue;
 		}
 		dprint("usbehci: %#x %#x: port %#p size %#x irq %d\n",
 			p->vid, p->did, io, p->mem[0].size, p->intl);
 
-		ctlr = malloc(sizeof(Ctlr));
+		ctlr = jehanne_malloc(sizeof(Ctlr));
 		if(ctlr == nil){
-			print("usbehci: no memory\n");
+			jehanne_print("usbehci: no memory\n");
 			continue;
 		}
 		ctlr->pcidev = p;
@@ -200,7 +200,7 @@ scanpci(void)
 				break;
 			}
 		if(i >= Nhcis)
-			print("ehci: bug: more than %d controllers\n", Nhcis);
+			jehanne_print("ehci: bug: more than %d controllers\n", Nhcis);
 
 		/*
 		 * currently, if we enable a second ehci controller,
@@ -226,7 +226,7 @@ reset(Hci *hp)
 
 	s = getconf("*maxehci");
 	if (s != nil && s[0] >= '0' && s[0] <= '9')
-		maxehci = atoi(s);
+		maxehci = jehanne_atoi(s);
 	if(maxehci == 0 || getconf("*nousbehci"))
 		return -1;
 	ilock(&resetlck);

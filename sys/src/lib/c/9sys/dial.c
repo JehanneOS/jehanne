@@ -101,8 +101,8 @@ dialimpl(const char *dest, const char *local, char *dir, int *cfdp)
 		return rv;
 	err[0] = '\0';
 	errstr(err, sizeof err);
-	if(strstr(err, "refused") != 0){
-		werrstr("%s", err);
+	if(jehanne_strstr(err, "refused") != 0){
+		jehanne_werrstr("%s", err);
 		return rv;
 	}
 	ds.netdir = "/net.alt";
@@ -112,10 +112,10 @@ dialimpl(const char *dest, const char *local, char *dir, int *cfdp)
 
 	alterr[0] = 0;
 	errstr(alterr, sizeof alterr);
-	if(strstr(alterr, "translate") || strstr(alterr, "does not exist"))
-		werrstr("%s", err);
+	if(jehanne_strstr(alterr, "translate") || jehanne_strstr(alterr, "does not exist"))
+		jehanne_werrstr("%s", err);
 	else
-		werrstr("%s", alterr);
+		jehanne_werrstr("%s", alterr);
 	return rv;
 }
 
@@ -126,7 +126,7 @@ dialimpl(const char *dest, const char *local, char *dir, int *cfdp)
 int (*_dial)(const char *, const char *, char *, int *) = dialimpl;
 
 int
-dial(const char *dest, const char *local, char *dir, int *cfdp)
+jehanne_dial(const char *dest, const char *local, char *dir, int *cfdp)
 {
 	return (*_dial)(dest, local, dir, cfdp);
 }
@@ -136,11 +136,11 @@ connsalloc(Dest *dp, int addrs)
 {
 	Conn *conn;
 
-	free(dp->conn);
+	jehanne_free(dp->conn);
 	dp->connend = nil;
 	assert(addrs > 0);
 
-	dp->conn = mallocz(addrs * sizeof *dp->conn, 1);
+	dp->conn = jehanne_mallocz(addrs * sizeof *dp->conn, 1);
 	if(dp->conn == nil)
 		return -1;
 	dp->connend = dp->conn + addrs;
@@ -157,8 +157,8 @@ freedest(Dest *dp)
 	if (dp == nil)
 		return;
 	oalarm = dp->oalarm;
-	free(dp->conn);
-	free(dp);
+	jehanne_free(dp->conn);
+	jehanne_free(dp);
 	if (oalarm >= 0)
 		alarm(oalarm);
 }
@@ -181,10 +181,10 @@ notedeath(Dest *dp, char *exitsts)
 
 	for (i = 0; i < nelem(fields); i++)
 		fields[i] = "";
-	n = tokenize(exitsts, fields, nelem(fields));
+	n = jehanne_tokenize(exitsts, fields, nelem(fields));
 	if (n < 4)
 		return;
-	pid = atoi(fields[0]);
+	pid = jehanne_atoi(fields[0]);
 	if (pid <= 0)
 		return;
 	for (conn = dp->conn; conn < dp->connend; conn++)
@@ -193,7 +193,7 @@ notedeath(Dest *dp, char *exitsts)
 				closeopenfd(&conn->dfd);
 				closeopenfd(&conn->cfd);
 			}
-			strncpy(conn->err, fields[4], sizeof conn->err - 1);
+			jehanne_strncpy(conn->err, fields[4], sizeof conn->err - 1);
 			conn->err[sizeof conn->err - 1] = '\0';
 			conn->dead = 1;
 			return;
@@ -235,7 +235,7 @@ fillinds(DS *ds, Dest *dp)
 	if (ds->cfdp)
 		*ds->cfdp = conn->cfd;
 	if (ds->dir) {
-		strncpy(ds->dir, conn->dir, NETPATHLEN);
+		jehanne_strncpy(ds->dir, conn->dir, NETPATHLEN);
 		ds->dir[NETPATHLEN-1] = '\0';
 	}
 	return conn->dfd;
@@ -253,7 +253,7 @@ connectwait(Dest *dp, char *besterr)
 	/* kill all of our still-live kids & reap them */
 	for (conn = dp->conn; conn < dp->connend; conn++)
 		if (!conn->dead)
-			postnote(PNPROC, conn->pid, "alarm");
+			jehanne_postnote(PNPROC, conn->pid, "alarm");
 	while (reap(dp) >= 0)
 		;
 
@@ -261,7 +261,7 @@ connectwait(Dest *dp, char *besterr)
 	for (conn = dp->conn; conn < dp->connend; conn++)
 		if (conn - dp->conn != dp->winner && conn->dead &&
 		    conn->err[0]) {
-			strncpy(besterr, conn->err, ERRMAX-1);
+			jehanne_strncpy(besterr, conn->err, ERRMAX-1);
 			besterr[ERRMAX-1] = '\0';
 			break;
 		}
@@ -273,18 +273,18 @@ parsecs(Dest *dp, char **clonep, char **destp)
 {
 	char *dest, *p;
 
-	dest = strchr(dp->nextaddr, ' ');
+	dest = jehanne_strchr(dp->nextaddr, ' ');
 	if(dest == nil) {
-		p = strchr(dp->nextaddr, '\n');
+		p = jehanne_strchr(dp->nextaddr, '\n');
 		if(p)
 			*p = '\0';
-		werrstr("malformed clone cmd from cs `%s'", dp->nextaddr);
+		jehanne_werrstr("malformed clone cmd from cs `%s'", dp->nextaddr);
 		if(p)
 			*p = '\n';
 		return -1;
 	}
 	*dest++ = '\0';
-	p = strchr(dest, '\n');
+	p = jehanne_strchr(dest, '\n');
 	if(p == nil)
 		return -1;
 	*p++ = '\0';
@@ -299,14 +299,14 @@ pickuperr(char *besterr, char *err)
 {
 	err[0] = '\0';
 	errstr(err, ERRMAX);
-	if(strstr(err, "does not exist") == 0)
-		strcpy(besterr, err);
+	if(jehanne_strstr(err, "does not exist") == 0)
+		jehanne_strcpy(besterr, err);
 }
 
 static int
 catcher(void *v, char *s)
 {
-	return strstr(s, "alarm") != nil;
+	return jehanne_strstr(s, "alarm") != nil;
 }
 
 /*
@@ -333,7 +333,7 @@ dialmulti(DS *ds, Dest *dp)
 			char err[ERRMAX];
 
 			/* only in kid, to avoid atnotify callbacks in parent */
-			atnotify(catcher, 1);
+			jehanne_atnotify(catcher, 1);
 
 			*besterr = '\0';
 			rv = call(clone, dest, ds, dp, &dp->conn[kidme]);
@@ -345,7 +345,7 @@ dialmulti(DS *ds, Dest *dp)
 	*besterr = '\0';
 	rv = connectwait(dp, besterr);
 	if(rv < 0)
-		werrstr("%s", (*besterr? besterr: "unknown error"));
+		jehanne_werrstr("%s", (*besterr? besterr: "unknown error"));
 	return rv;
 }
 
@@ -358,8 +358,8 @@ csdial(DS *ds)
 	char buf[Maxstring], clone[Maxpath], err[ERRMAX], besterr[ERRMAX];
 	Dest *dp;
 
-	werrstr("");
-	dp = mallocz(sizeof *dp, 1);
+	jehanne_werrstr("");
+	dp = jehanne_mallocz(sizeof *dp, 1);
 	if(dp == nil)
 		return -1;
 	dp->winner = -1;
@@ -372,11 +372,11 @@ csdial(DS *ds)
 	/*
 	 *  open connection server
 	 */
-	snprint(buf, sizeof(buf), "%s/cs", ds->netdir);
+	jehanne_snprint(buf, sizeof(buf), "%s/cs", ds->netdir);
 	fd = open(buf, ORDWR);
 	if(fd < 0){
 		/* no connection server, don't translate */
-		snprint(clone, sizeof(clone), "%s/%s/clone", ds->netdir, ds->proto);
+		jehanne_snprint(clone, sizeof(clone), "%s/%s/clone", ds->netdir, ds->proto);
 		rv = call(clone, ds->rem, ds, dp, &dp->conn[0]);
 		fillinds(ds, dp);
 		freedest(dp);
@@ -387,8 +387,8 @@ csdial(DS *ds)
 	 *  ask connection server to translate
 	 *  e.g., net!cs.bell-labs.com!smtp
 	 */
-	snprint(buf, sizeof(buf), "%s!%s", ds->proto, ds->rem);
-	if(write(fd, buf, strlen(buf)) < 0){
+	jehanne_snprint(buf, sizeof(buf), "%s!%s", ds->proto, ds->rem);
+	if(write(fd, buf, jehanne_strlen(buf)) < 0){
 		close(fd);
 		freedest(dp);
 		return -1;
@@ -427,13 +427,13 @@ csdial(DS *ds)
 	rv = -1;				/* pessimistic default */
 	dp->naddrs = addrs;
 	if (addrs == 0)
-		werrstr("no address to dial");
+		jehanne_werrstr("no address to dial");
 	else if (addrs == 1) {
 		/* common case: dial one address without forking */
 		if (parsecs(dp, &clone2, &dest) >= 0 &&
 		    (rv = call(clone2, dest, ds, dp, &dp->conn[0])) < 0) {
 			pickuperr(besterr, err);
-			werrstr("%s", besterr);
+			jehanne_werrstr("%s", besterr);
 		}
 	} else if (connsalloc(dp, addrs) >= 0)
 		rv = dialmulti(ds, dp);
@@ -454,16 +454,16 @@ call(char *clone, char *dest, DS *ds, Dest *dp, Conn *conn)
 
 	/* because cs is in a different name space, replace the mount point */
 	if(*clone == '/'){
-		p = strchr(clone+1, '/');
+		p = jehanne_strchr(clone+1, '/');
 		if(p == nil)
 			p = clone;
 		else 
 			p++;
 	} else
 		p = clone;
-	snprint(cname, sizeof cname, "%s/%s", ds->netdir, p);
+	jehanne_snprint(cname, sizeof cname, "%s/%s", ds->netdir, p);
 
-	conn->pid = getpid();
+	conn->pid = jehanne_getpid();
 	conn->cfd = cfd = open(cname, ORDWR);
 	if(cfd < 0)
 		return -1;
@@ -477,12 +477,12 @@ call(char *clone, char *dest, DS *ds, Dest *dp, Conn *conn)
 	name[n] = 0;
 	for(p = name; *p == ' '; p++)
 		;
-	snprint(name, sizeof(name), "%ld", strtoul(p, 0, 0));
-	p = strrchr(cname, '/');
+	jehanne_snprint(name, sizeof(name), "%ld", jehanne_strtoul(p, 0, 0));
+	p = jehanne_strrchr(cname, '/');
 	*p = 0;
 	if(ds->dir)
-		snprint(conn->dir, NETPATHLEN, "%s/%s", cname, name);
-	snprint(data, sizeof(data), "%s/%s/data", cname, name);
+		jehanne_snprint(conn->dir, NETPATHLEN, "%s/%s", cname, name);
+	jehanne_snprint(data, sizeof(data), "%s/%s/data", cname, name);
 
 	/* should be no alarm pending now; re-instate caller's alarm, if any */
 	calleralarm = dp->oalarm > 0;
@@ -493,10 +493,10 @@ call(char *clone, char *dest, DS *ds, Dest *dp, Conn *conn)
 
 	/* connect */
 	if(ds->local)
-		snprint(name, sizeof(name), "connect %s %s", dest, ds->local);
+		jehanne_snprint(name, sizeof(name), "connect %s %s", dest, ds->local);
 	else
-		snprint(name, sizeof(name), "connect %s", dest);
-	if(write(cfd, name, strlen(name)) < 0){
+		jehanne_snprint(name, sizeof(name), "connect %s", dest);
+	if(write(cfd, name, jehanne_strlen(name)) < 0){
 		closeopenfd(&conn->cfd);
 		return -1;
 	}
@@ -517,10 +517,10 @@ call(char *clone, char *dest, DS *ds, Dest *dp, Conn *conn)
 
 	n = conn - dp->conn;
 	if (dp->winner < 0) {
-		qlock(&dp->winlck);
+		jehanne_qlock(&dp->winlck);
 		if (dp->winner < 0 && conn < dp->connend)
 			dp->winner = n;
-		qunlock(&dp->winlck);
+		jehanne_qunlock(&dp->winlck);
 	}
 	alarm(calleralarm? dp->oalarm: 0);
 	return fd;
@@ -534,10 +534,10 @@ _dial_string_parse(const char *str, DS *ds)
 {
 	char *p, *p2;
 
-	strncpy(ds->buf, str, Maxstring);
+	jehanne_strncpy(ds->buf, str, Maxstring);
 	ds->buf[Maxstring-1] = 0;
 
-	p = strchr(ds->buf, '!');
+	p = jehanne_strchr(ds->buf, '!');
 	if(p == 0) {
 		ds->netdir = 0;
 		ds->proto = "net";

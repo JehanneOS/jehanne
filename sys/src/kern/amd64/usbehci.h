@@ -3,10 +3,10 @@
 #undef	ddprint
 #undef	deprint
 #undef	ddeprint
-#define dprint(...)	do if(ehcidebug)print(__VA_ARGS__); while(0)
-#define ddprint(...)	do if(ehcidebug>1)print(__VA_ARGS__); while(0)
-#define deprint(...)	do if(ehcidebug || ep->debug)print(__VA_ARGS__); while(0)
-#define ddeprint(...)	do if(ehcidebug>1 || ep->debug>1)print(__VA_ARGS__); while(0)
+#define dprint(...)	do if(ehcidebug)jehanne_print(__VA_ARGS__); while(0)
+#define ddprint(...)	do if(ehcidebug>1)jehanne_print(__VA_ARGS__); while(0)
+#define deprint(...)	do if(ehcidebug || ep->debug)jehanne_print(__VA_ARGS__); while(0)
+#define ddeprint(...)	do if(ehcidebug>1 || ep->debug>1)jehanne_print(__VA_ARGS__); while(0)
 
 typedef struct Ctlr Ctlr;
 typedef struct Eopio Eopio;

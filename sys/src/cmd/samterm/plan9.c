@@ -27,7 +27,7 @@ static char exname[64];
 void
 usage(void)
 {
-	fprint(2, "usage: samterm [-ai]\n");
+	jehanne_fprint(2, "usage: samterm [-ai]\n");
 	threadexitsall("usage");
 }
 
@@ -48,13 +48,13 @@ getscreen(int argc, char **argv)
 	}ARGEND
 
 	if(initdraw(panic1, nil, "sam") < 0){
-		fprint(2, "samterm: initdraw: %r\n");
+		jehanne_fprint(2, "samterm: initdraw: %r\n");
 		threadexitsall("init");
 	}
-	t = getenv("tabstop");
+	t = jehanne_getenv("tabstop");
 	if(t != nil)
-		maxtab = strtoul(t, nil, 0);
-	free(t);
+		maxtab = jehanne_strtoul(t, nil, 0);
+	jehanne_free(t);
 	draw(screen, screen->clipr, display->white, nil, ZP);
 }
 
@@ -73,12 +73,12 @@ screensize(int *w, int *h)
 		return 0;
 	buf[n] = 0;
 	if (h) {
-		*h = atoi(buf+4*12)-atoi(buf+2*12);
+		*h = jehanne_atoi(buf+4*12)-jehanne_atoi(buf+2*12);
 		if (*h < 0)
 			return 0;
 	}
 	if (w) {
-		*w = atoi(buf+3*12)-atoi(buf+1*12);
+		*w = jehanne_atoi(buf+3*12)-jehanne_atoi(buf+1*12);
 		if (*w < 0)
 			return 0;
 	}
@@ -104,10 +104,10 @@ snarfswap(char *fromsam, int nc, char **tosam)
 		n = 0;
 	if (n == 0) {
 		*tosam = 0;
-		free(s1);
+		jehanne_free(s1);
 	} else
 		s1[n] = 0;
-	f = ocreate("/dev/snarf", OWRITE, 0666);
+	f = jehanne_ocreate("/dev/snarf", OWRITE, 0666);
 	if(f >= 0){
 		write(f, fromsam, nc);
 		close(f);
@@ -118,7 +118,7 @@ snarfswap(char *fromsam, int nc, char **tosam)
 void
 dumperrmsg(int count, int type, int count0, int c)
 {
-	fprint(2, "samterm: host mesg: count %d %ux %ux %ux %s...ignored\n",
+	jehanne_fprint(2, "samterm: host mesg: count %d %ux %ux %ux %s...ignored\n",
 		count, type, count0, c, rcvstring());
 }
 
@@ -147,7 +147,7 @@ extproc(void *argv)
 		i = 1-i;	/* toggle */
 		n = read(*fdp, plumbbuf[i].data, sizeof plumbbuf[i].data);
 		if(n <= 0){
-			fprint(2, "samterm: extern read error: %r\n");
+			jehanne_fprint(2, "samterm: extern read error: %r\n");
 			threadexits("extern");	/* not a fatal error */
 		}
 		plumbbuf[i].n = n;
@@ -164,18 +164,18 @@ extstart(void)
 	static int p[2];
 	static void *arg[2];
 
-	if(pipe(p) < 0)
+	if(jehanne_pipe(p) < 0)
 		return;
-	sprint(exname, "/srv/sam.%s", getuser());
-	fd = ocreate(exname, OWRITE, 0600);
+	jehanne_sprint(exname, "/srv/sam.%s", jehanne_getuser());
+	fd = jehanne_ocreate(exname, OWRITE, 0600);
 	if(fd < 0){	/* assume existing guy is more important */
     Err:
 		close(p[0]);
 		close(p[1]);
 		return;
 	}
-	sprint(buf, "%d", p[0]);
-	if(write(fd, buf, strlen(buf)) <= 0)
+	jehanne_sprint(buf, "%d", p[0]);
+	if(write(fd, buf, jehanne_strlen(buf)) <= 0)
 		goto Err;
 	close(fd);
 	/*
@@ -186,7 +186,7 @@ extstart(void)
 	arg[0] = plumbc;
 	arg[1] = &p[1];
 	proccreate(extproc, arg, STACK);
-	atexit(removeextern);
+	jehanne_atexit(removeextern);
 }
 
 int
@@ -206,7 +206,7 @@ plumbformat(int i)
 		return 0;
 	}
 	act = plumblookup(m->attr, "action");
-	if(act!=nil && strcmp(act, "showfile")!=0){
+	if(act!=nil && jehanne_strcmp(act, "showfile")!=0){
 		/* can't handle other cases yet */
 		plumbfree(m);
 		return 0;
@@ -216,17 +216,17 @@ plumbformat(int i)
 		if(addr[0] == '\0')
 			addr = nil;
 		else
-			addr = strdup(addr);	/* copy to safe storage; we'll overwrite data */
+			addr = jehanne_strdup(addr);	/* copy to safe storage; we'll overwrite data */
 	}
-	memmove(data, "B ", 2);	/* we know there's enough room for this */
-	memmove(data+2, m->data, n);
+	jehanne_memmove(data, "B ", 2);	/* we know there's enough room for this */
+	jehanne_memmove(data+2, m->data, n);
 	n += 2;
 	if(data[n-1] != '\n')
 		data[n++] = '\n';
 	if(addr != nil){
-		if(n+strlen(addr)+1+1 <= READBUFSIZE)
-			n += sprint(data+n, "%s\n", addr);
-		free(addr);
+		if(n+jehanne_strlen(addr)+1+1 <= READBUFSIZE)
+			n += jehanne_sprint(data+n, "%s\n", addr);
+		jehanne_free(addr);
 	}
 	plumbbuf[i].n = n;
 	plumbfree(m);
@@ -249,7 +249,7 @@ plumbproc(void *argv)
 		i = 1-i;	/* toggle */
 		n = read(*fdp, plumbbuf[i].data, READBUFSIZE);
 		if(n <= 0){
-			fprint(2, "samterm: plumb read error: %r\n");
+			jehanne_fprint(2, "samterm: plumb read error: %r\n");
 			threadexits("plumb");	/* not a fatal error */
 		}
 		plumbbuf[i].n = n;
@@ -297,9 +297,9 @@ hostproc(void *arg)
 			if(n==0){
 				if(exiting)
 					threadexits(nil);
-				werrstr("unexpected eof");
+				jehanne_werrstr("unexpected eof");
 			}
-			fprint(2, "samterm: host read error: %r\n");
+			jehanne_fprint(2, "samterm: host read error: %r\n");
 			threadexitsall("host");
 		}
 		hostbuf[i].n = n;

@@ -58,19 +58,19 @@ isrand(int32_t seed)
 }
 
 void
-srand(int32_t seed)
+jehanne_srand(int32_t seed)
 {
-	lock(&lk);
+	jehanne_lock(&lk);
 	isrand(seed);
-	unlock(&lk);
+	jehanne_unlock(&lk);
 }
 
 int32_t
-lrand(void)
+jehanne_lrand(void)
 {
 	uint32_t x;
 
-	lock(&lk);
+	jehanne_lock(&lk);
 
 	rng_tap--;
 	if(rng_tap < rng_vec) {
@@ -86,7 +86,7 @@ lrand(void)
 	x = (*rng_feed + *rng_tap) & MASK;
 	*rng_feed = x;
 
-	unlock(&lk);
+	jehanne_unlock(&lk);
 
 	return x;
 }

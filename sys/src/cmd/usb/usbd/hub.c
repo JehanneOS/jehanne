@@ -1,5 +1,5 @@
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 #include <thread.h>
 #include "usb.h"
 #include "dat.h"
@@ -17,24 +17,24 @@ getdevnb(uint64_t *maskp)
 {
 	int i;
 
-	lock(&masklck);
+	jehanne_lock(&masklck);
 	for(i = 0; i < 8 * sizeof *maskp; i++)
 		if((*maskp & (1ULL<<i)) == 0){
 			*maskp |= 1ULL<<i;
-			unlock(&masklck);
+			jehanne_unlock(&masklck);
 			return i;
 		}
-	unlock(&masklck);
+	jehanne_unlock(&masklck);
 	return -1;
 }
 
 void
 putdevnb(uint64_t *maskp, int id)
 {
-	lock(&masklck);
+	jehanne_lock(&masklck);
 	if(id >= 0)
 		*maskp &= ~(1ULL<<id);
-	unlock(&masklck);
+	jehanne_unlock(&masklck);
 }
 
 static int

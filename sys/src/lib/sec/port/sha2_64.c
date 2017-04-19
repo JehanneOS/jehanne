@@ -2,7 +2,7 @@
  * sha2 64-bit
  */
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 #include <libsec.h>
 
 static void encode32(uint8_t*, uint32_t*, uint32_t);
@@ -23,7 +23,7 @@ SHA2_224state*
 sha2_224(uint8_t *p, uint32_t len, uint8_t *digest, SHA2_224state *s)
 {
 	if(s == nil) {
-		s = mallocz(sizeof(*s), 1);
+		s = jehanne_mallocz(sizeof(*s), 1);
 		if(s == nil)
 			return nil;
 		s->malloced = 1;
@@ -50,7 +50,7 @@ SHA2_256state*
 sha2_256(uint8_t *p, uint32_t len, uint8_t *digest, SHA2_256state *s)
 {
 	if(s == nil) {
-		s = mallocz(sizeof(*s), 1);
+		s = jehanne_mallocz(sizeof(*s), 1);
 		if(s == nil)
 			return nil;
 		s->malloced = 1;
@@ -87,7 +87,7 @@ sha2_64(uint8_t *p, uint32_t len, uint8_t *digest, SHA2_256state *s, int dlen)
 		i = 64 - s->blen;
 		if(len < i)
 			i = len;
-		memmove(s->buf + s->blen, p, i);
+		jehanne_memmove(s->buf + s->blen, p, i);
 		len -= i;
 		s->blen += i;
 		p += i;
@@ -110,7 +110,7 @@ sha2_64(uint8_t *p, uint32_t len, uint8_t *digest, SHA2_256state *s, int dlen)
 	/* save the left overs if not last call */
 	if(digest == 0){
 		if(len){
-			memmove(s->buf, p, len);
+			jehanne_memmove(s->buf, p, len);
 			s->blen += len;
 		}
 		return s;
@@ -124,7 +124,7 @@ sha2_64(uint8_t *p, uint32_t len, uint8_t *digest, SHA2_256state *s, int dlen)
 		p = s->buf;
 		len = s->blen;
 	} else {
-		memmove(buf, p, len);
+		jehanne_memmove(buf, p, len);
 		p = buf;
 	}
 	s->len += len;
@@ -133,7 +133,7 @@ sha2_64(uint8_t *p, uint32_t len, uint8_t *digest, SHA2_256state *s, int dlen)
 		i = 56 - len;
 	else
 		i = 120 - len;
-	memset(e, 0, i);
+	jehanne_memset(e, 0, i);
 	*e = 0x80;
 	len += i;
 
@@ -149,7 +149,7 @@ sha2_64(uint8_t *p, uint32_t len, uint8_t *digest, SHA2_256state *s, int dlen)
 	/* return result and free state */
 	encode32(digest, s->state, dlen);
 	if(s->malloced == 1)
-		free(s);
+		jehanne_free(s);
 	return nil;
 }
 

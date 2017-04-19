@@ -118,7 +118,7 @@ meminit(void)
 	assert(m->pgszlg2[1] == 21);
 	assert((sys->vmunmapped & m->pgszmask[1]) == 0);
 
-	print("vmunmapped %#llux\n", sys->vmunmapped);
+	jehanne_print("vmunmapped %#llux\n", sys->vmunmapped);
 
 	n = TMFM;
 	if(n > sys->pmoccupied)
@@ -146,10 +146,10 @@ memdebug(void)
 	if(DBGFLG || 1){
 		rmapprint(&rmapram);
 		rmapprint(&rmapunavail);
-		print("k ptes:");
+		jehanne_print("k ptes:");
 		for(i = 0; i < nelem(npg); i++)
-			print(" %d", npg[i]);
-		print("\n");
+			jehanne_print(" %d", npg[i]);
+		jehanne_print("\n");
 	}
 }
 
@@ -210,13 +210,13 @@ e820(void)
 	for(s = p;;){
 		if(*s == 0)
 			break;
-		type = strtoul(s, &s, 16);
+		type = jehanne_strtoul(s, &s, 16);
 		if(*s != ' ')
 			break;
-		base = strtoull(s, &s, 16);
+		base = jehanne_strtoull(s, &s, 16);
 		if(*s != ' ')
 			break;
-		len = strtoull(s, &s, 16) - base;
+		len = jehanne_strtoull(s, &s, 16) - base;
 		if(*s != ' ' && *s != 0 || len == 0)
 			break;
 		DBG("E820: %llux %llux %#ux\n", base, len, type);

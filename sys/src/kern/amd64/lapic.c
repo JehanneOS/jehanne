@@ -9,7 +9,7 @@
 #include "adr.h"
 
 #undef DBG
-#define	DBG	print
+#define	DBG	jehanne_print
 
 enum {						/* Local APIC registers */
 	Id		= 0x0020,		/* Identification */
@@ -131,14 +131,14 @@ lapicprint(char *p, char *e, Lapic *a, int i)
 	char *s;
 
 	s = "proc";
-	p = seprint(p, e, "%-8s ", s);
-	p = seprint(p, e, "%8ux ", i);
-//	p = seprint(p, e, "%.8ux ", a->dest);
-//	p = seprint(p, e, "%.8ux ", a->mask);
-//	p = seprint(p, e, "%c", a->flags & PcmpBP? 'b': ' ');
-//	p = seprint(p, e, "%c ", a->flags & PcmpEN? 'e': ' ');
-//	p = seprint(p, e, "%8ux %8ux", a->lintr[0], a->lintr[1]);
-	p = seprint(p, e, "%12d\n", a->machno);
+	p = jehanne_seprint(p, e, "%-8s ", s);
+	p = jehanne_seprint(p, e, "%8ux ", i);
+//	p = jehanne_seprint(p, e, "%.8ux ", a->dest);
+//	p = jehanne_seprint(p, e, "%.8ux ", a->mask);
+//	p = jehanne_seprint(p, e, "%c", a->flags & PcmpBP? 'b': ' ');
+//	p = jehanne_seprint(p, e, "%c ", a->flags & PcmpEN? 'e': ' ');
+//	p = jehanne_seprint(p, e, "%8ux %8ux", a->lintr[0], a->lintr[1]);
+	p = jehanne_seprint(p, e, "%12d\n", a->machno);
 	return p;
 }
 
@@ -148,7 +148,7 @@ lapicread(Chan* _1, void *a, long n, int64_t off)
 	char *s, *e, *p;
 	long i, r;
 
-	s = malloc(READSTR);
+	s = jehanne_malloc(READSTR);
 	e = s+READSTR;
 	p = s;
 
@@ -160,7 +160,7 @@ lapicread(Chan* _1, void *a, long n, int64_t off)
 		r = readstr(off, a, n, s);
 		poperror();
 	}
-	free(s);
+	jehanne_free(s);
 	return r;
 }
 
@@ -181,7 +181,7 @@ lapicinit(int lapicno, uintmem pa, int isbp)
 		return;
 	}
 	if((apic = &xlapic[lapicno])->useable){
-		print("lapicinit%d: already initialised\n", lapicno);
+		jehanne_print("lapicinit%d: already initialised\n", lapicno);
 		return;
 	}
 	if(lapicbase == nil){
@@ -220,7 +220,7 @@ lapicsetdom(int lapicno, int dom)
 	if((apic = &xlapic[lapicno])->useable)
 		apic->dom = dom;
 	else
-		print("lapic%d: lapicsetdom: apic not usable\n", lapicno);
+		jehanne_print("lapic%d: lapicsetdom: apic not usable\n", lapicno);
 }
 
 int
@@ -288,7 +288,7 @@ lapiconline(void)
 	ver = lapicrget(Ver);
 	nlvt = ((ver>>16) & 0xff) + 1;
 	if(nlvt > nelem(apic->lvt)){
-		print("lapiconline%d: nlvt %d > max (%d)\n",
+		jehanne_print("lapiconline%d: nlvt %d > max (%d)\n",
 			apicno, nlvt, nelem(apic->lvt));
 		nlvt = nelem(apic->lvt);
 	}
@@ -299,7 +299,7 @@ lapiconline(void)
 	 * These don't really matter in Physical mode;
 	 * set the defaults anyway.
 	 */
-//	if(memcmp(m->cpuinfo, "AuthenticAMD", 12) == 0)
+//	if(jehanne_memcmp(m->cpuinfo, "AuthenticAMD", 12) == 0)
 //		dfr = 0xf0000000;
 //	else
 		dfr = 0xffffffff;
@@ -344,7 +344,7 @@ lapiconline(void)
 	apic->div = ((m->cpuhz/apic->max)+HZ/2)/HZ;
 
 	if(m->machno == 0 || DBGFLG){
-		print("lapic%d: hz %lld max %lld min %lld div %lld\n", apicno,
+		jehanne_print("lapic%d: hz %lld max %lld min %lld div %lld\n", apicno,
 			apic->hz, apic->max, apic->min, apic->div);
 	}
 
@@ -420,7 +420,7 @@ lapictimerset(uint64_t next)
 	period = apic->max;
 	if(next != 0){
 		if(apic->div == 0){
-			print("lapictimerset: apic not ready, wait for gdb\n");
+			jehanne_print("lapictimerset: apic not ready, wait for gdb\n");
 			waitdebugger();
 		}
 		period = next - fastticks(nil);	/* fastticks is just rdtsc() */

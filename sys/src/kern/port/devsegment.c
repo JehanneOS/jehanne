@@ -97,9 +97,9 @@ putgseg(Globalseg *g)
 		putseg(g->s);
 	if(g->kproc)
 		docmd(g, Cdie);
-	free(g->name);
-	free(g->uid);
-	free(g);
+	jehanne_free(g->name);
+	jehanne_free(g->uid);
+	jehanne_free(g);
 }
 
 static int
@@ -300,7 +300,7 @@ segmentcreate(Chan *c, char *name, int omode, int perm)
 			if(xfree < 0)
 				xfree = x;
 		} else {
-			if(strcmp(g->name, name) == 0)
+			if(jehanne_strcmp(g->name, name) == 0)
 				error(Eexist);
 		}
 	}
@@ -337,7 +337,7 @@ segmentread(Chan *c, void *a, long n, int64_t voff)
 		g = c->aux;
 		if(g->s == nil)
 			error("segment not yet allocated");
-		snprint(buf, sizeof buf, "va %#lux %#lux\n", g->s->base,
+		jehanne_snprint(buf, sizeof buf, "va %#lux %#lux\n", g->s->base,
 			g->s->top-g->s->base);
 		return readstr(voff, a, n, buf);
 	case Qdata:
@@ -350,14 +350,14 @@ segmentread(Chan *c, void *a, long n, int64_t voff)
 		g->off = voff + g->s->base;
 		g->data = smalloc(n);
 		if(waserror()){
-			free(g->data);
+			jehanne_free(g->data);
 			qunlock(&g->l);
 			nexterror();
 		}
 		g->dlen = n;
 		docmd(g, Cread);
-		memmove(a, g->data, g->dlen);
-		free(g->data);
+		jehanne_memmove(a, g->data, g->dlen);
+		jehanne_free(g->data);
 		qunlock(&g->l);
 		poperror();
 		return g->dlen;
@@ -381,13 +381,13 @@ segmentwrite(Chan *c, void *a, long n, int64_t voff)
 	case Qctl:
 		g = c->aux;
 		cb = parsecmd(a, n);
-		if(strcmp(cb->f[0], "va") == 0){
+		if(jehanne_strcmp(cb->f[0], "va") == 0){
 			if(g->s != nil)
 				error("already has a virtual address");
 			if(cb->nf < 3)
 				error(Ebadarg);
-			va = strtoull(cb->f[1], 0, 0);
-			len = strtoull(cb->f[2], 0, 0);
+			va = jehanne_strtoull(cb->f[1], 0, 0);
+			len = jehanne_strtoull(cb->f[2], 0, 0);
 			top = ROUNDUP(va + len, PGSZ);
 			va = va&~(PGSZ-1);
 			len = (top - va) / PGSZ;
@@ -405,14 +405,14 @@ segmentwrite(Chan *c, void *a, long n, int64_t voff)
 		g->off = voff + g->s->base;
 		g->data = smalloc(n);
 		if(waserror()){
-			free(g->data);
+			jehanne_free(g->data);
 			qunlock(&g->l);
 			nexterror();
 		}
 		g->dlen = n;
-		memmove(g->data, a, g->dlen);
+		jehanne_memmove(g->data, a, g->dlen);
 		docmd(g, Cwrite);
-		free(g->data);
+		jehanne_free(g->data);
 		qunlock(&g->l);
 		poperror();
 		return g->dlen;
@@ -437,16 +437,16 @@ segmentwstat(Chan *c, uint8_t *dp, long n)
 		nexterror();
 	}
 
-	if(strcmp(g->uid, up->user) && !iseve())
+	if(jehanne_strcmp(g->uid, up->user) && !iseve())
 		error(Eperm);
 	d = smalloc(sizeof(Dir)+n);
-	n = convM2D(dp, n, &d[0], (char*)&d[1]);
+	n = jehanne_convM2D(dp, n, &d[0], (char*)&d[1]);
 	g->perm = d->mode & 0777;
 
 	putgseg(g);
 	poperror();
 
-	free(d);
+	jehanne_free(d);
 	return n;
 }
 
@@ -485,7 +485,7 @@ globalsegattach(Proc *p, char *name)
 	lock(&globalseglock);
 	for(x = 0; x < nelem(globalseg); x++){
 		g = globalseg[x];
-		if(g != nil && strcmp(g->name, name) == 0)
+		if(g != nil && jehanne_strcmp(g->name, name) == 0)
 			break;
 	}
 	if(x == nelem(globalseg)){
@@ -544,7 +544,7 @@ segmentkproc(void *arg)
 	for(done = 0; !done;){
 		sleep(&g->cmdwait, cmdready, g);
 		if(waserror()){
-			strncpy(g->err, up->errstr, sizeof(g->err));
+			jehanne_strncpy(g->err, up->errstr, sizeof(g->err));
 		} else {
 			switch(g->cmd){
 			case Cstart:
@@ -553,10 +553,10 @@ segmentkproc(void *arg)
 				done = 1;
 				break;
 			case Cread:
-				memmove(g->data, (char*)g->off, g->dlen);
+				jehanne_memmove(g->data, (char*)g->off, g->dlen);
 				break;
 			case Cwrite:
-				memmove((char*)g->off, g->data, g->dlen);
+				jehanne_memmove((char*)g->off, g->data, g->dlen);
 				break;
 			}
 			poperror();

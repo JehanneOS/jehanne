@@ -9,7 +9,7 @@
 
 /* ping for ip v4 and v6 */
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 #include <ctype.h>
 #include <ip.h>
 #include <bio.h>
@@ -167,7 +167,7 @@ clean(uint16_t seq, int64_t now, void *v)
 		else
 			ttl = ((Ip6hdr *)v)->ttl;
 	}
-	lock(&listlock);
+	jehanne_lock(&listlock);
 	last = nil;
 	for(l = &first; *l; ){
 		r = *l;
@@ -191,7 +191,7 @@ clean(uint16_t seq, int64_t now, void *v)
 			l = &r->next;
 		}
 	}
-	unlock(&listlock);
+	jehanne_unlock(&listlock);
 }
 
 static uint8_t loopbacknet[IPaddrlen] = {
@@ -291,13 +291,13 @@ sender(int fd, int msglen, int interval, int n)
 		r->next = nil;
 		r->replied = 0;
 		r->time = nsec();	/* avoid early free in reply! */
-		lock(&listlock);
+		jehanne_lock(&listlock);
 		if(first == nil)
 			first = r;
 		else
 			last->next = r;
 		last = r;
-		unlock(&listlock);
+		jehanne_unlock(&listlock);
 		r->time = nsec();
 		if(write(fd, buf, msglen) < msglen){
 			fprint(2, "%s: write failed: %r\n", argv0);
@@ -349,11 +349,11 @@ rcvr(int fd, int msglen, int interval, int nmsg)
 		clean(x, now, buf);
 	}
 
-	lock(&listlock);
+	jehanne_lock(&listlock);
 	for(r = first; r; r = r->next)
 		if(r->replied == 0)
 			lostmsgs++;
-	unlock(&listlock);
+	jehanne_unlock(&listlock);
 
 	if(!quiet && lostmsgs)
 		print("%d out of %d messages lost\n", lostmsgs,

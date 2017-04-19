@@ -210,7 +210,7 @@ traceslot(void *pc, int dopanic)
 		if (dopanic)
 			panic("Bad PC %p", pc);
 
-		print("Invalid PC %p\n", pc);
+		jehanne_print("Invalid PC %p\n", pc);
 		return nil;
 	}
 	index = (int)((uintptr_t)pc - KTZERO);
@@ -219,7 +219,7 @@ traceslot(void *pc, int dopanic)
 			panic("Bad PC %p", pc);
 			while(1);
 		}
-		print("Invalid PC %p\n", pc);
+		jehanne_print("Invalid PC %p\n", pc);
 		return nil;
 	}
 	p = &tracemap[index];
@@ -283,7 +283,7 @@ removetrace(Trace *p) {
 		} else {
 			traces = nil;	//this seems to work fine
 		}
-		free(curr);
+		jehanne_free(curr);
 		return;
 	}
 
@@ -436,7 +436,7 @@ static Trace *
 mktrace(void *func, void *start, void *end)
 {
 	Trace *p;
-	p = mallocz(sizeof p[0], 1);
+	p = jehanne_mallocz(sizeof p[0], 1);
 	p->func = func;
 	p->start = start;
 	p->end = end;
@@ -448,7 +448,7 @@ mktrace(void *func, void *start, void *end)
 static void
 freetrace(Trace *p)
 {
-	free(p);
+	jehanne_free(p);
 }
 #endif
 
@@ -480,17 +480,17 @@ traceopen(Chan *c, unsigned long omode)
 
 	codesize = (uintptr_t)etext - (uintptr_t)KTZERO;
 	if (! tracemap)
-		//tracemap = mallocz(sizeof(struct tracemap *)*codesize, 1);
-		tracemap = mallocz(sizeof(struct Trace *)*codesize, 1);
+		//tracemap = jehanne_mallocz(sizeof(struct tracemap *)*codesize, 1);
+		tracemap = jehanne_mallocz(sizeof(struct Trace *)*codesize, 1);
 	if (! tracemap)
 		error("tracemap malloc failed");
 	if (! tracelog)
-		tracelog = mallocz(sizeof(*tracelog)*logsize, 1);
+		tracelog = jehanne_mallocz(sizeof(*tracelog)*logsize, 1);
 	/* I guess malloc doesn't toss an error */
 	if (! tracelog)
 		error("tracelog malloc failed");
 	if (! pidwatch)
-		pidwatch = mallocz(sizeof(int)*PIDWATCHSIZE, 1);
+		pidwatch = jehanne_mallocz(sizeof(int)*PIDWATCHSIZE, 1);
 	if (! pidwatch)
 		error("pidwatch malloc failed");
 	c = devopen(c, omode, tracedir, nelem(tracedir), devgen);
@@ -505,7 +505,7 @@ traceclose(Chan * _1)
 /*
  * Reading from the device, either the data or control files.
  * The data reading involves deep rminnich magic so we don't have
- * to call print(), which is traced.
+ * to call jehanne_print(), which is traced.
  */
 static long
 traceread(Chan *c, void *a, long n, int64_t offset)
@@ -537,31 +537,31 @@ traceread(Chan *c, void *a, long n, int64_t offset)
 	case Qctl:
 		i = 0;
 		qlock(&traceslock);
-		buf = malloc(READSTR);
-		i += snprint(buf + i, READSTR - i, "logsize %lud\n", logsize);
+		buf = jehanne_malloc(READSTR);
+		i += jehanne_snprint(buf + i, READSTR - i, "logsize %lud\n", logsize);
 		for(p = traces; p != nil; p = p->next)
-			i += snprint(buf + i, READSTR - i, "trace %p %p new %s\n",
+			i += jehanne_snprint(buf + i, READSTR - i, "trace %p %p new %s\n",
 				p->start, p->end, p->name);
 
 		for(p = traces; p != nil; p = p->next)
-			i += snprint(buf + i, READSTR - i, "#trace %p traced? %p\n",
+			i += jehanne_snprint(buf + i, READSTR - i, "#trace %p traced? %p\n",
 				p->func, traced(p->func, 0));
 
 		for(p = traces; p != nil; p = p->next)
 			if (p->enabled)
-				i += snprint(buf + i, READSTR - i, "trace %s on\n",
+				i += jehanne_snprint(buf + i, READSTR - i, "trace %s on\n",
 				p->name);
-		i += snprint(buf + i, READSTR - i, "#tracehits %d, in queue %d\n",
+		i += jehanne_snprint(buf + i, READSTR - i, "#tracehits %d, in queue %d\n",
 				pw, pw-pr);
-		i += snprint(buf + i, READSTR - i, "#tracelog %p\n", tracelog);
-		i += snprint(buf + i, READSTR - i, "#traceactive %d\n", saveactive);
-		i += snprint(buf + i, READSTR - i, "#slothits %d\n", slothits);
-		i += snprint(buf + i, READSTR - i, "#traceinhits %d\n", traceinhits);
+		i += jehanne_snprint(buf + i, READSTR - i, "#tracelog %p\n", tracelog);
+		i += jehanne_snprint(buf + i, READSTR - i, "#traceactive %d\n", saveactive);
+		i += jehanne_snprint(buf + i, READSTR - i, "#slothits %d\n", slothits);
+		i += jehanne_snprint(buf + i, READSTR - i, "#traceinhits %d\n", traceinhits);
 		for (j = 0; j < numpids - 1; j++)
-			i += snprint(buf + i, READSTR - i, "watch %d\n", pidwatch[j]);
-		snprint(buf + i, READSTR - i, "watch %d\n", pidwatch[numpids - 1]);
+			i += jehanne_snprint(buf + i, READSTR - i, "watch %d\n", pidwatch[j]);
+		jehanne_snprint(buf + i, READSTR - i, "watch %d\n", pidwatch[numpids - 1]);
 		n = readstr(offset, a, n, buf);
-		free(buf);
+		jehanne_free(buf);
 		qunlock(&traceslock);
 		break;
 	case Qdata:
@@ -671,7 +671,7 @@ tracewrite(Chan *c, void *a, long n, int64_t _1)
 	qlock(&traceslock);
 	if(waserror()){
 		qunlock(&traceslock);
-		if(s != nil) free(s);
+		if(s != nil) jehanne_free(s);
 		traceactive = saveactive;
 		nexterror();
 	}
@@ -679,33 +679,33 @@ tracewrite(Chan *c, void *a, long n, int64_t _1)
 	default:
 		error("tracewrite: bad qid");
 	case Qctl:
-		s = malloc(n + 1);
-		memmove(s, a, n);
+		s = jehanne_malloc(n + 1);
+		jehanne_memmove(s, a, n);
 		s[n] = 0;
-		ntok = tokenize(s, tok, nelem(tok));
-		if(!strcmp(tok[0], "trace")){	/* 'trace' ktextaddr 'on'|'off'|'mk'|'del' [name] */
+		ntok = jehanne_tokenize(s, tok, nelem(tok));
+		if(!jehanne_strcmp(tok[0], "trace")){	/* 'trace' ktextaddr 'on'|'off'|'mk'|'del' [name] */
 			if(ntok < 3) {
 				error("devtrace: usage: 'trace' [ktextaddr|name] 'on'|'off'|'mk'|'del' [name]");
 			}
 			for(pp = &traces; *pp != nil; pp = &(*pp)->next){
-				if(!strcmp(tok[1], (*pp)->name))
+				if(!jehanne_strcmp(tok[1], (*pp)->name))
 					break;
 }
 			p = *pp;
-			if((ntok > 3) && (!strcmp(tok[3], "new"))){
+			if((ntok > 3) && (!jehanne_strcmp(tok[3], "new"))){
 				uintptr_t addr;
 				void *start, *end, *func;
 				if (ntok != 5) {
 					error("devtrace: usage: trace <ktextstart> <ktextend> new <name>");
 				}
-				addr = (uintptr_t)strtoul(tok[1], &ep, 16);
+				addr = (uintptr_t)jehanne_strtoul(tok[1], &ep, 16);
 				if (addr < KTZERO)
 					addr |= KTZERO;
 				func = start = (void *)addr;
 				if(*ep) {
 					error("devtrace: start address not in recognized format");
 				}
-				addr = (uintptr_t)strtoul(tok[2], &ep, 16);
+				addr = (uintptr_t)jehanne_strtoul(tok[2], &ep, 16);
 				if (addr < KTZERO)
 					addr |= KTZERO;
 				end = (void *)addr;
@@ -725,28 +725,28 @@ tracewrite(Chan *c, void *a, long n, int64_t _1)
 				}
 				p = mktrace(func, start, end);
 				for (foo = traces; foo != nil; foo = foo->next) {
-					if (!strcmp(tok[4], foo->name))
+					if (!jehanne_strcmp(tok[4], foo->name))
 						error("devtrace: trace with that name already exists");
 				}
 
 				if (!overlapping(p)) {
 					p->next = traces;
 					if(ntok < 5)
-						snprint(p->name, sizeof p->name, "%p", func);
+						jehanne_snprint(p->name, sizeof p->name, "%p", func);
 					else
-						strncpy(p->name, tok[4], sizeof p->name);
+						jehanne_strncpy(p->name, tok[4], sizeof p->name);
 					traces = p;
 				} else {
 					error("devtrace: given range overlaps with existing trace");
 				}
-			} else if(!strcmp(tok[2], "remove")){
+			} else if(!jehanne_strcmp(tok[2], "remove")){
 				if (ntok != 3)
 					error("devtrace: usage: trace <name> remove");
 				if (p == nil) {
 					error("devtrace: trace not found");
 				}
 				removetrace(p);
-			} else if(!strcmp(tok[2], "on")){
+			} else if(!jehanne_strcmp(tok[2], "on")){
 				if (ntok != 3)
 					error("devtrace: usage: trace <name> on");
 
@@ -756,7 +756,7 @@ tracewrite(Chan *c, void *a, long n, int64_t _1)
 				if (! traced(p->func, 0)){
 					traceon(p);
 				}
-			} else if(!strcmp(tok[2], "off")){
+			} else if(!jehanne_strcmp(tok[2], "off")){
 				if (ntok != 3)
 					error("devtrace: usage: trace <name> off");
 				if(p == nil) {
@@ -766,40 +766,40 @@ tracewrite(Chan *c, void *a, long n, int64_t _1)
 					traceoff(p);
 				}
 			}
-		} else if(!strcmp(tok[0], "query")){
+		} else if(!jehanne_strcmp(tok[0], "query")){
 			/* See if addr is being traced */
 			Trace* p;
 			uintptr_t addr;
 			if (ntok != 2) {
 				error("devtrace: usage: query <addr>");
 			}
-			addr = (uintptr_t)strtoul(tok[1], &ep, 16);
+			addr = (uintptr_t)jehanne_strtoul(tok[1], &ep, 16);
 			if (addr < KTZERO)
 				addr |= KTZERO;
 			p = traced((void *)addr, 0);
 			if (p) {
-				print("Probing is enabled\n");
+				jehanne_print("Probing is enabled\n");
 			} else {
-				print("Probing is disabled\n");
+				jehanne_print("Probing is disabled\n");
 			}
-		} else if(!strcmp(tok[0], "size")){
+		} else if(!jehanne_strcmp(tok[0], "size")){
 			int l, size;
 			struct Tracelog *newtracelog;
 
 			if (ntok != 2)
 				error("devtrace: usage: size <exponent>");
 
-			l = strtoul(tok[1], &ep, 0);
+			l = jehanne_strtoul(tok[1], &ep, 0);
 			if(*ep) {
 				error("devtrace: size not in recognized format");
 			}
 			size = 1 << l;
 			/* sort of foolish. Alloc new trace first, then free old. */
 			/* and too bad if there are unread traces */
-			newtracelog = mallocz(sizeof(*newtracelog)*size, 1);
+			newtracelog = jehanne_mallocz(sizeof(*newtracelog)*size, 1);
 			/* does malloc throw waserror? I don't know */
 			if (newtracelog){
-				free(tracelog);
+				jehanne_free(tracelog);
 				tracelog = newtracelog;
 				logsize = size;
 				logmask = size - 1;
@@ -807,7 +807,7 @@ tracewrite(Chan *c, void *a, long n, int64_t _1)
 			} else  {
 				error("devtrace:  can't allocate that much");
 			}
-		} else if (!strcmp(tok[0], "testtracein")) {
+		} else if (!jehanne_strcmp(tok[0], "testtracein")) {
 			/* Manually jump to a certain bit of traced code */
 			uintptr_t pc, a1, a2, a3, a4;
 			int x;
@@ -815,13 +815,13 @@ tracewrite(Chan *c, void *a, long n, int64_t _1)
 			if (ntok != 6)
 				error("devtrace: usage: testtracein <pc> <arg1> <arg2> <arg3> <arg4>");
 
-			pc = (uintptr_t)strtoul(tok[1], &ep, 16);
+			pc = (uintptr_t)jehanne_strtoul(tok[1], &ep, 16);
 			if (pc < KTZERO)
 				pc |= KTZERO;
-			a1 = (uintptr_t)strtoul(tok[2], &ep, 16);
-			a2 = (uintptr_t)strtoul(tok[3], &ep, 16);
-			a3 = (uintptr_t)strtoul(tok[4], &ep, 16);
-			a4 = (uintptr_t)strtoul(tok[5], &ep, 16);
+			a1 = (uintptr_t)jehanne_strtoul(tok[2], &ep, 16);
+			a2 = (uintptr_t)jehanne_strtoul(tok[3], &ep, 16);
+			a3 = (uintptr_t)jehanne_strtoul(tok[4], &ep, 16);
+			a4 = (uintptr_t)jehanne_strtoul(tok[5], &ep, 16);
 
 			if (traced((void *)pc, 0)) {
 				x = splhi();
@@ -830,7 +830,7 @@ tracewrite(Chan *c, void *a, long n, int64_t _1)
 				watching = 0;
 				splx(x);
 			}
-		} else if (!strcmp(tok[0], "watch")) {
+		} else if (!jehanne_strcmp(tok[0], "watch")) {
 			/* Watch a certain PID */
 			int pid;
 
@@ -838,9 +838,9 @@ tracewrite(Chan *c, void *a, long n, int64_t _1)
 				error("devtrace: usage: watch [0|<PID>]");
 			}
 
-			pid = atoi(tok[1]);
+			pid = jehanne_atoi(tok[1]);
 			if (pid == 0) {
-				pidwatch = mallocz(sizeof(int)*PIDWATCHSIZE, 1);
+				pidwatch = jehanne_mallocz(sizeof(int)*PIDWATCHSIZE, 1);
 				numpids = 0;
 			} else if (pid < 0) {
 				error("PID must be greater than zero.");
@@ -850,16 +850,16 @@ tracewrite(Chan *c, void *a, long n, int64_t _1)
 			} else {
 				error("pidwatch array full!");
 			}
-		} else if (!strcmp(tok[0], "start")) {
+		} else if (!jehanne_strcmp(tok[0], "start")) {
 			if (ntok != 1)
 				error("devtrace: usage: start");
 			saveactive = 1;
-		} else if (!strcmp(tok[0], "stop")) {
+		} else if (!jehanne_strcmp(tok[0], "stop")) {
 			if (ntok != 1)
 				error("devtrace: usage: stop");
 			saveactive = 0;
 			all = 0;
-		} else if (!strcmp(tok[0], "all")) {
+		} else if (!jehanne_strcmp(tok[0], "all")) {
 			if (ntok != 1)
 				error("devtrace: usage: all");
 			saveactive = 1;
@@ -867,7 +867,7 @@ tracewrite(Chan *c, void *a, long n, int64_t _1)
 		} else {
 			error("devtrace:  usage: 'trace' [ktextaddr|name] 'on'|'off'|'mk'|'del' [name] or:  'size' buffersize (power of 2)");
 		}
-		free(s);
+		jehanne_free(s);
 		break;
 	}
 	poperror();

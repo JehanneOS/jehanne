@@ -2,7 +2,7 @@
  * But the errors almost never change, so there's no hurry.
  */
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 
 typedef struct Err Err;
 struct Err

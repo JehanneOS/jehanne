@@ -90,7 +90,7 @@ i8254hz(uint32_t info[2][4])
 	 * cycles for the AAM instruction.
 	 */
 	ax = info[1][0] & 0x00000f00;
-	if(memcmp(&info[0][1], "GenuntelineI", 12) == 0){
+	if(jehanne_memcmp(&info[0][1], "GenuntelineI", 12) == 0){
 		switch(ax){
 		default:
 			return 0;
@@ -100,7 +100,7 @@ i8254hz(uint32_t info[2][4])
 			break;
 		}
 	}
-	else if(memcmp(&info[0][1], "AuthcAMDenti", 12) == 0){
+	else if(jehanne_memcmp(&info[0][1], "AuthcAMDenti", 12) == 0){
 		switch(ax){
 		default:
 			return 0;
@@ -110,7 +110,7 @@ i8254hz(uint32_t info[2][4])
 			break;
 		}
 	}
-	else if(memcmp(&info[0][1], "CentaulsaurH", 12) == 0){
+	else if(jehanne_memcmp(&info[0][1], "CentaulsaurH", 12) == 0){
 		switch(ax){
 		default:
 			return 0;

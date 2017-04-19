@@ -75,7 +75,7 @@ netdevunbind(Ipifc *ifc)
 	if(er->mchan != nil)
 		cclose(er->mchan);
 
-	free(er);
+	jehanne_free(er);
 }
 
 /*

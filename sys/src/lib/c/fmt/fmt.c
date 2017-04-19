@@ -53,7 +53,7 @@ static Convfmt knownfmt[] = {
 	'n',	_countfmt,
 	'o',	_ifmt,
 	'p',	_ifmt,
-	'r',	errfmt,
+	'r',	jehanne_errfmt,
 	's',	_strfmt,
 	'u',	_flagfmt,
 	'x',	_ifmt,
@@ -93,7 +93,7 @@ _fmtinstall(int c, Fmts f)
 }
 
 int
-fmtinstall(int c, Fmts f)
+jehanne_fmtinstall(int c, Fmts f)
 {
 	int ret;
 
@@ -149,7 +149,7 @@ _fmtdispatch(Fmt *f, const void *fmt, int isrunes)
 			r = *(Rune*)fmt;
 			fmt = (Rune*)fmt + 1;
 		}else{
-			fmt = (char*)fmt + chartorune(&rune, fmt);
+			fmt = (char*)fmt + jehanne_chartorune(&rune, fmt);
 			r = rune;
 		}
 		f->r = r;

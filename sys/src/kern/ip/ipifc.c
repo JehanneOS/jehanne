@@ -90,7 +90,7 @@ ipfindmedium(char *name)
 	Medium **mp;
 
 	for(mp = media; *mp != nil; mp++)
-		if(strcmp((*mp)->name, name) == 0)
+		if(jehanne_strcmp((*mp)->name, name) == 0)
 			break;
 	return *mp;
 }
@@ -130,9 +130,9 @@ ipifcbind(Conv *c, char **argv, int argc)
 
 	/* set the bound device name */
 	if(argc > 2)
-		strncpy(ifc->dev, argv[2], sizeof(ifc->dev));
+		jehanne_strncpy(ifc->dev, argv[2], sizeof(ifc->dev));
 	else
-		snprint(ifc->dev, sizeof ifc->dev, "%s%d", medium->name, c->x);
+		jehanne_snprint(ifc->dev, sizeof ifc->dev, "%s%d", medium->name, c->x);
 	ifc->dev[sizeof(ifc->dev)-1] = 0;
 
 	/* set up parameters */
@@ -199,7 +199,7 @@ ipifcunbind(Ipifc *ifc)
 	/* disassociate device */
 	if(ifc->medium && ifc->medium->unbind)
 		(*ifc->medium->unbind)(ifc);
-	memset(ifc->dev, 0, sizeof(ifc->dev));
+	jehanne_memset(ifc->dev, 0, sizeof(ifc->dev));
 	ifc->arg = nil;
 	ifc->reassemble = 0;
 
@@ -230,7 +230,7 @@ ipifcstate(Conv *c, char *state, int n)
 	ifc = (Ipifc*)c->ptcl;
 	s = state;
 	e = s+n;
-	s = seprint(s, e, sfixedformat,
+	s = jehanne_seprint(s, e, sfixedformat,
 		ifc->dev, ifc->maxtu, ifc->sendra6, ifc->recvra6,
 		ifc->rp.mflag, ifc->rp.oflag, ifc->rp.maxraint,
 		ifc->rp.minraint, ifc->rp.linkmtu, ifc->rp.reachtime,
@@ -239,10 +239,10 @@ ipifcstate(Conv *c, char *state, int n)
 
 	rlock(ifc);
 	for(lifc = ifc->lifc; lifc && s < e; lifc = lifc->next)
-		s = seprint(s, e, slineformat, lifc->local,
+		s = jehanne_seprint(s, e, slineformat, lifc->local,
 			lifc->mask, lifc->remote, lifc->validlt, lifc->preflt);
 	if(ifc->lifc == nil)
-		s = seprint(s, e, "\n");
+		s = jehanne_seprint(s, e, "\n");
 	runlock(ifc);
 	return s - state;
 }
@@ -261,10 +261,10 @@ ipifclocal(Conv *c, char *state, int n)
 
 	rlock(ifc);
 	for(lifc = ifc->lifc; lifc && s < e; lifc = lifc->next){
-		s = seprint(s, e, "%-40.40I ->", lifc->local);
+		s = jehanne_seprint(s, e, "%-40.40I ->", lifc->local);
 		for(link = lifc->link; link; link = link->lifclink)
-			s = seprint(s, e, " %-40.40I", link->self->a);
-		s = seprint(s, e, "\n");
+			s = jehanne_seprint(s, e, " %-40.40I", link->self->a);
+		s = jehanne_seprint(s, e, "\n");
 	}
 	runlock(ifc);
 	return s - state;
@@ -354,7 +354,7 @@ ipifcsetmtu(Ipifc *ifc, char **argv, int argc)
 
 	if(argc < 2 || ifc->medium == nil)
 		return Ebadarg;
-	mtu = strtoul(argv[1], 0, 0);
+	mtu = jehanne_strtoul(argv[1], 0, 0);
 	if(mtu < ifc->medium->mintu || mtu > ifc->medium->maxtu)
 		return Ebadarg;
 	ifc->maxtu = mtu;
@@ -379,16 +379,16 @@ ipifcadd(Ipifc *ifc, char **argv, int argc, int tentative, Iplifc *lifcp)
 	f = ifc->conv->p->f;
 
 	type = Rifc;
-	memset(ip, 0, IPaddrlen);
-	memset(mask, 0, IPaddrlen);
-	memset(rem, 0, IPaddrlen);
+	jehanne_memset(ip, 0, IPaddrlen);
+	jehanne_memset(mask, 0, IPaddrlen);
+	jehanne_memset(rem, 0, IPaddrlen);
 	switch(argc){
 	case 6:
-		if(strcmp(argv[5], "proxy") == 0)
+		if(jehanne_strcmp(argv[5], "proxy") == 0)
 			type |= Rproxy;
 		/* fall through */
 	case 5:
-		mtu = strtoul(argv[4], 0, 0);
+		mtu = jehanne_strtoul(argv[4], 0, 0);
 		if(mtu >= ifc->medium->mintu && mtu <= ifc->medium->maxtu)
 			ifc->maxtu = mtu;
 		/* fall through */
@@ -408,7 +408,7 @@ ipifcadd(Ipifc *ifc, char **argv, int argc, int tentative, Iplifc *lifcp)
 	case 2:
 		if (parseip(ip, argv[1]) == -1)
 			return Ebadip;
-		memmove(mask, defmask(ip), IPaddrlen);
+		jehanne_memmove(mask, defmask(ip), IPaddrlen);
 		maskip(ip, mask, rem);
 		maskip(rem, mask, net);
 		break;
@@ -489,13 +489,13 @@ ipifcadd(Ipifc *ifc, char **argv, int argc, int tentative, Iplifc *lifcp)
 		addselfcache(f, ifc, lifc, bcast, Rbcast);
 
 		/* add network directed broadcast address to the self cache */
-		memmove(mask, defmask(ip), IPaddrlen);
+		jehanne_memmove(mask, defmask(ip), IPaddrlen);
 		for(i = 0; i < IPaddrlen; i++)
 			bcast[i] = (ip[i] & mask[i]) | ~mask[i];
 		addselfcache(f, ifc, lifc, bcast, Rbcast);
 
 		/* add network directed network address to the self cache */
-		memmove(mask, defmask(ip), IPaddrlen);
+		jehanne_memmove(mask, defmask(ip), IPaddrlen);
 		for(i = 0; i < IPaddrlen; i++)
 			bcast[i] = (ip[i] & mask[i]) & mask[i];
 		addselfcache(f, ifc, lifc, bcast, Rbcast);
@@ -572,12 +572,12 @@ ipifcremlifc(Ipifc *ifc, Iplifc *lifc)
 		if(ipcmp(lifc->local, v6loopback) == 0)
 			/* remove route for all node multicast */
 			v6delroute(f, v6allnodesN, v6allnodesNmask, 1);
-		else if(memcmp(lifc->local, v6linklocal, v6llpreflen) == 0)
+		else if(jehanne_memcmp(lifc->local, v6linklocal, v6llpreflen) == 0)
 			/* remove route for all link multicast */
 			v6delroute(f, v6allnodesL, v6allnodesLmask, 1);
 	}
 
-	free(lifc);
+	jehanne_free(lifc);
 	return nil;
 }
 
@@ -612,9 +612,9 @@ ipifcrem(Ipifc *ifc, char **argv, int argc)
 	 *  addresss to remove.
 	 */
 	for(lifc = ifc->lifc; lifc != nil; lifc = lifc->next) {
-		if (memcmp(ip, lifc->local, IPaddrlen) == 0
-		&& memcmp(mask, lifc->mask, IPaddrlen) == 0
-		&& memcmp(rem, lifc->remote, IPaddrlen) == 0)
+		if (jehanne_memcmp(ip, lifc->local, IPaddrlen) == 0
+		&& jehanne_memcmp(mask, lifc->mask, IPaddrlen) == 0
+		&& jehanne_memcmp(rem, lifc->remote, IPaddrlen) == 0)
 			break;
 	}
 
@@ -712,28 +712,28 @@ ipifcra6(Ipifc *ifc, char **argv, int argc)
 		return Ebadarg;
 
 	while (argsleft > 1) {
-		if(strcmp(argv[i], "recvra") == 0)
-			ifc->recvra6 = (atoi(argv[i+1]) != 0);
-		else if(strcmp(argv[i], "sendra") == 0)
-			ifc->sendra6 = (atoi(argv[i+1]) != 0);
-		else if(strcmp(argv[i], "mflag") == 0)
-			ifc->rp.mflag = (atoi(argv[i+1]) != 0);
-		else if(strcmp(argv[i], "oflag") == 0)
-			ifc->rp.oflag = (atoi(argv[i+1]) != 0);
-		else if(strcmp(argv[i], "maxraint") == 0)
-			ifc->rp.maxraint = atoi(argv[i+1]);
-		else if(strcmp(argv[i], "minraint") == 0)
-			ifc->rp.minraint = atoi(argv[i+1]);
-		else if(strcmp(argv[i], "linkmtu") == 0)
-			ifc->rp.linkmtu = atoi(argv[i+1]);
-		else if(strcmp(argv[i], "reachtime") == 0)
-			ifc->rp.reachtime = atoi(argv[i+1]);
-		else if(strcmp(argv[i], "rxmitra") == 0)
-			ifc->rp.rxmitra = atoi(argv[i+1]);
-		else if(strcmp(argv[i], "ttl") == 0)
-			ifc->rp.ttl = atoi(argv[i+1]);
-		else if(strcmp(argv[i], "routerlt") == 0)
-			ifc->rp.routerlt = atoi(argv[i+1]);
+		if(jehanne_strcmp(argv[i], "recvra") == 0)
+			ifc->recvra6 = (jehanne_atoi(argv[i+1]) != 0);
+		else if(jehanne_strcmp(argv[i], "sendra") == 0)
+			ifc->sendra6 = (jehanne_atoi(argv[i+1]) != 0);
+		else if(jehanne_strcmp(argv[i], "mflag") == 0)
+			ifc->rp.mflag = (jehanne_atoi(argv[i+1]) != 0);
+		else if(jehanne_strcmp(argv[i], "oflag") == 0)
+			ifc->rp.oflag = (jehanne_atoi(argv[i+1]) != 0);
+		else if(jehanne_strcmp(argv[i], "maxraint") == 0)
+			ifc->rp.maxraint = jehanne_atoi(argv[i+1]);
+		else if(jehanne_strcmp(argv[i], "minraint") == 0)
+			ifc->rp.minraint = jehanne_atoi(argv[i+1]);
+		else if(jehanne_strcmp(argv[i], "linkmtu") == 0)
+			ifc->rp.linkmtu = jehanne_atoi(argv[i+1]);
+		else if(jehanne_strcmp(argv[i], "reachtime") == 0)
+			ifc->rp.reachtime = jehanne_atoi(argv[i+1]);
+		else if(jehanne_strcmp(argv[i], "rxmitra") == 0)
+			ifc->rp.rxmitra = jehanne_atoi(argv[i+1]);
+		else if(jehanne_strcmp(argv[i], "ttl") == 0)
+			ifc->rp.ttl = jehanne_atoi(argv[i+1]);
+		else if(jehanne_strcmp(argv[i], "routerlt") == 0)
+			ifc->rp.routerlt = jehanne_atoi(argv[i+1]);
 		else
 			return Ebadarg;
 
@@ -761,34 +761,34 @@ ipifcctl(Conv* c, char**argv, int argc)
 	int i;
 
 	ifc = (Ipifc*)c->ptcl;
-	if(strcmp(argv[0], "add") == 0)
+	if(jehanne_strcmp(argv[0], "add") == 0)
 		return ipifcadd(ifc, argv, argc, 0, nil);
-	else if(strcmp(argv[0], "try") == 0)
+	else if(jehanne_strcmp(argv[0], "try") == 0)
 		return ipifcadd(ifc, argv, argc, 1, nil);
-	else if(strcmp(argv[0], "remove") == 0)
+	else if(jehanne_strcmp(argv[0], "remove") == 0)
 		return ipifcrem(ifc, argv, argc);
-	else if(strcmp(argv[0], "unbind") == 0)
+	else if(jehanne_strcmp(argv[0], "unbind") == 0)
 		return ipifcunbind(ifc);
-	else if(strcmp(argv[0], "joinmulti") == 0)
+	else if(jehanne_strcmp(argv[0], "joinmulti") == 0)
 		return ipifcjoinmulti(ifc, argv, argc);
-	else if(strcmp(argv[0], "leavemulti") == 0)
+	else if(jehanne_strcmp(argv[0], "leavemulti") == 0)
 		return ipifcleavemulti(ifc, argv, argc);
-	else if(strcmp(argv[0], "mtu") == 0)
+	else if(jehanne_strcmp(argv[0], "mtu") == 0)
 		return ipifcsetmtu(ifc, argv, argc);
-	else if(strcmp(argv[0], "reassemble") == 0){
+	else if(jehanne_strcmp(argv[0], "reassemble") == 0){
 		ifc->reassemble = 1;
 		return nil;
 	}
-	else if(strcmp(argv[0], "iprouting") == 0){
+	else if(jehanne_strcmp(argv[0], "iprouting") == 0){
 		i = 1;
 		if(argc > 1)
-			i = atoi(argv[1]);
+			i = jehanne_atoi(argv[1]);
 		iprouting(c->p->f, i);
 		return nil;
 	}
-	else if(strcmp(argv[0], "add6") == 0)
+	else if(jehanne_strcmp(argv[0], "add6") == 0)
 		return ipifcadd6(ifc, argv, argc);
-	else if(strcmp(argv[0], "ra6") == 0)
+	else if(jehanne_strcmp(argv[0], "ra6") == 0)
 		return ipifcra6(ifc, argv, argc);
 	return "unsupported ctl";
 }
@@ -844,7 +844,7 @@ addselfcache(Fs *f, Ipifc *ifc, Iplifc *lifc, uint8_t *a, int type)
 	/* see if the address already exists */
 	h = hashipa(a);
 	for(p = f->self->hash[h]; p; p = p->next)
-		if(memcmp(a, p->a, IPaddrlen) == 0)
+		if(jehanne_memcmp(a, p->a, IPaddrlen) == 0)
 			break;
 
 	/* allocate a local address and add to hash chain */
@@ -910,7 +910,7 @@ iplinkfree(Iplink *p)
 	for(np = *l; np; np = *l){
 		if(np->expire > now){
 			*l = np->next;
-			free(np);
+			jehanne_free(np);
 			continue;
 		}
 		l = &np->next;
@@ -930,7 +930,7 @@ ipselffree(Ipself *p)
 	for(np = *l; np; np = *l){
 		if(np->expire > now){
 			*l = np->next;
-			free(np);
+			jehanne_free(np);
 			continue;
 		}
 		l = &np->next;
@@ -1048,7 +1048,7 @@ ipselftabread(Fs *f, char *cp, uint32_t offset, int n)
 			for(link = p->link; link; link = link->selflink)
 				nifc++;
 			routetype(p->type, state);
-			s = seprint(s, e, stformat, p->a, nifc, state);
+			s = jehanne_seprint(s, e, stformat, p->a, nifc, state);
 			if(off > 0){
 				off -= s - cp;
 				s = cp;
@@ -1109,7 +1109,7 @@ findipifc(Fs *f, uint8_t *remote, int type)
 	uint8_t gnet[IPaddrlen], xmask[IPaddrlen];
 
 	x = nil;
-	memset(xmask, 0, IPaddrlen);
+	jehanne_memset(xmask, 0, IPaddrlen);
 
 	/* find most specific match */
 	e = &f->ipifc->conv[f->ipifc->nc];
@@ -1239,7 +1239,7 @@ findlocalip(Fs *f, uint8_t *local, uint8_t *remote)
 	USED(atypel);
 	qlock(f->ipifc);
 	r = v6lookup(f, remote, nil);
-	version = (memcmp(remote, v4prefix, IPv4off) == 0)? V4: V6;
+	version = (jehanne_memcmp(remote, v4prefix, IPv4off) == 0)? V4: V6;
 
 	if(r != nil){
 		ifc = r->ifc;
@@ -1317,7 +1317,7 @@ ipv4local(Ipifc *ifc, uint8_t *addr)
 
 	for(lifc = ifc->lifc; lifc; lifc = lifc->next){
 		if(isv4(lifc->local)){
-			memmove(addr, lifc->local+IPv4off, IPv4addrlen);
+			jehanne_memmove(addr, lifc->local+IPv4off, IPv4addrlen);
 			return 1;
 		}
 	}
@@ -1505,7 +1505,7 @@ ipifcremmulti(Conv *c, uint8_t *ma, uint8_t *ia)
 		poperror();
 	}
 
-	free(multi);
+	jehanne_free(multi);
 }
 
 /*
@@ -1595,7 +1595,7 @@ adddefroute6(Fs *f, uint8_t *gate, int force)
 	 * route entries generated by all other means take precedence
 	 * over router announcements.
 	 */
-	if (r && !force && strcmp(r->tag, "ra") != 0)
+	if (r && !force && jehanne_strcmp(r->tag, "ra") != 0)
 		return;
 
 	v6delroute(f, v6Unspecified, v6Unspecified, 1);
@@ -1620,19 +1620,19 @@ ipifcadd6(Ipifc *ifc, char**argv, int argc)
 
 	switch(argc) {
 	case 7:
-		preflt = atoi(argv[6]);
+		preflt = jehanne_atoi(argv[6]);
 		/* fall through */
 	case 6:
-		validlt = atoi(argv[5]);
+		validlt = jehanne_atoi(argv[5]);
 		/* fall through */
 	case 5:
-		autoflag = atoi(argv[4]);
+		autoflag = jehanne_atoi(argv[4]);
 		/* fall through */
 	case 4:
-		onlink = atoi(argv[3]);
+		onlink = jehanne_atoi(argv[3]);
 		/* fall through */
 	case 3:
-		plen = atoi(argv[2]);
+		plen = jehanne_atoi(argv[2]);
 		/* fall through */
 	case 2:
 		break;
@@ -1655,8 +1655,8 @@ ipifcadd6(Ipifc *ifc, char**argv, int argc)
 	if(!ifc->medium->pref2addr)
 		return Ebadarg;
 	ifc->medium->pref2addr(prefix, ifc->mac);	/* mac → v6 link-local addr */
-	sprint(addr, "%I", prefix);
-	sprint(preflen, "/%d", plen);
+	jehanne_sprint(addr, "%I", prefix);
+	jehanne_sprint(preflen, "/%d", plen);
 	params[0] = "add";
 	params[1] = addr;
 	params[2] = preflen;

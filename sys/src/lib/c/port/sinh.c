@@ -11,7 +11,7 @@
 #include <libc.h>
 
 /*
- * sinh(arg) returns the hyperbolic sine of its floating-
+ * jehanne_sinh(arg) returns the hyperbolic sine of its floating-
  * point argument.
  *
  * The exponential function is called for arguments
@@ -20,7 +20,7 @@
  * A series is used for arguments smaller in magnitude than 0.5.
  * The coefficients are #2029 from Hart & Cheney. (20.36D)
  *
- * cosh(arg) is computed from the exponential function for
+ * jehanne_cosh(arg) is computed from the exponential function for
  * all arguments.
  */
 
@@ -33,7 +33,7 @@ static	double	q1   = 0.1521517378790019070696485176e+5;
 static	double	q2  = -0.173678953558233699533450911e+3;
 
 double
-sinh(double arg)
+jehanne_sinh(double arg)
 {
 	double temp, argsq;
 	int sign;
@@ -44,11 +44,11 @@ sinh(double arg)
 		sign++;
 	}
 	if(arg > 21) {
-		temp = exp(arg)/2;
+		temp = jehanne_exp(arg)/2;
 		goto out;
 	}
 	if(arg > 0.5) {
-		temp = (exp(arg) - exp(-arg))/2;
+		temp = (jehanne_exp(arg) - jehanne_exp(-arg))/2;
 		goto out;
 	}
 	argsq = arg*arg;
@@ -61,11 +61,11 @@ out:
 }
 
 double
-cosh(double arg)
+jehanne_cosh(double arg)
 {
 	if(arg < 0)
 		arg = - arg;
 	if(arg > 21)
-		return exp(arg)/2;
-	return (exp(arg) + exp(-arg))/2;
+		return jehanne_exp(arg)/2;
+	return (jehanne_exp(arg) + jehanne_exp(-arg))/2;
 }

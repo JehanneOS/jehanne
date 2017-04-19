@@ -145,7 +145,7 @@ mousecmd(int cmd)
 	iunlock(&i8042lock);
 
 	if(c != 0xFA){
-		print("mousecmd: %2.2ux returned to the %2.2ux command\n", c, cmd);
+		jehanne_print("mousecmd: %2.2ux returned to the %2.2ux command\n", c, cmd);
 		badkbd = 1;	/* don't keep trying; there might not be one */
 		return -1;
 	}
@@ -266,7 +266,7 @@ keybinit(void)
 	}
 	if (try <= 0) {
 		iunlock(&i8042lock);
-		print("keybinit failed 0\n");
+		jehanne_print("keybinit failed 0\n");
 		return;
 	}
 
@@ -274,7 +274,7 @@ keybinit(void)
 	outb(Cmd, 0x20);
 	if(inready() == -1){
 		iunlock(&i8042lock);
-		print("keybinit failed 1\n");
+		jehanne_print("keybinit failed 1\n");
 		ccc = 0;
 	} else
 		ccc = inb(Data);
@@ -284,18 +284,18 @@ keybinit(void)
 	ccc |= Csf | Ckeybint | Cscs1;
 	if(outready() == -1) {
 		iunlock(&i8042lock);
-		print("keybinit failed 2\n");
+		jehanne_print("keybinit failed 2\n");
 		return;
 	}
 
 	if (outbyte(Cmd, 0x60) == -1){
 		iunlock(&i8042lock);
-		print("keybinit failed 3\n");
+		jehanne_print("keybinit failed 3\n");
 		return;
 	}
 	if (outbyte(Data, ccc) == -1){
 		iunlock(&i8042lock);
-		print("keybinit failed 4\n");
+		jehanne_print("keybinit failed 4\n");
 		return;
 	}
 

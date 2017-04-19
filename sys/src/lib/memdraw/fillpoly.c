@@ -79,12 +79,12 @@ _memfillpolysc(Memimage *dst, Point *vert, int nvert, int w, Memimage *src, Poin
 	if(nvert == 0)
 		return;
 
-	seg = malloc((nvert+2)*sizeof(Seg*));
+	seg = jehanne_malloc((nvert+2)*sizeof(Seg*));
 	if(seg == nil)
 		return;
-	segtab = malloc((nvert+1)*sizeof(Seg));
+	segtab = jehanne_malloc((nvert+1)*sizeof(Seg));
 	if(segtab == nil) {
-		free(seg);
+		jehanne_free(seg);
 		return;
 	}
 
@@ -112,8 +112,8 @@ _memfillpolysc(Memimage *dst, Point *vert, int nvert, int w, Memimage *src, Poin
 	if(detail)
 		yscan(dst, seg, segtab, nvert, w, src, sp, fixshift, op);
 
-	free(seg);
-	free(segtab);
+	jehanne_free(seg);
+	jehanne_free(segtab);
 }
 
 static int32_t
@@ -190,7 +190,7 @@ xscan(Memimage *dst, Seg **seg, Seg *segtab, int nseg, int wind, Memimage *src, 
 	if(n == 0)
 		return;
 	*p = 0;
-	qsort(seg, p-seg , sizeof(Seg*), ycompare);
+	jehanne_qsort(seg, p-seg , sizeof(Seg*), ycompare);
 
 	onehalf = 0;
 	if(fixshift)
@@ -219,7 +219,7 @@ xscan(Memimage *dst, Seg **seg, Seg *segtab, int nseg, int wind, Memimage *src, 
 				s->z++;
 				s->zerr -= s->den;
 				if(s->zerr < 0 || s->zerr >= s->den)
-					print("bad ratzerr1: %ld den %ld dzrem %ld\n", s->zerr, s->den, s->dzrem);
+					jehanne_print("bad ratzerr1: %ld den %ld dzrem %ld\n", s->zerr, s->den, s->dzrem);
 			}
 			*q++ = s;
 		}
@@ -233,7 +233,7 @@ xscan(Memimage *dst, Seg **seg, Seg *segtab, int nseg, int wind, Memimage *src, 
 			s->z = s->p0.x;
 			s->z += smuldivmod(y - s->p0.y, s->num, s->den, &s->zerr);
 			if(s->zerr < 0 || s->zerr >= s->den)
-				print("bad ratzerr2: %ld den %ld ratdzrem %ld\n", s->zerr, s->den, s->dzrem);
+				jehanne_print("bad ratzerr2: %ld den %ld ratdzrem %ld\n", s->zerr, s->den, s->dzrem);
 			*q++ = s;
 		}
 		ep = q;
@@ -263,7 +263,7 @@ xscan(Memimage *dst, Seg **seg, Seg *segtab, int nseg, int wind, Memimage *src, 
 			p++;
 			for(;;) {
 				if(p == ep) {
-					print("xscan: fill to infinity");
+					jehanne_print("xscan: fill to infinity");
 					return;
 				}
 				cnt += p[0]->d;
@@ -320,7 +320,7 @@ yscan(Memimage *dst, Seg **seg, Seg *segtab, int nseg, int wind, Memimage *src, 
 	if(n == 0)
 		return;
 	*p = 0;
-	qsort(seg, n , sizeof(Seg*), xcompare);
+	jehanne_qsort(seg, n , sizeof(Seg*), xcompare);
 
 	onehalf = 0;
 	if(fixshift)
@@ -349,7 +349,7 @@ yscan(Memimage *dst, Seg **seg, Seg *segtab, int nseg, int wind, Memimage *src, 
 				s->z++;
 				s->zerr -= s->den;
 				if(s->zerr < 0 || s->zerr >= s->den)
-					print("bad ratzerr1: %ld den %ld ratdzrem %ld\n", s->zerr, s->den, s->dzrem);
+					jehanne_print("bad ratzerr1: %ld den %ld ratdzrem %ld\n", s->zerr, s->den, s->dzrem);
 			}
 			*q++ = s;
 		}
@@ -363,7 +363,7 @@ yscan(Memimage *dst, Seg **seg, Seg *segtab, int nseg, int wind, Memimage *src, 
 			s->z = s->p0.y;
 			s->z += smuldivmod(x - s->p0.x, s->num, s->den, &s->zerr);
 			if(s->zerr < 0 || s->zerr >= s->den)
-				print("bad ratzerr2: %ld den %ld ratdzrem %ld\n", s->zerr, s->den, s->dzrem);
+				jehanne_print("bad ratzerr2: %ld den %ld ratdzrem %ld\n", s->zerr, s->den, s->dzrem);
 			*q++ = s;
 		}
 		ep = q;
@@ -393,7 +393,7 @@ yscan(Memimage *dst, Seg **seg, Seg *segtab, int nseg, int wind, Memimage *src, 
 			p++;
 			for(;;) {
 				if(p == ep) {
-					print("yscan: fill to infinity");
+					jehanne_print("yscan: fill to infinity");
 					return;
 				}
 				cnt += p[0]->d;
@@ -444,7 +444,7 @@ zsort(Seg **seg, Seg **ep)
 		q = ep-1;
 		for(p = seg; p < q; p++) {
 			if(p[0]->z > p[1]->z) {
-				qsort(seg, ep-seg, sizeof(Seg*), zcompare);
+				jehanne_qsort(seg, ep-seg, sizeof(Seg*), zcompare);
 				break;
 			}
 		}

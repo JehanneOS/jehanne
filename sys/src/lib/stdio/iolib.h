@@ -26,7 +26,7 @@
  * (But plan9 version omits remove and rename, because they are in libc)
  */
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 #undef END
 #include "Stdio.h"
 /*

@@ -52,8 +52,8 @@ void	(*fcalls[])(void) = {
 void
 usage(void)
 {
-	fprint(2, "usage: %s [-v] [-s] [-f devicefile] [srvname]\n", argv0);
-	exits("usage");
+	jehanne_fprint(2, "usage: %s [-v] [-s] [-f devicefile] [srvname]\n", argv0);
+	jehanne_exits("usage");
 }
 
 void
@@ -61,8 +61,8 @@ main(int argc, char **argv)
 {
 	int stdio, srvfd, pipefd[2];
 
-	rep = malloc(sizeof(Fcall));
-	req = malloc(Reqsize);
+	rep = jehanne_malloc(sizeof(Fcall));
+	req = jehanne_malloc(Reqsize);
 	if(rep == nil || req == nil)
 		panic("out of memory");
 	stdio = 0;
@@ -90,9 +90,9 @@ main(int argc, char **argv)
 	}ARGEND
 
 	if(argc == 0)
-		strcpy(srvfile, "#s/dos");
+		jehanne_strcpy(srvfile, "#s/dos");
 	else if(argc == 1)
-		snprint(srvfile, sizeof srvfile, "#s/%s", argv[0]);
+		jehanne_snprint(srvfile, sizeof srvfile, "#s/%s", argv[0]);
 	else
 		usage();
 
@@ -104,15 +104,15 @@ main(int argc, char **argv)
 		close(1);
 		open("/dev/null", OREAD);
 		open("/dev/null", OWRITE);
-		if(pipe(pipefd) < 0)
+		if(jehanne_pipe(pipefd) < 0)
 			panic("pipe");
-		srvfd = ocreate(srvfile, OWRITE|ORCLOSE, 0600);
+		srvfd = jehanne_ocreate(srvfile, OWRITE|ORCLOSE, 0600);
 		if(srvfd < 0)
 			panic(srvfile);
-		fprint(srvfd, "%d", pipefd[0]);
+		jehanne_fprint(srvfd, "%d", pipefd[0]);
 		close(pipefd[0]);
-		atexit(rmservice);
-		fprint(2, "%s: serving %s\n", argv0, srvfile);
+		jehanne_atexit(rmservice);
+		jehanne_fprint(2, "%s: serving %s\n", argv0, srvfile);
 	}
 	srvfd = pipefd[1];
 
@@ -133,7 +133,7 @@ main(int argc, char **argv)
 	}
 
 	io(srvfd);
-	exits(0);
+	jehanne_exits(0);
 }
 
 void
@@ -141,9 +141,9 @@ io(int srvfd)
 {
 	int n, pid;
 
-	pid = getpid();
+	pid = jehanne_getpid();
 
-	fmtinstall('F', fcallfmt);
+	jehanne_fmtinstall('F', fcallfmt);
 	for(;;){
 		/*
 		 * reading from a pipe or a network device
@@ -162,7 +162,7 @@ io(int srvfd)
 			continue;
 
 		if(chatty)
-			fprint(2, "dossrv %d:<-%F\n", pid, req);
+			jehanne_fprint(2, "dossrv %d:<-%F\n", pid, req);
 
 		errno = 0;
 		if(!fcalls[req->type])
@@ -178,7 +178,7 @@ io(int srvfd)
 		}
 		rep->tag = req->tag;
 		if(chatty)
-			fprint(2, "dossrv %d:->%F\n", pid, rep);
+			jehanne_fprint(2, "dossrv %d:->%F\n", pid, rep);
 		n = convS2M(rep, mdata, sizeof mdata);
 		if(n == 0)
 			panic("convS2M error on write");

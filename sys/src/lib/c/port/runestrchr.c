@@ -11,7 +11,7 @@
 #include <libc.h>
 
 Rune*
-runestrchr(const Rune *s, Rune c)
+jehanne_runestrchr(const Rune *s, Rune c)
 {
 	Rune c0 = c;
 	Rune c1;

@@ -8,7 +8,7 @@
  */
 
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 #include <draw.h>
 #include <event.h>
 #include "plumb.h"
@@ -33,11 +33,11 @@ partial(int id, Event *e, uint8_t *b, int n)
 	EQueue *eq, *p;
 	int nmore;
 
-	lock(&eqlock);
+	jehanne_lock(&eqlock);
 	for(eq = equeue; eq != nil; eq = eq->next)
 		if(eq->id == id)
 			break;
-	unlock(&eqlock);
+	jehanne_unlock(&eqlock);
 	if(eq == nil)
 		return 0;
 	/* partial message exists for this id */
@@ -48,7 +48,7 @@ partial(int id, Event *e, uint8_t *b, int n)
 	eq->nbuf += n;
 	e->v = plumbunpackpartial((char*)eq->buf, eq->nbuf, &nmore);
 	if(nmore == 0){	/* no more to read in this message */
-		lock(&eqlock);
+		jehanne_lock(&eqlock);
 		if(eq == equeue)
 			equeue = eq->next;
 		else{
@@ -58,7 +58,7 @@ partial(int id, Event *e, uint8_t *b, int n)
 				drawerror(display, "eplumb: bad event queue");
 			p->next = eq->next;
 		}
-		unlock(&eqlock);
+		jehanne_unlock(&eqlock);
 		free(eq->buf);
 		free(eq);
 	}
@@ -82,10 +82,10 @@ addpartial(int id, char *b, int n)
 		return;
 	}
 	memmove(eq->buf, b, n);
-	lock(&eqlock);
+	jehanne_lock(&eqlock);
 	eq->next = equeue;
 	equeue = eq;
-	unlock(&eqlock);
+	jehanne_unlock(&eqlock);
 }
 
 static

@@ -5,7 +5,7 @@
     HMAC_SHA1(md5(key), AES-CBC(random | file))
 */
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 #include <bio.h>
 #include <mp.h>
 #include <libsec.h>

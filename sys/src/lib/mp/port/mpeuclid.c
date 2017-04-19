@@ -17,7 +17,7 @@ mpeuclid(mpint *a, mpint *b, mpint *d, mpint *x, mpint *y)
 	assert(((a->flags|b->flags|d->flags|x->flags|y->flags) & MPtimesafe) == 0);
 
 	if(a->sign<0 || b->sign<0)
-		sysfatal("mpeuclid: negative arg");
+		jehanne_sysfatal("mpeuclid: negative arg");
 
 	if(mpcmp(a, b) < 0){
 		tmp = a;

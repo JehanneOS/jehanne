@@ -23,10 +23,10 @@
 #include	"usbehci.h"
 #include	"uncached.h"
 
-#define diprint		if(ehcidebug || iso->debug)print
-#define ddiprint	if(ehcidebug>1 || iso->debug>1)print
-#define dqprint		if(ehcidebug || (qh->io && qh->io->debug))print
-#define ddqprint	if(ehcidebug>1 || (qh->io && qh->io->debug>1))print
+#define diprint		if(ehcidebug || iso->debug)jehanne_print
+#define ddiprint	if(ehcidebug>1 || iso->debug>1)jehanne_print
+#define dqprint		if(ehcidebug || (qh->io && qh->io->debug))jehanne_print
+#define ddqprint	if(ehcidebug>1 || (qh->io && qh->io->debug>1))jehanne_print
 
 #define TRUNC(x, sz)	((x) & ((sz)-1))
 #define LPTR(q)		((uint32_t*)KADDR((q) & ~0x1F))
@@ -393,7 +393,7 @@ ehcirun(Ctlr *ctlr, int on)
 		else
 			delay(1);
 	if(i == 100)
-		print("ehci %#p %s cmd timed out\n",
+		jehanne_print("ehci %#p %s cmd timed out\n",
 			ctlr->capio, on ? "run" : "halt");
 	ddprint("ehci %#p cmd %#ux sts %#ux\n",
 		ctlr->capio, opio->cmd, opio->sts);
@@ -407,7 +407,7 @@ edalloc(void)
 
 	lock(&edpool.l);
 	if(edpool.free == nil){
-		pool = mallocalign(Incr*sizeof(Ed), Align, 0, 0);
+		pool = jehanne_mallocalign(Incr*sizeof(Ed), Align, 0, 0);
 		if(pool == nil)
 			panic("edalloc");
 		for(i=Incr; --i>=0;){
@@ -424,7 +424,7 @@ edalloc(void)
 	edpool.nfree--;
 	unlock(&edpool.l);
 
-	memset(ed, 0, sizeof(Ed));	/* safety */
+	jehanne_memset(ed, 0, sizeof(Ed));	/* safety */
 	assert(((uintptr_t)ed & 0xF) == 0);
 	return ed;
 }
@@ -495,7 +495,7 @@ tdfree(Td *td)
 {
 	if(td == nil)
 		return;
-	free(td->buff);
+	jehanne_free(td->buff);
 	edfree(td);
 }
 
@@ -587,7 +587,7 @@ schedq(Ctlr *ctlr, Qh *qh, int pollival)
 	ddqprint("ehci: sched %#p q %d, ival %d, bw %uld\n",
 		qh->io, q, pollival, bw);
 	if(q < 0){
-		print("ehci: no room for ed\n");
+		jehanne_print("ehci: no room for ed\n");
 		return -1;
 	}
 	ctlr->tree->bw[q] += bw;
@@ -623,7 +623,7 @@ unschedq(Ctlr *ctlr, Qh *qh)
 		this = this->next;
 	}
 	if(this == nil)
-		print("ehci: unschedq %d: not found\n", q);
+		jehanne_print("ehci: unschedq %d: not found\n", q);
 	else{
 		next = this->next;
 		qhlinkqh(prev, next);
@@ -633,7 +633,7 @@ unschedq(Ctlr *ctlr, Qh *qh)
 			*l = (*l)->inext;
 			return;
 		}
-	print("ehci: unschedq: qh %#p not found\n", qh);
+	jehanne_print("ehci: unschedq: qh %#p not found\n", qh);
 }
 
 static uint32_t
@@ -713,7 +713,7 @@ qhalloc(Ctlr *ctlr, Ep *ep, Qio *io, char* tag)
 		schedq(ctlr, qh, ep->pollival);
 		break;
 	default:
-		print("ehci: qhalloc called for ttype != ctl/bulk\n");
+		jehanne_print("ehci: qhalloc called for ttype != ctl/bulk\n");
 	}
 	iunlock(&ctlr->l);
 	return qh;
@@ -748,7 +748,7 @@ qhcoherency(Ctlr *ctlr)
 	}
 	dprint("ehci: qhcoherency: doorbell %d\n", qhadvanced(ctlr));
 	if(i == 3)
-		print("ehci: async advance doorbell did not ring\n");
+		jehanne_print("ehci: async advance doorbell did not ring\n");
 	ctlr->opio->cmd &= ~Ciasync;	/* try to clean */
 	qunlock(&ctlr->portlck);
 }
@@ -814,20 +814,20 @@ qhlinktd(Qh *qh, Td *td)
 static char*
 seprintlink(char *s, char *se, char *name, uint32_t l, int typed)
 {
-	s = seprint(s, se, "%s %ux", name, l);
+	s = jehanne_seprint(s, se, "%s %ux", name, l);
 	if((l & Lterm) != 0)
-		return seprint(s, se, "T");
+		return jehanne_seprint(s, se, "T");
 	if(typed == 0)
 		return s;
 	switch(l & (3<<1)){
 	case Litd:
-		return seprint(s, se, "I");
+		return jehanne_seprint(s, se, "I");
 	case Lqh:
-		return seprint(s, se, "Q");
+		return jehanne_seprint(s, se, "Q");
 	case Lsitd:
-		return seprint(s, se, "S");
+		return jehanne_seprint(s, se, "S");
 	default:
-		return seprint(s, se, "F");
+		return jehanne_seprint(s, se, "F");
 	}
 }
 
@@ -840,19 +840,19 @@ seprintitd(char *s, char *se, Itd *td)
 	char *rw;
 
 	if(td == nil)
-		return seprint(s, se, "<nil itd>\n");
+		return jehanne_seprint(s, se, "<nil itd>\n");
 	b0 = td->buffer[0];
 	b1 = td->buffer[1];
 
-	s = seprint(s, se, "itd %#p", td);
+	s = jehanne_seprint(s, se, "itd %#p", td);
 	rw = (b1 & Itdin) ? "in" : "out";
-	s = seprint(s, se, " %s ep %ud dev %ud max %ud mult %ud",
+	s = jehanne_seprint(s, se, " %s ep %ud dev %ud max %ud mult %ud",
 		rw, (b0>>8)&Epmax, (b0&Devmax),
 		td->buffer[1] & 0x7ff, b1 & 3);
 	s = seprintlink(s, se, " link", td->link, 1);
-	s = seprint(s, se, "\n");
+	s = jehanne_seprint(s, se, "\n");
 	for(i = 0; i < nelem(td->csw); i++){
-		memset(flags, '-', 5);
+		jehanne_memset(flags, '-', 5);
 		if((td->csw[i] & Itdactive) != 0)
 			flags[0] = 'a';
 		if((td->csw[i] & Itdioc) != 0)
@@ -864,15 +864,15 @@ seprintitd(char *s, char *se, Itd *td)
 		if((td->csw[i] & Itdtrerr) != 0)
 			flags[4] = 't';
 		flags[5] = 0;
-		s = seprint(s, se, "\ttd%d %s", i, flags);
-		s = seprint(s, se, " len %ud", (td->csw[i] >> 16) & 0x7ff);
-		s = seprint(s, se, " pg %ud", (td->csw[i] >> 12) & 0x7);
-		s = seprint(s, se, " off %ud\n", td->csw[i] & 0xfff);
+		s = jehanne_seprint(s, se, "\ttd%d %s", i, flags);
+		s = jehanne_seprint(s, se, " len %ud", (td->csw[i] >> 16) & 0x7ff);
+		s = jehanne_seprint(s, se, " pg %ud", (td->csw[i] >> 12) & 0x7);
+		s = jehanne_seprint(s, se, " off %ud\n", td->csw[i] & 0xfff);
 	}
-	s = seprint(s, se, "\tbuffs:");
+	s = jehanne_seprint(s, se, "\tbuffs:");
 	for(i = 0; i < nelem(td->buffer); i++)
-		s = seprint(s, se, " %#ux", td->buffer[i] >> 12);
-	return seprint(s, se, "\n");
+		s = jehanne_seprint(s, se, " %#ux", td->buffer[i] >> 12);
+	return jehanne_seprint(s, se, "\n");
 }
 
 static char*
@@ -883,15 +883,15 @@ seprintsitd(char *s, char *se, Sitd *td)
 	static char pc[4] = { 'a', 'b', 'm', 'e' };
 
 	if(td == nil)
-		return seprint(s, se, "<nil sitd>\n");
-	s = seprint(s, se, "sitd %#p", td);
+		return jehanne_seprint(s, se, "<nil sitd>\n");
+	s = jehanne_seprint(s, se, "sitd %#p", td);
 	rw = (td->epc & Stdin) ? 'r' : 'w';
-	s = seprint(s, se, " %c ep %ud dev %ud",
+	s = jehanne_seprint(s, se, " %c ep %ud dev %ud",
 		rw, (td->epc>>8)&0xf, td->epc&0x7f);
-	s = seprint(s, se, " max %ud", (td->csw >> 16) & 0x3ff);
-	s = seprint(s, se, " hub %ud", (td->epc >> 16) & 0x7f);
-	s = seprint(s, se, " port %ud\n", (td->epc >> 24) & 0x7f);
-	memset(flags, '-', 7);
+	s = jehanne_seprint(s, se, " max %ud", (td->csw >> 16) & 0x3ff);
+	s = jehanne_seprint(s, se, " hub %ud", (td->epc >> 16) & 0x7f);
+	s = jehanne_seprint(s, se, " port %ud\n", (td->epc >> 24) & 0x7f);
+	jehanne_memset(flags, '-', 7);
 	if((td->csw & Stdactive) != 0)
 		flags[0] = 'a';
 	if((td->csw & Stdioc) != 0)
@@ -909,16 +909,16 @@ seprintsitd(char *s, char *se, Sitd *td)
 	flags[7] = 0;
 	ss = (td->csw & Stddcs) ? 'c' : 's';
 	pg = (td->csw & Stdpg) ? '1' : '0';
-	s = seprint(s, se, "\t%s %cs pg%c", flags, ss, pg);
-	s = seprint(s, se, " b0 %#ux b1 %#ux off %ud\n",
+	s = jehanne_seprint(s, se, "\t%s %cs pg%c", flags, ss, pg);
+	s = jehanne_seprint(s, se, " b0 %#ux b1 %#ux off %ud\n",
 		td->buffer[0] >> 12, td->buffer[1] >> 12, td->buffer[0] & 0xfff);
-	s = seprint(s, se, "\ttpos %c tcnt %ud",
+	s = jehanne_seprint(s, se, "\ttpos %c tcnt %ud",
 		pc[(td->buffer[0]>>3)&3], td->buffer[1] & 7);
-	s = seprint(s, se, " ssm %#ux csm %#ux cspm %#ux",
+	s = jehanne_seprint(s, se, " ssm %#ux csm %#ux cspm %#ux",
 		td->mfs & 0xff, (td->mfs>>8) & 0xff, (td->csw>>8) & 0xff);
 	s = seprintlink(s, se, " link", td->link, 1);
 	s = seprintlink(s, se, " blink", td->blink, 0);
-	return seprint(s, se, "\n");
+	return jehanne_seprint(s, se, "\n");
 }
 
 static int32_t
@@ -944,14 +944,14 @@ seprinttd(char *s, char *se, Td *td, char *tag)
 	static char *tok[4] = { "out", "in", "setup", "BUG" };
 
 	if(td == nil)
-		return seprint(s, se, "%s <nil td>\n", tag);
-	s = seprint(s, se, "%s %#p", tag, td);
+		return jehanne_seprint(s, se, "%s <nil td>\n", tag);
+	s = jehanne_seprint(s, se, "%s %#p", tag, td);
 	s = seprintlink(s, se, " nlink", td->nlink, 0);
 	s = seprintlink(s, se, " alink", td->alink, 0);
-	s = seprint(s, se, " %s", tok[(td->csw & Tdtok) >> 8]);
+	s = jehanne_seprint(s, se, " %s", tok[(td->csw & Tdtok) >> 8]);
 	if((td->csw & Tdping) != 0)
-		s = seprint(s, se, " png");
-	memset(flags, '-', 8);
+		s = jehanne_seprint(s, se, " png");
+	jehanne_memset(flags, '-', 8);
 	if((td->csw & Tdactive) != 0)
 		flags[0] = 'a';
 	if((td->csw & Tdioc) != 0)
@@ -971,16 +971,16 @@ seprinttd(char *s, char *se, Td *td, char *tag)
 	flags[8] = 0;
 	t = (td->csw & Tddata1) ? '1' : '0';
 	ss = (td->csw & Tddcs) ? 'c' : 's';
-	s = seprint(s, se, "\n\td%c %s %cs", t, flags, ss);
-	s = seprint(s, se, " max %uld", maxtdlen(td));
-	s = seprint(s, se, " pg %ud off %#ux\n",
+	s = jehanne_seprint(s, se, "\n\td%c %s %cs", t, flags, ss);
+	s = jehanne_seprint(s, se, " max %uld", maxtdlen(td));
+	s = jehanne_seprint(s, se, " pg %ud off %#ux\n",
 		(td->csw >> Tdpgshift) & Tdpgmask, td->buffer[0] & 0xFFF);
-	s = seprint(s, se, "\tbuffs:");
+	s = jehanne_seprint(s, se, "\tbuffs:");
 	for(i = 0; i < nelem(td->buffer); i++)
-		s = seprint(s, se, " %#ux", td->buffer[i]>>12);
+		s = jehanne_seprint(s, se, " %#ux", td->buffer[i]>>12);
 	if(td->data != nil)
 		s = seprintdata(s, se, td->data, td->ndata);
-	return seprint(s, se, "\n");
+	return jehanne_seprint(s, se, "\n");
 }
 
 static void
@@ -994,9 +994,9 @@ dumptd(Td *td, char *pref)
 	se = buf+sizeof(buf);
 	for(; td != nil; td = td->next){
 		seprinttd(buf, se, td, pref);
-		print("%s", buf);
+		jehanne_print("%s", buf);
 		if(i++ > 20){
-			print("...more tds...\n");
+			jehanne_print("...more tds...\n");
 			break;
 		}
 	}
@@ -1011,7 +1011,7 @@ qhdump(Qh *qh)
 	static char *speed[] = {"full", "low", "high", "BUG"};
 
 	if(qh == nil){
-		print("<nil qh>\n");
+		jehanne_print("<nil qh>\n");
 		return;
 	}
 	if(qh->io == nil)
@@ -1019,34 +1019,34 @@ qhdump(Qh *qh)
 	else
 		tag = qh->io->tag;
 	se = buf+sizeof(buf);
-	s = seprint(buf, se, "%s %#p", tag, qh);
-	s = seprint(s, se, " ep %ud dev %ud",
+	s = jehanne_seprint(buf, se, "%s %#p", tag, qh);
+	s = jehanne_seprint(s, se, " ep %ud dev %ud",
 		(qh->eps0>>8)&0xf, qh->eps0&0x7f);
-	s = seprint(s, se, " hub %ud", (qh->eps1 >> 16) & 0x7f);
-	s = seprint(s, se, " port %ud", (qh->eps1 >> 23) & 0x7f);
+	s = jehanne_seprint(s, se, " hub %ud", (qh->eps1 >> 16) & 0x7f);
+	s = jehanne_seprint(s, se, " port %ud", (qh->eps1 >> 23) & 0x7f);
 	s = seprintlink(s, se, " link", qh->link, 1);
-	seprint(s, se, "  clink %#ux", qh->tclink);
-	print("%s\n", buf);
-	s = seprint(buf, se, "\tnrld %ud", (qh->eps0 >> Qhrlcshift) & Qhrlcmask);
-	s = seprint(s, se, " nak %ud", (qh->alink >> 1) & 0xf);
-	s = seprint(s, se, " max %ud ", qhmaxpkt(qh));
+	jehanne_seprint(s, se, "  clink %#ux", qh->tclink);
+	jehanne_print("%s\n", buf);
+	s = jehanne_seprint(buf, se, "\tnrld %ud", (qh->eps0 >> Qhrlcshift) & Qhrlcmask);
+	s = jehanne_seprint(s, se, " nak %ud", (qh->alink >> 1) & 0xf);
+	s = jehanne_seprint(s, se, " max %ud ", qhmaxpkt(qh));
 	if((qh->eps0 & Qhnhctl) != 0)
-		s = seprint(s, se, "c");
+		s = jehanne_seprint(s, se, "c");
 	if((qh->eps0 & Qhhrl) != 0)
-		s = seprint(s, se, "h");
+		s = jehanne_seprint(s, se, "h");
 	if((qh->eps0 & Qhdtc) != 0)
-		s = seprint(s, se, "d");
+		s = jehanne_seprint(s, se, "d");
 	if((qh->eps0 & Qhint) != 0)
-		s = seprint(s, se, "i");
-	s = seprint(s, se, " %s", speed[(qh->eps0 >> 12) & 3]);
-	s = seprint(s, se, " mult %ud", (qh->eps1 >> Qhmultshift) & Qhmultmask);
-	seprint(s, se, " scm %#ux ism %#ux\n",
+		s = jehanne_seprint(s, se, "i");
+	s = jehanne_seprint(s, se, " %s", speed[(qh->eps0 >> 12) & 3]);
+	s = jehanne_seprint(s, se, " mult %ud", (qh->eps1 >> Qhmultshift) & Qhmultmask);
+	jehanne_seprint(s, se, " scm %#ux ism %#ux\n",
 		(qh->eps1 >> 8 & 0xff), qh->eps1 & 0xff);
-	print("%s\n", buf);
-	memset(&td, 0, sizeof(td));
-	memmove(&td, &qh->nlink, 32);	/* overlay area */
+	jehanne_print("%s\n", buf);
+	jehanne_memset(&td, 0, sizeof(td));
+	jehanne_memmove(&td, &qh->nlink, 32);	/* overlay area */
 	seprinttd(buf, se, &td, "\tovl");
-	print("%s", buf);
+	jehanne_print("%s", buf);
 }
 
 static void
@@ -1058,34 +1058,34 @@ isodump(Isoio* iso, int all)
 	int i;
 
 	if(iso == nil){
-		print("<nil iso>\n");
+		jehanne_print("<nil iso>\n");
 		return;
 	}
-	print("iso %#p %s %s speed state %d nframes %d maxsz %uld",
+	jehanne_print("iso %#p %s %s speed state %d nframes %d maxsz %uld",
 		iso, iso->tok == Tdtokin ? "in" : "out",
 		iso->hs ? "high" : "full",
 		iso->state, iso->nframes, iso->maxsize);
-	print(" td0 %uld tdi %#p tdu %#p data %#p\n",
+	jehanne_print(" td0 %uld tdi %#p tdu %#p data %#p\n",
 		iso->td0frno, iso->tdi, iso->tdu, iso->data);
 	if(iso->err != nil)
-		print("\terr %s\n", iso->err);
+		jehanne_print("\terr %s\n", iso->err);
 	if(iso->err != nil)
-		print("\terr='%s'\n", iso->err);
+		jehanne_print("\terr='%s'\n", iso->err);
 	if(all == 0)
 		if(iso->hs != 0){
 			tdi = iso->tdi;
 			seprintitd(buf, buf+sizeof(buf), tdi);
-			print("\ttdi %s\n", buf);
+			jehanne_print("\ttdi %s\n", buf);
 			tdu = iso->tdu;
 			seprintitd(buf, buf+sizeof(buf), tdu);
-			print("\ttdu %s\n", buf);
+			jehanne_print("\ttdu %s\n", buf);
 		}else{
 			stdi = iso->stdi;
 			seprintsitd(buf, buf+sizeof(buf), stdi);
-			print("\tstdi %s\n", buf);
+			jehanne_print("\tstdi %s\n", buf);
 			stdu = iso->stdu;
 			seprintsitd(buf, buf+sizeof(buf), stdu);
-			print("\tstdu %s\n", buf);
+			jehanne_print("\tstdu %s\n", buf);
 		}
 	else
 		for(i = 0; i < Nisoframes; i++)
@@ -1094,18 +1094,18 @@ isodump(Isoio* iso, int all)
 					td = iso->itdps[i];
 					seprintitd(buf, buf+sizeof(buf), td);
 					if(td == iso->tdi)
-						print("i->");
+						jehanne_print("i->");
 					if(td == iso->tdu)
-						print("i->");
-					print("[%d]\t%s", i, buf);
+						jehanne_print("i->");
+					jehanne_print("[%d]\t%s", i, buf);
 				}else{
 					std = iso->sitdps[i];
 					seprintsitd(buf, buf+sizeof(buf), std);
 					if(std == iso->stdi)
-						print("i->");
+						jehanne_print("i->");
 					if(std == iso->stdu)
-						print("u->");
-					print("[%d]\t%s", i, buf);
+						jehanne_print("u->");
+					jehanne_print("[%d]\t%s", i, buf);
 				}
 }
 
@@ -1123,22 +1123,22 @@ dump(Hci *hp)
 	ctlr = hp->aux;
 	opio = ctlr->opio;
 	ilock(&ctlr->l);
-	print("ehci port %#p frames %#p (%d fr.) nintr %d ntdintr %d",
+	jehanne_print("ehci port %#p frames %#p (%d fr.) nintr %d ntdintr %d",
 		ctlr->capio, ctlr->frames, ctlr->nframes,
 		ctlr->nintr, ctlr->ntdintr);
-	print(" nqhintr %d nisointr %d\n", ctlr->nqhintr, ctlr->nisointr);
-	print("\tcmd %#ux sts %#ux intr %#ux frno %ud",
+	jehanne_print(" nqhintr %d nisointr %d\n", ctlr->nqhintr, ctlr->nisointr);
+	jehanne_print("\tcmd %#ux sts %#ux intr %#ux frno %ud",
 		opio->cmd, opio->sts, opio->intr, opio->frno);
-	print(" base %#ux link %#ux fr0 %#lux\n",
+	jehanne_print(" base %#ux link %#ux fr0 %#lux\n",
 		opio->frbase, opio->link, ctlr->frames[0]);
 	se = buf+sizeof(buf);
-	s = seprint(buf, se, "\t");
+	s = jehanne_seprint(buf, se, "\t");
 	for(i = 0; i < hp->nports; i++){
-		s = seprint(s, se, "p%d %#ux ", i, opio->portsc[i]);
+		s = jehanne_seprint(s, se, "p%d %#ux ", i, opio->portsc[i]);
 		if(hp->nports > 4 && i == hp->nports/2 - 1)
-			s = seprint(s, se, "\n\t");
+			s = jehanne_seprint(s, se, "\n\t");
 	}
-	print("%s\n", buf);
+	jehanne_print("%s\n", buf);
 	qh = ctlr->qhs;
 	i = 0;
 	do{
@@ -1146,19 +1146,19 @@ dump(Hci *hp)
 		qh = qh->next;
 	}while(qh != ctlr->qhs && i++ < 100);
 	if(i > 100)
-		print("...too many Qhs...\n");
+		jehanne_print("...too many Qhs...\n");
 	if(ctlr->intrqhs != nil)
-		print("intr qhs:\n");
+		jehanne_print("intr qhs:\n");
 	for(qh = ctlr->intrqhs; qh != nil; qh = qh->inext)
 		qhdump(qh);
 	if(ctlr->iso != nil)
-		print("iso:\n");
+		jehanne_print("iso:\n");
 	for(iso = ctlr->iso; iso != nil; iso = iso->next)
 		isodump(ctlr->iso, 0);
-	print("%d eds in tree\n", ctlr->ntree);
+	jehanne_print("%d eds in tree\n", ctlr->ntree);
 	iunlock(&ctlr->l);
 	lock(&edpool.l);
-	print("%d eds allocated = %d in use + %d free\n",
+	jehanne_print("%d eds allocated = %d in use + %d free\n",
 		edpool.nalloc, edpool.ninuse, edpool.nfree);
 	unlock(&edpool.l);
 }
@@ -1380,7 +1380,7 @@ isohsinterrupt(Ctlr *ctlr, Isoio *iso)
 		}else
 			tdi->ndata = 0;
 		if(tdi->next == iso->tdu || tdi->next->next == iso->tdu){
-			memset(iso->tdu->data, 0, iso->tdu->mdata);
+			jehanne_memset(iso->tdu->data, 0, iso->tdu->mdata);
 			itdinit(iso, iso->tdu);
 			iso->tdu = iso->tdu->next;
 			iso->nleft = 0;
@@ -1445,7 +1445,7 @@ isofsinterrupt(Ctlr *ctlr, Isoio *iso)
 			stdi->ndata = 0;
 
 		if(stdi->next == iso->stdu || stdi->next->next == iso->stdu){
-			memset(iso->stdu->data, 0, iso->stdu->mdata);
+			jehanne_memset(iso->stdu->data, 0, iso->stdu->mdata);
 			coherence();
 			sitdinit(iso, iso->stdu);
 			iso->stdu = iso->stdu->next;
@@ -1774,9 +1774,9 @@ portstatus(Hci *hp, int port)
 static char*
 seprintio(char *s, char *e, Qio *io, char *pref)
 {
-	s = seprint(s,e,"%s io %#p qh %#p id %#x", pref, io, io->qh, io->usbid);
-	s = seprint(s,e," iot %ld", io->iotime);
-	s = seprint(s,e," tog %#x tok %#x err %s", io->toggle, io->tok, io->err);
+	s = jehanne_seprint(s,e,"%s io %#p qh %#p id %#x", pref, io, io->qh, io->usbid);
+	s = jehanne_seprint(s,e," iot %ld", io->iotime);
+	s = jehanne_seprint(s,e," tog %#x tok %#x err %s", io->toggle, io->tok, io->err);
 	return s;
 }
 
@@ -1798,7 +1798,7 @@ seprintep(char *s, char *e, Ep *ep)
 	case Tctl:
 		cio = ep->aux;
 		s = seprintio(s, e, cio, "c");
-		s = seprint(s, e, "\trepl %d ndata %d\n", ep->rhrepl, cio->ndata);
+		s = jehanne_seprint(s, e, "\trepl %d ndata %d\n", ep->rhrepl, cio->ndata);
 		break;
 	case Tbulk:
 	case Tintr:
@@ -1854,13 +1854,13 @@ xdump(char* pref, void *qh)
 	uint32_t *u;
 
 	u = qh;
-	print("%s %#p:", pref, u);
+	jehanne_print("%s %#p:", pref, u);
 	for(i = 0; i < 16; i++)
 		if((i%4) == 0)
-			print("\n %#.8ux", u[i]);
+			jehanne_print("\n %#.8ux", u[i]);
 		else
-			print(" %#.8ux", u[i]);
-	print("\n");
+			jehanne_print(" %#.8ux", u[i]);
+	jehanne_print("\n");
 }
 #endif
 
@@ -1879,16 +1879,16 @@ episohscpy(Ctlr *ctlr, Ep *ep, Isoio* iso, uint8_t *b, int32_t count)
 		if(tot + nr > count)
 			nr = count - tot;
 		if(nr == 0)
-			print("ehci: ep%d.%d: too many polls\n",
+			jehanne_print("ehci: ep%d.%d: too many polls\n",
 				ep->dev->nb, ep->nb);
 		else{
 			iunlock(&ctlr->l);		/* We could page fault here */
-			memmove(b+tot, tdu->data, nr);
+			jehanne_memmove(b+tot, tdu->data, nr);
 			ilock(&ctlr->l);
 			if(iso->tdu != tdu)
 				continue;
 			if(nr < tdu->ndata)
-				memmove(tdu->data, tdu->data+nr, tdu->ndata - nr);
+				jehanne_memmove(tdu->data, tdu->data+nr, tdu->ndata - nr);
 			tdu->ndata -= nr;
 			coherence();
 		}
@@ -1917,16 +1917,16 @@ episofscpy(Ctlr *ctlr, Ep *ep, Isoio* iso, uint8_t *b, int32_t count)
 		if(tot + nr > count)
 			nr = count - tot;
 		if(nr == 0)
-			print("ehci: ep%d.%d: too many polls\n",
+			jehanne_print("ehci: ep%d.%d: too many polls\n",
 				ep->dev->nb, ep->nb);
 		else{
 			iunlock(&ctlr->l);		/* We could page fault here */
-			memmove(b+tot, stdu->data, nr);
+			jehanne_memmove(b+tot, stdu->data, nr);
 			ilock(&ctlr->l);
 			if(iso->stdu != stdu)
 				continue;
 			if(nr < stdu->ndata)
-				memmove(stdu->data, stdu->data+nr,
+				jehanne_memmove(stdu->data, stdu->data+nr,
 					stdu->ndata - nr);
 			stdu->ndata -= nr;
 			coherence();
@@ -2018,7 +2018,7 @@ putsamples(Ctlr *ctlr, Isoio *iso, uint8_t *b, int32_t count)
 			if(n > tdu->mdata - left)
 				n = tdu->mdata - left;
 			iunlock(&ctlr->l);		/* We could page fault here */
-			memmove(tdu->data + left, b + tot, n);
+			jehanne_memmove(tdu->data + left, b + tot, n);
 			ilock(&ctlr->l);
 			if(iso->tdu != tdu)
 				continue;
@@ -2033,7 +2033,7 @@ putsamples(Ctlr *ctlr, Isoio *iso, uint8_t *b, int32_t count)
 			if(n > stdu->mdata - left)
 				n = stdu->mdata - left;
 			iunlock(&ctlr->l);		/* We could page fault here */
-			memmove(stdu->data + left, b + tot, n);
+			jehanne_memmove(stdu->data + left, b + tot, n);
 			ilock(&ctlr->l);
 			if(iso->stdu != stdu)
 				continue;
@@ -2169,7 +2169,7 @@ epgettd(Qio *io, int flags, void *a, int count, int maxpkt)
 	}
 	td->ndata = count;
 	if(a != nil && count > 0)
-		memmove(td->data, a, count);
+		jehanne_memmove(td->data, a, count);
 	coherence();
 	io->toggle = nexttoggle(io->toggle, count, maxpkt);
 	coherence();
@@ -2250,7 +2250,7 @@ pollcheck(Hci *hp)
 		lock(&poll->l);
 		if(poll->must != 0 && poll->does == 0){
 			poll->does++;
-			print("ehci %#p: polling\n", ctlr->capio);
+			jehanne_print("ehci %#p: polling\n", ctlr->capio);
 			kproc("ehcipoll", ehcipoll, hp);
 		}
 		unlock(&poll->l);
@@ -2357,7 +2357,7 @@ epio(Ep *ep, Qio *io, void *a, int32_t count, int mustlock)
 		ep->dev->nb, ep->nb, io, count, ctlr->load);
 	if((ehcidebug > 1 || ep->debug > 1) && io->tok != Tdtokin){
 		seprintdata(buf, buf+sizeof(buf), a, count);
-		print("echi epio: user data: %s\n", buf);
+		jehanne_print("echi epio: user data: %s\n", buf);
 	}
 	if(mustlock){
 		qlock(&io->ql);
@@ -2452,7 +2452,7 @@ epio(Ep *ep, Qio *io, void *a, int32_t count, int mustlock)
 				if((tot + n) > count)
 					n = count - tot;
 				if(c != nil && (td->csw & Tdtok) == Tdtokin){
-					memmove(c, td->data, n);
+					jehanne_memmove(c, td->data, n);
 					c += n;
 				}
 				tot += n;
@@ -2507,9 +2507,9 @@ epread(Ep *ep, void *a, int32_t count)
 			if(count > cio->ndata)
 				count = cio->ndata;
 			if(count > 0)
-				memmove(a, cio->data, count);
+				jehanne_memmove(a, cio->data, count);
 			/* BUG for big transfers */
-			free(cio->data);
+			jehanne_free(cio->data);
 			cio->data = nil;
 			cio->ndata = 0;	/* signal EOF next time */
 		}
@@ -2517,7 +2517,7 @@ epread(Ep *ep, void *a, int32_t count)
 		poperror();
 		if(ehcidebug>1 || ep->debug){
 			seprintdata(buf, buf+sizeof(buf), a, count);
-			print("epread: %s\n", buf);
+			jehanne_print("epread: %s\n", buf);
 		}
 		return count;
 	case Tbulk:
@@ -2564,11 +2564,11 @@ epctlio(Ep *ep, Ctlio *cio, void *a, int32_t count)
 	if(count < Rsetuplen)
 		error("short usb comand");
 	qlock(&cio->ql);
-	free(cio->data);
+	jehanne_free(cio->data);
 	cio->data = nil;
 	cio->ndata = 0;
 	if(waserror()){
-		free(cio->data);
+		jehanne_free(cio->data);
 		cio->data = nil;
 		cio->ndata = 0;
 		qunlock(&cio->ql);
@@ -2699,9 +2699,9 @@ isofsinit(Ep *ep, Isoio *iso)
 			td->mdata *= ep->samplesz;
 			left = (ep->hz+left) * ep->pollival % 1000;
 			if(td->mdata > ep->maxpkt){
-				print("ehci: ep%d.%d: size > maxpkt\n",
+				jehanne_print("ehci: ep%d.%d: size > maxpkt\n",
 					ep->dev->nb, ep->nb);
-				print("size = %d max = %ld\n",
+				jehanne_print("size = %d max = %ld\n",
 					td->mdata, ep->maxpkt);
 				td->mdata = ep->maxpkt;
 			}
@@ -2807,7 +2807,7 @@ isoopen(Ctlr *ctlr, Ep *ep)
 		error("uhci isoopen bug");	/* we need at least 3 tds */
 	iso->maxsize = ep->ntds * ep->maxpkt;
 	if(ctlr->load + ep->load > 800)
-		print("usb: ehci: bandwidth may be exceeded\n");
+		jehanne_print("usb: ehci: bandwidth may be exceeded\n");
 	ilock(&ctlr->l);
 	ctlr->load += ep->load;
 	ctlr->isoload += ep->load;
@@ -2899,7 +2899,7 @@ epopen(Ep *ep)
 	if(ep->aux != nil)
 		panic("ehci: epopen called with open ep");
 	if(waserror()){
-		free(ep->aux);
+		jehanne_free(ep->aux);
 		ep->aux = nil;
 		nexterror();
 	}
@@ -3072,9 +3072,9 @@ cancelisoio(Ctlr *ctlr, Isoio *iso, int pollival, uint32_t load)
 		iso->tdps[frno] = nil;
 		frno = TRUNC(frno+pollival, Nisoframes);
 	}
-	free(iso->tdps);
+	jehanne_free(iso->tdps);
 	iso->tdps = nil;
-	free(iso->data);
+	jehanne_free(iso->data);
 	iso->data = nil;
 	coherence();
 }
@@ -3096,7 +3096,7 @@ epclose(Ep *ep)
 	case Tctl:
 		cio = ep->aux;
 		cancelio(ctlr, cio);
-		free(cio->data);
+		jehanne_free(cio->data);
 		cio->data = nil;
 		break;
 	case Tintr:
@@ -3122,7 +3122,7 @@ epclose(Ep *ep)
 	default:
 		panic("epclose: bad ttype");
 	}
-	free(ep->aux);
+	jehanne_free(ep->aux);
 	ep->aux = nil;
 }
 
@@ -3154,13 +3154,13 @@ mkqhtree(Ctlr *ctlr)
 
 	depth = flog2(Nintrleafs);
 	n = (1 << (depth+1)) - 1;
-	qt = mallocz(sizeof(*qt), 1);
+	qt = jehanne_mallocz(sizeof(*qt), 1);
 	if(qt == nil)
 		panic("ehci: mkqhtree: no memory");
 	qt->nel = n;
 	qt->depth = depth;
-	qt->bw = mallocz(n * sizeof(qt->bw), 1);
-	qt->root = tree = mallocz(n * sizeof(Qh *), 1);
+	qt->bw = jehanne_mallocz(n * sizeof(qt->bw), 1);
+	qt->root = tree = jehanne_mallocz(n * sizeof(Qh *), 1);
 	if(qt->bw == nil || tree == nil)
 		panic("ehci: mkqhtree: no memory");
 	for(i = 0; i < n; i++){
@@ -3187,14 +3187,14 @@ mkqhtree(Ctlr *ctlr)
 				o |= 1;
 		}
 		if(leaf0 + o >= n){
-			print("leaf0=%d o=%d i=%d n=%d\n", leaf0, o, i, n);
+			jehanne_print("leaf0=%d o=%d i=%d n=%d\n", leaf0, o, i, n);
 			break;
 		}
 		leafs[i] = PADDR(tree[leaf0 + o]) | Lqh;
 	}
 	assert((ctlr->nframes % Nintrleafs) == 0);
 	for(i = 0; i < ctlr->nframes; i += Nintrleafs){
-		memmove(ctlr->frames + i, leafs, sizeof leafs);
+		jehanne_memmove(ctlr->frames + i, leafs, sizeof leafs);
 		coherence();
 	}
 	ctlr->tree = qt;
@@ -3210,7 +3210,7 @@ ehcimeminit(Ctlr *ctlr)
 	opio = ctlr->opio;
 	frsize = ctlr->nframes * sizeof(uint32_t);
 	assert((frsize & 0xFFF) == 0);		/* must be 4k aligned */
-	ctlr->frames = mallocalign(frsize, frsize, 0, 0);
+	ctlr->frames = jehanne_mallocalign(frsize, frsize, 0, 0);
 	if(ctlr->frames == nil)
 		panic("ehci reset: no memory");
 

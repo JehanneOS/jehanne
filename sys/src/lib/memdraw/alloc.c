@@ -20,7 +20,7 @@ memimagemove(void *from, void *to)
 
 	md = *(Memdata**)to;
 	if(md->base != from){
-		print("compacted data not right: #%p\n", md->base);
+		jehanne_print("compacted data not right: #%p\n", md->base);
 		abort();
 	}
 	md->base = to;
@@ -37,17 +37,17 @@ allocmemimaged(Rectangle r, uint32_t chan, Memdata *md)
 	Memimage *i;
 
 	if(Dx(r) <= 0 || Dy(r) <= 0){
-		werrstr("bad rectangle %R", r);
+		jehanne_werrstr("bad rectangle %R", r);
 		return nil;
 	}
 	if((d = chantodepth(chan)) == 0) {
-		werrstr("bad channel descriptor %.8lux", chan);
+		jehanne_werrstr("bad channel descriptor %.8lux", chan);
 		return nil;
 	}
 
 	l = wordsperline(r, d);
 
-	i = mallocz(sizeof(Memimage), 1);
+	i = jehanne_mallocz(sizeof(Memimage), 1);
 	if(i == nil)
 		return nil;
 
@@ -66,7 +66,7 @@ allocmemimaged(Rectangle r, uint32_t chan, Memdata *md)
 	i->layer = nil;
 	i->cmap = memdefcmap;
 	if(memsetchan(i, chan) < 0){
-		free(i);
+		jehanne_free(i);
 		return nil;
 	}
 	return i;
@@ -82,13 +82,13 @@ allocmemimage(Rectangle r, uint32_t chan)
 	Memimage *i;
 
 	if((d = chantodepth(chan)) == 0) {
-		werrstr("bad channel descriptor %.8lux", chan);
+		jehanne_werrstr("bad channel descriptor %.8lux", chan);
 		return nil;
 	}
 
 	l = wordsperline(r, d);
 	nw = l*Dy(r);
-	md = malloc(sizeof(Memdata));
+	md = jehanne_malloc(sizeof(Memdata));
 	if(md == nil)
 		return nil;
 
@@ -96,7 +96,7 @@ allocmemimage(Rectangle r, uint32_t chan)
 	md->base = poolalloc(imagmem,
 			     sizeof(Memdata*)+(1+nw)*sizeof(uint32_t));
 	if(md->base == nil){
-		free(md);
+		jehanne_free(md);
 		return nil;
 	}
 
@@ -104,7 +104,7 @@ allocmemimage(Rectangle r, uint32_t chan)
 	*(Memdata**)p = md;
 	p += sizeof(Memdata*);
 
-	*(uint32_t*)p = getcallerpc();
+	*(uint32_t*)p = jehanne_getcallerpc();
 	p += sizeof(uint32_t);
 
 	/* if this changes, memimagemove must change too */
@@ -114,7 +114,7 @@ allocmemimage(Rectangle r, uint32_t chan)
 	i = allocmemimaged(r, chan, md);
 	if(i == nil){
 		poolfree(imagmem, md->base);
-		free(md);
+		jehanne_free(md);
 		return nil;
 	}
 	md->imref = i;
@@ -129,9 +129,9 @@ freememimage(Memimage *i)
 	if(i->data->ref-- == 1 && i->data->allocd){
 		if(i->data->base)
 			poolfree(imagmem, i->data->base);
-		free(i->data);
+		jehanne_free(i->data);
 	}
-	free(i);
+	jehanne_free(i);
 }
 
 /*
@@ -175,7 +175,7 @@ memsetchan(Memimage *i, uint32_t chan)
 	int bytes;
 
 	if((d = chantodepth(chan)) == 0) {
-		werrstr("bad channel descriptor");
+		jehanne_werrstr("bad channel descriptor");
 		return -1;
 	}
 
@@ -186,7 +186,7 @@ memsetchan(Memimage *i, uint32_t chan)
 	for(cc=chan, j=0, k=0; cc; j+=NBITS(cc), cc>>=8, k++){
 		t=TYPE(cc);
 		if(t < 0 || t >= NChan){
-			werrstr("bad channel string");
+			jehanne_werrstr("bad channel string");
 			return -1;
 		}
 		if(t == CGrey)

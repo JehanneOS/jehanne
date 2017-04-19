@@ -48,7 +48,7 @@ DSAprimes(mpint *q, mpint *p, uint8_t seed[SHA1dlen])
 forever:
 	do{
 		Hrand(s);
-		memcpy(sj, s, 20);
+		jehanne_memcpy(sj, s, 20);
 		sha1(s, 20, Hs, 0);
 		Hincr(sj);
 		sha1(sj, 20, Hs1, 0);
@@ -59,13 +59,13 @@ forever:
 		letomp(Hs, 20, q);
 	}while(!probably_prime(q, 18));
 	if(seed != nil)	// allow skeptics to confirm computation
-		memmove(seed, s, SHA1dlen);
+		jehanne_memmove(seed, s, SHA1dlen);
 	i = 0;
 	j = 2;
 	Hincr(sj);
 	mpleft(q, 1, q2);
 	while(i<4096){
-		memcpy(sjk, sj, 20);
+		jehanne_memcpy(sjk, sj, 20);
 		for(k=0; k <= n; k++){
 			sha1(sjk, 20, Hs, 0);
 			letomp(Hs, 20, Vk);

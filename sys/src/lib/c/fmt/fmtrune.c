@@ -12,7 +12,7 @@
 #include "fmtdef.h"
 
 int
-fmtrune(Fmt *f, int r)
+jehanne_fmtrune(Fmt *f, int r)
 {
 	Rune *rt;
 	char *t;

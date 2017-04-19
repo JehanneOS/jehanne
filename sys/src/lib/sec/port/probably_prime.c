@@ -15,7 +15,7 @@ probably_prime(mpint *n, int nrep)
 	mpint *nm1, *q, *x, *y, *r;
 
 	if(n->sign < 0)
-		sysfatal("negative prime candidate");
+		jehanne_sysfatal("negative prime candidate");
 
 	if(nrep <= 0)
 		nrep = 18;

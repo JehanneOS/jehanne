@@ -8,7 +8,7 @@
  */
 
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 #include "regexp.h"
 
 /* substitute into one string using the matches from the last regexec() */

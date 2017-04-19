@@ -4,7 +4,7 @@
  *	needs #¤/caphash and #¤/capuse.
  */
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 #include <bio.h>
 #include <libsec.h>
 #include <auth.h>

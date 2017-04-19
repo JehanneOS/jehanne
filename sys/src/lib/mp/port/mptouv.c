@@ -15,7 +15,7 @@ uvtomp(uint64_t v, mpint *b)
 
 	if(b == nil){
 		b = mpnew(VLDIGITS*sizeof(mpdigit));
-		setmalloctag(b, getcallerpc());
+		jehanne_setmalloctag(b, jehanne_getcallerpc());
 	}else
 		mpbits(b, VLDIGITS*sizeof(mpdigit));
 	b->sign = 1;

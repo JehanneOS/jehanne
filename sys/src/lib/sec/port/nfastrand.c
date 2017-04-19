@@ -13,7 +13,7 @@ nfastrand(uint32_t n)
 	 * so we want a random number < m.
 	 */
 	if(n > Maxrand)
-		sysfatal("nfastrand: n too large");
+		jehanne_sysfatal("nfastrand: n too large");
 
 	m = Maxrand - Maxrand % n;
 	while((r = fastrand()) >= m)

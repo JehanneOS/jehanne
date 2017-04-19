@@ -11,7 +11,7 @@
  * Count bytes within runes, if it fits in a uint64_t, and other things.
  */
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 #include <bio.h>
 
 /* flags, per-file counts, and total counts */

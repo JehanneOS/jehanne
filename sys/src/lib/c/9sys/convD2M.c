@@ -12,7 +12,7 @@
 #include	<9P2000.h>
 
 uint32_t
-sizeD2M(Dir *d)
+jehanne_sizeD2M(Dir *d)
 {
 	char *sv[4];
 	int i, ns;
@@ -25,13 +25,13 @@ sizeD2M(Dir *d)
 	ns = 0;
 	for(i = 0; i < 4; i++)
 		if(sv[i])
-			ns += strlen(sv[i]);
+			ns += jehanne_strlen(sv[i]);
 
 	return STATFIXLEN + ns;
 }
 
 uint32_t
-convD2M(Dir *d, uint8_t *buf, uint32_t nbuf)
+jehanne_convD2M(Dir *d, uint8_t *buf, uint32_t nbuf)
 {
 	uint8_t *p, *ebuf;
 	char *sv[4];
@@ -51,7 +51,7 @@ convD2M(Dir *d, uint8_t *buf, uint32_t nbuf)
 	ns = 0;
 	for(i = 0; i < 4; i++){
 		if(sv[i])
-			nsv[i] = strlen(sv[i]);
+			nsv[i] = jehanne_strlen(sv[i]);
 		else
 			nsv[i] = 0;
 		ns += nsv[i];
@@ -93,7 +93,7 @@ convD2M(Dir *d, uint8_t *buf, uint32_t nbuf)
 		PBIT16(p, ns);
 		p += BIT16SZ;
 		if(ns)
-			memmove(p, sv[i], ns);
+			jehanne_memmove(p, sv[i], ns);
 		p += ns;
 	}
 

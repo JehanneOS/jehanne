@@ -13,7 +13,7 @@
 #include <libc.h>
 
 int
-strcmp(const char *s1, const char *s2)
+jehanne_strcmp(const char *s1, const char *s2)
 {
 	unsigned char c1, c2;
 

@@ -92,7 +92,7 @@ ip3gen(Chan *c, int i, Dir *dp)
 		p = "remote";
 		break;
 	case Qsnoop:
-		if(strcmp(cv->p->name, "ipifc") != 0)
+		if(jehanne_strcmp(cv->p->name, "ipifc") != 0)
 			return -1;
 		devdir(c, q, "snoop", qlen(cv->sq), cv->owner, 0400, dp);
 		return 1;
@@ -145,7 +145,7 @@ ip1gen(Chan *c, int i, Dir *dp)
 		break;
 	case Qndb:
 		p = "ndb";
-		len = strlen(f->ndb);
+		len = jehanne_strlen(f->ndb);
 		q.vers = f->ndbvers;
 		break;
 	case Qiproute:
@@ -179,7 +179,7 @@ ipgen(Chan *c, char* _1, Dirtab* _2, int _3, int s, Dir *dp)
 	case Qtopdir:
 		if(s == DEVDOTDOT){
 			mkqid(&q, QID(0, 0, Qtopdir), 0, QTDIR);
-			snprint(up->genbuf, sizeof up->genbuf, "#I%ud", c->devno);
+			jehanne_snprint(up->genbuf, sizeof up->genbuf, "#I%ud", c->devno);
 			devdir(c, q, up->genbuf, 0, network, 0555, dp);
 			return 1;
 		}
@@ -201,13 +201,13 @@ ipgen(Chan *c, char* _1, Dirtab* _2, int _3, int s, Dir *dp)
 	case Qprotodir:
 		if(s == DEVDOTDOT){
 			mkqid(&q, QID(0, 0, Qtopdir), 0, QTDIR);
-			snprint(up->genbuf, sizeof up->genbuf, "#I%ud", c->devno);
+			jehanne_snprint(up->genbuf, sizeof up->genbuf, "#I%ud", c->devno);
 			devdir(c, q, up->genbuf, 0, network, 0555, dp);
 			return 1;
 		}
 		if(s < f->p[PROTO(c->qid)]->ac) {
 			cv = f->p[PROTO(c->qid)]->conv[s];
-			snprint(up->genbuf, sizeof up->genbuf, "%d", s);
+			jehanne_snprint(up->genbuf, sizeof up->genbuf, "%d", s);
 			mkqid(&q, QID(PROTO(c->qid), s, Qconvdir), 0, QTDIR);
 			devdir(c, q, up->genbuf, 0, cv->owner, 0555, dp);
 			return 1;
@@ -244,11 +244,11 @@ ipreset(void)
 	nullmediumlink();
 	pktmediumlink();
 
-	fmtinstall('i', eipfmt);
-	fmtinstall('I', eipfmt);
-	fmtinstall('E', eipfmt);
-	fmtinstall('V', eipfmt);
-	fmtinstall('M', eipfmt);
+	jehanne_fmtinstall('i', eipfmt);
+	jehanne_fmtinstall('I', eipfmt);
+	jehanne_fmtinstall('E', eipfmt);
+	jehanne_fmtinstall('V', eipfmt);
+	jehanne_fmtinstall('M', eipfmt);
 }
 
 static Fs*
@@ -285,11 +285,11 @@ newipaux(char *owner, char *tag)
 
 	a = smalloc(sizeof(*a));
 	kstrdup(&a->owner, owner);
-	memset(a->tag, ' ', sizeof(a->tag));
-	n = strlen(tag);
+	jehanne_memset(a->tag, ' ', sizeof(a->tag));
+	n = jehanne_strlen(tag);
 	if(n > sizeof(a->tag))
 		n = sizeof(a->tag);
-	memmove(a->tag, tag, n);
+	jehanne_memmove(a->tag, tag, n);
 	return a;
 }
 
@@ -300,7 +300,7 @@ ipattach(Chan *c, Chan *ac, char *spec, int flags)
 {
 	int devno;
 
-	devno = atoi(spec);
+	devno = jehanne_atoi(spec);
 	if(devno >= Nfs)
 		error("bad specification");
 
@@ -393,7 +393,7 @@ ipopen(Chan* c, unsigned long omode)
 			error(Eperm);
 		p = f->p[PROTO(c->qid)];
 		cv = p->conv[CONV(c->qid)];
-		if(strcmp(ATTACHER(c), cv->owner) != 0 && !isevegroup())
+		if(jehanne_strcmp(ATTACHER(c), cv->owner) != 0 && !isevegroup())
 			error(Eperm);
 		incref(&cv->snoopers);
 		break;
@@ -426,7 +426,7 @@ ipopen(Chan* c, unsigned long omode)
 			nexterror();
 		}
 		if((perm & (cv->perm>>6)) != perm) {
-			if(strcmp(ATTACHER(c), cv->owner) != 0)
+			if(jehanne_strcmp(ATTACHER(c), cv->owner) != 0)
 				error(Eperm);
 			if((perm & cv->perm) != perm)
 				error(Eperm);
@@ -444,7 +444,7 @@ ipopen(Chan* c, unsigned long omode)
 	case Qlisten:
 		cv = f->p[PROTO(c->qid)]->conv[CONV(c->qid)];
 		if((perm & (cv->perm>>6)) != perm) {
-			if(strcmp(ATTACHER(c), cv->owner) != 0)
+			if(jehanne_strcmp(ATTACHER(c), cv->owner) != 0)
 				error(Eperm);
 			if((perm & cv->perm) != perm)
 				error(Eperm);
@@ -531,11 +531,11 @@ ipwstat(Chan *c, uint8_t *dp, long n)
 		break;
 	}
 
-	n = convM2D(dp, n, &d, nil);
+	n = jehanne_convM2D(dp, n, &d, nil);
 	if(n > 0){
 		p = f->p[PROTO(c->qid)];
 		cv = p->conv[CONV(c->qid)];
-		if(!iseve() && strcmp(ATTACHER(c), cv->owner) != 0)
+		if(!iseve() && jehanne_strcmp(ATTACHER(c), cv->owner) != 0)
 			error(Eperm);
 		if(d.uid[0])
 			kstrdup(&cv->owner, d.uid);
@@ -604,8 +604,8 @@ ipclose(Chan* c)
 			decref(&f->p[PROTO(c->qid)]->conv[CONV(c->qid)]->snoopers);
 		break;
 	}
-	free(((IPaux*)c->aux)->owner);
-	free(c->aux);
+	jehanne_free(((IPaux*)c->aux)->owner);
+	jehanne_free(c->aux);
 }
 
 enum
@@ -645,33 +645,33 @@ ipread(Chan *ch, void *a, long n, int64_t off)
 		return netlogread(f, a, offset, n);
 	case Qctl:
 		buf = smalloc(16);
-		snprint(buf, 16, "%lud", CONV(ch->qid));
+		jehanne_snprint(buf, 16, "%lud", CONV(ch->qid));
 		rv = readstr(offset, p, n, buf);
-		free(buf);
+		jehanne_free(buf);
 		return rv;
 	case Qremote:
 		buf = smalloc(Statelen);
 		x = f->p[PROTO(ch->qid)];
 		c = x->conv[CONV(ch->qid)];
 		if(x->remote == nil) {
-			snprint(buf, Statelen, "%I!%d\n", c->raddr, c->rport);
+			jehanne_snprint(buf, Statelen, "%I!%d\n", c->raddr, c->rport);
 		} else {
 			(*x->remote)(c, buf, Statelen-2);
 		}
 		rv = readstr(offset, p, n, buf);
-		free(buf);
+		jehanne_free(buf);
 		return rv;
 	case Qlocal:
 		buf = smalloc(Statelen);
 		x = f->p[PROTO(ch->qid)];
 		c = x->conv[CONV(ch->qid)];
 		if(x->local == nil) {
-			snprint(buf, Statelen, "%I!%d\n", c->laddr, c->lport);
+			jehanne_snprint(buf, Statelen, "%I!%d\n", c->laddr, c->lport);
 		} else {
 			(*x->local)(c, buf, Statelen-2);
 		}
 		rv = readstr(offset, p, n, buf);
-		free(buf);
+		jehanne_free(buf);
 		return rv;
 	case Qstatus:
 		buf = smalloc(Statelen);
@@ -679,7 +679,7 @@ ipread(Chan *ch, void *a, long n, int64_t off)
 		c = x->conv[CONV(ch->qid)];
 		(*x->state)(c, buf, Statelen-2);
 		rv = readstr(offset, p, n, buf);
-		free(buf);
+		jehanne_free(buf);
 		return rv;
 	case Qdata:
 		c = f->p[PROTO(ch->qid)]->conv[CONV(ch->qid)];
@@ -697,7 +697,7 @@ ipread(Chan *ch, void *a, long n, int64_t off)
 		buf = smalloc(Statelen);
 		(*x->stats)(x, buf, Statelen);
 		rv = readstr(offset, p, n, buf);
-		free(buf);
+		jehanne_free(buf);
 		return rv;
 	}
 }
@@ -819,7 +819,7 @@ setlport(Conv* c)
 	 * if we do (and we're a cpu server), we might as well restart
 	 * since we're now unable to service new connections.
 	 */
-	print("setlport: %s: %s: %I!%ud -> %I out of ports\n",
+	jehanne_print("setlport: %s: %s: %I!%ud -> %I out of ports\n",
 		p->name, c->restricted? "restrict": "", c->raddr, c->rport, c->laddr);
 	return "no ports available";
 
@@ -845,10 +845,10 @@ setladdrport(Conv* c, char* str, int announcing)
 	 *  ignore restricted part if it exists.  it's
 	 *  meaningless on local ports.
 	 */
-	p = strchr(str, '!');
+	p = jehanne_strchr(str, '!');
 	if(p != nil){
 		*p++ = 0;
-		if(strcmp(p, "r") == 0)
+		if(jehanne_strcmp(p, "r") == 0)
 			p = nil;
 	}
 
@@ -860,7 +860,7 @@ setladdrport(Conv* c, char* str, int announcing)
 			setladdr(c);
 		p = str;
 	} else {
-		if(strcmp(str, "*") == 0)
+		if(jehanne_strcmp(str, "*") == 0)
 			ipmove(c->laddr, IPnoaddr);
 		else {
 			if(parseip(addr, str) == -1)
@@ -873,13 +873,13 @@ setladdrport(Conv* c, char* str, int announcing)
 	}
 
 	/* one process can get all connections */
-	if(announcing && strcmp(p, "*") == 0){
+	if(announcing && jehanne_strcmp(p, "*") == 0){
 		if(!iseve())
 			error(Eperm);
 		return setluniqueport(c, 0);
 	}
 
-	lport = atoi(p);
+	lport = jehanne_atoi(p);
 	if(lport <= 0)
 		rv = setlport(c);
 	else
@@ -892,16 +892,16 @@ setraddrport(Conv* c, char* str)
 {
 	char *p;
 
-	p = strchr(str, '!');
+	p = jehanne_strchr(str, '!');
 	if(p == nil)
 		return "malformed address";
 	*p++ = 0;
 	if (parseip(c->raddr, str) == -1)
 		return Ebadip;
-	c->rport = atoi(p);
-	p = strchr(p, '!');
+	c->rport = jehanne_atoi(p);
+	p = jehanne_strchr(p, '!');
 	if(p){
-		if(strstr(p, "!r") != nil)
+		if(jehanne_strstr(p, "!r") != nil)
 			c->restricted = 1;
 	}
 	return nil;
@@ -936,8 +936,8 @@ Fsstdconnect(Conv *c, char *argv[], int argc)
 			return p;
 	}
 
-	if( (memcmp(c->raddr, v4prefix, IPv4off) == 0 &&
-		memcmp(c->laddr, v4prefix, IPv4off) == 0)
+	if( (jehanne_memcmp(c->raddr, v4prefix, IPv4off) == 0 &&
+		jehanne_memcmp(c->laddr, v4prefix, IPv4off) == 0)
 		|| ipcmp(c->raddr, IPnoaddr) == 0)
 		c->ipversion = V4;
 	else
@@ -987,7 +987,7 @@ connectctlmsg(Proto *x, Conv *c, Cmdbuf *cb)
 char*
 Fsstdannounce(Conv* c, char* argv[], int argc)
 {
-	memset(c->raddr, 0, sizeof(c->raddr));
+	jehanne_memset(c->raddr, 0, sizeof(c->raddr));
 	c->rport = 0;
 	switch(argc){
 	default:
@@ -1068,7 +1068,7 @@ tosctlmsg(Conv *c, Cmdbuf *cb)
 	if(cb->nf < 2)
 		c->tos = 0;
 	else
-		c->tos = atoi(cb->f[1]);
+		c->tos = jehanne_atoi(cb->f[1]);
 }
 
 static void
@@ -1077,7 +1077,7 @@ ttlctlmsg(Conv *c, Cmdbuf *cb)
 	if(cb->nf < 2)
 		c->ttl = MAXTTL;
 	else
-		c->ttl = atoi(cb->f[1]);
+		c->ttl = jehanne_atoi(cb->f[1]);
 }
 
 static long
@@ -1125,24 +1125,24 @@ ipwrite(Chan* ch, void *v, long n, int64_t off)
 		qlock(c);
 		if(waserror()) {
 			qunlock(c);
-			free(cb);
+			jehanne_free(cb);
 			nexterror();
 		}
 		if(cb->nf < 1)
 			error("short control request");
-		if(strcmp(cb->f[0], "connect") == 0)
+		if(jehanne_strcmp(cb->f[0], "connect") == 0)
 			connectctlmsg(x, c, cb);
-		else if(strcmp(cb->f[0], "announce") == 0)
+		else if(jehanne_strcmp(cb->f[0], "announce") == 0)
 			announcectlmsg(x, c, cb);
-		else if(strcmp(cb->f[0], "bind") == 0)
+		else if(jehanne_strcmp(cb->f[0], "bind") == 0)
 			bindctlmsg(x, c, cb);
-		else if(strcmp(cb->f[0], "ttl") == 0)
+		else if(jehanne_strcmp(cb->f[0], "ttl") == 0)
 			ttlctlmsg(c, cb);
-		else if(strcmp(cb->f[0], "tos") == 0)
+		else if(jehanne_strcmp(cb->f[0], "tos") == 0)
 			tosctlmsg(c, cb);
-		else if(strcmp(cb->f[0], "ignoreadvice") == 0)
+		else if(jehanne_strcmp(cb->f[0], "ignoreadvice") == 0)
 			c->ignoreadvice = 1;
-		else if(strcmp(cb->f[0], "addmulti") == 0){
+		else if(jehanne_strcmp(cb->f[0], "addmulti") == 0){
 			if(cb->nf < 2)
 				error("addmulti needs interface address");
 			if(cb->nf == 2){
@@ -1159,7 +1159,7 @@ ipwrite(Chan* ch, void *v, long n, int64_t off)
 					error("addmulti for a non multicast address");
 				ipifcaddmulti(c, ma, ia);
 			}
-		} else if(strcmp(cb->f[0], "remmulti") == 0){
+		} else if(jehanne_strcmp(cb->f[0], "remmulti") == 0){
 			if(cb->nf < 2)
 				error("remmulti needs interface address");
 			if(!ipismulticast(c->raddr))
@@ -1167,11 +1167,11 @@ ipwrite(Chan* ch, void *v, long n, int64_t off)
 			if (parseip(ia, cb->f[1]) == -1)
 				error(Ebadip);
 			ipifcremmulti(c, c->raddr, ia);
-		} else if(strcmp(cb->f[0], "maxfragsize") == 0){
+		} else if(jehanne_strcmp(cb->f[0], "maxfragsize") == 0){
 			if(cb->nf < 2)
 				error("maxfragsize needs size");
 
-			c->maxfragsize = (int)strtol(cb->f[1], nil, 0);
+			c->maxfragsize = (int)jehanne_strtol(cb->f[1], nil, 0);
 
 		} else if(x->ctl != nil) {
 			p = x->ctl(c, cb->f, cb->nf);
@@ -1180,7 +1180,7 @@ ipwrite(Chan* ch, void *v, long n, int64_t off)
 		} else
 			error("unknown control request");
 		qunlock(c);
-		free(cb);
+		jehanne_free(cb);
 		poperror();
 	}
 	return n;
@@ -1250,7 +1250,7 @@ Fsproto(Fs *f, Proto *p)
 
 	p->qid.type = QTDIR;
 	p->qid.path = QID(f->np, 0, Qprotodir);
-	p->conv = malloc(sizeof(Conv*)*(p->nc+1));
+	p->conv = jehanne_malloc(sizeof(Conv*)*(p->nc+1));
 	if(p->conv == nil)
 		panic("Fsproto");
 
@@ -1285,16 +1285,16 @@ retry:
 	for(pp = p->conv; pp < ep; pp++) {
 		c = *pp;
 		if(c == nil){
-			c = malloc(sizeof(Conv));
+			c = jehanne_malloc(sizeof(Conv));
 			if(c == nil)
 				error(Enomem);
 			qlock(c);
 			c->p = p;
 			c->x = pp - p->conv;
 			if(p->ptclsize != 0){
-				c->ptcl = malloc(p->ptclsize);
+				c->ptcl = jehanne_malloc(p->ptclsize);
 				if(c->ptcl == nil) {
-					free(c);
+					jehanne_free(c);
 					error(Enomem);
 				}
 			}
@@ -1317,11 +1317,11 @@ retry:
 	}
 	if(pp >= ep) {
 		if(p->gc)
-			print("Fsprotoclone: garbage collecting Convs\n");
+			jehanne_print("Fsprotoclone: garbage collecting Convs\n");
 		if(p->gc != nil && (*p->gc)(p))
 			goto retry;
 		/* debugging: do we ever get here? */
-		print("Fsprotoclone: %s: all conversations in use: %s\n", p->name, user);
+		jehanne_print("Fsprotoclone: %s: all conversations in use: %s\n", p->name, user);
 		return nil;
 	}
 
@@ -1350,7 +1350,7 @@ int
 Fsconnected(Conv* c, char* msg)
 {
 	if(msg != nil && *msg != '\0')
-		strncpy(c->cerr, msg, ERRMAX-1);
+		jehanne_strncpy(c->cerr, msg, ERRMAX-1);
 
 	switch(c->state){
 
@@ -1426,11 +1426,11 @@ Fsnewcall(Conv *c, uint8_t *raddr, uint16_t rport, uint8_t *laddr, uint16_t lpor
 long
 ndbwrite(Fs *f, char *a, uint32_t off, int n)
 {
-	if(off > strlen(f->ndb))
+	if(off > jehanne_strlen(f->ndb))
 		error(Eio);
 	if(off+n >= sizeof(f->ndb))
 		error(Eio);
-	memmove(f->ndb+off, a, n);
+	jehanne_memmove(f->ndb+off, a, n);
 	f->ndb[off+n] = 0;
 	f->ndbvers++;
 	f->ndbmtime = seconds();

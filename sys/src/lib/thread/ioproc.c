@@ -50,7 +50,7 @@ xioproc(void *a)
 
 		io->ret = io->op(&io->arg);
 		if(io->ret < 0)
-			rerrstr(io->err, sizeof io->err);
+			jehanne_rerrstr(io->err, sizeof io->err);
 		while(send(io->creply, &io) == -1)
 			;
 		while(recv(io->creply, &x) == -1)
@@ -63,9 +63,9 @@ ioproc(void)
 {
 	Ioproc *io;
 
-	io = mallocz(sizeof(*io), 1);
+	io = jehanne_mallocz(sizeof(*io), 1);
 	if(io == nil)
-		sysfatal("ioproc malloc: %r");
+		jehanne_sysfatal("ioproc malloc: %r");
 	io->c = chancreate(sizeof(void*), 0);
 	io->creply = chancreate(sizeof(void*), 0);
 	io->tid = proccreate(xioproc, io, STACK);
@@ -82,5 +82,5 @@ closeioproc(Ioproc *io)
 		;
 	chanfree(io->c);
 	chanfree(io->creply);
-	free(io);
+	jehanne_free(io);
 }

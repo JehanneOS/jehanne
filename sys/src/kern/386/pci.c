@@ -80,31 +80,31 @@ tbdffmt(Fmt* fmt)
 	int l, r;
 	uint32_t type, tbdf;
 
-	if((p = malloc(READSTR)) == nil)
-		return fmtstrcpy(fmt, "(tbdfconv)");
+	if((p = jehanne_malloc(READSTR)) == nil)
+		return jehanne_fmtstrcpy(fmt, "(tbdfconv)");
 
 	switch(fmt->r){
 	case 'T':
 		tbdf = va_arg(fmt->args, int);
 		if(tbdf == BUSUNKNOWN)
-			snprint(p, READSTR, "unknown");
+			jehanne_snprint(p, READSTR, "unknown");
 		else{
 			type = BUSTYPE(tbdf);
 			if(type < nelem(bustypes))
-				l = snprint(p, READSTR, bustypes[type]);
+				l = jehanne_snprint(p, READSTR, bustypes[type]);
 			else
-				l = snprint(p, READSTR, "%d", type);
-			snprint(p+l, READSTR-l, ".%d.%d.%d",
+				l = jehanne_snprint(p, READSTR, "%d", type);
+			jehanne_snprint(p+l, READSTR-l, ".%d.%d.%d",
 				BUSBNO(tbdf), BUSDNO(tbdf), BUSFNO(tbdf));
 		}
 		break;
 
 	default:
-		snprint(p, READSTR, "(tbdfconv)");
+		jehanne_snprint(p, READSTR, "(tbdfconv)");
 		break;
 	}
-	r = fmtstrcpy(fmt, p);
-	free(p);
+	r = jehanne_fmtstrcpy(fmt, p);
+	jehanne_free(p);
 
 	return r;
 }
@@ -175,7 +175,7 @@ pcibusmap(Pcidev *root, uint32_t *pmema, uint32_t *pioa, int wrreg)
 		ntb++;
 
 	ntb *= (PciCIS-PciBAR0)/4;
-	table = malloc(2*ntb*sizeof(Pcisiz));
+	table = jehanne_malloc(2*ntb*sizeof(Pcisiz));
 	if(table == nil)
 		panic("pcibusmap: can't allocate memory");
 	itb = table;
@@ -247,9 +247,9 @@ pcibusmap(Pcidev *root, uint32_t *pmema, uint32_t *pioa, int wrreg)
 	/*
 	 * Sort both tables IO smallest first, Memory largest
 	 */
-	qsort(table, itb-table, sizeof(Pcisiz), pcisizcmp);
+	jehanne_qsort(table, itb-table, sizeof(Pcisiz), pcisizcmp);
 	tptr = table+ntb;
-	qsort(tptr, mtb-tptr, sizeof(Pcisiz), pcisizcmp);
+	jehanne_qsort(tptr, mtb-tptr, sizeof(Pcisiz), pcisizcmp);
 
 	/*
 	 * Allocate IO address space on this bus
@@ -296,7 +296,7 @@ pcibusmap(Pcidev *root, uint32_t *pmema, uint32_t *pioa, int wrreg)
 
 	*pmema = mema;
 	*pioa = ioa;
-	free(table);
+	jehanne_free(table);
 
 	if(wrreg == 0)
 		return;
@@ -368,7 +368,7 @@ pcilscan(int bno, Pcidev** list, Pcidev *parent)
 			l = pcicfgrw32(tbdf, PciVID, 0, 1);
 			if(l == 0xFFFFFFFF || l == 0)
 				continue;
-			p = malloc(sizeof(*p));
+			p = jehanne_malloc(sizeof(*p));
 			if(p == nil)
 				panic("pcilscan: can't allocate memory");
 			p->tbdf = tbdf;
@@ -432,7 +432,7 @@ pcilscan(int bno, Pcidev** list, Pcidev *parent)
 						rno += 4;
 						hi = pcicfgr32(p, rno);
 						if(hi != 0){
-							print("ignoring 64-bit bar %d: %llux %d from %T\n",
+							jehanne_print("ignoring 64-bit bar %d: %llux %d from %T\n",
 								i, (uint64_t)hi<<32 | p->mem[i].bar, p->mem[i].size, p->tbdf);
 							p->mem[i].bar = 0;
 							p->mem[i].size = 0;
@@ -754,13 +754,13 @@ pcirouting(void)
 	if(size < sizeof(Router) || checksum(r, size))
 		return;
 
-	if(0) print("PCI interrupt routing table version %d.%d at %p\n",
+	if(0) jehanne_print("PCI interrupt routing table version %d.%d at %p\n",
 		r->version[0], r->version[1], r);
 
 	tbdf = MKBUS(BusPCI, r->bus, (r->devfn>>3)&0x1f, r->devfn&7);
 	sbpci = pcimatchtbdf(tbdf);
 	if(sbpci == nil) {
-		print("pcirouting: Cannot find south bridge %T\n", tbdf);
+		jehanne_print("pcirouting: Cannot find south bridge %T\n", tbdf);
 		return;
 	}
 
@@ -769,7 +769,7 @@ pcirouting(void)
 			break;
 
 	if(i == nelem(southbridges)) {
-		print("pcirouting: ignoring south bridge %T %.4uX/%.4uX\n", tbdf, sbpci->vid, sbpci->did);
+		jehanne_print("pcirouting: ignoring south bridge %T %.4uX/%.4uX\n", tbdf, sbpci->vid, sbpci->did);
 		return;
 	}
 	southbridge = &southbridges[i];
@@ -779,12 +779,12 @@ pcirouting(void)
 	pciirqs = (r->pciirqs[1] << 8)|r->pciirqs[0];
 	for(e = (Slot *)&r[1]; (uint8_t *)e < p + size; e++) {
 		if(0) {
-			print("%.2uX/%.2uX %.2uX: ", e->bus, e->dev, e->slot);
+			jehanne_print("%.2uX/%.2uX %.2uX: ", e->bus, e->dev, e->slot);
 			for (i = 0; i < 4; i++) {
 				map = &e->maps[i * 3];
-				print("[%d] %.2uX %.4uX ", i, map[0], (map[2] << 8)|map[1]);
+				jehanne_print("[%d] %.2uX %.4uX ", i, map[0], (map[2] << 8)|map[1]);
 			}
-			print("\n");
+			jehanne_print("\n");
 		}
 		for(i = 0; i < 8; i++) {
 			tbdf = MKBUS(BusPCI, e->bus, (e->dev>>3)&0x1f, i);
@@ -808,7 +808,7 @@ pcirouting(void)
 					continue;
 				southbridge->set(sbpci, link, irq);
 			}
-			print("pcirouting: %T at pin %d link %.2uX irq %d -> %d\n", tbdf, pin, link, pci->intl, irq);
+			jehanne_print("pcirouting: %T at pin %d link %.2uX irq %d -> %d\n", tbdf, pin, link, pci->intl, irq);
 			pcicfgw8(pci, PciINTL, irq);
 			pci->intl = irq;
 		}
@@ -825,7 +825,7 @@ pcicfgrw8bios(int tbdf, int rno, int data, int read)
 	if(pcibiossi == nil)
 		return -1;
 
-	memset(&ci, 0, sizeof(BIOS32ci));
+	jehanne_memset(&ci, 0, sizeof(BIOS32ci));
 	ci.ebx = (BUSBNO(tbdf)<<8)|(BUSDNO(tbdf)<<3)|BUSFNO(tbdf);
 	ci.edi = rno;
 	if(read){
@@ -851,7 +851,7 @@ pcicfgrw16bios(int tbdf, int rno, int data, int read)
 	if(pcibiossi == nil)
 		return -1;
 
-	memset(&ci, 0, sizeof(BIOS32ci));
+	jehanne_memset(&ci, 0, sizeof(BIOS32ci));
 	ci.ebx = (BUSBNO(tbdf)<<8)|(BUSDNO(tbdf)<<3)|BUSFNO(tbdf);
 	ci.edi = rno;
 	if(read){
@@ -877,7 +877,7 @@ pcicfgrw32bios(int tbdf, int rno, int data, int read)
 	if(pcibiossi == nil)
 		return -1;
 
-	memset(&ci, 0, sizeof(BIOS32ci));
+	jehanne_memset(&ci, 0, sizeof(BIOS32ci));
 	ci.ebx = (BUSBNO(tbdf)<<8)|(BUSDNO(tbdf)<<3)|BUSFNO(tbdf);
 	ci.edi = rno;
 	if(read){
@@ -904,10 +904,10 @@ pcibiosinit(void)
 	if((si = bios32open("$PCI")) == nil)
 		return nil;
 
-	memset(&ci, 0, sizeof(BIOS32ci));
+	jehanne_memset(&ci, 0, sizeof(BIOS32ci));
 	ci.eax = 0xB101;
 	if(bios32ci(si, &ci) || ci.edx != ((' '<<24)|('I'<<16)|('C'<<8)|'P')){
-		free(si);
+		jehanne_free(si);
 		return nil;
 	}
 	if(ci.eax & 0x01)
@@ -996,12 +996,12 @@ pcicfginit(void)
 		pcicfgmode = 3;
 	}
 
-	fmtinstall('T', tbdffmt);
+	jehanne_fmtinstall('T', tbdffmt);
 
 	if(p = getconf("*pcimaxbno"))
-		pcimaxbno = strtoul(p, 0, 0);
+		pcimaxbno = jehanne_strtoul(p, 0, 0);
 	if(p = getconf("*pcimaxdno")){
-		n = strtoul(p, 0, 0);
+		n = jehanne_strtoul(p, 0, 0);
 		if(n < pcimaxdno)
 			pcimaxdno = n;
 	}
@@ -1317,26 +1317,26 @@ pcilhinv(Pcidev* p)
 
 	if(p == nil) {
 		p = pciroot;
-		print("bus dev type vid  did intl memory\n");
+		jehanne_print("bus dev type vid  did intl memory\n");
 	}
 	for(t = p; t != nil; t = t->link) {
-		print("%d  %2d/%d %.2ux %.2ux %.2ux %.4ux %.4ux %3d  ",
+		jehanne_print("%d  %2d/%d %.2ux %.2ux %.2ux %.4ux %.4ux %3d  ",
 			BUSBNO(t->tbdf), BUSDNO(t->tbdf), BUSFNO(t->tbdf),
 			t->ccrb, t->ccru, t->ccrp, t->vid, t->did, t->intl);
 
 		for(i = 0; i < nelem(p->mem); i++) {
 			if(t->mem[i].size == 0)
 				continue;
-			print("%d:%.8lux %d ", i,
+			jehanne_print("%d:%.8lux %d ", i,
 				t->mem[i].bar, t->mem[i].size);
 		}
 		if(t->ioa.bar || t->ioa.size)
-			print("ioa:%.8lux %d ", t->ioa.bar, t->ioa.size);
+			jehanne_print("ioa:%.8lux %d ", t->ioa.bar, t->ioa.size);
 		if(t->mema.bar || t->mema.size)
-			print("mema:%.8lux %d ", t->mema.bar, t->mema.size);
+			jehanne_print("mema:%.8lux %d ", t->mema.bar, t->mema.size);
 		if(t->bridge)
-			print("->%d", BUSBNO(t->bridge->tbdf));
-		print("\n");
+			jehanne_print("->%d", BUSBNO(t->bridge->tbdf));
+		jehanne_print("\n");
 	}
 	while(p != nil) {
 		if(p->bridge != nil)

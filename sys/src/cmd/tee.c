@@ -12,7 +12,7 @@
  */
 
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 
 int	uflag;
 int	aflag;

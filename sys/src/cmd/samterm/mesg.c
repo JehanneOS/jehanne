@@ -69,7 +69,7 @@ rcv(void)
 					state = 0;
 					continue;
 				}
-				fprint(2, "type %d count %d\n", h.type, count);
+				jehanne_fprint(2, "type %d count %d\n", h.type, count);
 				panic("count>DATASIZE");
 			}
 			if(count == 0)
@@ -116,7 +116,7 @@ inmesg(Hmesg type, int count)
 	default:
 		if(type == ((Hmesg)-1))
 			panic("rcv error");
-		fprint(2, "type %d\n", type);
+		jehanne_fprint(2, "type %d\n", type);
 		panic("rcv unknown");
 
 	case Hversion:
@@ -170,7 +170,7 @@ inmesg(Hmesg type, int count)
 				m = 1;
 			else m = 0;
 			for(; m<nname; m++)
-				if(strcmp((char*)indata+2, (char*)name[m]+1)<0)
+				if(jehanne_strcmp((char*)indata+2, (char*)name[m]+1)<0)
 					break;
 		}
 		menuins(m, indata+2, t, i, (int)l);
@@ -446,7 +446,7 @@ outTslS(Tmesg type, int s1, long l1, Rune *s)
 	outlong(l1);
 	c = buf;
 	while(*s)
-		c += runetochar(c, s++);
+		c += jehanne_runetochar(c, s++);
 	*c++ = 0;
 	outcopy(c-buf, (uint8_t *)buf);
 	outsend();
@@ -654,7 +654,7 @@ hsetsnarf(int nc)
 	if(n >= 0){
 		if(!s1)
 			n = 0;
-		s1 = realloc(s1, n+1);
+		s1 = jehanne_realloc(s1, n+1);
 		if (!s1)
 			panic("realloc");
 		s1[n] = 0;
@@ -662,10 +662,10 @@ hsetsnarf(int nc)
 		outTs(Tsetsnarf, n);
 		if(n>0 && write(1, s1, n)!=n)
 			panic("snarf write error");
-		free(s1);
+		jehanne_free(s1);
 	}else
 		outTs(Tsetsnarf, 0);
-	free(s2);
+	jehanne_free(s2);
 	setcursor(mousectl, cursor);
 }
 
@@ -685,7 +685,7 @@ hplumb(int nc)
 			plumbsend(plumbfd, m);
 		plumbfree(m);
 	}
-	free(s);
+	jehanne_free(s);
 }
 
 void
@@ -757,7 +757,7 @@ hdata(int m, long a, uint8_t *s, int len)
 		return 0;
 	r = buf;
 	for(i=0; i<len; i+=w,s+=w)
-		w = chartorune(r++, (char*)s);
+		w = jehanne_chartorune(r++, (char*)s);
 	return hdata1(t, a, buf, r-buf);
 }
 

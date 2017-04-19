@@ -130,7 +130,7 @@ extern int
 icmpstate(Conv *c, char *state, int n)
 {
 	USED(c);
-	return snprint(state, n, "%s qin %d qout %d\n",
+	return jehanne_snprint(state, n, "%s qin %d qout %d\n",
 		"Datagram",
 		c->rq ? qlen(c->rq) : 0,
 		c->wq ? qlen(c->wq) : 0
@@ -184,7 +184,7 @@ icmpkick(void *x, Block *bp)
 	v6tov4(p->src, c->laddr);
 	p->proto = IP_ICMPPROTO;
 	hnputs(p->icmpid, c->lport);
-	memset(p->cksum, 0, sizeof(p->cksum));
+	jehanne_memset(p->cksum, 0, sizeof(p->cksum));
 	hnputs(p->cksum, ptclcsum(bp, ICMP_IPSIZE, blocklen(bp) - ICMP_IPSIZE));
 	ipriv->stats[OutMsgs]++;
 	ipoput4(c->p->f, bp, 0, c->ttl, c->tos, nil);
@@ -229,15 +229,15 @@ icmpttlexceeded(Fs *f, uint8_t *ia, Block *bp)
 	nbp->wp += ICMP_IPSIZE + ICMP_HDRSIZE + ICMP_IPSIZE + 8;
 	np = (Icmp *)nbp->rp;
 	np->vihl = IP_VER4;
-	memmove(np->dst, p->src, sizeof(np->dst));
+	jehanne_memmove(np->dst, p->src, sizeof(np->dst));
 	v6tov4(np->src, ia);
-	memmove(np->data, bp->rp, ICMP_IPSIZE + 8);
+	jehanne_memmove(np->data, bp->rp, ICMP_IPSIZE + 8);
 	np->type = TimeExceed;
 	np->code = 0;
 	np->proto = IP_ICMPPROTO;
 	hnputs(np->icmpid, 0);
 	hnputs(np->seq, 0);
-	memset(np->cksum, 0, sizeof(np->cksum));
+	jehanne_memset(np->cksum, 0, sizeof(np->cksum));
 	hnputs(np->cksum, ptclcsum(nbp, ICMP_IPSIZE, blocklen(nbp) - ICMP_IPSIZE));
 	ipoput4(f, nbp, 0, MAXTTL, DFLTTOS, nil);
 }
@@ -257,15 +257,15 @@ icmpunreachable(Fs *f, Block *bp, int code, int seq)
 	nbp->wp += ICMP_IPSIZE + ICMP_HDRSIZE + ICMP_IPSIZE + 8;
 	np = (Icmp *)nbp->rp;
 	np->vihl = IP_VER4;
-	memmove(np->dst, p->src, sizeof(np->dst));
-	memmove(np->src, p->dst, sizeof(np->src));
-	memmove(np->data, bp->rp, ICMP_IPSIZE + 8);
+	jehanne_memmove(np->dst, p->src, sizeof(np->dst));
+	jehanne_memmove(np->src, p->dst, sizeof(np->src));
+	jehanne_memmove(np->data, bp->rp, ICMP_IPSIZE + 8);
 	np->type = Unreachable;
 	np->code = code;
 	np->proto = IP_ICMPPROTO;
 	hnputs(np->icmpid, 0);
 	hnputs(np->seq, seq);
-	memset(np->cksum, 0, sizeof(np->cksum));
+	jehanne_memset(np->cksum, 0, sizeof(np->cksum));
 	hnputs(np->cksum, ptclcsum(nbp, ICMP_IPSIZE, blocklen(nbp) - ICMP_IPSIZE));
 	ipoput4(f, nbp, 0, MAXTTL, DFLTTOS, nil);
 }
@@ -315,11 +315,11 @@ mkechoreply(Block *bp, Fs *f)
 	if(!ip4me(f, q->dst) || !ip4reply(f, q->src))
 		return nil;
 	q->vihl = IP_VER4;
-	memmove(ip, q->src, sizeof(q->dst));
-	memmove(q->src, q->dst, sizeof(q->src));
-	memmove(q->dst, ip, sizeof(q->dst));
+	jehanne_memmove(ip, q->src, sizeof(q->dst));
+	jehanne_memmove(q->src, q->dst, sizeof(q->src));
+	jehanne_memmove(q->dst, ip, sizeof(q->dst));
 	q->type = EchoReply;
-	memset(q->cksum, 0, sizeof(q->cksum));
+	jehanne_memset(q->cksum, 0, sizeof(q->cksum));
 	hnputs(q->cksum, ptclcsum(bp, ICMP_IPSIZE, blocklen(bp) - ICMP_IPSIZE));
 
 	return bp;
@@ -403,7 +403,7 @@ icmpiput(Proto *icmp, Ipifc* _1, Block *bp)
 		break;
 	case Unreachable:
 		if(p->code >= nelem(unreachcode)) {
-			snprint(m2, sizeof m2, "unreachable %V->%V code %d",
+			jehanne_snprint(m2, sizeof m2, "unreachable %V->%V code %d",
 				p->src, p->dst, p->code);
 			msg = m2;
 		} else
@@ -426,7 +426,7 @@ icmpiput(Proto *icmp, Ipifc* _1, Block *bp)
 		break;
 	case TimeExceed:
 		if(p->code == 0){
-			snprint(m2, sizeof m2, "ttl exceeded at %V", p->src);
+			jehanne_snprint(m2, sizeof m2, "ttl exceeded at %V", p->src);
 
 			bp->rp += ICMP_IPSIZE+ICMP_HDRSIZE;
 			if(blocklen(bp) < MinAdvise){
@@ -491,12 +491,12 @@ icmpstats(Proto *icmp, char *buf, int len)
 	p = buf;
 	e = p+len;
 	for(i = 0; i < Nstats; i++)
-		p = seprint(p, e, "%s: %lud\n", statnames[i], priv->stats[i]);
+		p = jehanne_seprint(p, e, "%s: %lud\n", statnames[i], priv->stats[i]);
 	for(i = 0; i <= Maxtype; i++){
 		if(icmpnames[i])
-			p = seprint(p, e, "%s: %lud %lud\n", icmpnames[i], priv->in[i], priv->out[i]);
+			p = jehanne_seprint(p, e, "%s: %lud %lud\n", icmpnames[i], priv->in[i], priv->out[i]);
 		else
-			p = seprint(p, e, "%d: %lud %lud\n", i, priv->in[i], priv->out[i]);
+			p = jehanne_seprint(p, e, "%d: %lud %lud\n", i, priv->in[i], priv->out[i]);
 	}
 	return p - buf;
 }

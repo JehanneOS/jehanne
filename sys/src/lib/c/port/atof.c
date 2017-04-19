@@ -11,7 +11,7 @@
 #include <libc.h>
 
 double
-atof(const char *cp)
+jehanne_atof(const char *cp)
 {
-	return strtod(cp, 0);
+	return jehanne_strtod(cp, 0);
 }

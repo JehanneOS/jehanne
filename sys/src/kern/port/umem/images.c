@@ -92,10 +92,10 @@ static ImagePool pool;
 void
 imagepool_init(void)
 {
-	pool.chunks = malloc(sizeof(ImgPoolChunk*));
+	pool.chunks = jehanne_malloc(sizeof(ImgPoolChunk*));
 	if(pool.chunks == nil)
 		panic("image_init: out of memory");
-	pool.chunks[0] = mallocz(sizeof(ImgPoolChunk), 1);
+	pool.chunks[0] = jehanne_mallocz(sizeof(ImgPoolChunk), 1);
 	if(pool.chunks[0] == nil)
 		panic("image_init: out of memory");
 	pool.allocated = PSTEP;
@@ -120,16 +120,16 @@ imagepool_grow(void)
 		initially_allocated = pool.allocated;
 
 		size = pool.allocated/PSTEP;
-		chunks = malloc(sizeof(ImgPoolChunk*)*(size+1));
+		chunks = jehanne_malloc(sizeof(ImgPoolChunk*)*(size+1));
 		if(chunks == nil)
 			goto Fail;
-		chunks[size] = mallocz(sizeof(ImgPoolChunk), 1);
+		chunks[size] = jehanne_mallocz(sizeof(ImgPoolChunk), 1);
 		if(chunks[size] == nil){
 			goto FreeChunksAndFail;
 		}
-		chunks = memmove(chunks, pool.chunks, size);
+		chunks = jehanne_memmove(chunks, pool.chunks, size);
 
-		free(pool.chunks);
+		jehanne_free(pool.chunks);
 		pool.chunks = chunks;
 		pool.allocated += PSTEP;
 		pool.blanks += PSTEP;
@@ -156,7 +156,7 @@ imagepool_grow(void)
 	return 1;
 
 FreeChunksAndFail:
-	free(chunks);
+	jehanne_free(chunks);
 Fail:
 	/* reset blanks requests: the requesters will fail anyway */
 	if(pool.blanks < 0)
@@ -178,6 +178,16 @@ image_initialize(ElfImage* new, Chan *c)
 	new->hnext = 0;
 }
 
+static void
+dispose_segment_pages(PagePointer* pages, unsigned int npages)
+{
+	if(pages == nil)
+		return;
+	while(npages){
+		page_dispose(&pages[--npages]);
+	}
+}
+
 static int
 segments_fill(ElfSegment* segments, Ldseg *infos)
 {
@@ -189,12 +199,15 @@ segments_fill(ElfSegment* segments, Ldseg *infos)
 	if(text->pgsz != PGSZ || data->pgsz != PGSZ)
 		return 0;
 
+	dispose_segment_pages(segments[0].pages, segments[0].npages);
+	dispose_segment_pages(segments[1].pages, segments[1].npages);
+
 	segments[0].npages = HOWMANY(text->pg0off+text->memsz, PGSZ);
 	if(segments[0].npages > (SEGMAPSIZE*PTEPERTAB))
 		return 0;
 	if(segments[0].pages != nil)
-		free(segments[0].pages);
-	segments[0].pages = mallocz(sizeof(PagePointer)*segments[0].npages, 1);
+		jehanne_free(segments[0].pages);
+	segments[0].pages = jehanne_mallocz(sizeof(PagePointer)*segments[0].npages, 1);
 	if(segments[0].pages == nil)
 		return 0;
 	segments[0].pg0addr = text->pg0vaddr;
@@ -206,10 +219,10 @@ segments_fill(ElfSegment* segments, Ldseg *infos)
 	if(segments[1].npages > (SEGMAPSIZE*PTEPERTAB))
 		return 0;
 	if(segments[1].pages != nil)
-		free(segments[1].pages);
-	segments[1].pages = mallocz(sizeof(PagePointer)*segments[1].npages, 1);
+		jehanne_free(segments[1].pages);
+	segments[1].pages = jehanne_mallocz(sizeof(PagePointer)*segments[1].npages, 1);
 	if(segments[1].pages == nil){
-		free(segments[0].pages);
+		jehanne_free(segments[0].pages);
 		segments[0].pages = nil;
 		return 0;
 	}
@@ -511,9 +524,9 @@ faultio_error(Chan *c)
 	char buf[ERRMAX];
 
 	if(c && c->path && c->path->s)
-		snprint(buf, sizeof buf, "%s accessing %s: %s", Eioload, c->path->s, up->errstr);
+		jehanne_snprint(buf, sizeof buf, "%s accessing %s: %s", Eioload, c->path->s, up->errstr);
 	else
-		snprint(buf, sizeof buf, "sys: %s", Eioload);
+		jehanne_snprint(buf, sizeof buf, "sys: %s", Eioload);
 
 	if(up->nerrlab) {
 		postnote(up, 1, buf, NDebug);
@@ -592,7 +605,7 @@ image_fill(PagePointer* page, ElfSegPointer segment, uintptr_t va)
 	 * - the last page of the segment, if partial (rend & (PGSZ-1))
 	 */
 	if ((rend & (PGSZ-1)) || (rstart & (PGSZ-1)))
-		memset(kaddr, 0, PGSZ);
+		jehanne_memset(kaddr, 0, PGSZ);
 
 	c = img->c;
 
@@ -607,7 +620,7 @@ image_fill(PagePointer* page, ElfSegPointer segment, uintptr_t va)
 
 	/* ok, so we really have to read the file */
 	while(waserror()){
-		if(strcmp(up->errstr, Eintr) == 0)
+		if(jehanne_strcmp(up->errstr, Eintr) == 0)
 			continue;
 		qunlock(&seg->l);
 		page_kunmap(new, &kaddr);

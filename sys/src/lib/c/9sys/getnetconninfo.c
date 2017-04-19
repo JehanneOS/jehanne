@@ -21,18 +21,18 @@ getendpoint(char *dir, char *file, char **sysp, char **servp)
 
 	sys = serv = 0;
 
-	snprint(buf, sizeof buf, "%s/%s", dir, file);
+	jehanne_snprint(buf, sizeof buf, "%s/%s", dir, file);
 	fd = open(buf, OREAD);
 	if(fd >= 0){
 		n = read(fd, buf, sizeof(buf)-1);
 		if(n>0){
 			buf[n-1] = 0;
-			serv = strchr(buf, '!');
+			serv = jehanne_strchr(buf, '!');
 			if(serv){
 				*serv++ = 0;
-				serv = strdup(serv);
+				serv = jehanne_strdup(serv);
 			}
-			sys = strdup(buf);
+			sys = jehanne_strdup(buf);
 		}
 		close(fd);
 	}
@@ -45,7 +45,7 @@ getendpoint(char *dir, char *file, char **sysp, char **servp)
 }
 
 NetConnInfo*
-getnetconninfo(const char *dir, int fd)
+jehanne_getnetconninfo(const char *dir, int fd)
 {
 	NetConnInfo *nci;
 	char *cp;
@@ -58,40 +58,40 @@ getnetconninfo(const char *dir, int fd)
 	if(dir == nil || *dir == 0){
 		if(fd2path(fd, path, sizeof(path)) < 0)
 			return nil;
-		cp = strrchr(path, '/');
+		cp = jehanne_strrchr(path, '/');
 		if(cp == nil)
 			return nil;
 		*cp = 0;
 		dir = path;
 	}
 
-	nci = mallocz(sizeof *nci, 1);
+	nci = jehanne_mallocz(sizeof *nci, 1);
 	if(nci == nil)
 		return nil;
 
 	/* copy connection directory */
-	nci->dir = strdup(dir);
+	nci->dir = jehanne_strdup(dir);
 	if(nci->dir == nil)
 		goto err;
 
 	/* get netroot */
-	nci->root = strdup(dir);
+	nci->root = jehanne_strdup(dir);
 	if(nci->root == nil)
 		goto err;
-	cp = strchr(nci->root+1, '/');
+	cp = jehanne_strchr(nci->root+1, '/');
 	if(cp == nil)
 		goto err;
 	*cp = 0;
 
 	/* figure out bind spec */
-	d = dirstat(nci->dir);
+	d = jehanne_dirstat(nci->dir);
 	if(d != nil){
-		sprint(spec, "#%C%d", d->type, d->dev);
-		nci->spec = strdup(spec);
+		jehanne_sprint(spec, "#%C%d", d->type, d->dev);
+		nci->spec = jehanne_strdup(spec);
 	}
 	if(nci->spec == nil)
 		nci->spec = unknown;
-	free(d);
+	jehanne_free(d);
 
 	/* get the two end points */
 	getendpoint(nci->dir, "local", &nci->lsys, &nci->lserv);
@@ -101,18 +101,18 @@ getnetconninfo(const char *dir, int fd)
 	if(nci->rsys == nil || nci->rserv == nil)
 		goto err;
 
-	strecpy(netname, netname+sizeof netname, nci->dir);
-	if((p = strrchr(netname, '/')) != nil)
+	jehanne_strecpy(netname, netname+sizeof netname, nci->dir);
+	if((p = jehanne_strrchr(netname, '/')) != nil)
 		*p = 0;
-	if(strncmp(netname, "/net/", 5) == 0)
-		memmove(netname, netname+5, strlen(netname+5)+1);
-	nci->laddr = smprint("%s!%s!%s", netname, nci->lsys, nci->lserv);
-	nci->raddr = smprint("%s!%s!%s", netname, nci->rsys, nci->rserv);
+	if(jehanne_strncmp(netname, "/net/", 5) == 0)
+		jehanne_memmove(netname, netname+5, jehanne_strlen(netname+5)+1);
+	nci->laddr = jehanne_smprint("%s!%s!%s", netname, nci->lsys, nci->lserv);
+	nci->raddr = jehanne_smprint("%s!%s!%s", netname, nci->rsys, nci->rserv);
 	if(nci->laddr == nil || nci->raddr == nil)
 		goto err;
 	return nci;
 err:
-	freenetconninfo(nci);
+	jehanne_freenetconninfo(nci);
 	return nil;
 }
 
@@ -121,11 +121,11 @@ xfree(char *x)
 {
 	if(x == nil || x == unknown)
 		return;
-	free(x);
+	jehanne_free(x);
 }
 
 void
-freenetconninfo(NetConnInfo *nci)
+jehanne_freenetconninfo(NetConnInfo *nci)
 {
 	if(nci == nil)
 		return;
@@ -138,5 +138,5 @@ freenetconninfo(NetConnInfo *nci)
 	xfree(nci->rserv);
 	xfree(nci->laddr);
 	xfree(nci->raddr);
-	free(nci);
+	jehanne_free(nci);
 }

@@ -1,5 +1,5 @@
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 #include <ctype.h>
 #include <draw.h>
 #include <event.h>

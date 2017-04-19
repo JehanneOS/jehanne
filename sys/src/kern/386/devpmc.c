@@ -35,11 +35,11 @@ topdirinit(void)
 	int nent;
 
 	nent = 1  + MACHMAX;
-	toptab = mallocz(nent * sizeof(Dirtab), 1);
+	toptab = jehanne_mallocz(nent * sizeof(Dirtab), 1);
 	if (toptab == nil)
 		return;
 	d = toptab;
-	strncpy(d->name, "ctrdesc", KNAMELEN);
+	jehanne_strncpy(d->name, "ctrdesc", KNAMELEN);
 	mkqid(&d->qid, Qdesc, 0, 0);
 	d->perm = 0440;
 
@@ -64,11 +64,11 @@ corefilesinit(void)
 					continue;
 				}else{
 					/* a new one appeared, make space, should almost never happen */
-					memmove(d + 1, d, (MACHMAX - i)*sizeof(*d));
-					memset(d, 0, sizeof(*d));
+					jehanne_memmove(d + 1, d, (MACHMAX - i)*sizeof(*d));
+					jehanne_memset(d, 0, sizeof(*d));
 				}
 			}
-			snprint(d->name, KNAMELEN, "core%4.4ud", i);
+			jehanne_snprint(d->name, KNAMELEN, "core%4.4ud", i);
 			mkqid(&d->qid, PMCQID(i, Qcore), 0, 0);
 			d->perm = 0660;
 			nc++;
@@ -156,28 +156,28 @@ pmcctlstr(char *str, int nstr, PmcCtl *p, int64_t v)
 	int ns;
 
 	ns = 0;
-	ns += snprint(str + ns,  nstr - ns, "%#ullx ", v);
+	ns += jehanne_snprint(str + ns,  nstr - ns, "%#ullx ", v);
 	if (p->enab && p->enab != PmcCtlNullval)
-		ns += snprint(str + ns, nstr - ns, "on ");
+		ns += jehanne_snprint(str + ns, nstr - ns, "on ");
 	else
-		ns += snprint(str + ns, nstr - ns, "off ");
+		ns += jehanne_snprint(str + ns, nstr - ns, "off ");
 
 	if (p->user && p->user != PmcCtlNullval)
-		ns += snprint(str + ns, nstr - ns, "user ");
+		ns += jehanne_snprint(str + ns, nstr - ns, "user ");
 	else
-		ns += snprint(str + ns, nstr - ns, "nouser ");
+		ns += jehanne_snprint(str + ns, nstr - ns, "nouser ");
 
 	if (p->os && p->user != PmcCtlNullval)
-		ns += snprint(str + ns, nstr - ns, "os ");
+		ns += jehanne_snprint(str + ns, nstr - ns, "os ");
 	else
-		ns += snprint(str + ns, nstr - ns, "noos ");
+		ns += jehanne_snprint(str + ns, nstr - ns, "noos ");
 
 	/* TODO, inverse pmctrans? */
 	if(!p->nodesc)
-		ns += snprint(str + ns, nstr - ns, "%s", p->descstr);
+		ns += jehanne_snprint(str + ns, nstr - ns, "%s", p->descstr);
 	else
-		ns += snprint(str + ns, nstr - ns, "no desc");
-	ns += snprint(str + ns, nstr - ns, "\n");
+		ns += jehanne_snprint(str + ns, nstr - ns, "no desc");
+	ns += jehanne_snprint(str + ns, nstr - ns, "\n");
 	return ns;
 }
 
@@ -198,9 +198,9 @@ pmcread(Chan *c, void *a, long n, int64_t offset)
 
 	if(type == Qdir)
 		return devdirread(c, a, n, nil, 0, pmcgen);
-	s = malloc(PmcCtlRdStr);
+	s = jehanne_malloc(PmcCtlRdStr);
 	if(waserror()){
-		free(s);
+		jehanne_free(s);
 		nexterror();
 	}
 
@@ -215,7 +215,7 @@ pmcread(Chan *c, void *a, long n, int64_t offset)
 			if(! p.enab)
 				continue;
 			v = pmcgetctr(coreno, i);
-			ns += snprint(s + ns, PmcCtlRdStr - ns, "%2.2ud ", i);
+			ns += jehanne_snprint(s + ns, PmcCtlRdStr - ns, "%2.2ud ", i);
 			nn = pmcctlstr(s + ns, PmcCtlRdStr - ns, &p, v);
 			if (n < 0)
 				error("bad pmc");
@@ -230,7 +230,7 @@ pmcread(Chan *c, void *a, long n, int64_t offset)
 		error(Eperm);
 	}
 	n = readstr(offset, a, n, s);
-	free(s);
+	jehanne_free(s);
 	poperror();
 	return n;
 }
@@ -238,7 +238,7 @@ pmcread(Chan *c, void *a, long n, int64_t offset)
 static int
 isset(char *str)
 {
-	return strncmp(str, "-", 2) != 0;
+	return jehanne_strncmp(str, "-", 2) != 0;
 }
 
 static int
@@ -266,20 +266,20 @@ fillctl(PmcCtl *p, Cmdbuf *cb, int start, int end)
 		end = cb->nf -1;
 	for(i = start; i <= end; i++){
 		if(pmcdebug != 0)
-			print("setting field %d to %s\n", i, cb->f[i]);
+			jehanne_print("setting field %d to %s\n", i, cb->f[i]);
 		if(!isset(cb->f[i]))
 			continue;
-		else if(strcmp("on", cb->f[i]) == 0)
+		else if(jehanne_strcmp("on", cb->f[i]) == 0)
 			p->enab = 1;
-		else if(strcmp("off", cb->f[i]) == 0)
+		else if(jehanne_strcmp("off", cb->f[i]) == 0)
 			p->enab = 0;
-		else if(strcmp("user", cb->f[i]) == 0)
+		else if(jehanne_strcmp("user", cb->f[i]) == 0)
 			p->user = 1;
-		else if(strcmp("os", cb->f[i]) == 0)
+		else if(jehanne_strcmp("os", cb->f[i]) == 0)
 			p->os = 1;
-		else if(strcmp("nouser", cb->f[i]) == 0)
+		else if(jehanne_strcmp("nouser", cb->f[i]) == 0)
 			p->user = 0;
-		else if(strcmp("noos", cb->f[i]) == 0)
+		else if(jehanne_strcmp("noos", cb->f[i]) == 0)
 			p->os = 0;
 		else
 			error("bad ctl");
@@ -308,12 +308,12 @@ pmcwrite(Chan *c, void *a, long n, int64_t)
 	/* TODO, multiple lines? */
 	cb = parsecmd(a, n);
 	if(waserror()){
-		free(cb);
+		jehanne_free(cb);
 		nexterror();
 	}
 	if(cb->nf < 1)
 		error("short ctl");
-	if(strcmp("debug", cb->f[0]) == 0)
+	if(jehanne_strcmp("debug", cb->f[0]) == 0)
 			pmcdebug = ~pmcdebug;
 	else{
 		if(cb->nf < 2)
@@ -324,16 +324,16 @@ pmcwrite(Chan *c, void *a, long n, int64_t)
 			if(regno < 0)
 				error("no free regno");
 			if(pmcdebug != 0)
-				print("picked regno %d\n", regno);
+				jehanne_print("picked regno %d\n", regno);
 		}else{
-			regno = strtoull(cb->f[0], 0, 0);
+			regno = jehanne_strtoull(cb->f[0], 0, 0);
 			if(regno > pmcnregs())
 				error("ctr number too big");
 			if(pmcdebug != 0)
-				print("setting regno %d\n", regno);
+				jehanne_print("setting regno %d\n", regno);
 		}
 		if(isset(cb->f[1]))
-			pmcsetctr(coreno, strtoull(cb->f[1], 0, 0), regno);
+			pmcsetctr(coreno, jehanne_strtoull(cb->f[1], 0, 0), regno);
 
 		pmcinitctl(&p);
 		fillctl(&p, cb, 2, 4);
@@ -343,14 +343,14 @@ pmcwrite(Chan *c, void *a, long n, int64_t)
 		for(i = 5; i < cb->nf; i++){
 			if(!isset(cb->f[i]))
 				continue;
-			ns += snprint(s + ns, KNAMELEN - ns, "%s ", cb->f[i]);
+			ns += jehanne_snprint(s + ns, KNAMELEN - ns, "%s ", cb->f[i]);
 			p.nodesc = 0;
 		}
 		if(pmcdebug != 0)
-			print("setting desc to %s\n", p.descstr);
+			jehanne_print("setting desc to %s\n", p.descstr);
 		pmcsetctl(coreno, &p, regno);
 	}
-	free(cb);
+	jehanne_free(cb);
 	poperror();
 
 

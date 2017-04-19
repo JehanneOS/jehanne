@@ -27,7 +27,7 @@ rpc(int fd, int type)
 	if(write(fd, buf, n) != n)
 		fatal("write rpc");
 
-	print("...");
+	jehanne_print("...");
 	p = buf;
 	l = 0;
 	while(l < 3) {
@@ -40,13 +40,13 @@ rpc(int fd, int type)
 		l += n;
 	}
 	if(convM2S(buf, &hdr, n) == 0){
-		print("%ux %ux %ux\n", buf[0], buf[1], buf[2]);
+		jehanne_print("%ux %ux %ux\n", buf[0], buf[1], buf[2]);
 		fatal("rpc format");
 	}
 	if(hdr.tag != NOTAG)
 		fatal("rpc tag not NOTAG");
 	if(hdr.type == Rerror){
-		print("error %s;", hdr.ename);
+		jehanne_print("error %s;", hdr.ename);
 		fatal("remote error");
 	}
 	if(hdr.type != type+1)
@@ -56,6 +56,6 @@ rpc(int fd, int type)
 void
 nop(int fd)
 {
-	print("nop");
+	jehanne_print("nop");
 	rpc(fd, Tnop);
 }

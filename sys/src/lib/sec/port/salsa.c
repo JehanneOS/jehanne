@@ -37,9 +37,9 @@ void
 setupSalsastate(Salsastate *s, uint8_t *key, uint32_t keylen, uint8_t *iv, uint32_t ivlen, int rounds)
 {
 	if(keylen != 256/8 && keylen != 128/8)
-		sysfatal("invalid salsa key length");
+		jehanne_sysfatal("invalid salsa key length");
 	if(ivlen != 64/8 && ivlen != 128/8 && ivlen != 192/8)
-		sysfatal("invalid salsa iv length");
+		jehanne_sysfatal("invalid salsa iv length");
 	if(rounds == 0)
 		rounds = 20;
 	s->rounds = rounds;
@@ -176,7 +176,7 @@ salsa_setiv(Salsastate *s, uint8_t *iv)
 		hsalsablock(h, s);
 		load(&s->input[1],  h+16*0, 4);
 		load(&s->input[11], h+16*1, 4);
-		memset(h, 0, 32);
+		jehanne_memset(h, 0, 32);
 
 		s->input[8] = counter[0];
 		s->input[9] = counter[1];
@@ -296,9 +296,9 @@ salsa_encrypt2(uint8_t *src, uint8_t *dst, uint32_t bytes, Salsastate *s)
 		dst += SalsaBsize;
 	}
 	if(bytes > 0){
-		memmove(tmp, src, bytes);
+		jehanne_memmove(tmp, src, bytes);
 		encryptblock(s, tmp, tmp);
-		memmove(dst, tmp, bytes);
+		jehanne_memmove(dst, tmp, bytes);
 	}
 }
 
@@ -315,5 +315,5 @@ hsalsa(uint8_t h[32], uint8_t *key, uint32_t keylen, uint8_t nonce[16], int roun
 
 	setupSalsastate(s, key, keylen, nonce, 16, rounds);
 	hsalsablock(h, s);
-	memset(s, 0, sizeof(s));
+	jehanne_memset(s, 0, sizeof(s));
 }

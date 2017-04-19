@@ -617,7 +617,7 @@ igbeifstat(Ether* edev, void* a, long n, uint32_t offset)
 				continue;
 			ctlr->statistics[i] = tuvl;
 			ctlr->statistics[i+1] = tuvl>>32;
-			l += snprint(p+l, READSTR-l, "%s: %llud %llud\n",
+			l += jehanne_snprint(p+l, READSTR-l, "%s: %llud %llud\n",
 				s, tuvl, ruvl);
 			i++;
 			break;
@@ -626,43 +626,43 @@ igbeifstat(Ether* edev, void* a, long n, uint32_t offset)
 			ctlr->statistics[i] += r;
 			if(ctlr->statistics[i] == 0)
 				continue;
-			l += snprint(p+l, READSTR-l, "%s: %ud %ud\n",
+			l += jehanne_snprint(p+l, READSTR-l, "%s: %ud %ud\n",
 				s, ctlr->statistics[i], r);
 			break;
 		}
 	}
 
-	l += snprint(p+l, READSTR-l, "lintr: %ud %ud\n",
+	l += jehanne_snprint(p+l, READSTR-l, "lintr: %ud %ud\n",
 		ctlr->lintr, ctlr->lsleep);
-	l += snprint(p+l, READSTR-l, "rintr: %ud %ud\n",
+	l += jehanne_snprint(p+l, READSTR-l, "rintr: %ud %ud\n",
 		ctlr->rintr, ctlr->rsleep);
-	l += snprint(p+l, READSTR-l, "tintr: %ud %ud\n",
+	l += jehanne_snprint(p+l, READSTR-l, "tintr: %ud %ud\n",
 		ctlr->tintr, ctlr->txdw);
-	l += snprint(p+l, READSTR-l, "ixcs: %ud %ud %ud\n",
+	l += jehanne_snprint(p+l, READSTR-l, "ixcs: %ud %ud %ud\n",
 		ctlr->ixsm, ctlr->ipcs, ctlr->tcpcs);
-	l += snprint(p+l, READSTR-l, "rdtr: %ud\n", ctlr->rdtr);
-	l += snprint(p+l, READSTR-l, "Ctrlext: %08x\n", csr32r(ctlr, Ctrlext));
+	l += jehanne_snprint(p+l, READSTR-l, "rdtr: %ud\n", ctlr->rdtr);
+	l += jehanne_snprint(p+l, READSTR-l, "Ctrlext: %08x\n", csr32r(ctlr, Ctrlext));
 
-	l += snprint(p+l, READSTR-l, "eeprom:");
+	l += jehanne_snprint(p+l, READSTR-l, "eeprom:");
 	for(i = 0; i < 0x40; i++){
 		if(i && ((i & 0x07) == 0))
-			l += snprint(p+l, READSTR-l, "\n       ");
-		l += snprint(p+l, READSTR-l, " %4.4uX", ctlr->eeprom[i]);
+			l += jehanne_snprint(p+l, READSTR-l, "\n       ");
+		l += jehanne_snprint(p+l, READSTR-l, " %4.4uX", ctlr->eeprom[i]);
 	}
-	l += snprint(p+l, READSTR-l, "\n");
+	l += jehanne_snprint(p+l, READSTR-l, "\n");
 
 	if(ctlr->mii != nil && ctlr->mii->curphy != nil){
-		l += snprint(p+l, READSTR-l, "phy:   ");
+		l += jehanne_snprint(p+l, READSTR-l, "phy:   ");
 		for(i = 0; i < NMiiPhyr; i++){
 			if(i && ((i & 0x07) == 0))
-				l += snprint(p+l, READSTR-l, "\n       ");
+				l += jehanne_snprint(p+l, READSTR-l, "\n       ");
 			r = miimir(ctlr->mii, i);
-			l += snprint(p+l, READSTR-l, " %4.4uX", r);
+			l += jehanne_snprint(p+l, READSTR-l, " %4.4uX", r);
 		}
-		snprint(p+l, READSTR-l, "\n");
+		jehanne_snprint(p+l, READSTR-l, "\n");
 	}
 	n = readstr(offset, a, n, p);
-	free(p);
+	jehanne_free(p);
 	qunlock(&ctlr->slock);
 
 	return n;
@@ -690,21 +690,21 @@ igbectl(Ether* edev, void* buf, long n)
 
 	cb = parsecmd(buf, n);
 	if(waserror()){
-		free(cb);
+		jehanne_free(cb);
 		nexterror();
 	}
 
 	ct = lookupcmd(cb, igbectlmsg, nelem(igbectlmsg));
 	switch(ct->index){
 	case CMrdtr:
-		v = strtol(cb->f[1], &p, 0);
+		v = jehanne_strtol(cb->f[1], &p, 0);
 		if(v < 0 || p == cb->f[1] || v > 0xFFFF)
 			error(Ebadarg);
 		ctlr->rdtr = v;;
 		csr32w(ctlr, Rdtr, Fpd|v);
 		break;
 	}
-	free(cb);
+	jehanne_free(cb);
 	poperror();
 
 	return n;
@@ -905,7 +905,7 @@ igbetxinit(Ctlr* ctlr)
 			ctlr->tb[i] = nil;
 			freeb(bp);
 		}
-		memset(&ctlr->tdba[i], 0, sizeof(Td));
+		jehanne_memset(&ctlr->tdba[i], 0, sizeof(Td));
 	}
 	ctlr->tdfree = ctlr->ntd;
 
@@ -961,7 +961,7 @@ igbetransmit(Ether* edev)
 			ctlr->tb[tdh] = nil;
 			freeb(bp);
 		}
-		memset(&ctlr->tdba[tdh], 0, sizeof(Td));
+		jehanne_memset(&ctlr->tdba[tdh], 0, sizeof(Td));
 		tdh = NEXT(tdh, ctlr->ntd);
 	}
 	ctlr->tdh = tdh;
@@ -1149,7 +1149,7 @@ igberproc(void* arg)
 				ctlr->rb[rdh] = nil;
 			}
 
-			memset(rd, 0, sizeof(Rd));
+			jehanne_memset(rd, 0, sizeof(Rd));
 			coherence();
 			ctlr->rdfree--;
 			rdh = NEXT(rdh, ctlr->nrd);
@@ -1177,38 +1177,38 @@ igbeattach(Ether* edev)
 
 	ctlr->nrd = ROUND(Nrd, 8);
 	ctlr->ntd = ROUND(Ntd, 8);
-	ctlr->alloc = malloc(ctlr->nrd*sizeof(Rd)+ctlr->ntd*sizeof(Td) + 127);
+	ctlr->alloc = jehanne_malloc(ctlr->nrd*sizeof(Rd)+ctlr->ntd*sizeof(Td) + 127);
 	if(ctlr->alloc == nil){
-		print("igbe: can't allocate ctlr->alloc\n");
+		jehanne_print("igbe: can't allocate ctlr->alloc\n");
 		qunlock(&ctlr->alock);
 		return;
 	}
 	ctlr->rdba = (Rd*)ROUNDUP((uintptr_t)ctlr->alloc, 128);
 	ctlr->tdba = (Td*)(ctlr->rdba+ctlr->nrd);
 
-	ctlr->rb = malloc(ctlr->nrd*sizeof(Block*));
-	ctlr->tb = malloc(ctlr->ntd*sizeof(Block*));
+	ctlr->rb = jehanne_malloc(ctlr->nrd*sizeof(Block*));
+	ctlr->tb = jehanne_malloc(ctlr->ntd*sizeof(Block*));
 	if (ctlr->rb == nil || ctlr->tb == nil) {
-		print("igbe: can't allocate ctlr->rb or ctlr->tb\n");
+		jehanne_print("igbe: can't allocate ctlr->rb or ctlr->tb\n");
 		qunlock(&ctlr->alock);
 		return;
 	}
 
 	if(waserror()){
-		free(ctlr->tb);
+		jehanne_free(ctlr->tb);
 		ctlr->tb = nil;
-		free(ctlr->rb);
+		jehanne_free(ctlr->rb);
 		ctlr->rb = nil;
-		free(ctlr->alloc);
+		jehanne_free(ctlr->alloc);
 		ctlr->alloc = nil;
 		qunlock(&ctlr->alock);
 		nexterror();
 	}
 
-	snprint(name, KNAMELEN, "#l%dlproc", edev->ctlrno);
+	jehanne_snprint(name, KNAMELEN, "#l%dlproc", edev->ctlrno);
 	kproc(name, igbelproc, edev);
 
-	snprint(name, KNAMELEN, "#l%drproc", edev->ctlrno);
+	jehanne_snprint(name, KNAMELEN, "#l%drproc", edev->ctlrno);
 	kproc(name, igberproc, edev);
 
 	igbetxinit(ctlr);
@@ -1405,7 +1405,7 @@ igbemii(Ctlr* ctlr)
 	r = csr32r(ctlr, Status);
 	if(r & Tbimode)
 		return -1;
-	if((ctlr->mii = malloc(sizeof(Mii))) == nil)
+	if((ctlr->mii = jehanne_malloc(sizeof(Mii))) == nil)
 		return -1;
 	ctlr->mii->ctlr = ctlr;
 
@@ -1425,7 +1425,7 @@ igbemii(Ctlr* ctlr)
 		 */
 		r = csr32r(ctlr, Ctrlext);
 		if(!(r & Mdro)) {
-			print("igbe: 82543gc Mdro not set\n");
+			jehanne_print("igbe: 82543gc Mdro not set\n");
 			return -1;
 		}
 		csr32w(ctlr, Ctrlext, r);
@@ -1463,18 +1463,18 @@ igbemii(Ctlr* ctlr)
 		ctlr->mii->miw = igbemiimiw;
 		break;
 	default:
-		free(ctlr->mii);
+		jehanne_free(ctlr->mii);
 		ctlr->mii = nil;
 		return -1;
 	}
 
 	if(mii(ctlr->mii, ~0) == 0 || (phy = ctlr->mii->curphy) == nil){
-		free(ctlr->mii);
+		jehanne_free(ctlr->mii);
 		ctlr->mii = nil;
 		return -1;
 	}
 	USED(phy);
-	// print("oui %X phyno %d\n", phy->oui, phy->phyno);
+	// jehanne_print("oui %X phyno %d\n", phy->oui, phy->phyno);
 
 	/*
 	 * 8254X-specific PHY registers not in 802.3:
@@ -1536,7 +1536,7 @@ at93c46io(Ctlr* ctlr, char* op, int data)
 		case ' ':
 			continue;
 		case ':':			/* start of loop */
-			loop = strtol(p+1, &lp, 0)-1;
+			loop = jehanne_strtol(p+1, &lp, 0)-1;
 			lp--;
 			if(p == lp)
 				loop = 7;
@@ -1636,7 +1636,7 @@ at93c46r(Ctlr* ctlr)
 			microdelay(5);
 		}
 		if(!(eecd & Agnt)){
-			print("igbe: not granted EEPROM access\n");
+			jehanne_print("igbe: not granted EEPROM access\n");
 			goto release;
 		}
 		break;
@@ -1654,7 +1654,7 @@ at93c46r(Ctlr* ctlr)
 			at93c46io(ctlr, "Ss", 0);
 		}
 		if(i == 1000){
-			print("igbe: SPI EEPROM not ready\n");
+			jehanne_print("igbe: SPI EEPROM not ready\n");
 			goto release;
 		}
 
@@ -1664,9 +1664,9 @@ at93c46r(Ctlr* ctlr)
 			bits = 16;
 		else
 			bits = 8;
-		snprint(rop, sizeof(rop), "H :%dHDCc;", bits);
+		jehanne_snprint(rop, sizeof(rop), "H :%dHDCc;", bits);
 		if(at93c46io(ctlr, rop, 0) != 0){
-			print("igbe: can't set EEPROM address 0x00\n");
+			jehanne_print("igbe: can't set EEPROM address 0x00\n");
 			goto release;
 		}
 
@@ -1680,7 +1680,7 @@ at93c46r(Ctlr* ctlr)
 			bits = 8;
 		else
 			bits = 6;
-		snprint(rop, sizeof(rop), "S :%dDCc;", bits+3);
+		jehanne_snprint(rop, sizeof(rop), "S :%dDCc;", bits+3);
 
 		for(addr = 0; addr < 0x40; addr++){
 			/*
@@ -1690,7 +1690,7 @@ at93c46r(Ctlr* ctlr)
 			 * for protocol details.
 			 */
 			if(at93c46io(ctlr, rop, (0x06<<bits)|addr) != 0){
-				print("igbe: can't set EEPROM address 0x%2.2X\n", addr);
+				jehanne_print("igbe: can't set EEPROM address 0x%2.2X\n", addr);
 				goto release;
 			}
 			data = at93c46io(ctlr, ":16COc;", 0);
@@ -1793,7 +1793,7 @@ igbereset(Ctlr* ctlr)
 	 * then get the device back to a power-on state.
 	 */
 	if((r = at93c46r(ctlr)) != 0xBABA){
-		print("igbe: bad EEPROM checksum - 0x%4.4uX\n", r);
+		jehanne_print("igbe: bad EEPROM checksum - 0x%4.4uX\n", r);
 		return -1;
 	}
 
@@ -1830,7 +1830,7 @@ igbereset(Ctlr* ctlr)
 	 * Clear the Multicast Table Array.
 	 * It's a 4096 bit vector accessed as 128 32-bit registers.
 	 */
-	memset(ctlr->mta, 0, sizeof(ctlr->mta));
+	jehanne_memset(ctlr->mta, 0, sizeof(ctlr->mta));
 	for(i = 0; i < 128; i++)
 		csr32w(ctlr, Mta+i*4, 0);
 
@@ -1945,13 +1945,13 @@ igbepci(void)
 
 		mem = vmap(p->mem[0].bar & ~0x0F, p->mem[0].size);
 		if(mem == nil){
-			print("igbe: can't map %8.8luX\n", p->mem[0].bar);
+			jehanne_print("igbe: can't map %8.8luX\n", p->mem[0].bar);
 			continue;
 		}
 		cls = pcicfgr8(p, PciCLS);
 		switch(cls){
 		default:
-			print("igbe: p->cls %#ux, setting to 0x10\n", p->cls);
+			jehanne_print("igbe: p->cls %#ux, setting to 0x10\n", p->cls);
 			p->cls = 0x10;
 			pcicfgw8(p, PciCLS, p->cls);
 			break;
@@ -1959,9 +1959,9 @@ igbepci(void)
 		case 0x10:
 			break;
  		}
-		ctlr = malloc(sizeof(Ctlr));
+		ctlr = jehanne_malloc(sizeof(Ctlr));
 		if(ctlr == nil){
-			print("igbe: can't allocate memory\n");
+			jehanne_print("igbe: can't allocate memory\n");
 			continue;
 		}
 		ctlr->port = p->mem[0].bar & ~0x0F;
@@ -1971,7 +1971,7 @@ igbepci(void)
 		ctlr->nic = mem;
 
 		if(igbereset(ctlr)){
-			free(ctlr);
+			jehanne_free(ctlr);
 			vunmap(mem, p->mem[0].size);
 			continue;
 		}
@@ -2013,7 +2013,7 @@ igbepnp(Ether* edev)
 	edev->irq = ctlr->pcidev->intl;
 	edev->tbdf = ctlr->pcidev->tbdf;
 	edev->netif.mbps = 1000;
-	memmove(edev->ea, ctlr->ra, Eaddrlen);
+	jehanne_memmove(edev->ea, ctlr->ra, Eaddrlen);
 
 	/*
 	 * Linkage to the generic ethernet driver.

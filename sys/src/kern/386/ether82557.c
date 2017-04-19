@@ -361,7 +361,7 @@ ethwatchdog(void* arg)
 		 */
 		ctlr = ether->ctlr;
 		if(ctlr == nil || ctlr->state == 0){
-			print("%s: exiting\n", up->text);
+			jehanne_print("%s: exiting\n", up->text);
 			pexit("disabled", 0);
 		}
 
@@ -395,7 +395,7 @@ attach(Ether* ether)
 		 * omitted.
 		 */
 		if((ctlr->eeprom[0x03] & 0x0003) != 0x0003){
-			snprint(name, KNAMELEN, "#l%dwatchdog", ether->ctlrno);
+			jehanne_snprint(name, KNAMELEN, "#l%dwatchdog", ether->ctlrno);
 			kproc(name, ethwatchdog, ether);
 		}
 	}
@@ -434,55 +434,55 @@ ifstat(Ether* ether, void* a, long n, uint32_t offset)
 		return 0;
 	}
 
-	memmove(dump, ctlr->dump, sizeof(dump));
+	jehanne_memmove(dump, ctlr->dump, sizeof(dump));
 	unlock(&ctlr->dlock);
 
-	if((alloc = malloc(READSTR)) == nil)
+	if((alloc = jehanne_malloc(READSTR)) == nil)
 		error(Enomem);
 	p = alloc;
 	e = p + READSTR;
 
-	p = seprint(p, e, "transmit good frames: %lud\n", dump[0]);
-	p = seprint(p, e, "transmit maximum collisions errors: %lud\n", dump[1]);
-	p = seprint(p, e, "transmit late collisions errors: %lud\n", dump[2]);
-	p = seprint(p, e, "transmit underrun errors: %lud\n", dump[3]);
-	p = seprint(p, e, "transmit lost carrier sense: %lud\n", dump[4]);
-	p = seprint(p, e, "transmit deferred: %lud\n", dump[5]);
-	p = seprint(p, e, "transmit single collisions: %lud\n", dump[6]);
-	p = seprint(p, e, "transmit multiple collisions: %lud\n", dump[7]);
-	p = seprint(p, e, "transmit total collisions: %lud\n", dump[8]);
-	p = seprint(p, e, "receive good frames: %lud\n", dump[9]);
-	p = seprint(p, e, "receive CRC errors: %lud\n", dump[10]);
-	p = seprint(p, e, "receive alignment errors: %lud\n", dump[11]);
-	p = seprint(p, e, "receive resource errors: %lud\n", dump[12]);
-	p = seprint(p, e, "receive overrun errors: %lud\n", dump[13]);
-	p = seprint(p, e, "receive collision detect errors: %lud\n", dump[14]);
-	p = seprint(p, e, "receive short frame errors: %lud\n", dump[15]);
-	p = seprint(p, e, "nop: %d\n", ctlr->nop);
+	p = jehanne_seprint(p, e, "transmit good frames: %lud\n", dump[0]);
+	p = jehanne_seprint(p, e, "transmit maximum collisions errors: %lud\n", dump[1]);
+	p = jehanne_seprint(p, e, "transmit late collisions errors: %lud\n", dump[2]);
+	p = jehanne_seprint(p, e, "transmit underrun errors: %lud\n", dump[3]);
+	p = jehanne_seprint(p, e, "transmit lost carrier sense: %lud\n", dump[4]);
+	p = jehanne_seprint(p, e, "transmit deferred: %lud\n", dump[5]);
+	p = jehanne_seprint(p, e, "transmit single collisions: %lud\n", dump[6]);
+	p = jehanne_seprint(p, e, "transmit multiple collisions: %lud\n", dump[7]);
+	p = jehanne_seprint(p, e, "transmit total collisions: %lud\n", dump[8]);
+	p = jehanne_seprint(p, e, "receive good frames: %lud\n", dump[9]);
+	p = jehanne_seprint(p, e, "receive CRC errors: %lud\n", dump[10]);
+	p = jehanne_seprint(p, e, "receive alignment errors: %lud\n", dump[11]);
+	p = jehanne_seprint(p, e, "receive resource errors: %lud\n", dump[12]);
+	p = jehanne_seprint(p, e, "receive overrun errors: %lud\n", dump[13]);
+	p = jehanne_seprint(p, e, "receive collision detect errors: %lud\n", dump[14]);
+	p = jehanne_seprint(p, e, "receive short frame errors: %lud\n", dump[15]);
+	p = jehanne_seprint(p, e, "nop: %d\n", ctlr->nop);
 	if(ctlr->cbqmax > ctlr->cbqmaxhw)
 		ctlr->cbqmaxhw = ctlr->cbqmax;
-	p = seprint(p, e, "cbqmax: %d\n", ctlr->cbqmax);
+	p = jehanne_seprint(p, e, "cbqmax: %d\n", ctlr->cbqmax);
 	ctlr->cbqmax = 0;
-	p = seprint(p, e, "threshold: %d\n", ctlr->threshold);
+	p = jehanne_seprint(p, e, "threshold: %d\n", ctlr->threshold);
 
-	p = seprint(p, e, "eeprom:");
+	p = jehanne_seprint(p, e, "eeprom:");
 	for(i = 0; i < (1<<ctlr->eepromsz); i++){
 		if(i && ((i & 0x07) == 0))
-			p = seprint(p, e, "\n       ");
-		p = seprint(p, e, " %4.4ux", ctlr->eeprom[i]);
+			p = jehanne_seprint(p, e, "\n       ");
+		p = jehanne_seprint(p, e, " %4.4ux", ctlr->eeprom[i]);
 	}
 
 	if((ctlr->eeprom[6] & 0x1F00) && !(ctlr->eeprom[6] & 0x8000)){
 		phyaddr = ctlr->eeprom[6] & 0x00FF;
-		p = seprint(p, e, "\nphy %2d:", phyaddr);
+		p = jehanne_seprint(p, e, "\nphy %2d:", phyaddr);
 		for(i = 0; i < 6; i++){
-			p = seprint(p, e, " %4.4ux", miir(ctlr, phyaddr, i));
+			p = jehanne_seprint(p, e, " %4.4ux", miir(ctlr, phyaddr, i));
 		}
 	}
-	seprint(p, e, "\n");
+	jehanne_seprint(p, e, "\n");
 
 	n = readstr(offset, a, n, alloc);
-	free(alloc);
+	jehanne_free(alloc);
 
 	return n;
 }
@@ -513,21 +513,21 @@ txstart(Ether* ether)
 		}
 		else if(ctlr->action == CbConfigure){
 			cb->command = CbS|CbConfigure;
-			memmove(cb->data, ctlr->configdata, sizeof(ctlr->configdata));
+			jehanne_memmove(cb->data, ctlr->configdata, sizeof(ctlr->configdata));
 			ctlr->action = 0;
 		}
 		else if(ctlr->action == CbIAS){
 			cb->command = CbS|CbIAS;
-			memmove(cb->data, ether->ea, Eaddrlen);
+			jehanne_memmove(cb->data, ether->ea, Eaddrlen);
 			ctlr->action = 0;
 		}
 		else if(ctlr->action == CbMAS){
 			cb->command = CbS|CbMAS;
-			memset(cb->data, 0, sizeof(cb->data));
+			jehanne_memset(cb->data, 0, sizeof(cb->data));
 			ctlr->action = 0;
 		}
 		else{
-			print("#l%d: action %#ux\n", ether->ctlrno, ctlr->action);
+			jehanne_print("#l%d: action %#ux\n", ether->ctlrno, ctlr->action);
 			ctlr->action = 0;
 			break;
 		}
@@ -640,7 +640,7 @@ receive(Ether* ether)
 			pbp = nil;
 			count = rfd->count & 0x3FFF;
 			if((count < ETHERMAXTU/4) && (pbp = iallocb(count))){
-				memmove(pbp->rp, bp->rp+offsetof(Rfd, data[0]), count);
+				jehanne_memmove(pbp->rp, bp->rp+offsetof(Rfd, data[0]), count);
 				pbp->wp = pbp->rp + count;
 
 				rfd->count = 0;
@@ -800,7 +800,7 @@ ctlrinit(Ctlr* ctlr)
 	 * transmit side.
 	 */
 	ilock(&ctlr->cblock);
-	ctlr->cbr = malloc(ctlr->ncb*sizeof(Cb));
+	ctlr->cbr = jehanne_malloc(ctlr->ncb*sizeof(Cb));
 	if(ctlr->cbr == nil) {
 		iunlock(&ctlr->cblock);
 		error(Enomem);
@@ -815,7 +815,7 @@ ctlrinit(Ctlr* ctlr)
 	ctlr->cbtail = ctlr->cbr;
 	ctlr->cbq = 0;
 
-	memmove(ctlr->configdata, configdata, sizeof(configdata));
+	jehanne_memmove(ctlr->configdata, configdata, sizeof(configdata));
 	ctlr->threshold = 80;
 	ctlr->tick = 0;
 
@@ -920,7 +920,7 @@ reread:
 
 	if(ctlr->eepromsz == 0){
 		ctlr->eepromsz = 8-size;
-		ctlr->eeprom = malloc((1<<ctlr->eepromsz)*sizeof(uint16_t));
+		ctlr->eeprom = jehanne_malloc((1<<ctlr->eepromsz)*sizeof(uint16_t));
 		if(ctlr->eeprom == nil)
 			error(Enomem);
 		goto reread;
@@ -978,11 +978,11 @@ i82557pci(void)
 		 */
 		port = p->mem[1].bar & ~0x01;
 		if(ioalloc(port, p->mem[1].size, 0, "i82557") < 0){
-			print("i82557: port %#ux in use\n", port);
+			jehanne_print("i82557: port %#ux in use\n", port);
 			continue;
 		}
 
-		ctlr = malloc(sizeof(Ctlr));
+		ctlr = jehanne_malloc(sizeof(Ctlr));
 		if(ctlr == nil)
 			error(Enomem);
 		ctlr->port = port;
@@ -1022,7 +1022,7 @@ scanphy(Ctlr* ctlr)
 		oui <<= 6;
 		x = miir(ctlr, i, 3);
 		oui |= x>>10;
-		//print("phy%d: oui %#ux reg1 %#ux\n", i, oui, miir(ctlr, i, 1));
+		//jehanne_print("phy%d: oui %#ux reg1 %#ux\n", i, oui, miir(ctlr, i, 1));
 
 		ctlr->eeprom[6] = i;
 		if(oui == 0xAA00)
@@ -1117,7 +1117,7 @@ reset(Ether* ether)
 		sum += x;
 	}
 	if(sum != 0xBABA)
-		print("#l%d: EEPROM checksum - %#4.4ux\n", ether->ctlrno, sum);
+		jehanne_print("#l%d: EEPROM checksum - %#4.4ux\n", ether->ctlrno, sum);
 
 	/*
 	 * Eeprom[6] indicates whether there is a PHY and whether
@@ -1181,7 +1181,7 @@ reset(Ether* ether)
 			x = miir(ctlr, phyaddr, 0x17) & ~0x0520;
 			x |= 0x0420;
 			for(i = 0; i < ether->nopt; i++){
-				if(cistrcmp(ether->opt[i], "congestioncontrol"))
+				if(jehanne_cistrcmp(ether->opt[i], "congestioncontrol"))
 					continue;
 				x |= 0x0100;
 				break;
@@ -1238,7 +1238,7 @@ reset(Ether* ether)
 			medium = -1;
 			for(i = 0; i < ether->nopt; i++){
 				for(k = 0; k < nelem(mediatable); k++){
-					if(cistrcmp(mediatable[k], ether->opt[i]))
+					if(jehanne_cistrcmp(mediatable[k], ether->opt[i]))
 						continue;
 					medium = k;
 					break;
@@ -1312,8 +1312,8 @@ reset(Ether* ether)
 	 * If not, read it from the EEPROM and set in ether->ea prior to loading
 	 * the station address with the Individual Address Setup command.
 	 */
-	memset(ea, 0, Eaddrlen);
-	if(memcmp(ea, ether->ea, Eaddrlen) == 0){
+	jehanne_memset(ea, 0, Eaddrlen);
+	if(jehanne_memcmp(ea, ether->ea, Eaddrlen) == 0){
 		for(i = 0; i < Eaddrlen/2; i++){
 			x = ctlr->eeprom[i];
 			ether->ea[2*i] = x;

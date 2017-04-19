@@ -11,14 +11,14 @@
 #include <libc.h>
 
 char*
-mktemp(char *as)
+jehanne_mktemp(char *as)
 {
 	char *s;
 	unsigned pid;
 	int i;
 	char err[ERRMAX];
 
-	pid = getpid();
+	pid = jehanne_getpid();
 	s = as;
 	while(*s++)
 		;
@@ -29,7 +29,7 @@ mktemp(char *as)
 	}
 	s++;
 	i = 'a';
-	while(access(as, AEXIST) != -1) {
+	while(jehanne_access(as, AEXIST) != -1) {
 		if (i == 'z')
 			return "/";
 		*s = i++;

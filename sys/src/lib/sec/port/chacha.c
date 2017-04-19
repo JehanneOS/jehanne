@@ -56,9 +56,9 @@ void
 setupChachastate(Chachastate *s, uint8_t *key, uint32_t keylen, uint8_t *iv, uint32_t ivlen, int rounds)
 {
 	if(keylen != 256/8 && keylen != 128/8)
-		sysfatal("invalid chacha key length");
+		jehanne_sysfatal("invalid chacha key length");
 	if(ivlen != 96/8 && ivlen != 64/8)
-		sysfatal("invalid chacha iv length");
+		jehanne_sysfatal("invalid chacha iv length");
 	if(rounds == 0)
 		rounds = 20;
 	s->rounds = rounds;
@@ -173,9 +173,9 @@ chacha_encrypt2(uint8_t *src, uint8_t *dst, uint32_t bytes, Chachastate *s)
 		dst += ChachaBsize;
 	}
 	if(bytes > 0){
-		memmove(tmp, src, bytes);
+		jehanne_memmove(tmp, src, bytes);
 		encryptblock(s, tmp, tmp);
-		memmove(dst, tmp, bytes);
+		jehanne_memmove(dst, tmp, bytes);
 	}
 }
 

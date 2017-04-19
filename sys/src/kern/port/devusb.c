@@ -181,9 +181,9 @@ char*
 seprintdata(char *s, char *se, uint8_t *d, int n)
 {
 	if(n > 10)
-		return seprint(s, se, " %#p[%d]: %.10H...", d, n, d);
+		return jehanne_seprint(s, se, " %#p[%d]: %.10H...", d, n, d);
 	else
-		return seprint(s, se, " %#p[%d]: %.*H", d, n, n, d);
+		return jehanne_seprint(s, se, " %#p[%d]: %.*H", d, n, n, d);
 }
 
 static int
@@ -192,7 +192,7 @@ name2speed(char *name)
 	int i;
 
 	for(i = 0; i < nelem(spname); i++)
-		if(strcmp(name, spname[i]) == 0)
+		if(jehanne_strcmp(name, spname[i]) == 0)
 			return i;
 	return Nospeed;
 }
@@ -203,10 +203,10 @@ name2ttype(char *name)
 	int i;
 
 	for(i = 0; i < nelem(ttname); i++)
-		if(strcmp(name, ttname[i]) == 0)
+		if(jehanne_strcmp(name, ttname[i]) == 0)
 			return i;
 	/* may be a std. USB ep. type */
-	i = strtol(name, nil, 0);
+	i = jehanne_strtol(name, nil, 0);
 	switch(i+1){
 	case Tctl:
 	case Tiso:
@@ -224,7 +224,7 @@ name2mode(char *mode)
 	int i;
 
 	for(i = OREAD; i < nelem(usbmodename); i++)
-		if(strcmp(mode, usbmodename[i]) == 0)
+		if(jehanne_strcmp(mode, usbmodename[i]) == 0)
 			return i;
 	return -1;
 }
@@ -276,42 +276,42 @@ seprintep(char *s, char *se, Ep *ep, int all)
 	}
 	di = ep->dev->nb;
 	if(all)
-		s = seprint(s, se, "dev %d ep %d ", di, ep->nb);
-	s = seprint(s, se, "%s", dsnames[ep->dev->state]);
-	s = seprint(s, se, " %s", ttname[ep->ttype]);
+		s = jehanne_seprint(s, se, "dev %d ep %d ", di, ep->nb);
+	s = jehanne_seprint(s, se, "%s", dsnames[ep->dev->state]);
+	s = jehanne_seprint(s, se, " %s", ttname[ep->ttype]);
 	assert(ep->mode == OREAD || ep->mode == OWRITE || ep->mode == ORDWR);
-	s = seprint(s, se, " %s", usbmodename[ep->mode]);
-	s = seprint(s, se, " speed %s", spname[d->speed]);
-	s = seprint(s, se, " maxpkt %ld", ep->maxpkt);
-	s = seprint(s, se, " pollival %ld", ep->pollival);
-	s = seprint(s, se, " samplesz %ld", ep->samplesz);
-	s = seprint(s, se, " hz %ld", ep->hz);
-	s = seprint(s, se, " hub %d", ep->dev->hub);
-	s = seprint(s, se, " port %d", ep->dev->port);
+	s = jehanne_seprint(s, se, " %s", usbmodename[ep->mode]);
+	s = jehanne_seprint(s, se, " speed %s", spname[d->speed]);
+	s = jehanne_seprint(s, se, " maxpkt %ld", ep->maxpkt);
+	s = jehanne_seprint(s, se, " pollival %ld", ep->pollival);
+	s = jehanne_seprint(s, se, " samplesz %ld", ep->samplesz);
+	s = jehanne_seprint(s, se, " hz %ld", ep->hz);
+	s = jehanne_seprint(s, se, " hub %d", ep->dev->hub);
+	s = jehanne_seprint(s, se, " port %d", ep->dev->port);
 	if(ep->inuse)
-		s = seprint(s, se, " busy");
+		s = jehanne_seprint(s, se, " busy");
 	else
-		s = seprint(s, se, " idle");
+		s = jehanne_seprint(s, se, " idle");
 	if(all){
-		s = seprint(s, se, " load %uld", ep->load);
-		s = seprint(s, se, " ref %d addr %#p", ep->ref, ep);
-		s = seprint(s, se, " idx %d", ep->idx);
+		s = jehanne_seprint(s, se, " load %uld", ep->load);
+		s = jehanne_seprint(s, se, " ref %d addr %#p", ep->ref, ep);
+		s = jehanne_seprint(s, se, " idx %d", ep->idx);
 		if(ep->name != nil)
-			s = seprint(s, se, " name '%s'", ep->name);
+			s = jehanne_seprint(s, se, " name '%s'", ep->name);
 		if(ep->tmout != 0)
-			s = seprint(s, se, " tmout");
+			s = jehanne_seprint(s, se, " tmout");
 		if(ep == ep->ep0){
-			s = seprint(s, se, " ctlrno %#x", ep->hp->ctlrno);
-			s = seprint(s, se, " eps:");
+			s = jehanne_seprint(s, se, " ctlrno %#x", ep->hp->ctlrno);
+			s = jehanne_seprint(s, se, " eps:");
 			for(i = 0; i < nelem(d->eps); i++)
 				if(d->eps[i] != nil)
-					s = seprint(s, se, " ep%d.%d", di, i);
+					s = jehanne_seprint(s, se, " ep%d.%d", di, i);
 		}
 	}
 	if(ep->info != nil)
-		s = seprint(s, se, "\n%s %s\n", ep->info, ep->hp->type);
+		s = jehanne_seprint(s, se, "\n%s %s\n", ep->info, ep->hp->type);
 	else
-		s = seprint(s, se, "\n");
+		s = jehanne_seprint(s, se, "\n");
 	qunlock(ep);
 	poperror();
 	return s;
@@ -331,8 +331,8 @@ epalloc(Hci *hp)
 			break;
 	if(i == Neps){
 		qunlock(&epslck);
-		free(ep);
-		print("usb: bug: too few endpoints.\n");
+		jehanne_free(ep);
+		jehanne_print("usb: bug: too few endpoints.\n");
 		return nil;
 	}
 	ep->idx = i;
@@ -386,9 +386,9 @@ putep(Ep *ep)
 			putep(ep->ep0);
 			ep->ep0 = nil;
 		}
-		free(ep->info);
-		free(ep->name);
-		free(ep);
+		jehanne_free(ep->info);
+		jehanne_free(ep->name);
+		jehanne_free(ep);
 	}
 }
 
@@ -401,7 +401,7 @@ dumpeps(void)
 	char *e;
 	Ep *ep;
 
-	print("usb dump eps: epmax %d Neps %d (ref=1+ for dump):\n", epmax, Neps);
+	jehanne_print("usb dump eps: epmax %d Neps %d (ref=1+ for dump):\n", epmax, Neps);
 	for(i = 0; i < epmax; i++){
 		s = buf;
 		e = buf+sizeof(buf);
@@ -411,18 +411,18 @@ dumpeps(void)
 				putep(ep);
 				nexterror();
 			}
-			s = seprint(s, e, "ep%d.%d ", ep->dev->nb, ep->nb);
+			s = jehanne_seprint(s, e, "ep%d.%d ", ep->dev->nb, ep->nb);
 			seprintep(s, e, ep, 1);
-			print("%s", buf);
+			jehanne_print("%s", buf);
 			if(ep->hp->seprintep != nil){
 				ep->hp->seprintep(buf, e, ep);
-				print("%s", buf);
+				jehanne_print("%s", buf);
 			}
 			poperror();
 			putep(ep);
 		}
 	}
-	print("usb dump hcis:\n");
+	jehanne_print("usb dump hcis:\n");
 	for(i = 0; i < Nhcis; i++)
 		if(hcis[i] != nil && hcis[i]->dump != nil)
 			hcis[i]->dump(hcis[i]);
@@ -436,7 +436,7 @@ newusbid(Hci * _)
 	qlock(&epslck);
 	id = ++usbidgen;
 	if(id >= 0x7F)
-		print("#u: too many device addresses; reuse them more\n");
+		jehanne_print("#u: too many device addresses; reuse them more\n");
 	qunlock(&epslck);
 	return id;
 }
@@ -605,7 +605,7 @@ usbgen(Chan *c, char * _, Dirtab* __, int ___, int s, Dir *dp)
 			nexterror();
 		}
 		se = up->genbuf+sizeof(up->genbuf);
-		seprint(up->genbuf, se, "ep%d.%d", ep->dev->nb, ep->nb);
+		jehanne_seprint(up->genbuf, se, "ep%d.%d", ep->dev->nb, ep->nb);
 		mkqid(&q, Qep0dir+4*s, 0, QTDIR);
 		putep(ep);
 		poperror();
@@ -670,7 +670,7 @@ hciprobe(int cardno, int ctlrno)
 	if(cardno < 0){
 //		if(pciconfig("usb", ctlrno, hp) == 0){
 		if(1){
-			free(hp);
+			jehanne_free(hp);
 			return nil;
 		}
 		for(cardno = 0; cardno < Nhcis; cardno++){
@@ -679,18 +679,18 @@ hciprobe(int cardno, int ctlrno)
 			type = hp->type;
 			if(type==nil || *type==0)
 				type = "uhci";
-			if(cistrcmp(hcitypes[cardno].type, type) == 0)
+			if(jehanne_cistrcmp(hcitypes[cardno].type, type) == 0)
 				break;
 		}
 	}
 
 	if(cardno >= Nhcis || hcitypes[cardno].type == nil){
-		free(hp);
+		jehanne_free(hp);
 		return nil;
 	}
 	dprint("%s...", hcitypes[cardno].type);
 	if(hcitypes[cardno].reset(hp) < 0){
-		free(hp);
+		jehanne_free(hp);
 		return nil;
 	}
 
@@ -701,7 +701,7 @@ hciprobe(int cardno, int ctlrno)
 	 */
 /*port*/	if(hp->irq == 2)
 /*port*/		hp->irq = 9;
-	snprint(name, sizeof(name), "usb%s", hcitypes[cardno].type);
+	jehanne_snprint(name, sizeof(name), "usb%s", hcitypes[cardno].type);
 	intrenable(hp->irq, hp->interrupt, hp, hp->tbdf, name);
 
 	/*
@@ -738,7 +738,7 @@ usbreset(void)
 			hcis[ctlrno++] = hp;
 		}
 	if(hcis[Nhcis-1] != nil)
-		print("usbreset: bug: Nhcis (%d) too small\n", Nhcis);
+		jehanne_print("usbreset: bug: Nhcis (%d) too small\n", Nhcis);
 }
 
 static void
@@ -758,7 +758,7 @@ usbinit(void)
 			d = newdev(hp, 1, 1);		/* new root hub */
 			d->dev->state = Denabled;	/* although addr == 0 */
 			d->maxpkt = 64;
-			snprint(info, sizeof(info), "ports %d", hp->nports);
+			jehanne_snprint(info, sizeof(info), "ports %d", hp->nports);
 			kstrdup(&d->info, info);
 		}
 	}
@@ -810,7 +810,7 @@ usbload(int speed, int maxpkt)
 		l = 64107 + 2 * Hubns + 667 * (3 + bs) + Hostns;
 		break;
 	default:
-		print("usbload: bad speed %d\n", speed);
+		jehanne_print("usbload: bad speed %d\n", speed);
 		/* let it run */
 	}
 	return l / 1000UL;	/* in microseconds */
@@ -907,7 +907,7 @@ usbclose(Chan *c)
 		nexterror();
 	}
 	if(c->flag & COPEN){
-		free(c->aux);
+		jehanne_free(c->aux);
 		c->aux = nil;
 		epclose(ep);
 		putep(ep);	/* release ref kept since usbopen */
@@ -931,7 +931,7 @@ ctlread(Chan *c, void *a, long n, int64_t offset)
 	us = s = smalloc(READSTR);
 	se = s + READSTR;
 	if(waserror()){
-		free(us);
+		jehanne_free(us);
 		nexterror();
 	}
 	if(q == Qctl)
@@ -942,7 +942,7 @@ ctlread(Chan *c, void *a, long n, int64_t offset)
 					putep(ep);
 					nexterror();
 				}
-				s = seprint(s, se, "ep%d.%d ", ep->dev->nb, ep->nb);
+				s = jehanne_seprint(s, se, "ep%d.%d ", ep->dev->nb, ep->nb);
 				s = seprintep(s, se, ep, 0);
 				poperror();
 			}
@@ -960,8 +960,8 @@ ctlread(Chan *c, void *a, long n, int64_t offset)
 			/* After a new endpoint request we read
 			 * the new endpoint name back.
 			 */
-			strecpy(s, se, c->aux);
-			free(c->aux);
+			jehanne_strecpy(s, se, c->aux);
+			jehanne_free(c->aux);
 			c->aux = nil;
 		}else
 			seprintep(s, se, ep, 0);
@@ -970,7 +970,7 @@ ctlread(Chan *c, void *a, long n, int64_t offset)
 	}
 	n = readstr(offset, a, n, us);
 	poperror();
-	free(us);
+	jehanne_free(us);
 	return n;
 }
 
@@ -988,7 +988,7 @@ rhubread(Ep *ep, void *a, long n)
 		return -1;
 
 	b = a;
-	memset(b, 0, n);
+	jehanne_memset(b, 0, n);
 	PUT2(b, ep->rhrepl);
 	ep->rhrepl = -1;
 	return n;
@@ -1100,7 +1100,7 @@ setmaxpkt(Ep *ep, char* s)
 		ep->hz, ep->pollival, ep->ntds, spname[ep->dev->speed],
 		spp, ep->maxpkt);
 	if(ep->maxpkt > 1024){
-		print("usb: %s: maxpkt %ld > 1024. truncating\n", s, ep->maxpkt);
+		jehanne_print("usb: %s: maxpkt %ld > 1024. truncating\n", s, ep->maxpkt);
 		ep->maxpkt = 1024;
 	}
 }
@@ -1125,7 +1125,7 @@ epctl(Ep *ep, Chan *c, void *a, long n)
 
 	cb = parsecmd(a, n);
 	if(waserror()){
-		free(cb);
+		jehanne_free(cb);
 		nexterror();
 	}
 	ct = lookupcmd(cb, epctls, nelem(epctls));
@@ -1141,7 +1141,7 @@ epctl(Ep *ep, Chan *c, void *a, long n)
 	switch(i){
 	case CMnew:
 		deprint("usb epctl %s\n", cb->f[0]);
-		nb = strtol(cb->f[1], nil, 0);
+		nb = jehanne_strtol(cb->f[1], nil, 0);
 		if(nb < 0 || nb >= Ndeveps)
 			error("bad endpoint number");
 		tt = name2ttype(cb->f[2]);
@@ -1164,12 +1164,12 @@ epctl(Ep *ep, Chan *c, void *a, long n)
 		if(nep->dev->speed  != Lowspeed)
 			nep->maxpkt = 64;	/* assume full speed */
 		nep->dev->hub = d->nb;
-		nep->dev->port = atoi(cb->f[2]);
+		nep->dev->port = jehanne_atoi(cb->f[2]);
 		/* next read request will read
 		 * the name for the new endpoint
 		 */
 		l = sizeof(up->genbuf);
-		snprint(up->genbuf, l, "ep%d.%d", nep->dev->nb, nep->nb);
+		jehanne_snprint(up->genbuf, l, "ep%d.%d", nep->dev->nb, nep->nb);
 		kstrdup((char**)&c->aux, up->genbuf);
 		break;
 	case CMhub:
@@ -1186,7 +1186,7 @@ epctl(Ep *ep, Chan *c, void *a, long n)
 		qunlock(ep->ep0);
 		break;
 	case CMmaxpkt:
-		l = strtoul(cb->f[1], nil, 0);
+		l = jehanne_strtoul(cb->f[1], nil, 0);
 		deprint("usb epctl %s %d\n", cb->f[0], l);
 		if(l < 1 || l > 1024)
 			error("maxpkt not in [1:1024]");
@@ -1195,7 +1195,7 @@ epctl(Ep *ep, Chan *c, void *a, long n)
 		qunlock(ep);
 		break;
 	case CMntds:
-		l = strtoul(cb->f[1], nil, 0);
+		l = jehanne_strtoul(cb->f[1], nil, 0);
 		deprint("usb epctl %s %d\n", cb->f[0], l);
 		if(l < 1 || l > 3)
 			error("ntds not in [1:3]");
@@ -1206,7 +1206,7 @@ epctl(Ep *ep, Chan *c, void *a, long n)
 	case CMpollival:
 		if(ep->ttype != Tintr && ep->ttype != Tiso)
 			error("not an intr or iso endpoint");
-		l = strtoul(cb->f[1], nil, 0);
+		l = jehanne_strtoul(cb->f[1], nil, 0);
 		deprint("usb epctl %s %d\n", cb->f[0], l);
 		if(ep->ttype == Tiso ||
 		   (ep->ttype == Tintr && ep->dev->speed == Highspeed)){
@@ -1225,7 +1225,7 @@ epctl(Ep *ep, Chan *c, void *a, long n)
 	case CMsamplesz:
 		if(ep->ttype != Tiso)
 			error("not an iso endpoint");
-		l = strtoul(cb->f[1], nil, 0);
+		l = jehanne_strtoul(cb->f[1], nil, 0);
 		deprint("usb epctl %s %d\n", cb->f[0], l);
 		if(l <= 0 || l > 8)
 			error("samplesz not in [1:8]");
@@ -1237,7 +1237,7 @@ epctl(Ep *ep, Chan *c, void *a, long n)
 	case CMhz:
 		if(ep->ttype != Tiso)
 			error("not an iso endpoint");
-		l = strtoul(cb->f[1], nil, 0);
+		l = jehanne_strtoul(cb->f[1], nil, 0);
 		deprint("usb epctl %s %d\n", cb->f[0], l);
 		if(l <= 0 || l > 100000)
 			error("hz not in [1:100000]");
@@ -1254,19 +1254,19 @@ epctl(Ep *ep, Chan *c, void *a, long n)
 		break;
 	case CMinfo:
 		deprint("usb epctl %s\n", cb->f[0]);
-		l = strlen(Info);
+		l = jehanne_strlen(Info);
 		s = a;
-		if(n < l+2 || strncmp(Info, s, l) != 0)
+		if(n < l+2 || jehanne_strncmp(Info, s, l) != 0)
 			error(Ebadctl);
 		if(n > 1024)
 			n = 1024;
 		b = smalloc(n);
-		memmove(b, s+l, n-l);
+		jehanne_memmove(b, s+l, n-l);
 		b[n-l] = 0;
 		if(b[n-l-1] == '\n')
 			b[n-l-1] = 0;
 		qlock(ep);
-		free(ep->info);
+		jehanne_free(ep->info);
 		ep->info = b;
 		qunlock(ep);
 		break;
@@ -1285,13 +1285,13 @@ epctl(Ep *ep, Chan *c, void *a, long n)
 			putep(ep->dev->eps[i]);
 		break;
 	case CMdebugep:
-		if(strcmp(cb->f[1], "on") == 0)
+		if(jehanne_strcmp(cb->f[1], "on") == 0)
 			ep->debug = 1;
-		else if(strcmp(cb->f[1], "off") == 0)
+		else if(jehanne_strcmp(cb->f[1], "off") == 0)
 			ep->debug = 0;
 		else
-			ep->debug = strtoul(cb->f[1], nil, 0);
-		print("usb: ep%d.%d debug %d\n",
+			ep->debug = jehanne_strtoul(cb->f[1], nil, 0);
+		jehanne_print("usb: ep%d.%d debug %d\n",
 			ep->dev->nb, ep->nb, ep->debug);
 		break;
 	case CMname:
@@ -1303,14 +1303,14 @@ epctl(Ep *ep, Chan *c, void *a, long n)
 		deprint("usb epctl %s\n", cb->f[0]);
 		if(ep->ttype == Tiso || ep->ttype == Tctl)
 			error("ctl ignored for this endpoint type");
-		ep->tmout = strtoul(cb->f[1], nil, 0);
+		ep->tmout = jehanne_strtoul(cb->f[1], nil, 0);
 		if(ep->tmout != 0 && ep->tmout < Xfertmout)
 			ep->tmout = Xfertmout;
 		break;
 	case CMsampledelay:
 		if(ep->ttype != Tiso)
 			error("ctl ignored for this endpoint type");
-		ep->sampledelay = strtoul(cb->f[1], nil, 0);
+		ep->sampledelay = jehanne_strtoul(cb->f[1], nil, 0);
 		break;
 	case CMpreset:
 		deprint("usb epctl %s\n", cb->f[0]);
@@ -1323,7 +1323,7 @@ epctl(Ep *ep, Chan *c, void *a, long n)
 	default:
 		panic("usb: unknown epctl %d", ct->index);
 	}
-	free(cb);
+	jehanne_free(cb);
 	poperror();
 	return n;
 }
@@ -1338,20 +1338,20 @@ usbctl(void *a, long n)
 
 	cb = parsecmd(a, n);
 	if(waserror()){
-		free(cb);
+		jehanne_free(cb);
 		nexterror();
 	}
 	ct = lookupcmd(cb, usbctls, nelem(usbctls));
 	dprint("usb ctl %s\n", cb->f[0]);
 	switch(ct->index){
 	case CMdebug:
-		if(strcmp(cb->f[1], "on") == 0)
+		if(jehanne_strcmp(cb->f[1], "on") == 0)
 			debug = 1;
-		else if(strcmp(cb->f[1], "off") == 0)
+		else if(jehanne_strcmp(cb->f[1], "off") == 0)
 			debug = 0;
 		else
-			debug = strtol(cb->f[1], nil, 0);
-		print("usb: debug %d\n", debug);
+			debug = jehanne_strtol(cb->f[1], nil, 0);
+		jehanne_print("usb: debug %d\n", debug);
 		for(i = 0; i < epmax; i++)
 			if((ep = getep(i)) != nil){
 				if(ep->hp->debug != nil)
@@ -1363,7 +1363,7 @@ usbctl(void *a, long n)
 		dumpeps();
 		break;
 	}
-	free(cb);
+	jehanne_free(cb);
 	poperror();
 	return n;
 }
@@ -1389,7 +1389,7 @@ ctlwrite(Chan *c, void *a, long n)
 		error(Edetach);
 	if(isqtype(q, Qepctl) && c->aux != nil){
 		/* Be sure we don't keep a cloned ep name */
-		free(c->aux);
+		jehanne_free(c->aux);
 		c->aux = nil;
 		error("read, not write, expected");
 	}
@@ -1455,7 +1455,7 @@ usbshutdown(void)
 		if(hp == nil)
 			continue;
 		if(hp->shutdown == nil)
-			print("#u: no shutdown function for %s\n", hp->type);
+			jehanne_print("#u: no shutdown function for %s\n", hp->type);
 		else
 			hp->shutdown(hp);
 	}

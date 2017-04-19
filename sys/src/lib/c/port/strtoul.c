@@ -13,7 +13,7 @@
 #define ULONG_MAX	4294967295UL
 
 uint32_t
-strtoul(const char *nptr, char **endptr, int base)
+jehanne_strtoul(const char *nptr, char **endptr, int base)
 {
 	const char *p;
 	uint32_t n, nn, m;

@@ -15,7 +15,7 @@
  *  force a connection to hangup
  */
 int
-hangup(int ctl)
+jehanne_hangup(int ctl)
 {
 	return write(ctl, "hangup", sizeof("hangup")-1) != sizeof("hangup")-1;
 }

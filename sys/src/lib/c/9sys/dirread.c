@@ -38,7 +38,7 @@ dirpackage(uint8_t *buf, int32_t ts, Dir **d)
 	if(i != ts)
 		return -1;
 
-	*d = malloc(n * sizeof(Dir) + ss);
+	*d = jehanne_malloc(n * sizeof(Dir) + ss);
 	if(*d == nil)
 		return -1;
 
@@ -49,8 +49,8 @@ dirpackage(uint8_t *buf, int32_t ts, Dir **d)
 	nn = 0;
 	for(i = 0; i < ts; i += m){
 		m = BIT16SZ + GBIT16((uint8_t*)&buf[i]);
-		if(nn >= n || convM2D(&buf[i], m, *d + nn, s) != m){
-			free(*d);
+		if(nn >= n || jehanne_convM2D(&buf[i], m, *d + nn, s) != m){
+			jehanne_free(*d);
 			*d = nil;
 			return -1;
 		}
@@ -62,23 +62,23 @@ dirpackage(uint8_t *buf, int32_t ts, Dir **d)
 }
 
 int32_t
-dirread(int fd, Dir **d)
+jehanne_dirread(int fd, Dir **d)
 {
 	uint8_t *buf;
 	int32_t ts;
 
-	buf = malloc(DIRMAX);
+	buf = jehanne_malloc(DIRMAX);
 	if(buf == nil)
 		return -1;
 	ts = read(fd, buf, DIRMAX);
 	if(ts >= 0)
 		ts = dirpackage(buf, ts, d);
-	free(buf);
+	jehanne_free(buf);
 	return ts;
 }
 
 int32_t
-dirreadall(int fd, Dir **d)
+jehanne_dirreadall(int fd, Dir **d)
 {
 	uint8_t *buf, *nbuf;
 	int32_t n, ts;
@@ -86,9 +86,9 @@ dirreadall(int fd, Dir **d)
 	buf = nil;
 	ts = 0;
 	for(;;){
-		nbuf = realloc(buf, ts+DIRMAX);
+		nbuf = jehanne_realloc(buf, ts+DIRMAX);
 		if(nbuf == nil){
-			free(buf);
+			jehanne_free(buf);
 			return -1;
 		}
 		buf = nbuf;
@@ -99,7 +99,7 @@ dirreadall(int fd, Dir **d)
 	}
 	if(ts >= 0)
 		ts = dirpackage(buf, ts, d);
-	free(buf);
+	jehanne_free(buf);
 	if(ts == 0 && n < 0)
 		return -1;
 	return ts;

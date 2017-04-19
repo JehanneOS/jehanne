@@ -1,5 +1,5 @@
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 #include <auth.h>
 #include <9P2000.h>
 #include <bio.h>
@@ -299,10 +299,10 @@ newfid(int fid, int needunused)
 {
 	Mfile *mf;
 
-	lock(&mfalloc);
+	jehanne_lock(&mfalloc);
 	for(mf = mfalloc.inuse; mf != nil; mf = mf->next)
 		if(mf->fid == fid){
-			unlock(&mfalloc);
+			jehanne_unlock(&mfalloc);
 			if(needunused)
 				return nil;
 			return mf;
@@ -315,7 +315,7 @@ newfid(int fid, int needunused)
 	mf->user = estrdup("none");
 	mf->next = mfalloc.inuse;
 	mfalloc.inuse = mf;
-	unlock(&mfalloc);
+	jehanne_unlock(&mfalloc);
 	return mf;
 }
 
@@ -324,17 +324,17 @@ freefid(Mfile *mf)
 {
 	Mfile **l;
 
-	lock(&mfalloc);
+	jehanne_lock(&mfalloc);
 	for(l = &mfalloc.inuse; *l != nil; l = &(*l)->next)
 		if(*l == mf){
 			*l = mf->next;
 			free(mf->user);
 			memset(mf, 0, sizeof *mf);	/* cause trouble */
 			free(mf);
-			unlock(&mfalloc);
+			jehanne_unlock(&mfalloc);
 			return;
 		}
-	unlock(&mfalloc);
+	jehanne_unlock(&mfalloc);
 	sysfatal("freeing unused fid");
 }
 
@@ -361,11 +361,11 @@ newjob(void)
 	Job *job;
 
 	job = emalloc(sizeof *job);
-	lock(&joblock);
+	jehanne_lock(&joblock);
 	job->next = joblist;
 	joblist = job;
 	job->request.tag = -1;
-	unlock(&joblock);
+	jehanne_unlock(&joblock);
 	return job;
 }
 
@@ -374,7 +374,7 @@ freejob(Job *job)
 {
 	Job **l;
 
-	lock(&joblock);
+	jehanne_lock(&joblock);
 	for(l = &joblist; *l; l = &(*l)->next)
 		if(*l == job){
 			*l = job->next;
@@ -382,7 +382,7 @@ freejob(Job *job)
 			free(job);
 			break;
 		}
-	unlock(&joblock);
+	jehanne_unlock(&joblock);
 }
 
 void
@@ -390,13 +390,13 @@ flushjob(int tag)
 {
 	Job *job;
 
-	lock(&joblock);
+	jehanne_lock(&joblock);
 	for(job = joblist; job; job = job->next)
 		if(job->request.tag == tag && job->request.type != Tflush){
 			job->flushed = 1;
 			break;
 		}
-	unlock(&joblock);
+	jehanne_unlock(&joblock);
 }
 
 void
@@ -847,7 +847,7 @@ respond(Job *job, Mfile *mf, RR *rp, char *errbuf, int status, int wantsav)
 			return errbuf;
 		}
 
-	lock(&joblock);
+	jehanne_lock(&joblock);
 	if(!job->flushed){
 		/* format data to be read later */
 		n = 0;
@@ -862,7 +862,7 @@ respond(Job *job, Mfile *mf, RR *rp, char *errbuf, int status, int wantsav)
 		}
 		mf->rr[mf->nrr] = n;
 	}
-	unlock(&joblock);
+	jehanne_unlock(&joblock);
 
 	rrfreelist(rp);
 
@@ -932,11 +932,11 @@ sendmsg(Job *job, char *err)
 		warning("sendmsg convS2M of %F returns 0", &job->reply);
 		abort();
 	}
-	lock(&joblock);
+	jehanne_lock(&joblock);
 	if(job->flushed == 0)
 		if(write(mfd[1], mdata, n)!=n)
 			sysfatal("mount write");
-	unlock(&joblock);
+	jehanne_unlock(&joblock);
 	if(debug)
 		dnslog("%F %d", &job->reply, n);
 }

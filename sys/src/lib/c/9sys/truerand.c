@@ -11,7 +11,7 @@
 #include <libc.h>
 
 uint32_t
-truerand(void)
+jehanne_truerand(void)
 {
 	uint32_t x;
 	static int randfd = -1;
@@ -19,8 +19,8 @@ truerand(void)
 	if(randfd < 0)
 		randfd = open("/dev/random", OREAD|OCEXEC);
 	if(randfd < 0)
-		sysfatal("can't open /dev/random");
+		jehanne_sysfatal("can't open /dev/random");
 	if(read(randfd, &x, sizeof(x)) != sizeof(x))
-		sysfatal("can't read /dev/random");
+		jehanne_sysfatal("can't read /dev/random");
 	return x;
 }

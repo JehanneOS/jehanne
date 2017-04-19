@@ -230,7 +230,7 @@ fmul(felem *output, felem *in, felem *in2) {
   fproduct(t, in, in2);
   freduce_degree(t);
   freduce_coefficients(t);
-  memcpy(output, t, sizeof(felem) * 10);
+  jehanne_memcpy(output, t, sizeof(felem) * 10);
 }
 
 static void fsquare_inner(felem *output, felem *in) {
@@ -298,7 +298,7 @@ fsquare(felem *output, felem *in) {
   fsquare_inner(t, in);
   freduce_degree(t);
   freduce_coefficients(t);
-  memcpy(output, t, sizeof(felem) * 10);
+  jehanne_memcpy(output, t, sizeof(felem) * 10);
 }
 
 /* Take a little-endian, 32-byte number and expand it into polynomial form */
@@ -394,11 +394,11 @@ static void fmonty(felem *x2, felem *z2,  /* output 2Q */
   felem origx[10], origxprime[10], zzz[19], xx[19], zz[19], xxprime[19],
         zzprime[19], zzzprime[19], xxxprime[19];
 
-  memcpy(origx, x, 10 * sizeof(felem));
+  jehanne_memcpy(origx, x, 10 * sizeof(felem));
   fsum(x, z);
   fdifference(z, origx);  // does x - z
 
-  memcpy(origxprime, xprime, sizeof(felem) * 10);
+  jehanne_memcpy(origxprime, xprime, sizeof(felem) * 10);
   fsum(xprime, zprime);
   fdifference(zprime, origxprime);
   fproduct(xxprime, xprime, z);
@@ -407,7 +407,7 @@ static void fmonty(felem *x2, felem *z2,  /* output 2Q */
   freduce_coefficients(xxprime);
   freduce_degree(zzprime);
   freduce_coefficients(zzprime);
-  memcpy(origxprime, xxprime, sizeof(felem) * 10);
+  jehanne_memcpy(origxprime, xxprime, sizeof(felem) * 10);
   fsum(xxprime, zzprime);
   fdifference(zzprime, origxprime);
   fsquare(xxxprime, xxprime);
@@ -415,8 +415,8 @@ static void fmonty(felem *x2, felem *z2,  /* output 2Q */
   fproduct(zzprime, zzzprime, qmqp);
   freduce_degree(zzprime);
   freduce_coefficients(zzprime);
-  memcpy(x3, xxxprime, sizeof(felem) * 10);
-  memcpy(z3, zzprime, sizeof(felem) * 10);
+  jehanne_memcpy(x3, xxxprime, sizeof(felem) * 10);
+  jehanne_memcpy(z3, zzprime, sizeof(felem) * 10);
 
   fsquare(xx, x);
   fsquare(zz, z);
@@ -424,7 +424,7 @@ static void fmonty(felem *x2, felem *z2,  /* output 2Q */
   freduce_degree(x2);
   freduce_coefficients(x2);
   fdifference(zz, xx);  // does zz = xx - zz
-  memset(zzz + 10, 0, sizeof(felem) * 9);
+  jehanne_memset(zzz + 10, 0, sizeof(felem) * 9);
   fscalar_product(zzz, zz, 121665);
   freduce_degree(zzz);
   freduce_coefficients(zzz);
@@ -449,7 +449,7 @@ cmult(felem *resultx, felem *resultz, uint8_t *n, felem *q) {
 
   unsigned i, j;
 
-  memcpy(nqpqx, q, sizeof(felem) * 10);
+  jehanne_memcpy(nqpqx, q, sizeof(felem) * 10);
 
   for (i = 0; i < 32; ++i) {
     uint8_t byte = n[31 - i];
@@ -485,8 +485,8 @@ cmult(felem *resultx, felem *resultz, uint8_t *n, felem *q) {
     }
   }
 
-  memcpy(resultx, nqx, sizeof(felem) * 10);
-  memcpy(resultz, nqz, sizeof(felem) * 10);
+  jehanne_memcpy(resultx, nqx, sizeof(felem) * 10);
+  jehanne_memcpy(resultz, nqz, sizeof(felem) * 10);
 }
 
 // -----------------------------------------------------------------------------

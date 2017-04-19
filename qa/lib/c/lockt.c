@@ -16,7 +16,7 @@
  * along with Jehanne.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 
 QLock rl;
 Rendez rStart;
@@ -85,7 +85,7 @@ main(void)
 	resInWaiter = 0xff;
 
 	spawnWaiter(&l);
-	lock(&l);
+	jehanne_lock(&l);
 
 	alarm(20000);	/* global timeout, FAIL if reached */
 	if (!atnotify(failOnTimeout, 1)){
@@ -112,7 +112,7 @@ main(void)
 	rwakeupall(&rStart);
 	qunlock(&rl);
 	sleep(1200);
-	unlock(&l);
+	jehanne_unlock(&l);
 
 	qlock(&rl);
 	while(elapsedInWaiter == 0)

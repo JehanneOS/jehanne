@@ -11,7 +11,7 @@
 #include <libc.h>
 
 Rune*
-runestrncpy(Rune *s1, const Rune *s2, int32_t n)
+jehanne_runestrncpy(Rune *s1, const Rune *s2, int32_t n)
 {
 	int i;
 	Rune *os1;

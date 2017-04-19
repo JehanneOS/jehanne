@@ -9,7 +9,7 @@
 
 /*	join F1 F2 on stuff */
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 #include <bio.h>
 #include <ctype.h>
 

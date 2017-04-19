@@ -27,7 +27,7 @@ static double q1	  = 0.4765751362916483698926655581e+4;
 static double q2	 = -0.1555033164031709966900124574e+3;
 
 double
-tan(double arg)
+jehanne_tan(double arg)
 {
 	double temp, e, x, xsq;
 	int flag, sign, i;
@@ -39,7 +39,7 @@ tan(double arg)
 		sign++;
 	}
 	arg = 2*arg/PIO2;   /* overflow? */
-	x = modf(arg, &e);
+	x = jehanne_modf(arg, &e);
 	i = e;
 	switch(i%4) {
 	case 1:
@@ -67,7 +67,7 @@ tan(double arg)
 
 	if(flag) {
 		if(temp == 0)
-			return NaN();
+			return jehanne_NaN();
 		temp = 1/temp;
 	}
 	if(sign)

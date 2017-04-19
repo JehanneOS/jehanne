@@ -237,9 +237,9 @@ drawgen(Chan *c, char *cc, Dirtab *dt, int i, int s, Dir *dp)
 		case Q3rd:
 			cl = drawclientofpath(c->qid.path);
 			if(cl == nil)
-				strncpy(up->genbuf, "??", sizeof up->genbuf);
+				jehanne_strncpy(up->genbuf, "??", sizeof up->genbuf);
 			else
-				snprint(up->genbuf, sizeof up->genbuf,
+				jehanne_snprint(up->genbuf, sizeof up->genbuf,
 					"%d", cl->clientid);
 			mkqid(&q, Q2nd, 0, QTDIR);
 			devdir(c, q, up->genbuf, 0, eve, 0500, dp);
@@ -288,7 +288,7 @@ drawgen(Chan *c, char *cc, Dirtab *dt, int i, int s, Dir *dp)
 			cl = sdraw.client[s-1];
 			if(cl == 0)
 				return 0;
-			snprint(up->genbuf, sizeof up->genbuf, "%d",
+			jehanne_snprint(up->genbuf, sizeof up->genbuf, "%d",
 				cl->clientid);
 			mkqid(&q, (s<<QSHIFT)|Q3rd, 0, QTDIR);
 			devdir(c, q, up->genbuf, 0, eve, 0555, dp);
@@ -367,7 +367,7 @@ drawrefresh(Memimage *m, Rectangle r, void *v)
 			combinerect(&ref->r, r);
 			return;
 		}
-	ref = malloc(sizeof(Refresh));
+	ref = jehanne_malloc(sizeof(Refresh));
 	if(ref){
 		ref->dimage = d;
 		ref->r = r;
@@ -432,7 +432,7 @@ dstflush(int dstid, Memimage *dst, Rectangle r)
 	}
 	/* how can this happen? -rsc, dec 12 2002 */
 	if(dst == 0){
-		print("nil dstflush\n");
+		jehanne_print("nil dstflush\n");
 		return;
 	}
 	l = dst->layer;
@@ -459,9 +459,9 @@ static
 int
 drawcmp(char *a, char *b, int n)
 {
-	if(strlen(a) != n)
+	if(jehanne_strlen(a) != n)
 		return 1;
-	return memcmp(a, b, n);
+	return jehanne_memcmp(a, b, n);
 }
 
 DName*
@@ -489,7 +489,7 @@ drawgoodname(DImage *d)
 			return 0;
 	if(d->name == nil)
 		return 1;
-	n = drawlookupname(strlen(d->name), d->name);
+	n = drawlookupname(jehanne_strlen(d->name), d->name);
 	if(n==nil || n->vers!=d->vers)
 		return 0;
 	return 1;
@@ -548,7 +548,7 @@ allocdimage(Memimage *i)
 {
 	DImage *d;
 
-	d = malloc(sizeof(DImage));
+	d = jehanne_malloc(sizeof(DImage));
 	if(d == 0)
 		return 0;
 	d->ref = 1;
@@ -582,22 +582,22 @@ drawinstallscreen(Client *client, DScreen *d, int id, DImage *dimage, DImage *df
 	Memscreen *s;
 	CScreen *c;
 
-	c = malloc(sizeof(CScreen));
+	c = jehanne_malloc(sizeof(CScreen));
 	if(dimage && dimage->image && dimage->image->chan == 0)
 		panic("bad image %p in drawinstallscreen", dimage->image);
 
 	if(c == 0)
 		return 0;
 	if(d == 0){
-		d = malloc(sizeof(DScreen));
+		d = jehanne_malloc(sizeof(DScreen));
 		if(d == 0){
-			free(c);
+			jehanne_free(c);
 			return 0;
 		}
-		s = malloc(sizeof(Memscreen));
+		s = jehanne_malloc(sizeof(Memscreen));
 		if(s == 0){
-			free(c);
-			free(d);
+			jehanne_free(c);
+			jehanne_free(d);
 			return 0;
 		}
 		s->frontmost = 0;
@@ -633,7 +633,7 @@ drawdelname(DName *name)
 	int i;
 
 	i = name-sdraw.name;
-	memmove(name, name+1, (sdraw.nname-(i+1))*sizeof(DName));
+	jehanne_memmove(name, name+1, (sdraw.nname-(i+1))*sizeof(DName));
 	sdraw.nname--;
 }
 
@@ -644,7 +644,7 @@ drawfreedscreen(DScreen *this)
 
 	this->ref--;
 	if(this->ref < 0)
-		print("negative ref in drawfreedscreen\n");
+		jehanne_print("negative ref in drawfreedscreen\n");
 	if(this->ref > 0)
 		return;
 	ds = dscreen;
@@ -666,8 +666,8 @@ drawfreedscreen(DScreen *this)
 		drawfreedimage(this->dimage);
 	if(this->dfill)
 		drawfreedimage(this->dfill);
-	free(this->screen);
-	free(this);
+	jehanne_free(this->screen);
+	jehanne_free(this);
 }
 
 void
@@ -679,7 +679,7 @@ drawfreedimage(DImage *dimage)
 
 	dimage->ref--;
 	if(dimage->ref < 0)
-		print("negative ref in drawfreedimage\n");
+		jehanne_print("negative ref in drawfreedimage\n");
 	if(dimage->ref > 0)
 		return;
 
@@ -701,7 +701,7 @@ drawfreedimage(DImage *dimage)
 		if(l->data == screenimage->data)
 			addflush(l->layer->screenr);
 		if(l->layer->refreshfn == drawrefresh)	/* else true owner will clean up */
-			free(l->layer->refreshptr);
+			jehanne_free(l->layer->refreshptr);
 		l->layer->refreshptr = nil;
 		if(drawgoodname(dimage))
 			memldelete(l);
@@ -711,8 +711,8 @@ drawfreedimage(DImage *dimage)
 	}else
 		freememimage(dimage->image);
     Return:
-	free(dimage->fchar);
-	free(dimage);
+	jehanne_free(dimage->fchar);
+	jehanne_free(dimage);
 }
 
 void
@@ -724,14 +724,14 @@ drawuninstallscreen(Client *client, CScreen *this)
 	if(cs == this){
 		client->cscreen = this->next;
 		drawfreedscreen(this->dscreen);
-		free(this);
+		jehanne_free(this);
 		return;
 	}
 	while(next = cs->next){	/* assign = */
 		if(next == this){
 			cs->next = this->next;
 			drawfreedscreen(this->dscreen);
-			free(this);
+			jehanne_free(this);
 			return;
 		}
 		cs = next;
@@ -773,13 +773,13 @@ drawaddname(Client *client, DImage *di, int n, char *str)
 		if(drawcmp(name->name, str, n) == 0)
 			error(Enameused);
 	t = sqmalloc((sdraw.nname+1)*sizeof(DName));
-	memmove(t, sdraw.name, sdraw.nname*sizeof(DName));
-	free(sdraw.name);
+	jehanne_memmove(t, sdraw.name, sdraw.nname*sizeof(DName));
+	jehanne_free(sdraw.name);
 	sdraw.name = t;
 	new = &sdraw.name[sdraw.nname++];
-	memset(new, 0, sizeof(DName));	// clear the new element.
+	jehanne_memset(new, 0, sizeof(DName));	// clear the new element.
 	new->name = sqmalloc(n+1);
-	memmove(new->name, str, n);
+	jehanne_memmove(new->name, str, n);
 	new->name[n] = 0;
 	new->dimage = di;
 	new->client = client;
@@ -798,19 +798,19 @@ drawnewclient(void)
 			break;
 	}
 	if(i == sdraw.nclient){
-		cp = malloc((sdraw.nclient+1)*sizeof(Client*));
+		cp = jehanne_malloc((sdraw.nclient+1)*sizeof(Client*));
 		if(cp == 0)
 			return 0;
-		memmove(cp, sdraw.client, sdraw.nclient*sizeof(Client*));
-		free(sdraw.client);
+		jehanne_memmove(cp, sdraw.client, sdraw.nclient*sizeof(Client*));
+		jehanne_free(sdraw.client);
 		sdraw.client = cp;
 		sdraw.nclient++;
 		cp[i] = 0;
 	}
-	cl = malloc(sizeof(Client));
+	cl = jehanne_malloc(sizeof(Client));
 	if(cl == 0)
 		return 0;
-	memset(cl, 0, sizeof(Client));
+	jehanne_memset(cl, 0, sizeof(Client));
 	cl->slot = i;
 	cl->clientid = ++sdraw.clientid;
 	cl->op = SoverD;
@@ -948,20 +948,20 @@ makescreenimage(void)
 	Memimage *i;
 	Rectangle r;
 
-	md = malloc(sizeof *md);
+	md = jehanne_malloc(sizeof *md);
 	if(md == nil)
 		return nil;
 	md->allocd = 1;
 	md->base = nil;
 	md->bdata = attachscreen(&r, &chan, &depth, &width, &sdraw.softscreen);
 	if(md->bdata == nil){
-		free(md);
+		jehanne_free(md);
 		return nil;
 	}
 	md->ref = 1;
 	i = allocmemimaged(r, chan, md);
 	if(i == nil){
-		free(md);
+		jehanne_free(md);
 		return nil;
 	}
 	i->width = width;
@@ -973,8 +973,8 @@ makescreenimage(void)
 		return nil;
 	}
 	if(!waserror()){
-		snprint(screenname, sizeof screenname, "noborder.screen.%d", ++screennameid);
-		drawaddname(nil, di, strlen(screenname), screenname);
+		jehanne_snprint(screenname, sizeof screenname, "noborder.screen.%d", ++screennameid);
+		drawaddname(nil, di, jehanne_strlen(screenname), screenname);
 		poperror();
 	}
 	return di;
@@ -1083,7 +1083,7 @@ drawopen(Chan *c, unsigned long omode)
 			error(Einuse);
 		cl->busy = 1;
 		flushrect = Rect(10000, 10000, -10000, -10000);
-		dn = drawlookupname(strlen(screenname), screenname);
+		dn = drawlookupname(jehanne_strlen(screenname), screenname);
 		if(dn == 0)
 			error("draw: cannot happen 2");
 		if(drawinstall(cl, 0, dn->dimage->image, 0) == 0)
@@ -1092,8 +1092,8 @@ drawopen(Chan *c, unsigned long omode)
 		if(di == 0)
 			error("draw: cannot happen 1");
 		di->vers = dn->vers;
-		di->name = sqmalloc(strlen(screenname)+1);
-		strcpy(di->name, screenname);
+		di->name = sqmalloc(jehanne_strlen(screenname)+1);
+		jehanne_strcpy(di->name, screenname);
 		di->fromname = dn->dimage;
 		di->fromname->ref++;
 		incref(&cl->r);
@@ -1137,7 +1137,7 @@ drawclose(Chan *c)
 	if((c->flag&COPEN) && (decref(&cl->r)==0)){
 		while(r = cl->refresh){	/* assign = */
 			cl->refresh = r->next;
-			free(r);
+			jehanne_free(r);
 		}
 		/* free names */
 		for(i=0; i<sdraw.nname; )
@@ -1158,7 +1158,7 @@ drawclose(Chan *c)
 		}
 		sdraw.client[cl->slot] = 0;
 		drawflush();	/* to erase visible, now dead windows */
-		free(cl);
+		jehanne_free(cl);
 	}
 	dunlock();
 	poperror();
@@ -1204,7 +1204,7 @@ drawread(Chan *c, void *a, long n, int64_t off)
 				error(Enodrawimage);
 			i = di->image;
 		}
-		n = snprint(a, n,
+		n = jehanne_snprint(a, n,
 			"%11d %11d %11s %11d %11d %11d %11d %11d %11d %11d %11d %11d ",
 			cl->clientid, cl->infoid, chantostr(buf, i->chan),
 			(i->flags&Frepl)==Frepl,
@@ -1216,18 +1216,18 @@ drawread(Chan *c, void *a, long n, int64_t off)
 
 	case Qcolormap:
 		drawactive(1);	/* to restore map from backup */
-		p = malloc(4*12*256+1);
+		p = jehanne_malloc(4*12*256+1);
 		if(p == 0)
 			error(Enomem);
 		m = 0;
 		for(index = 0; index < 256; index++){
 			getcolor(index, &red, &green, &blue);
-			m += snprint((char*)p+m, 4*12*256+1 - m,
+			m += jehanne_snprint((char*)p+m, 4*12*256+1 - m,
 				"%11d %11lud %11lud %11lud\n", index,
 				red>>24, green>>24, blue>>24);
 		}
 		n = readstr(offset, a, n, (char*)p);
-		free(p);
+		jehanne_free(p);
 		break;
 
 	case Qdata:
@@ -1236,8 +1236,8 @@ drawread(Chan *c, void *a, long n, int64_t off)
 		if(n < cl->nreaddata)
 			error(Eshortread);
 		n = cl->nreaddata;
-		memmove(a, cl->readdata, cl->nreaddata);
-		free(cl->readdata);
+		jehanne_memmove(a, cl->readdata, cl->nreaddata);
+		jehanne_free(cl->readdata);
 		cl->readdata = nil;
 		break;
 
@@ -1265,7 +1265,7 @@ drawread(Chan *c, void *a, long n, int64_t off)
 			BPLONG(p+3*4, r->r.max.x);
 			BPLONG(p+4*4, r->r.max.y);
 			cl->refresh = r->next;
-			free(r);
+			jehanne_free(r);
 			p += 5*4;
 			n -= 5*4;
 		}
@@ -1322,7 +1322,7 @@ drawwrite(Chan *c, void *a, long n, int64_t nn)
 			x = m;
 			if(x > sizeof(buf)-1)
 				x = sizeof(buf)-1;
-			q = memccpy(buf, a, '\n', x);
+			q = jehanne_memccpy(buf, a, '\n', x);
 			if(q == 0)
 				break;
 			i = q-buf;
@@ -1330,12 +1330,12 @@ drawwrite(Chan *c, void *a, long n, int64_t nn)
 			a = (char*)a + i;
 			m -= i;
 			*q = 0;
-			if(tokenize(buf, fields, nelem(fields)) != 4)
+			if(jehanne_tokenize(buf, fields, nelem(fields)) != 4)
 				error(Ebadarg);
-			i = strtoul(fields[0], 0, 0);
-			red = strtoul(fields[1], 0, 0);
-			green = strtoul(fields[2], 0, 0);
-			blue = strtoul(fields[3], &q, 0);
+			i = jehanne_strtoul(fields[0], 0, 0);
+			red = jehanne_strtoul(fields[1], 0, 0);
+			green = jehanne_strtoul(fields[2], 0, 0);
+			blue = jehanne_strtoul(fields[3], &q, 0);
 			if(fields[3] == q)
 				error(Ebadarg);
 			if(red>255 || green>255 || blue>255 || i<0 || i>255)
@@ -1406,31 +1406,31 @@ printmesg(char *fmt, unsigned char *a, int plsprnt)
 		left = sizeof buf - 2 - (q - buf);	/* 2 for \n\0 */
 		switch(*p){
 		case 'l':
-			q += snprint(q, left, " %ld", (int32_t)BGLONG(a));
+			q += jehanne_snprint(q, left, " %ld", (int32_t)BGLONG(a));
 			a += 4;
 			break;
 		case 'L':
-			q += snprint(q, left, " %.8lux", (uint32_t)BGLONG(a));
+			q += jehanne_snprint(q, left, " %.8lux", (uint32_t)BGLONG(a));
 			a += 4;
 			break;
 		case 'R':
-			q += snprint(q, left, " [%d %d %d %d]", BGLONG(a),
+			q += jehanne_snprint(q, left, " [%d %d %d %d]", BGLONG(a),
 				BGLONG(a+4), BGLONG(a+8), BGLONG(a+12));
 			a += 16;
 			break;
 		case 'P':
-			q += snprint(q, left, " [%d %d]", BGLONG(a), BGLONG(a+4));
+			q += jehanne_snprint(q, left, " [%d %d]", BGLONG(a), BGLONG(a+4));
 			a += 8;
 			break;
 		case 'b':
-			q += snprint(q, left, " %d", *a++);
+			q += jehanne_snprint(q, left, " %d", *a++);
 			break;
 		case 's':
-			q += snprint(q, left, " %d", BGSHORT(a));
+			q += jehanne_snprint(q, left, " %d", BGSHORT(a));
 			a += 2;
 			break;
 		case 'S':
-			q += snprint(q, left, " %.4ux", BGSHORT(a));
+			q += jehanne_snprint(q, left, " %.4ux", BGSHORT(a));
 			a += 2;
 			break;
 		}
@@ -1522,7 +1522,7 @@ drawmesg(Client *client, void *av, int n)
 				if(reffn){
 					refx = nil;
 					if(reffn == drawrefresh){
-						refx = malloc(sizeof(Refx));
+						refx = jehanne_malloc(sizeof(Refx));
 						if(refx == 0){
 							drawuninstall(client, dstid);
 							error(Edrawmem);
@@ -1686,11 +1686,11 @@ drawmesg(Client *client, void *av, int n)
 			ni = BGLONG(a+5);
 			if(ni<=0 || ni>4096)
 				error("bad font size (4096 chars max)");
-			free(font->fchar);	/* should we complain if non-zero? */
-			font->fchar = malloc(ni*sizeof(FChar));
+			jehanne_free(font->fchar);	/* should we complain if non-zero? */
+			font->fchar = jehanne_malloc(ni*sizeof(FChar));
 			if(font->fchar == 0)
 				error("no memory for font");
-			memset(font->fchar, 0, ni*sizeof(FChar));
+			jehanne_memset(font->fchar, 0, ni*sizeof(FChar));
 			font->nfchar = ni;
 			font->ascent = a[9];
 			continue;
@@ -1788,7 +1788,7 @@ drawmesg(Client *client, void *av, int n)
 			di->name = sqmalloc(j+1);
 			di->fromname = dn->dimage;
 			di->fromname->ref++;
-			memmove(di->name, a+6, j);
+			jehanne_memmove(di->name, a+6, j);
 			di->name[j] = 0;
 			client->infoid = dstid;
 			continue;
@@ -1880,7 +1880,7 @@ drawmesg(Client *client, void *av, int n)
 			drawpoint(&sp, a+23);
 			drawpoint(&p, a+31);
 			ni++;
-			pp = malloc(ni*sizeof(Point));
+			pp = jehanne_malloc(ni*sizeof(Point));
 			if(pp == nil)
 				error(Enomem);
 			doflush = 0;
@@ -1928,7 +1928,7 @@ drawmesg(Client *client, void *av, int n)
 				mempoly(dst, pp, ni, e0, e1, j, src, sp, op);
 			else
 				memfillpoly(dst, pp, ni, e0, src, sp, op);
-			free(pp);
+			jehanne_free(pp);
 			m = u-a;
 			continue;
 
@@ -1944,13 +1944,13 @@ drawmesg(Client *client, void *av, int n)
 				error(Ereadoutside);
 			c = bytesperline(r, i->depth);
 			c *= Dy(r);
-			free(client->readdata);
-			client->readdata = mallocz(c, 0);
+			jehanne_free(client->readdata);
+			client->readdata = jehanne_mallocz(c, 0);
 			if(client->readdata == nil)
 				error("readimage malloc failed");
 			client->nreaddata = memunload(i, r, client->readdata, c);
 			if(client->nreaddata < 0){
-				free(client->readdata);
+				jehanne_free(client->readdata);
 				client->readdata = nil;
 				error("bad readimage call");
 			}
@@ -2055,11 +2055,11 @@ drawmesg(Client *client, void *av, int n)
 			m += nw*4;
 			if(n < m)
 				error(Eshortdraw);
-			lp = malloc(nw*sizeof(Memimage*));
+			lp = jehanne_malloc(nw*sizeof(Memimage*));
 			if(lp == 0)
 				error(Enomem);
 			if(waserror()){
-				free(lp);
+				jehanne_free(lp);
 				nexterror();
 			}
 			for(j=0; j<nw; j++)
@@ -2079,7 +2079,7 @@ drawmesg(Client *client, void *av, int n)
 			ll = drawlookup(client, BGLONG(a+1+1+2), 1);
 			drawrefreshscreen(ll, client);
 			poperror();
-			free(lp);
+			jehanne_free(lp);
 			continue;
 
 		/* visible: 'v' */

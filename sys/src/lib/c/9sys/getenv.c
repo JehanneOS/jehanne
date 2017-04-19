@@ -20,7 +20,7 @@
 #include <libc.h>
 
 char*
-getenv(const char *name)
+jehanne_getenv(const char *name)
 {
 	int f;
 	int32_t l;
@@ -29,13 +29,13 @@ getenv(const char *name)
 	assert(name != nil);
 	if(name[0]=='\0')
 		goto BadName;
-	if(strcmp(name, ".")==0 || strcmp(name, "..")==0)
+	if(jehanne_strcmp(name, ".")==0 || jehanne_strcmp(name, "..")==0)
 		goto BadName;
-	if(strchr(name, '/')!=nil)
+	if(jehanne_strchr(name, '/')!=nil)
 		goto BadName;
 
-	snprint(path, sizeof path, "/env/%s", name);
-	if(strcmp(path+5, name) != 0)
+	jehanne_snprint(path, sizeof path, "/env/%s", name);
+	if(jehanne_strcmp(path+5, name) != 0)
 		goto BadName;
 
 	f = open(path, OREAD);
@@ -47,16 +47,16 @@ getenv(const char *name)
 		 * using #ec when the open in #e fails is both
 		 * slow and not flexible enough.
 		 */
-		snprint(path, sizeof path, "#e/%s", name);
+		jehanne_snprint(path, sizeof path, "#e/%s", name);
 		f = open(path, OREAD);
 		if(f < 0)
 			return nil;
 	}
 	l = seek(f, 0, 2);
-	value = malloc(l+1);
+	value = jehanne_malloc(l+1);
 	if(value == nil)
 		goto Done;
-	setmalloctag(value, getcallerpc());
+	jehanne_setmalloctag(value, jehanne_getcallerpc());
 	seek(f, 0, 0);
 	if(read(f, value, l) >= 0)
 		value[l] = '\0';
@@ -65,6 +65,6 @@ Done:
 	return value;
 
 BadName:
-	werrstr("bad env name: '%s'", name);
+	jehanne_werrstr("bad env name: '%s'", name);
 	return nil;
 }

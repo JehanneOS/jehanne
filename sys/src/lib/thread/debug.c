@@ -25,21 +25,21 @@ _threaddebug(uint32_t flag, char *fmt, ...)
 	if((_threaddebuglevel&flag) == 0)
 		return;
 
-	fmtfdinit(&f, 2, buf, sizeof buf);
+	jehanne_fmtfdinit(&f, 2, buf, sizeof buf);
 
 	p = _threadgetproc();
 	if(p==nil)
-		fmtprint(&f, "noproc ");
+		jehanne_fmtprint(&f, "noproc ");
 	else if(p->thread)
-		fmtprint(&f, "%d.%d ", p->pid, p->thread->id);
+		jehanne_fmtprint(&f, "%d.%d ", p->pid, p->thread->id);
 	else
-		fmtprint(&f, "%d._ ", p->pid);
+		jehanne_fmtprint(&f, "%d._ ", p->pid);
 
 	va_start(arg, fmt);
-	fmtvprint(&f, fmt, arg);
+	jehanne_fmtvprint(&f, fmt, arg);
 	va_end(arg);
-	fmtprint(&f, "\n");
-	fmtfdflush(&f);
+	jehanne_fmtprint(&f, "\n");
+	jehanne_fmtfdflush(&f);
 }
 
 void
@@ -51,10 +51,10 @@ _threadassert(char *s)
 
 	p = _threadgetproc();
 	if(p && p->thread)
-		n = sprint(buf, "%d.%d ", p->pid, p->thread->id);
+		n = jehanne_sprint(buf, "%d.%d ", p->pid, p->thread->id);
 	else
 		n = 0;
-	snprint(buf+n, sizeof(buf)-n, "%s: assertion failed at %#p\n", s, getcallerpc());
-	write(2, buf, strlen(buf));
+	jehanne_snprint(buf+n, sizeof(buf)-n, "%s: assertion failed at %#p\n", s, jehanne_getcallerpc());
+	write(2, buf, jehanne_strlen(buf));
 	abort();
 }

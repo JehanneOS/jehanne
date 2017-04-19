@@ -11,8 +11,8 @@
 #include <libc.h>
 
 int32_t
-runestrlen(const Rune *s)
+jehanne_runestrlen(const Rune *s)
 {
 
-	return runestrchr(s, 0) - s;
+	return jehanne_runestrchr(s, 0) - s;
 }

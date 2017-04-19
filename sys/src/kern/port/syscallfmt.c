@@ -31,7 +31,7 @@ fmtrwdata(Fmt* f, char* a, int n)
 	char *t;
 
 	if(a == nil){
-		fmtprint(f, " 0x0%s");
+		jehanne_fmtprint(f, " 0x0%s");
 		return;
 	}
 	a = validaddr(a, n, 0);
@@ -44,8 +44,8 @@ fmtrwdata(Fmt* f, char* a, int n)
 	}
 	t[n] = 0;
 
-	fmtprint(f, " %#p/\"%s\"", a, t);
-	free(t);
+	jehanne_fmtprint(f, " %#p/\"%s\"", a, t);
+	jehanne_free(t);
 }
 
 void
@@ -55,16 +55,16 @@ fmtuserstring(Fmt* f, const char* a)
 	char *t;
 
 	if(a == nil){
-		fmtprint(f, " 0/\"\"");
+		jehanne_fmtprint(f, " 0/\"\"");
 		return;
 	}
 	a = validaddr((void*)a, 1, 0);
 	n = ((char*)vmemchr((char*)a, 0, 0x7fffffff) - a) + 1;
 	t = smalloc(n+1);
-	memmove(t, (char*)a, n);
+	jehanne_memmove(t, (char*)a, n);
 	t[n] = 0;
-	fmtprint(f, " %#p/\"%s\"", a, t);
-	free(t);
+	jehanne_fmtprint(f, " %#p/\"%s\"", a, t);
+	jehanne_free(t);
 }
 
 void
@@ -76,7 +76,7 @@ fmtuserstringlist(Fmt* fmt, const char** argv)
 		a = *(char**)validaddr((char**)argv, sizeof(char**), 0);
 		if(a == nil)
 			break;
-		fmtprint(fmt, " ");
+		jehanne_fmtprint(fmt, " ");
 		fmtuserstring(fmt, a);
 		argv++;
 	}

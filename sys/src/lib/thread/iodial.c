@@ -23,7 +23,7 @@ _iodial(va_list *arg)
 	dir = va_arg(*arg, char*);
 	cdfp = va_arg(*arg, int*);
 
-	return dial(addr, local, dir, cdfp);
+	return jehanne_dial(addr, local, dir, cdfp);
 }
 
 int

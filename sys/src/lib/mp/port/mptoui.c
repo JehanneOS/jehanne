@@ -12,7 +12,7 @@ uitomp(uint32_t i, mpint *b)
 {
 	if(b == nil){
 		b = mpnew(0);
-		setmalloctag(b, getcallerpc());
+		jehanne_setmalloctag(b, jehanne_getcallerpc());
 	}
 	*b->p = i;
 	b->top = 1;

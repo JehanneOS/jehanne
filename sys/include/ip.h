@@ -192,8 +192,8 @@ uint16_t	ptclbsum(uint8_t*, int);
 int	v6tov4(uint8_t*, uint8_t*);
 void	v4tov6(uint8_t*, uint8_t*);
 
-#define	ipcmp(x, y) memcmp(x, y, IPaddrlen)
-#define	ipmove(x, y) memmove(x, y, IPaddrlen)
+#define	ipcmp(x, y) jehanne_memcmp(x, y, IPaddrlen)
+#define	ipmove(x, y) jehanne_memmove(x, y, IPaddrlen)
 
 extern uint8_t IPv4bcast[IPaddrlen];
 extern uint8_t IPv4bcastobs[IPaddrlen];

@@ -11,7 +11,7 @@
  * This routine converts time as follows.
  * The epoch is 0000 Jan 1 1970 GMT.
  * The argument time is in seconds since then.
- * The localtime(t) entry returns a pointer to an array
+ * The jehanne_localtime(t) entry returns a pointer to an array
  * containing
  *
  *	seconds (0-59)
@@ -26,7 +26,7 @@
  *
  * The routine gets the daylight savings time from the environment.
  *
- * asctime(tvec))
+ * jehanne_asctime(tvec))
  * where tvec is produced by localtime
  * returns a ptr to a character string
  * that has the ascii time in the form
@@ -36,7 +36,7 @@
  *	012345678901234567890123456789
  *	0	  1	    2
  *
- * ctime(t) just calls localtime, then asctime.
+ * jehanne_ctime(t) just calls localtime, then asctime.
  */
 
 #include <u.h>
@@ -71,13 +71,13 @@ struct
 } timezone;
 
 char*
-ctime(int32_t t)
+jehanne_ctime(int32_t t)
 {
-	return asctime(localtime(t));
+	return jehanne_asctime(jehanne_localtime(t));
 }
 
 Tm*
-localtime(int32_t tim)
+jehanne_localtime(int32_t tim)
 {
 	Tm *ct;
 	int32_t t, *p;
@@ -94,19 +94,19 @@ localtime(int32_t tim)
 			dlflag++;
 			break;
 		}
-	ct = gmtime(t);
+	ct = jehanne_gmtime(t);
 	if(dlflag){
-		strcpy(ct->zone, timezone.dlname);
+		jehanne_strcpy(ct->zone, timezone.dlname);
 		ct->tzoff = timezone.dldiff;
 	} else {
-		strcpy(ct->zone, timezone.stname);
+		jehanne_strcpy(ct->zone, timezone.stname);
 		ct->tzoff = timezone.stdiff;
 	}
 	return ct;
 }
 
 Tm*
-gmtime(int32_t tim)
+jehanne_gmtime(int32_t tim)
 {
 	int d0, d1;
 	int32_t hms, day;
@@ -162,17 +162,17 @@ gmtime(int32_t tim)
 	dmsize[1] = 28;
 	xtime.mday = d0 + 1;
 	xtime.mon = d1;
-	strcpy(xtime.zone, "GMT");
+	jehanne_strcpy(xtime.zone, "GMT");
 	return &xtime;
 }
 
 char*
-asctime(Tm *t)
+jehanne_asctime(Tm *t)
 {
 	char *ncp;
 	static char cbuf[30];
 
-	strcpy(cbuf, "Thu Jan 01 00:00:00 GMT 1970\n");
+	jehanne_strcpy(cbuf, "Thu Jan 01 00:00:00 GMT 1970\n");
 	ncp = &"SunMonTueWedThuFriSat"[t->wday*3];
 	cbuf[0] = *ncp++;
 	cbuf[1] = *ncp++;
@@ -225,7 +225,7 @@ readtimezone(void)
 	char buf[TZSIZE*11+30], *p;
 	int i;
 
-	memset(buf, 0, sizeof(buf));
+	jehanne_memset(buf, 0, sizeof(buf));
 	i = open("/env/timezone", OREAD);
 	if(i < 0)
 		goto error;
@@ -252,7 +252,7 @@ readtimezone(void)
 
 error:
 	timezone.stdiff = 0;
-	strcpy(timezone.stname, "GMT");
+	jehanne_strcpy(timezone.stname, "GMT");
 	timezone.dlpairs[0] = 0;
 }
 

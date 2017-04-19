@@ -60,7 +60,7 @@ kbinclose(Chan *c)
 	if((c->flag & COPEN) == 0)
 		return;
 	if(c->aux){
-		free(c->aux);
+		jehanne_free(c->aux);
 		c->aux = nil;
 	}
 	if(c->qid.path == Qkbd)

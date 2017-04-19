@@ -12,7 +12,7 @@
  * ICS2494[A] Dual Video/Memory Clock Generator.
  */
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 #include <bio.h>
 
 #include "pci.h"

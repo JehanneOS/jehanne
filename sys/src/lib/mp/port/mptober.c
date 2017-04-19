@@ -8,7 +8,7 @@ mptober(mpint *b, uint8_t *p, int n)
 	int i, j, m;
 	mpdigit x;
 
-	memset(p, 0, n);
+	jehanne_memset(p, 0, n);
 
 	p += n;
 	m = b->top*Dbytes;

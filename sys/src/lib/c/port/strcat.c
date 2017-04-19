@@ -11,9 +11,9 @@
 #include <libc.h>
 
 char*
-strcat(char *s1, const char *s2)
+jehanne_strcat(char *s1, const char *s2)
 {
 
-	strcpy(strchr(s1, 0), s2);
+	jehanne_strcpy(jehanne_strchr(s1, 0), s2);
 	return s1;
 }

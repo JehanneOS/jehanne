@@ -31,14 +31,14 @@
 #define	q2      -.891110902798312337e1
 
 double
-log(double arg)
+jehanne_log(double arg)
 {
 	double x, z, zsq, temp;
 	int exp;
 
 	if(arg <= 0)
-		return NaN();
-	x = frexp(arg, &exp);
+		return jehanne_NaN();
+	x = jehanne_frexp(arg, &exp);
 	while(x < 0.5) {
 		x *= 2;
 		exp--;
@@ -58,10 +58,10 @@ log(double arg)
 }
 
 double
-log10(double arg)
+jehanne_log10(double arg)
 {
 
 	if(arg <= 0)
-		return NaN();
-	return log(arg) * ln10o1;
+		return jehanne_NaN();
+	return jehanne_log(arg) * ln10o1;
 }

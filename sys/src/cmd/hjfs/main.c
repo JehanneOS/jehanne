@@ -1,5 +1,5 @@
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 #include <libsec.h>
 #include <thread.h>
 #include "dat.h"

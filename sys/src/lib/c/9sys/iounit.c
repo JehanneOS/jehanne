@@ -16,12 +16,12 @@
  */
 
 int
-iounit(int fd)
+jehanne_iounit(int fd)
 {
 	int i, cfd;
 	char buf[128], *args[10];
 
-	snprint(buf, sizeof buf, "#d/%dctl", fd);
+	jehanne_snprint(buf, sizeof buf, "#d/%dctl", fd);
 	cfd = open(buf, OREAD);
 	if(cfd < 0)
 		return 0;
@@ -30,7 +30,7 @@ iounit(int fd)
 	if(i <= 0)
 		return 0;
 	buf[i] = '\0';
-	if(tokenize(buf, args, nelem(args)) != nelem(args))
+	if(jehanne_tokenize(buf, args, nelem(args)) != nelem(args))
 		return 0;
-	return atoi(args[7]);
+	return jehanne_atoi(args[7]);
 }

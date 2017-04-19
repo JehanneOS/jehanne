@@ -189,14 +189,14 @@ halfpt(ECdomain *dom, char *s, char **rptr, mpint *out)
 	mpint *ret;
 	
 	n = ((mpsignif(dom->p)+7)/8)*2;
-	if(strlen(s) < n)
+	if(jehanne_strlen(s) < n)
 		return 0;
-	buf = malloc(n+1);
+	buf = jehanne_malloc(n+1);
 	buf[n] = 0;
-	memcpy(buf, s, n);
+	jehanne_memcpy(buf, s, n);
 	ret = strtomp(buf, &r, 16, out);
 	*rptr = s + (r - buf);
-	free(buf);
+	jehanne_free(buf);
 	return ret;
 }
 
@@ -324,7 +324,7 @@ strtoec(ECdomain *dom, char *s, char **rptr, ECpoint *ret)
 	allocd = 0;
 	if(ret == nil){
 		allocd = 1;
-		ret = mallocz(sizeof(*ret), 1);
+		ret = jehanne_mallocz(sizeof(*ret), 1);
 		if(ret == nil)
 			return nil;
 		ret->x = mpnew(0);
@@ -376,7 +376,7 @@ err:
 	if(allocd){
 		mpfree(ret->x);
 		mpfree(ret->y);
-		free(ret);
+		jehanne_free(ret);
 	}
 	return nil;
 }
@@ -385,7 +385,7 @@ ECpriv*
 ecgen(ECdomain *dom, ECpriv *p)
 {
 	if(p == nil){
-		p = mallocz(sizeof(*p), 1);
+		p = jehanne_mallocz(sizeof(*p), 1);
 		if(p == nil)
 			return nil;
 		p->x = mpnew(0);
@@ -516,12 +516,12 @@ base58dec(char *src, uint8_t *dst, int len)
 	r = mpnew(0);
 	b = uitomp(58, nil);
 	for(; *src; src++){
-		t = strchr(code, *src);
+		t = jehanne_strchr(code, *src);
 		if(t == nil){
 			mpfree(n);
 			mpfree(r);
 			mpfree(b);
-			werrstr("invalid base58 char");
+			jehanne_werrstr("invalid base58 char");
 			return -1;
 		}
 		uitomp(t - code, r);
@@ -538,7 +538,7 @@ base58dec(char *src, uint8_t *dst, int len)
 void
 ecdominit(ECdomain *dom, void (*init)(mpint *p, mpint *a, mpint *b, mpint *x, mpint *y, mpint *n, mpint *h))
 {
-	memset(dom, 0, sizeof(*dom));
+	jehanne_memset(dom, 0, sizeof(*dom));
 	dom->p = mpnew(0);
 	dom->a = mpnew(0);
 	dom->b = mpnew(0);
@@ -562,7 +562,7 @@ ecdomfree(ECdomain *dom)
 	mpfree(dom->G.y);
 	mpfree(dom->n);
 	mpfree(dom->h);
-	memset(dom, 0, sizeof(*dom));
+	jehanne_memset(dom, 0, sizeof(*dom));
 }
 
 int
@@ -589,7 +589,7 @@ ecdecodepub(ECdomain *dom, uint8_t *data, int len)
 	n = (mpsignif(dom->p)+7)/8;
 	if(len != 1 + 2*n || data[0] != 0x04)
 		return nil;
-	pub = mallocz(sizeof(*pub), 1);
+	pub = jehanne_mallocz(sizeof(*pub), 1);
 	if(pub == nil)
 		return nil;
 	pub->x = betomp(data+1, n, nil);
@@ -608,5 +608,5 @@ ecpubfree(ECpub *p)
 		return;
 	mpfree(p->x);
 	mpfree(p->y);
-	free(p);
+	jehanne_free(p);
 }

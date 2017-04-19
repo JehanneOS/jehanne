@@ -113,7 +113,7 @@ cgaputc(int c)
 		cga[cgapos++] = Attr;
 	}
 	if(cgapos >= (Width*Height)-Postlen*2){
-		memmove(cga, &cga[Width], Width*(Height-1));
+		jehanne_memmove(cga, &cga[Width], Width*(Height-1));
 		p = &cga[Width*(Height-1)-Postlen*2];
 		for(i = 0; i < Width/2; i++){
 			*p++ = ' ';
@@ -133,7 +133,7 @@ cgaprint(int off, char *fmt, ...)
 	int i, n;
 
 	va_start(va, fmt);
-	n = vsnprint(buf, sizeof buf, fmt, va);
+	n = jehanne_vsnprint(buf, sizeof buf, fmt, va);
 	va_end(va);
 
 	cga = CGA;
@@ -214,7 +214,7 @@ cgaread(Chan* c, void *vbuf, long len, int64_t off)
 	if(off+len > Cgasize)
 		len = Cgasize - off;
 	cga = CGA;
-	memmove(vbuf, cga + off, len);
+	jehanne_memmove(vbuf, cga + off, len);
 	return len;
 }
 
@@ -230,7 +230,7 @@ cgawrite(Chan* c, void *vbuf, long len, int64_t off)
 	if(off+len > Cgasize)
 		len = Cgasize - off;
 	cga = CGA;
-	memmove(cga + off, vbuf, len);
+	jehanne_memmove(cga + off, vbuf, len);
 	return len;
 }
 

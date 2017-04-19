@@ -2,7 +2,7 @@
  *  this currently only works for ethernet bootp's -- presotto
  */
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 #include <ip.h>
 #include <bio.h>
 #include <ndb.h>

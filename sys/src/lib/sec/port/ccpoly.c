@@ -6,8 +6,8 @@ ccpolyotk(Chachastate *cs, DigestState *ds)
 {
 	uint8_t otk[ChachaBsize];
 
-	memset(ds, 0, sizeof(*ds));
-	memset(otk, 0, 32);
+	jehanne_memset(ds, 0, sizeof(*ds));
+	jehanne_memset(otk, 0, 32);
 	chacha_setblock(cs, 0);
 	chacha_encrypt(otk, ChachaBsize, cs);
 	poly1305(nil, 0, otk, 32, nil, ds);

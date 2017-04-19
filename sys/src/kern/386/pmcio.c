@@ -218,7 +218,7 @@ pmcintelfamily(void)
 void
 pmcinitctl(PmcCtl *p)
 {
-	memset(p, 0xff, sizeof(PmcCtl));
+	jehanne_memset(p, 0xff, sizeof(PmcCtl));
 	p->enab = PmcCtlNullval;
 	p->user = PmcCtlNullval;
 	p->os = PmcCtlNullval;
@@ -233,14 +233,14 @@ pmcconfigure(void)
 
 	isrecog = 0;
 	
-	if(memcmp(&m->cpuinfo[0][1], "AuthcAMDenti", 12) == 0){
+	if(jehanne_memcmp(&m->cpuinfo[0][1], "AuthcAMDenti", 12) == 0){
 		isrecog++;
 		cfg.ctrbase = PerfCtrbaseAmd;
 		cfg.evtbase = PerfEvtbaseAmd;
 		cfg.vendor = PeAmd;
 		cfg.family = PeUnk;
 		cfg.pmcidsarch = pmcidsk10;
-	}else if(memcmp(&m->cpuinfo[0][1], "GenuntelineI", 12) == 0){
+	}else if(jehanne_memcmp(&m->cpuinfo[0][1], "GenuntelineI", 12) == 0){
 		isrecog++;
 		cfg.ctrbase = PerfCtrbaseIntel;
 		cfg.evtbase = PerfEvtbaseIntel;
@@ -306,8 +306,8 @@ pmctrans(PmcCtl *p)
 	n = 0;
 	if(cfg.pmcidsarch != nil)
 		for (pi = &cfg.pmcidsarch[0]; pi->portdesc[0] != '\0'; pi++){
-			if (strncmp(p->descstr, pi->portdesc, strlen(pi->portdesc)) == 0){
-				strncpy(p->descstr, pi->archdesc, strlen(pi->archdesc) + 1);
+			if (jehanne_strncmp(p->descstr, pi->portdesc, jehanne_strlen(pi->portdesc)) == 0){
+				jehanne_strncpy(p->descstr, pi->archdesc, jehanne_strlen(pi->archdesc) + 1);
 				n = 1;
 				break;
 			}
@@ -315,14 +315,14 @@ pmctrans(PmcCtl *p)
 	/* this ones supersede the other ones */
 	if(cfg.pmcids != nil)
 		for (pi = &cfg.pmcids[0]; pi->portdesc[0] != '\0'; pi++){
-			if (strncmp(p->descstr, pi->portdesc, strlen(pi->portdesc)) == 0){
-				strncpy(p->descstr, pi->archdesc, strlen(pi->archdesc) + 1);
+			if (jehanne_strncmp(p->descstr, pi->portdesc, jehanne_strlen(pi->portdesc)) == 0){
+				jehanne_strncpy(p->descstr, pi->archdesc, jehanne_strlen(pi->archdesc) + 1);
 				n = 1;
 				break;
 			}
 		}
 	if(pmcdebug != 0)
-		print("really setting %s\n", p->descstr);
+		jehanne_print("really setting %s\n", p->descstr);
 	return n;
 }
 
@@ -346,7 +346,7 @@ getctl(PmcCtl *p, uint32_t regno)
 	e = GetEvMsk(r);
 	u = GetUMsk(r);
 	/* TODO inverse translation */
-	snprint(p->descstr, KNAMELEN, "%#ullx %#ullx", e, u);
+	jehanne_snprint(p->descstr, KNAMELEN, "%#ullx %#ullx", e, u);
 	p->nodesc = 0;
 	return 0;
 }
@@ -399,11 +399,11 @@ setctl(PmcCtl *p, int regno)
 		return -1;
 
 	if (p->nodesc == 0) {
-		memmove(str, p->descstr, KNAMELEN);
-		if (tokenize(str, toks, 2) != 2)
+		jehanne_memmove(str, p->descstr, KNAMELEN);
+		if (jehanne_tokenize(str, toks, 2) != 2)
 			return -1;
-		e = atoi(toks[0]);
-		u = atoi(toks[1]);
+		e = jehanne_atoi(toks[0]);
+		u = jehanne_atoi(toks[1]);
 		v &= ~(PeEvMskL|PeEvMskH|PeUnMsk);
 		v |= SetEvMsk(v, e);
 		v |= SetUMsk(v, u);
@@ -412,7 +412,7 @@ setctl(PmcCtl *p, int regno)
 	pmcuserenab(pmcanyenab());
 	if (pmcdebug) {
 		v = rdmsr(regno+ cfg.evtbase);
-		print("conf pmc[%#ux]: %#llux\n", regno, v);
+		jehanne_print("conf pmc[%#ux]: %#llux\n", regno, v);
 	}
 	return 0;
 }
@@ -426,7 +426,7 @@ pmcdescstr(char *str, int nstr)
 	ns = 0;
 
 	if(pmcdebug != 0)
-		print("vendor %x family %x nregs %d pmcnregs %d\n", cfg.vendor, cfg.family, cfg.nregs, pmcnregs());
+		jehanne_print("vendor %x family %x nregs %d pmcnregs %d\n", cfg.vendor, cfg.family, cfg.nregs, pmcnregs());
 	if(cfg.pmcidsarch == nil && cfg.pmcids == nil){
 		*str = 0;
 		return ns;
@@ -434,10 +434,10 @@ pmcdescstr(char *str, int nstr)
 
 	if(cfg.pmcidsarch != nil)
 		for (pi = &cfg.pmcidsarch[0]; pi->portdesc[0] != '\0'; pi++)
-			ns += snprint(str + ns, nstr - ns, "%s\n",pi->portdesc);
+			ns += jehanne_snprint(str + ns, nstr - ns, "%s\n",pi->portdesc);
 	if(cfg.pmcids != nil)
 		for (pi = &cfg.pmcids[0]; pi->portdesc[0] != '\0'; pi++)
-			ns += snprint(str + ns, nstr - ns, "%s\n",pi->portdesc);
+			ns += jehanne_snprint(str + ns, nstr - ns, "%s\n",pi->portdesc);
 	return ns;
 }
 
@@ -508,7 +508,7 @@ ctl2ctl(PmcCtl *dctl, PmcCtl *sctl)
 	if(sctl->os != PmcCtlNullval)
 		dctl->os = sctl->os;
 	if(sctl->nodesc == 0) {
-		memmove(dctl->descstr, sctl->descstr, KNAMELEN);
+		jehanne_memmove(dctl->descstr, sctl->descstr, KNAMELEN);
 		dctl->nodesc = 0;
 	}
 }
@@ -551,7 +551,7 @@ pmcgetctl(uint32_t coreno, PmcCtl *pctl, uint32_t regno)
 	if(coreno == m->machno)
 		n = getctl(pctl, regno);
 	else{
-		memmove(pctl, &p->PmcCtl, sizeof(PmcCtl));
+		jehanne_memmove(pctl, &p->PmcCtl, sizeof(PmcCtl));
 		n = 0;
 	}
 	iunlock(&pmccore[coreno]);

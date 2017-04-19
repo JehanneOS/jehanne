@@ -40,13 +40,13 @@ _schedinit(void *arg)
 
 	p = arg;
 	_threadsetproc(p);
-	p->pid = getpid();
-	while(setjmp(p->sched))
+	p->pid = jehanne_getpid();
+	while(jehanne_setjmp(p->sched))
 		;
 	_threaddebug(DBGSCHED, "top of schedinit, _threadexitsallstatus=%p", _threadexitsallstatus);
 	if(_threadexitsallstatus)
-		exits(_threadexitsallstatus);
-	lock(&p->lock);
+		jehanne_exits(_threadexitsallstatus);
+	jehanne_lock(&p->lock);
 	if((t=p->thread) != nil){
 		p->thread = nil;
 		if(t->moribund){
@@ -59,14 +59,14 @@ _schedinit(void *arg)
 					p->nthreads--;
 					break;
 				}
-			unlock(&p->lock);
+			jehanne_unlock(&p->lock);
 			if(t->inrendez){
 				_threadflagrendez(t);
 				_threadbreakrendez();
 			}
-			free(t->stk);
-			free(t->cmdname);
-			free(t);	/* XXX how do we know there are no references? */
+			jehanne_free(t->stk);
+			jehanne_free(t->cmdname);
+			jehanne_free(t);	/* XXX how do we know there are no references? */
 			t = nil;
 			_sched();
 		}
@@ -82,7 +82,7 @@ _schedinit(void *arg)
 		if(t->state == Ready)
 			_threadready(t);
 	}
-	unlock(&p->lock);
+	jehanne_unlock(&p->lock);
 	_sched();
 }
 
@@ -97,9 +97,9 @@ needstack(int n)
 	t = p->thread;
 	
 	if((uint8_t*)&x - n < (uint8_t*)t->stk){
-		fprint(2, "%s %lud: &x=%p n=%d t->stk=%p\n",
-			argv0, getpid(), &x, n, t->stk);
-		fprint(2, "%s %lud: stack overflow\n", argv0, getmainpid());
+		jehanne_fprint(2, "%s %lud: &x=%p n=%d t->stk=%p\n",
+			argv0, jehanne_getpid(), &x, n, t->stk);
+		jehanne_fprint(2, "%s %lud: stack overflow\n", argv0, jehanne_getmainpid());
 		abort();
 	}
 }
@@ -115,8 +115,8 @@ Resched:
 	if((t = p->thread) != nil){
 		needstack(128);
 		_threaddebug(DBGSCHED, "pausing, state=%s", psstate(t->state));
-		if(setjmp(t->sched)==0)
-			longjmp(p->sched, 1);
+		if(jehanne_setjmp(t->sched)==0)
+			jehanne_longjmp(p->sched, 1);
 		return;
 	}else{
 		t = runthread(p);
@@ -132,7 +132,7 @@ Resched:
 		}
 		t->state = Running;
 		t->nextstate = Ready;
-		longjmp(t->sched, 1);
+		jehanne_longjmp(t->sched, 1);
 	}
 }
 
@@ -145,20 +145,20 @@ runthread(Proc *p)
 	if(p->nthreads==0)
 		return nil;
 	q = &p->ready;
-	lock(&p->readylock);
+	jehanne_lock(&p->readylock);
 	if(q->head == nil){
 		q->asleep = 1;
 		_threaddebug(DBGSCHED, "sleeping for more work");
-		unlock(&p->readylock);
+		jehanne_unlock(&p->readylock);
 		while(rendezvous(q, 0) == (void*)~0){
 			if(_threadexitsallstatus)
-				exits(_threadexitsallstatus);
+				jehanne_exits(_threadexitsallstatus);
 		}
 		/* lock picked up from _threadready */
 	}
 	t = q->head;
 	q->head = t->next;
-	unlock(&p->readylock);
+	jehanne_unlock(&p->readylock);
 	return t;
 }
 
@@ -170,7 +170,7 @@ _threadready(Thread *t)
 	assert(t->state == Ready);
 	_threaddebug(DBGSCHED, "readying %d.%d", t->proc->pid, t->id);
 	q = &t->proc->ready;
-	lock(&t->proc->readylock);
+	jehanne_lock(&t->proc->readylock);
 	t->next = nil;
 	if(q->head==nil)
 		q->head = t;
@@ -183,10 +183,10 @@ _threadready(Thread *t)
 		_threaddebug(DBGSCHED, "waking process %d", t->proc->pid);
 		while(rendezvous(q, 0) == (void*)~0){
 			if(_threadexitsallstatus)
-				exits(_threadexitsallstatus);
+				jehanne_exits(_threadexitsallstatus);
 		}
 	}else
-		unlock(&t->proc->readylock);
+		jehanne_unlock(&t->proc->readylock);
 }
 
 void

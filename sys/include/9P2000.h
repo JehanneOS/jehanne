@@ -147,6 +147,7 @@ extern unsigned int	convS2M(Fcall*, uint8_t*, uint);
 extern unsigned int	sizeS2M(Fcall*);
 extern int		statcheck(uint8_t *abuf, uint nbuf);
 
+extern int		dirfmt(Fmt *fmt);
 extern int		fcallfmt(Fmt*);
 extern int		read9pmsg(int, void*, uint);
 

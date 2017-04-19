@@ -383,7 +383,7 @@ dequeueproc(Schedq *rq, Proc *tp)
 	rq->n--;
 	nrdy--;
 	if(p->state != Ready)
-		print("dequeueproc %s %d %s\n", p->text, p->pid, statename[p->state]);
+		jehanne_print("dequeueproc %s %d %s\n", p->text, p->pid, statename[p->state]);
 
 	unlock(&runq->l);
 	return p;
@@ -603,7 +603,7 @@ newproc(void)
 	p->args = nil;
 	p->nargs = 0;
 	p->setargs = 0;
-	memset(p->seg, 0, sizeof p->seg);
+	jehanne_memset(p->seg, 0, sizeof p->seg);
 	p->pid = incref(&pidalloc);
 	pshash(p);
 	p->noteid = incref(&noteidalloc);
@@ -635,7 +635,7 @@ procwired(Proc *p, int bm)
 
 	if(bm < 0){
 		/* pick a machine to wire to */
-		memset(nwired, 0, sizeof(nwired));
+		jehanne_memset(nwired, 0, sizeof(nwired));
 		p->wired = 0;
 		for(i=0; (pp = psincref(i)) != nil; i++){
 			wm = pp->wired;
@@ -692,12 +692,12 @@ sleep(Rendez *r, int (*f)(void*), void *arg)
 	s = splhi();
 
 	if(up->nlocks)
-		print("process %d sleeps with %d locks held, last lock %#p locked at pc %#p, sleep called from %#p\n",
+		jehanne_print("process %d sleeps with %d locks held, last lock %#p locked at pc %#p, sleep called from %#p\n",
 			up->pid, up->nlocks, up->lastlock, lockgetpc(up->lastlock), getcallerpc());
 	lock(&r->l);
 	lock(&up->rlock);
 	if(r->p){
-		print("double sleep called from %#p, %d %d\n",
+		jehanne_print("double sleep called from %#p, %d %d\n",
 			getcallerpc(), r->p->pid, up->pid);
 		dumpstack();
 	}
@@ -795,7 +795,7 @@ void
 tsleep(Rendez *r, int (*fn)(void*), void *arg, int64_t ms)
 {
 	if (up->tt){
-		print("%s %lud: tsleep timer active: mode %d, tf %#p, pc %#p\n",
+		jehanne_print("%s %lud: tsleep timer active: mode %d, tf %#p, pc %#p\n",
 			up->text, up->pid, up->tmode, up->tf, __builtin_return_address(0));
 		timerdel(up);
 	}
@@ -872,7 +872,7 @@ postnote(Proc *p, int dolock, char *n, int flag)
 
 	ret = 0;
 	if(p->nnote < NNOTE) {
-		strcpy(p->note[p->nnote].msg, n);
+		jehanne_strcpy(p->note[p->nnote].msg, n);
 		p->note[p->nnote++].flag = flag;
 		ret = 1;
 	}
@@ -981,7 +981,7 @@ addbroken(Proc *p)
 	qlock(&broken);
 	if(broken.n == NBROKEN) {
 		ready(broken.p[0]);
-		memmove(&broken.p[0], &broken.p[1], sizeof(Proc*)*(NBROKEN-1));
+		jehanne_memmove(&broken.p[0], &broken.p[1], sizeof(Proc*)*(NBROKEN-1));
 		--broken.n;
 	}
 	broken.p[broken.n++] = p;
@@ -1001,7 +1001,7 @@ unbreak(Proc *p)
 	for(b=0; b < broken.n; b++)
 		if(broken.p[b] == p) {
 			broken.n--;
-			memmove(&broken.p[b], &broken.p[b+1],
+			jehanne_memmove(&broken.p[b], &broken.p[b+1],
 					sizeof(Proc*)*(NBROKEN-(b+1)));
 			ready(p);
 			break;
@@ -1098,7 +1098,7 @@ pexit(char *exitstr, int freemem)
 		wq->w.time[TSys] = tk2ms(stime);
 		wq->w.time[TReal] = tk2ms(sys->ticks - up->time[TReal]);
 		if(exitstr && exitstr[0])
-			snprint(wq->w.msg, sizeof(wq->w.msg), "%s %d: %s",
+			jehanne_snprint(wq->w.msg, sizeof(wq->w.msg), "%s %d: %s",
 				up->text, up->pid, exitstr);
 		else
 			wq->w.msg[0] = '\0';
@@ -1128,7 +1128,7 @@ pexit(char *exitstr, int freemem)
 		}
 		unlock(&p->exl);
 		if(wq)
-			free(wq);
+			jehanne_free(wq);
 	}
 
 	if(!freemem)
@@ -1150,7 +1150,7 @@ pexit(char *exitstr, int freemem)
 
 	while((wq = up->waitq) != nil){
 		up->waitq = wq->next;
-		free(wq);
+		jehanne_free(wq);
 	}
 
 	/* release debuggers */
@@ -1215,9 +1215,9 @@ pwait(Waitmsg *w)
 	poperror();
 
 	if(w)
-		memmove(w, &wq->w, sizeof(Waitmsg));
+		jehanne_memmove(w, &wq->w, sizeof(Waitmsg));
 	cpid = wq->w.pid;
-	free(wq);
+	jehanne_free(wq);
 
 	return cpid;
 }
@@ -1240,7 +1240,7 @@ dumpaproc(Proc *p)
 	s = p->psstate;
 	if(s == 0)
 		s = statename[p->state];
-	print("%3d:%10s pc %#p dbgpc %#p  %8s (%s) ut %ld st %ld bss %#p qpc %#p nl %d nd %lud lpc %#p pri %lud\n",
+	jehanne_print("%3d:%10s pc %#p dbgpc %#p  %8s (%s) ut %ld st %ld bss %#p qpc %#p nl %d nd %lud lpc %#p pri %lud\n",
 		p->pid, p->text, p->pc, dbgpc(p), s, statename[p->state],
 		p->time[0], p->time[1], bss, p->qpc, p->nlocks,
 		p->delaysched, p->lastlock ? lockgetpc(p->lastlock) : 0, p->priority);
@@ -1253,9 +1253,9 @@ procdump(void)
 	Proc *p;
 
 	if(up)
-		print("up %d\n", up->pid);
+		jehanne_print("up %d\n", up->pid);
 	else
-		print("no current process\n");
+		jehanne_print("no current process\n");
 	for(i=0; (p = psincref(i)) != nil; i++) {
 		if(p->state != Dead)
 			dumpaproc(p);
@@ -1343,13 +1343,13 @@ scheddump(void)
 	for(rq = &runq[Npriq-1]; rq >= runq; rq--){
 		if(rq->head == 0)
 			continue;
-		print("rq%ld:", rq-runq);
+		jehanne_print("rq%ld:", rq-runq);
 		for(p = rq->head; p; p = p->rnext)
-			print(" %d(%llud)", p->pid, m->ticks - p->readytime);
-		print("\n");
+			jehanne_print(" %d(%llud)", p->pid, m->ticks - p->readytime);
+		jehanne_print("\n");
 		delay(150);
 	}
-	print("nrdy %d\n", nrdy);
+	jehanne_print("nrdy %d\n", nrdy);
 }
 
 void
@@ -1368,14 +1368,14 @@ kproc(char *name, void (*func)(void *), void *arg)
 	p->kp = 1;
 
 	p->scallnr = up->scallnr;
-	memmove(p->arg, up->arg, sizeof(up->arg));
+	jehanne_memmove(p->arg, up->arg, sizeof(up->arg));
 	p->nerrlab = 0;
 	p->slash = up->slash;
 	p->dot = up->dot;
 	if(p->dot)
 		incref(&p->dot->r);
 
-	memmove(p->note, up->note, sizeof(p->note));
+	jehanne_memmove(p->note, up->note, sizeof(p->note));
 	p->nnote = up->nnote;
 	p->notified = 0;
 	p->lastnote = up->lastnote;
@@ -1394,7 +1394,7 @@ kproc(char *name, void (*func)(void *), void *arg)
 	p->pgrp = kpgrp;
 	incref(&kpgrp->r);
 
-	memset(p->time, 0, sizeof(p->time));
+	jehanne_memset(p->time, 0, sizeof(p->time));
 	p->time[TReal] = sys->ticks;
 //	pickmach(p);
 	ready(p);
@@ -1452,7 +1452,7 @@ errorf(char *fmt, ...)
 	char buf[PRINTSIZE];
 
 	va_start(arg, fmt);
-	vseprint(buf, buf+sizeof(buf), fmt, arg);
+	jehanne_vseprint(buf, buf+sizeof(buf), fmt, arg);
 	va_end(arg);
 	error(buf);
 }
@@ -1494,10 +1494,10 @@ labtrap(char *source)
 	int i;
 
 	ilock(&l);
-	print("labtrap (%s):\n", source);
+	jehanne_print("labtrap (%s):\n", source);
 	for (i=NERR-1; i>=0; i--)
 		if (up->errlab[i].pc)
-			print("%d: sp=%#p pc=%#p\n", i, up->errlab[i].sp, up->errlab[i].pc);
+			jehanne_print("%d: sp=%#p pc=%#p\n", i, up->errlab[i].sp, up->errlab[i].pc);
 	iunlock(&l);
 	delay(3*1000);	/* delay to let cons queue drain */
 	panic(source);
@@ -1516,7 +1516,7 @@ exhausted(char *resource)
 {
 	char buf[ERRMAX];
 
-	sprint(buf, "no free %s", resource);
+	jehanne_sprint(buf, "no free %s", resource);
 	iprint("%s\n", buf);
 	error(buf);
 }
@@ -1555,7 +1555,7 @@ cankillproc(Proc *p)
 		return 0;
 	if(p->procctl == Proc_exitbig || p->procctl == Proc_exitme)
 		return 0;
-	return strcmp(p->user, eve) != 0 || (p->procmode&0222) != 0;
+	return jehanne_strcmp(p->user, eve) != 0 || (p->procmode&0222) != 0;
 }
 
 enum{
@@ -1570,8 +1570,8 @@ findbignoteid(void)
 	Proc *p;
 	int j;
 
-	memset(sizes, 0, sizeof(sizes));
-	memset(noteids, 0, sizeof(noteids));
+	jehanne_memset(sizes, 0, sizeof(sizes));
+	jehanne_memset(noteids, 0, sizeof(noteids));
 	nbig = 0;
 	for(j = 0; (p = psincref(j)) != nil; j++){
 		if(cankillproc(p)){
@@ -1622,7 +1622,7 @@ killbig(char *why)
 	for(i = 0; (p = psincref(i)) != nil; i++){
 		if(p->noteid == noteid && canqlock(&p->debug)){
 			if(p->noteid == noteid && cankillproc(p)){
-				print("%ud: %s killed: %s\n", p->pid, p->text, why);
+				jehanne_print("%ud: %s killed: %s\n", p->pid, p->text, why);
 				prockill(p, Proc_exitbig, why);
 			}
 			qunlock(&p->debug);
@@ -1664,7 +1664,7 @@ renameuser(char *old, char *new)
 	Proc *p;
 
 	for(i = 0; (p = psincref(i)) != nil; i++){
-		if(p->user!=nil && strcmp(old, p->user)==0)
+		if(p->user!=nil && jehanne_strcmp(old, p->user)==0)
 			kstrdup(&p->user, new);
 		psdecref(p);
 	}

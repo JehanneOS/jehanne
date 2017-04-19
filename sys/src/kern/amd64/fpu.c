@@ -107,12 +107,12 @@ fpudevprocio(Proc* proc, void* a, int32_t n, uintptr_t offset, int write)
 	default:
 		if(offset+n > sizeof(Fxsave))
 			n = sizeof(Fxsave) - offset;
-		memmove(p+offset, a, n);
+		jehanne_memmove(p+offset, a, n);
 		break;
 	case 0:
 		if(offset+n > sizeof(Fxsave))
 			n = sizeof(Fxsave) - offset;
-		memmove(a, p+offset, n);
+		jehanne_memmove(a, p+offset, n);
 		break;
 	}
 
@@ -178,7 +178,7 @@ fpusysrforkchild(Proc* child, Proc* parent)
 	if(child->FPU.fpustate == Init)
 		return;
 
-	memmove(child->FPU.fpusave, parent->FPU.fpusave, sizeof(Fxsave));
+	jehanne_memmove(child->FPU.fpusave, parent->FPU.fpusave, sizeof(Fxsave));
 }
 
 void
@@ -298,7 +298,7 @@ fpunote(void)
 	else
 		cm =  "Unknown";
 
-	snprint(up->genbuf, sizeof(up->genbuf),
+	jehanne_snprint(up->genbuf, sizeof(up->genbuf),
 		"sys: fp: %s Exception ipo=%#llux fsw=%#ux",
 		cm, fpusave->rip, fsw);
 	return up->genbuf;
@@ -348,7 +348,7 @@ xfpuxf(Ureg* ureg, void* v)
 	else
 		cm =  "Unknown";
 
-	snprint(up->genbuf, sizeof(up->genbuf),
+	jehanne_snprint(up->genbuf, sizeof(up->genbuf),
 		"sys: fp: %s Exception mxcsr=%#ux", cm, mxcsr);
 	return up->genbuf;
 }
@@ -524,7 +524,7 @@ fpuinit(void)
 
 	_fninit();
 	fxsave = (Fxsave*)((PTR2UINT(buf) + 15) & ~15);
-	memset(fxsave, 0, sizeof(Fxsave));
+	jehanne_memset(fxsave, 0, sizeof(Fxsave));
 	_fxsave(fxsave);
 	m->FPU.fcw = RCn|PCd|P|U|D;
 	if(fxsave->mxcsrmask == 0)

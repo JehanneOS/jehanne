@@ -30,24 +30,24 @@ main(int argc, char **argv)
 	int64_t del;
 
 	if (argc != 2) {
-		fprint(2, "usage: arctest number\n");
-		exits("usage");
+		jehanne_fprint(2, "usage: arctest number\n");
+		jehanne_exits("usage");
 	}
 	memimageinit();
 
 	x = allocmemimage(Rect(0,0,1000,1000), CMAP8);
-	n = atoi(argv[1]);
+	n = jehanne_atoi(argv[1]);
 
-	t0 = nsec();
-	t0 = nsec();
-	t0 = nsec();
-	t1 = nsec();
+	t0 = jehanne_nsec();
+	t0 = jehanne_nsec();
+	t0 = jehanne_nsec();
+	t1 = jehanne_nsec();
 	del = t1-t0;
-	t0 = nsec();
+	t0 = jehanne_nsec();
 	for(i=0; i<n; i++)
 		memarc(x, c, a, b, thick, memblack, sp, alpha, phi, SoverD);
-	t1 = nsec();
-	print("%lld %lld\n", t1-t0-del, del);
+	t1 = jehanne_nsec();
+	jehanne_print("%lld %lld\n", t1-t0-del, del);
 }
 
 int drawdebug = 0;
@@ -65,7 +65,7 @@ iprint(char *fmt, ...)
 	char buf[1024];
 
 	va_start(va, fmt);
-	n = vseprint(buf, buf+sizeof buf, fmt, va) - buf;
+	n = jehanne_vseprint(buf, buf+sizeof buf, fmt, va) - buf;
 	va_end(va);
 
 	write(1,buf,n);

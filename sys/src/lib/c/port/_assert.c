@@ -13,11 +13,11 @@
 void (*__assert)(char*);
 
 void
-_assert(const char *s)
+jehanne__assert(const char *s)
 {
 	if(__assert)
 		(*__assert)((char*)s);
-	fprint(2, "assert failed: %s\n", s);
+	jehanne_fprint(2, "assert failed: %s\n", s);
 	abort();
 	__builtin_unreachable();
 }

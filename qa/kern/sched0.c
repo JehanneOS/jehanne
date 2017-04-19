@@ -16,7 +16,7 @@
  * along with Jehanne.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 
 /* verify that the scheduler give each process a chance to run
  * with a single cpu (x86) this test do not pass on plan9/9front

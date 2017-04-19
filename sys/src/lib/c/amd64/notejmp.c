@@ -3,7 +3,7 @@
 #include <ureg.h>
 
 void
-notejmp(void *vr, jmp_buf j, int ret)
+jehanne_notejmp(void *vr, jmp_buf j, int ret)
 {
 	struct Ureg *r = vr;
 

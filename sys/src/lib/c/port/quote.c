@@ -16,12 +16,12 @@ extern int _needsquotes(const char*, int*);
 extern int _runeneedsquotes(const Rune*, int*);
 
 char*
-unquotestrdup(const char *s)
+jehanne_unquotestrdup(const char *s)
 {
 	char *s1, *t, *ret;
 	int quoting;
 
-	ret = s1 = strdup(s);	/* return unquoted copy */
+	ret = s1 = jehanne_strdup(s);	/* return unquoted copy */
 	if(ret == nil)
 		return ret;
 	quoting = 0;
@@ -49,17 +49,17 @@ unquotestrdup(const char *s)
 		*s1++ = *t++;
 	}
 	if(t != s1)
-		memmove(s1, t, strlen(t)+1);
+		jehanne_memmove(s1, t, jehanne_strlen(t)+1);
 	return ret;
 }
 
 Rune*
-unquoterunestrdup(const Rune *s)
+jehanne_unquoterunestrdup(const Rune *s)
 {
 	Rune *s1, *t, *ret;
 	int quoting;
 
-	ret = s1 = runestrdup(s);	/* return unquoted copy */
+	ret = s1 = jehanne_runestrdup(s);	/* return unquoted copy */
 	if(ret == nil)
 		return ret;
 	quoting = 0;
@@ -87,12 +87,12 @@ unquoterunestrdup(const Rune *s)
 		*s1++ = *t++;
 	}
 	if(t != s1)
-		memmove(s1, t, (runestrlen(t)+1)*sizeof(Rune));
+		jehanne_memmove(s1, t, (jehanne_runestrlen(t)+1)*sizeof(Rune));
 	return ret;
 }
 
 char*
-quotestrdup(const char *s)
+jehanne_quotestrdup(const char *s)
 {
 	const char *t;
 	char *u, *ret;
@@ -100,9 +100,9 @@ quotestrdup(const char *s)
 	Rune r;
 
 	if(_needsquotes(s, &quotelen) == 0)
-		return strdup(s);
+		return jehanne_strdup(s);
 	
-	ret = malloc(quotelen+1);
+	ret = jehanne_malloc(quotelen+1);
 	if(ret == nil)
 		return nil;
 	u = ret;
@@ -119,7 +119,7 @@ quotestrdup(const char *s)
 }
 
 Rune*
-quoterunestrdup(const Rune *s)
+jehanne_quoterunestrdup(const Rune *s)
 {
 	const Rune *t;
 	Rune *u, *ret;
@@ -127,9 +127,9 @@ quoterunestrdup(const Rune *s)
 	Rune r;
 
 	if(_runeneedsquotes(s, &quotelen) == 0)
-		return runestrdup(s);
+		return jehanne_runestrdup(s);
 	
-	ret = malloc((quotelen+1)*sizeof(Rune));
+	ret = jehanne_malloc((quotelen+1)*sizeof(Rune));
 	if(ret == nil)
 		return nil;
 	u = ret;

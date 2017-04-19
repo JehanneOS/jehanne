@@ -9,7 +9,7 @@
 #include	"ipv6.h"
 
 
-#define DPRINT if(0)print
+#define DPRINT if(0)jehanne_print
 
 enum
 {
@@ -124,7 +124,7 @@ udpconnect(Conv *c, char **argv, int argc)
 static int
 udpstate(Conv *c, char *state, int n)
 {
-	return snprint(state, n, "%s qin %d qout %d\n",
+	return jehanne_snprint(state, n, "%s qin %d qout %d\n",
 		c->inuse ? "Open" : "Closed",
 		c->rq ? qlen(c->rq) : 0,
 		c->wq ? qlen(c->wq) : 0
@@ -217,15 +217,15 @@ udpkick(void *x, Block *bp)
 		rport = nhgets(bp->rp);
 		bp->rp += 2+2;			/* Ignore local port */
 
-		if(memcmp(laddr, v4prefix, IPv4off) == 0
+		if(jehanne_memcmp(laddr, v4prefix, IPv4off) == 0
 		|| ipcmp(laddr, IPnoaddr) == 0)
 			version = 4;
 		else
 			version = 6;
 	} else {
 		rport = 0;
-		if( (memcmp(c->raddr, v4prefix, IPv4off) == 0 &&
-			memcmp(c->laddr, v4prefix, IPv4off) == 0)
+		if( (jehanne_memcmp(c->raddr, v4prefix, IPv4off) == 0 &&
+			jehanne_memcmp(c->laddr, v4prefix, IPv4off) == 0)
 			|| ipcmp(c->raddr, IPnoaddr) == 0)
 			version = 4;
 		else
@@ -281,7 +281,7 @@ udpkick(void *x, Block *bp)
 		 * first then reset it to the normal ip header
 		 */
 		uh6 = (Udp6hdr *)(bp->rp);
-		memset(uh6, 0, 8);
+		jehanne_memset(uh6, 0, 8);
 		ptcllen = dlen + UDP_UDPHDR_SZ;
 		hnputl(uh6->viclfl, ptcllen);
 		uh6->hoplimit = IP_UDPPROTO;
@@ -304,7 +304,7 @@ udpkick(void *x, Block *bp)
 		uh6->udpcksum[1] = 0;
 		hnputs(uh6->udpcksum,
 		       ptclcsum(bp, UDP6_PHDR_OFF, dlen+UDP_UDPHDR_SZ+UDP6_PHDR_SZ));
-		memset(uh6, 0, 8);
+		jehanne_memset(uh6, 0, 8);
 		uh6->viclfl[0] = IP_VER6;
 		hnputs(uh6->len, ptcllen);
 		uh6->nextheader = IP_UDPPROTO;
@@ -377,7 +377,7 @@ udpiput(Proto *udp, Ipifc *ifc, Block *bp)
 		ipmove(laddr, uh6->udpdst);
 		lport = nhgets(uh6->udpdport);
 		rport = nhgets(uh6->udpsport);
-		memset(uh6, 0, 8);
+		jehanne_memset(uh6, 0, 8);
 		hnputl(uh6->viclfl, len);
 		uh6->hoplimit = IP_UDPPROTO;
 		if(ptclcsum(bp, UDP6_PHDR_OFF, len+UDP6_PHDR_SZ)) {
@@ -514,7 +514,7 @@ udpctl(Conv *c, char **f, int n)
 
 	ucb = (Udpcb*)c->ptcl;
 	if(n == 1){
-		if(strcmp(f[0], "headers") == 0){
+		if(jehanne_strcmp(f[0], "headers") == 0){
 			ucb->headers = 7;	/* new headers format */
 			return nil;
 		}
@@ -583,7 +583,7 @@ udpstats(Proto *udp, char *buf, int len)
 	Udppriv *upriv;
 
 	upriv = udp->priv;
-	return snprint(buf, len, "InDatagrams: %llud\nNoPorts: %llud\n"
+	return jehanne_snprint(buf, len, "InDatagrams: %llud\nNoPorts: %llud\n"
 		"InErrors: %llud\nOutDatagrams: %llud\n",
 		upriv->ustats.udpInDatagrams,
 		upriv->ustats.udpNoPorts,

@@ -13,12 +13,12 @@
 #define	HZ	1000
 
 double
-cputime(void)
+jehanne_cputime(void)
 {
 	int32_t t[4];
 	int i;
 
-	times(t);
+	jehanne_times(t);
 	for(i=1; i<4; i++)
 		t[0] += t[i];
 	return t[0] / (double)HZ;

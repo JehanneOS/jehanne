@@ -59,30 +59,30 @@ main(int argc, char **argv)
 	memimageinit();
 	c = mkcmap();
 	if(!inferno)
-		print("#include <u.h>\n#include <libc.h>\n");
+		jehanne_print("#include <u.h>\n#include <libc.h>\n");
 	else
-		print("#include \"lib9.h\"\n");
-	print("#include <draw.h>\n");
-	print("#include <memdraw.h>\n\n");
-	print("static Memcmap def = {\n");
-	print("/* cmap2rgb */ {\n");
+		jehanne_print("#include \"lib9.h\"\n");
+	jehanne_print("#include <draw.h>\n");
+	jehanne_print("#include <memdraw.h>\n\n");
+	jehanne_print("static Memcmap def = {\n");
+	jehanne_print("/* cmap2rgb */ {\n");
 	for(i=0; i<sizeof(c->cmap2rgb); ){
-		print("\t");
+		jehanne_print("\t");
 		for(j=0; j<16; j++, i++)
-			print("0x%2.2ux,", c->cmap2rgb[i]);
-		print("\n");
+			jehanne_print("0x%2.2ux,", c->cmap2rgb[i]);
+		jehanne_print("\n");
 	}
-	print("},\n");
-	print("/* rgb2cmap */ {\n");
+	jehanne_print("},\n");
+	jehanne_print("/* rgb2cmap */ {\n");
 	for(i=0; i<sizeof(c->rgb2cmap);){
-		print("\t");
+		jehanne_print("\t");
 		for(j=0; j<16; j++, i++)
-			print("0x%2.2ux,", c->rgb2cmap[i]);
-		print("\n");
+			jehanne_print("0x%2.2ux,", c->rgb2cmap[i]);
+		jehanne_print("\n");
 	}
-	print("}\n");
-	print("};\n");
-	print("Memcmap *memdefcmap = &def;\n");
-	print("void _memmkcmap(void){}\n");
-	exits(0);
+	jehanne_print("}\n");
+	jehanne_print("};\n");
+	jehanne_print("Memcmap *memdefcmap = &def;\n");
+	jehanne_print("void _memmkcmap(void){}\n");
+	jehanne_exits(0);
 }

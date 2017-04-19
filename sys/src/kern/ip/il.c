@@ -241,7 +241,7 @@ ilconnect(Conv *c, char **argv, int argc)
 	/* huge hack to quickly try an il connection */
 	fast = 0;
 	if(argc > 1){
-		p = strstr(argv[1], "!fasttimeout");
+		p = jehanne_strstr(argv[1], "!fasttimeout");
 		if(p != nil){
 			*p = 0;
 			fast = 1;
@@ -260,7 +260,7 @@ ilstate(Conv *c, char *state, int n)
 	Ilcb *ic;
 
 	ic = (Ilcb*)(c->ptcl);
-	return snprint(state, n, "%s qin %d qout %d del %5.5d Br %5.5d md %5.5d una %5.5lud rex %5.5d rxq %5.5d max %5.5d\n",
+	return jehanne_snprint(state, n, "%s qin %d qout %d del %5.5d Br %5.5d md %5.5d una %5.5lud rex %5.5d rxq %5.5d max %5.5d\n",
 		ilstates[ic->state],
 		c->rq ? qlen(c->rq) : 0,
 		c->wq ? qlen(c->wq) : 0,
@@ -434,7 +434,7 @@ ilxstats(Proto *il, char *buf, int len)
 	p = buf;
 	e = p+len;
 	for(i = 0; i < Nstats; i++)
-		p = seprint(p, e, "%s: %lud\n", statnames[i], priv->stats[i]);
+		p = jehanne_seprint(p, e, "%s: %lud\n", statnames[i], priv->stats[i]);
 	return p - buf;
 }
 
@@ -494,7 +494,7 @@ ilrttcalc(Ilcb *ic, Block *bp)
 
 	/* mdev */
 	pt = ic->rttlen/(rate>>LogAGain) + (delay>>LogAGain);
-	ic->mdev += abs(rtt-pt) - (ic->mdev>>LogDGain);
+	ic->mdev += jehanne_abs(rtt-pt) - (ic->mdev>>LogDGain);
 
 	if(rtt > ic->maxrtt)
 		ic->maxrtt = rtt;
@@ -1125,12 +1125,12 @@ later(uint32_t t1, uint32_t t2, char *x)
 	dt = t1 - t2;
 	if(dt > 0) {
 		if(x != nil && dt > Tfuture)
-			print("%s: way future %d\n", x, dt);
+			jehanne_print("%s: way future %d\n", x, dt);
 		return 1;
 	}
 	if(dt < -Tfuture) {
 		if(x != nil)
-			print("%s: way past %d\n", x, -dt);
+			jehanne_print("%s: way past %d\n", x, -dt);
 		return 1;
 	}
 	return 0;
@@ -1247,7 +1247,7 @@ ilstart(Conv *c, int type, int fasttimeout)
 	if(ipriv->ackprocstarted == 0){
 		qlock(&ipriv->apl);
 		if(ipriv->ackprocstarted == 0){
-			sprint(kpname, "#I%dilack", c->p->f->dev);
+			jehanne_sprint(kpname, "#I%dilack", c->p->f->dev);
 			kproc(kpname, ilackproc, c->p);
 			ipriv->ackprocstarted = 1;
 		}

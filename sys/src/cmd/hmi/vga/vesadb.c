@@ -10,7 +10,7 @@
 /* this file was automatically generated from vesa.txt */
 
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 #include <bio.h>
 #include "pci.h"
 #include "vga.h"

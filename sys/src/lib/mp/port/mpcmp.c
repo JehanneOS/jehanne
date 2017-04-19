@@ -2,7 +2,7 @@
 #include <mp.h>
 #include "dat.h"
 
-// return neg, 0, pos as abs(b1)-abs(b2) is neg, 0, pos
+// return neg, 0, pos as jehanne_abs(b1)-jehanne_abs(b2) is neg, 0, pos
 int
 mpmagcmp(mpint *b1, mpint *b2)
 {

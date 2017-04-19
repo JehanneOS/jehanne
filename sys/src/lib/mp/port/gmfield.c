@@ -38,7 +38,7 @@ gmreduce(Mfield *m, mpint *a, mpint *r)
 
 	d = g->top;
 	mpbits(r, (d+1)*Dbits*2);
-	memmove(t+d, r->p+d, d*Dbytes);
+	jehanne_memmove(t+d, r->p+d, d*Dbytes);
 
 	r->sign = 1;
 	r->top = d;
@@ -94,8 +94,8 @@ gmfield(mpint *N)
 	g = nil;
 	T = mpnew(0);
 	M = mpcopy(N);
-	C = malloc(sizeof(int)*(d+1));
-	X = malloc(sizeof(int)*(d*d));
+	C = jehanne_malloc(sizeof(int)*(d+1));
+	X = jehanne_malloc(sizeof(int)*(d*d));
 	if(C == nil || X == nil)
 		goto out;
 
@@ -115,7 +115,7 @@ gmfield(mpint *N)
 		for(j=1; j<d; j++)
 			X[d*i + j] = X[d*(i-1) + j-1] + X[d*(i-1) + d-1]*C[d-j];
 	}
-	g = mallocz(sizeof(GMfield) + (d+1)*sizeof(mpdigit)*2, 1);
+	g = jehanne_mallocz(sizeof(GMfield) + (d+1)*sizeof(mpdigit)*2, 1);
 	if(g == nil)
 		goto out;
 
@@ -164,8 +164,8 @@ gmfield(mpint *N)
 		g = nil;
 	}
 out:
-	free(C);
-	free(X);
+	jehanne_free(C);
+	jehanne_free(X);
 	mpfree(M);
 	mpfree(T);
 	return g;

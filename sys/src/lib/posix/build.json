@@ -1,0 +1,22 @@
+{
+	"LibPosix": {
+		"Cflags": [
+			"-fasm",
+			"-I."
+		],
+		"Include": [
+			"../lib.json"
+		],
+		"Install": "/arch/$ARCH/lib/",
+		"Library": "libposix.a",
+		"SourceFiles": [
+			"environment.c",
+			"errors.c",
+			"files.c",
+			"initlib.c",
+			"memory.c",
+			"others.c",
+			"processes.c"
+		]
+	}
+}

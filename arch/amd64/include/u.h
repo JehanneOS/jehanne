@@ -25,6 +25,8 @@ typedef int32_t			pid_t;
 typedef uint32_t		Rune;
 typedef union FPdbleword	FPdbleword;
 typedef uintptr			jmp_buf[10]; // for registers.
+typedef long			off_t;
+typedef long			ptrdiff_t;
 
 #define JMPBUFSP 6
 #define JMPBUFPC 7

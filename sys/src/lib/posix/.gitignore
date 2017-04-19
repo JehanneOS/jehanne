@@ -1,0 +1,4 @@
+libc.h
+libc_wrapper.h
+*.a
+libc.sed

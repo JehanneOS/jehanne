@@ -636,9 +636,6 @@ extern int		jehanne_dirmodefmt(Fmt*);
 # define NPRIVATES	16
 #endif
 
-/* can be overwritten to do anything before calling main */
-extern void __libc_init(int argc, char *argv[]) __attribute__((weak, noreturn));
-
 /* compiler directives on plan 9 */
 #define SET(x)  ((x)=0)
 #define USED(x) if(x){}else{}

@@ -23,6 +23,9 @@ extern int	_nprivates;
 
 static void call_main(int argc, char *argv[]) __attribute__((noreturn));
 
+/* can be overwritten to do anything before calling main */
+extern void __libc_init(int argc, char *argv[]) __attribute__((weak, noreturn));
+
 void
 __jehanne_libc_init(int argc, char *argv[])
 {

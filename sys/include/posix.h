@@ -40,6 +40,7 @@ extern int POSIX_execve(int *errnop, const char *name, char * const*argv, char *
 extern int POSIX_fork(int *errnop);
 extern int POSIX_fstat(int *errnop, int file, void *stat);
 extern int POSIX_getpid(int *errnop);
+extern int POSIX_getppid(int *errnop);
 extern int POSIX_isatty(int *errnop, int file);
 extern int POSIX_kill(int *errnop, int pid, int sig);
 extern int POSIX_link(int *errnop, const char *old, const char *new);

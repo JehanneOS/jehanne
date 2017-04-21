@@ -159,6 +159,12 @@ POSIX_getpid(int *errnop)
 }
 
 int
+POSIX_getppid(int *errnop)
+{
+	return getppid();
+}
+
+int
 POSIX_fork(int *errnop)
 {
 	return fork();

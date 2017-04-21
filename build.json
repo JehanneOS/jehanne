@@ -6,6 +6,7 @@
 			"/sys/src/cmd/cmds.json",
 			"/sys/src/kern/amd64/workhorse.json",
 			"/sys/src/kern/amd64/",
+			"/hacking/cross/pkgs/",
 			"qa/"
 		]
 	}

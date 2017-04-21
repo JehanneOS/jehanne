@@ -4,6 +4,7 @@
 			"kern/",
 			"lib/c/",
 			"lib/thread/",
+			"lib/newlib",
 			"gnu/gcc/"
 		]
 	}

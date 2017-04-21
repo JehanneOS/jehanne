@@ -23,17 +23,23 @@
 extern char **environ;
 
 static PosixSignalTrampoline __libposix_signal_trampoline;
+static PosixExitStatusTranslator __libposix_exit_status_translator;
 
 #define __POSIX_SIGNAL_PREFIX_LEN (sizeof(__POSIX_SIGNAL_PREFIX)-1)
 
 void
 POSIX_exit(int code)
 {
-	char buf[64];
+	char buf[64], *s;
 
-	if(code == 0)
-		exits(nil);
-	snprint(buf, sizeof(buf), __POSIX_EXIT_PREFIX "%d", code);
+	if(__libposix_exit_status_translator != nil
+	&&(s = __libposix_exit_status_translator(code)) != nil){
+		snprint(buf, sizeof(buf), "%s", s);
+	} else {
+		if(code == 0)
+			exits(nil);
+		snprint(buf, sizeof(buf), __POSIX_EXIT_PREFIX "%d", code);
+	}
 	exits(buf);
 }
 
@@ -176,6 +182,17 @@ __libposix_note_handler(void *ureg, char *note)
 }
 
 int
+libposix_translate_exit_status(PosixExitStatusTranslator translator)
+{
+	if(__libposix_initialized())
+		return 0;
+	if(translator == nil)
+		return 0;
+	__libposix_exit_status_translator = translator;
+	return 1;
+}
+
+int
 libposix_set_signal_trampoline(PosixSignalTrampoline trampoline)
 {
 	if(__libposix_initialized())
@@ -191,4 +208,5 @@ __libposix_processes_check_conf(void)
 {
 	if(__libposix_signal_trampoline == nil)
 		sysfatal("libposix: no signal trampoline");
+	/* __libposix_exit_status_translator is optional */
 }

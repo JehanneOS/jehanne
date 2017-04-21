@@ -3,16 +3,16 @@
  *
  * Copyright (C) 2017 Giacomo Tesio <giacomo@tesio.it>
  *
- * Jehanne is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, version 3 of the License.
+ * This is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, version 3 of the License.
  *
  * Jehanne is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
+ * You should have received a copy of the GNU Affero General Public License
  * along with Jehanne.  If not, see <http://www.gnu.org/licenses/>.
  */
 
@@ -68,6 +68,7 @@ extern void POSIX_free(void *ptr);
  *
  *	libposix_define_errno to set the value of each PosixError
  *	libposix_translate_error to translate error strings to PosixError
+ * 	libposix_set_signal_trampoline to dispatch signal received as notes
  *	libposix_set_stat_reader
  *	libposix_set_tms_reader
  *	libposix_set_timeval_reader
@@ -147,6 +148,18 @@ extern int libposix_translate_open(PosixOpenTranslator translation);
 
 extern int libposix_translate_seek_whence(int seek_set, int seek_cur, int seek_end);
 
+/* Map the main exit status received by POSIX_exit to the exit status
+ * string for Jehanne.
+ *
+ * Must return nil if unable to translate the status, so that the
+ * default translation strategy will be adopted.
+ */
+typedef char* (*PosixExitStatusTranslator)(int status);
+
+extern int libposix_translate_exit_status(PosixExitStatusTranslator translator);
+
+/* Dispatch the signal to the registered handlers.
+ */
 typedef int (*PosixSignalTrampoline)(int signal);
 
 extern int libposix_set_signal_trampoline(PosixSignalTrampoline trampoline);

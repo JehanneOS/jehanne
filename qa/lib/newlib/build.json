@@ -3,6 +3,9 @@
 		"Include": [
 			"/arch/$ARCH/include/cflags.json"
 		],
+		"Projects": [
+			"testsuite/"
+		],
 		"Cflags": [
 			"-fstack-check",
 			"-fstack-protector-all",

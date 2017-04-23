@@ -1,0 +1,51 @@
+{
+	"NewlibTestsuite": {
+		"Include": [
+			"/arch/$ARCH/include/cflags.json"
+		],
+		"Cflags": [
+			"-iquote", "/hacking/cross/pkgs/newlib/src/newlib/testsuite/include/",
+			"-fstack-check",
+			"-Wno-unused-variable",
+			"-Wno-format",
+			"-fstack-protector-all",
+			"/arch/$ARCH/lib/newlib/libc.a",
+			"/arch/$ARCH/lib/newlib/libm.a",
+			"/arch/$ARCH/lib/newlib/libg.a",
+			"-I", "/sys/posix/newlib",
+			"-O2",
+			"-std=gnu11"
+		],
+		"Oflags": [
+			"-static",
+			"-lposix",
+			"-lc"
+		],
+		"Post": [
+			"mkdir -p $JEHANNE/arch/$ARCH/qa/lib/newlib/testsuite",
+			"find -type f -perm /a+x -exec cp {} $JEHANNE/arch/$ARCH/qa/lib/newlib/testsuite/ \\;",
+			"git clean -xdf ."
+		],
+		"Pre": [
+			"rm -f *.tag.*"
+		],
+		"SourceFiles": [
+			"../libposix_customization.c"
+		],
+		"SourceFilesCmd": [
+			"/hacking/cross/pkgs/newlib/src/newlib/testsuite/newlib.string/tstring.c",
+			"/hacking/cross/pkgs/newlib/src/newlib/testsuite/newlib.string/memmove1.c",
+			"/hacking/cross/pkgs/newlib/src/newlib/testsuite/newlib.string/memcpy-1.c",
+			"/hacking/cross/pkgs/newlib/src/newlib/testsuite/newlib.string/strcmp-1.c",
+			"/hacking/cross/pkgs/newlib/src/newlib/testsuite/newlib.stdlib/size_max.c",
+			"/hacking/cross/pkgs/newlib/src/newlib/testsuite/newlib.stdlib/atexit.c",
+			"/hacking/cross/pkgs/newlib/src/newlib/testsuite/newlib.wctype/twctype.c",
+			"/hacking/cross/pkgs/newlib/src/newlib/testsuite/newlib.wctype/tiswctype.c",
+			"/hacking/cross/pkgs/newlib/src/newlib/testsuite/newlib.wctype/twctrans.c",
+			"/hacking/cross/pkgs/newlib/src/newlib/testsuite/newlib.search/hsearchtest.c",
+			"/hacking/cross/pkgs/newlib/src/newlib/testsuite/newlib.locale/UTF-8.c",
+			"/hacking/cross/pkgs/newlib/src/newlib/testsuite/newlib.stdio/nulprintf.c",
+			"/hacking/cross/pkgs/newlib/src/newlib/testsuite/newlib.stdio/swprintf.c"
+		]
+	}
+}

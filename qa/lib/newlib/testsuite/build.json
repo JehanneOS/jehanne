@@ -24,6 +24,7 @@
 		"Post": [
 			"mkdir -p $JEHANNE/arch/$ARCH/qa/lib/newlib/testsuite",
 			"find -type f -perm /a+x -exec cp {} $JEHANNE/arch/$ARCH/qa/lib/newlib/testsuite/ \\;",
+			"cp *.check $JEHANNE/arch/$ARCH/qa/lib/newlib/testsuite/",
 			"git clean -xdf ."
 		],
 		"Pre": [

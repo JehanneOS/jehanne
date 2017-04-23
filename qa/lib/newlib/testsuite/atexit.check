@@ -1,0 +1,12 @@
+#!/cmd/rc
+
+if ( cat /tmp/qa.previous.log | grep a0cba > /dev/null ) {
+	rm /tmp/qa.previous.log
+	echo PASS
+	exit PASS
+}
+if not {
+	echo FAIL
+	cat /tmp/qa.previous.log
+	exit FAIL
+}

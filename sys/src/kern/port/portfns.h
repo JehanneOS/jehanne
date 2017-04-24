@@ -242,7 +242,7 @@ Cmdbuf*		parsecmd(char *a, int n);
 void		pathclose(Path*);
 uint64_t	perfticks(void);
 void		peekAtExecFaults(uintptr_t);
-void		pexit(char*, int);
+void		pexit(char*, int) __attribute__ ((noreturn));
 void		pgrpcpy(Pgrp*, Pgrp*);
 void		pgrpnote(uint32_t, char*, long, int);
 void		physdump(void);

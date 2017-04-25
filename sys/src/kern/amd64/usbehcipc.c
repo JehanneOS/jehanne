@@ -209,7 +209,8 @@ scanpci(void)
 		if (i >= maxehci) {
 			iprint("usbehci: ignoring controllers after first %d, "
 				"at %#p\n", maxehci, io);
-			ctlrs[i] = nil;
+			if(i < Nhcis)
+				ctlrs[i] = nil;
 		}
 	}
 }

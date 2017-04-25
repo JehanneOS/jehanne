@@ -700,7 +700,7 @@ static char *
 grectlretunnel(Conv *c, int _1, char **argv)
 {
 	GREconv *grec;
-	uint8_t ipaddr[4];
+	uint8_t ipaddr[4] = {0, 0, 0, 0};
 
 	grec = c->ptcl;
 	if(jehanne_memcmp(grec->hoa, nulladdr, sizeof grec->hoa))

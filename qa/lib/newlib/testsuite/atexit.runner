@@ -1,0 +1,18 @@
+#!/cmd/rc
+runner=$0
+test = `{echo $runner|sed 's/.runner//'}
+test_output = /tmp/output-`{basename $test}
+
+if ( test -e $test_output) rm $test_output
+
+$test > $test_output
+if ( cat $test_output | grep a0cba > /dev/null ) {
+	rm $test_output
+	echo PASS
+	exit PASS
+}
+if not {
+	cat $test_output
+	echo FAIL
+	exit FAIL
+}

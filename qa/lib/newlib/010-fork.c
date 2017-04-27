@@ -32,9 +32,9 @@ int main(int argc, char **argv)
 		}
 		wait(&status);
 		if(status != 0){
-		printf("parent: child exited with status %d\n", status);
-		return 2;
-	}
+			printf("parent: child exited with status %d\n", status);
+			return 2;
+		}
 	}
 	else
 	{

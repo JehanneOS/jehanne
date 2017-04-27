@@ -9,17 +9,19 @@ if(~ $dir '') dir=/qa
 l = `{du -a /arch/$objtype/$dir|awk '{print $2}'|sort}
 
 failed = ()
-ce=.check
+runner=.runner
 
 for(t in $l){
 	if(test -x $t) {
-		echo -n $t: 
-		$t > /tmp/qa.log >[2=1]
-		st = $status
-		if(~ `{echo $st|field 3} PASS) {
-			if( test -x $t$ce ) { cp /tmp/qa.log /tmp/qa.previous.log }
-			rm /tmp/qa.log && echo PASS
+		if( test -x $t$runner ) { }
+		if not {
+			echo -n $t:
+			$t > /tmp/qa.log >[2=1]
+			st = $status
+			if(~ `{echo $st|field 3} PASS) {
+				rm /tmp/qa.log && echo PASS
+			}
+			if not { echo $st && cat /tmp/qa.log; exit $st}
 		}
-		if not { echo $st && cat /tmp/qa.log; exit $st}
 	}
 }

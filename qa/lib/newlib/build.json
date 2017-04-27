@@ -3,9 +3,6 @@
 		"Include": [
 			"/arch/$ARCH/include/cflags.json"
 		],
-		"Projects": [
-			"testsuite/"
-		],
 		"Cflags": [
 			"-fstack-check",
 			"-fstack-protector-all",
@@ -24,7 +21,7 @@
 		"Install": "/arch/$ARCH/qa/lib/newlib",
 		"Post": [
 			"rm -f *.o",
-			"#cp *.rc $JEHANNE/arch/$ARCH/qa/lib/newlib/"
+			"cp *.runner $JEHANNE/arch/$ARCH/qa/lib/newlib/"
 		],
 		"Pre": [
 			"rm -f *.tag.*"
@@ -33,8 +30,14 @@
 			"libposix_customization.c"
 		],
 		"SourceFilesCmd": [
-			"hello.c",
-			"fork0.c"
+			"000-hello.c",
+			"010-fork.c",
+			"100-files.c"
+		]
+	},
+	"NewlibTestsuite": {
+		"Projects": [
+			"testsuite/"
 		]
 	}
 }

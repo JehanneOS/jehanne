@@ -32,7 +32,8 @@
 		"SourceFilesCmd": [
 			"000-hello.c",
 			"010-fork.c",
-			"100-files.c"
+			"100-files.c",
+			"101-files.c"
 		]
 	},
 	"NewlibTestsuite": {

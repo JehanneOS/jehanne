@@ -115,11 +115,6 @@ POSIX_kill(int *errnop, int pid, int sig)
 	int mode;
 	int ret;
 
-	if(access("/proc", AEXEC) != 0){
-		*errnop = __libposix_get_errno(PosixEPERM);
-		return -1;
-	}
-
 	snprint(msg, sizeof(msg), __POSIX_SIGNAL_PREFIX "%d", sig);
 	switch(pid){
 	case 0:

@@ -98,6 +98,16 @@ find_seek_type(int whence)
 }
 
 int
+POSIX_pipe(int *errnop, int fildes[2])
+{
+	int res;
+	res = jehanne_pipe(fildes);
+	if(res == -1)
+		*errnop = __libposix_get_errno(PosixEMFILE);
+	return res;
+}
+
+int
 POSIX_open(int *errnop, const char *name, int flags, int mode)
 {
 	long omode = 0, cperm = 0;

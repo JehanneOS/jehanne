@@ -59,6 +59,8 @@ extern void * POSIX_malloc(int *errnop, size_t size);
 extern void *POSIX_realloc(int *errnop, void *ptr, size_t size);
 extern void *POSIX_calloc(int *errnop, size_t nelem, size_t size);
 extern void POSIX_free(void *ptr);
+extern unsigned int POSIX_sleep(unsigned int seconds);
+extern int POSIX_pipe(int *errnop, int fildes[2]);
 
 /* Library initialization
  */

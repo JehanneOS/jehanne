@@ -41,6 +41,13 @@ POSIX_isatty(int *errnop, int fd)
 	return 0;
 }
 
+unsigned int
+POSIX_sleep(unsigned int seconds)
+{
+	sleep(seconds*1000);
+	return 0;
+}
+
 clock_t
 POSIX_times(int *errnop, void *buf)
 {

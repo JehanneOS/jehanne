@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <signal.h>
+#include <sys/wait.h>
 
 void sighup(); /* routines child will call upon sigtrap */
 void sigint();
@@ -9,7 +10,7 @@ void sigquit();
 
 int
 main() { 
-	int pid, p[2];
+	int pid, p[2], child, cstatus;
 	char dummy[1];
 
 	/* get child process */
@@ -47,7 +48,14 @@ main() {
 		sleep(3); /* pause for 3 secs */
 		printf("\nPARENT: sending SIGQUIT\n\n");
 		kill(pid,SIGQUIT);
-		sleep(3);
+		child = wait(&cstatus);
+		if(child == pid && cstatus == 0)
+			exit(0);
+		else
+		{
+			printf("PARENT: child exited with status %d\n", cstatus);
+			exit(1);
+		}
 	}
 }
 

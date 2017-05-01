@@ -22,6 +22,15 @@
 
 extern char **environ;
 
+typedef struct WaitList WaitList;
+struct WaitList
+{
+	int pid;
+	int status;
+	WaitList *next;
+};
+
+WaitList **__libposix_wait_list;
 static PosixSignalTrampoline __libposix_signal_trampoline;
 static PosixExitStatusTranslator __libposix_exit_status_translator;
 
@@ -31,6 +40,20 @@ void
 POSIX_exit(int code)
 {
 	char buf[64], *s;
+	WaitList *wl, c;
+
+	/* free the wait list as the memory is shared */
+	wl = *__libposix_wait_list;
+	if(wl != nil){
+		*__libposix_wait_list = nil;
+		do
+		{
+			c = wl;
+			wl = c->next;
+			free(c);
+		}
+		while (wl != nil)
+	}
 
 	if(__libposix_exit_status_translator != nil
 	&&(s = __libposix_exit_status_translator(code)) != nil){
@@ -75,8 +98,18 @@ int
 POSIX_wait(int *errnop, int *status)
 {
 	Waitmsg *w;
+	WaitList *l;
 	char *s;
 	int ret = 0, pid;
+	
+	l = *__libposix_wait_list; 
+	if(l != nil){
+		*__libposix_wait_list = l->next;
+		*status = l->status;
+		pid = l->pid;
+		free(l);
+		return pid;
+	}
 	
 	w = wait();
 	if(w == nil){
@@ -98,6 +131,45 @@ POSIX_wait(int *errnop, int *status)
 		*status = ret;
 	free(w);
 	return pid;
+}
+
+int
+POSIX_waitpid(int *errnop, int pid, int *status, int options)
+{
+	Waitmsg *w;
+	WaitList *c, **nl;
+	char *s;
+	int ret = 0, pid;
+
+	nl = __libposix_wait_list;
+	l = *nl'
+	while(l != nil){
+	}
+	if(l != nil){
+		
+	}
+
+	w = wait();
+	if(w == nil){
+		*errnop = __libposix_get_errno(PosixECHILD);
+		return -1;
+	}
+	pid = w->pid;
+	if(w->msg[0] != 0){
+		s = strstr(w->msg, __POSIX_EXIT_PREFIX);
+		if(s){
+			s += (sizeof(__POSIX_EXIT_PREFIX)/sizeof(char) - 1);
+			ret = atoi(s);
+		} else {
+			/* TODO: setup configurable interpretations */
+			ret = 127;
+		}
+	}
+	if(status != nil)
+		*status = ret;
+	free(w);
+	return pid;
+
 }
 
 static int
@@ -162,7 +234,13 @@ POSIX_getppid(int *errnop)
 int
 POSIX_fork(int *errnop)
 {
-	return fork();
+	int pid = fork();
+
+	if(pid == 0){
+		/* reset wait list for the child */
+		*__libposix_wait_list = nil;
+	}
+	return pid;
 }
 
 static int

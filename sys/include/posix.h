@@ -51,6 +51,7 @@ extern int POSIX_stat(int *errnop, const char *file, void *stat);
 extern clock_t POSIX_times(int *errnop, void *tms);
 extern int POSIX_unlink(int *errnop, const char *name);
 extern int POSIX_wait(int *errnop, int *status);
+extern int POSIX_waitpid(int *errnop, int pid, int *status, int options);
 extern long POSIX_write(int *errnop, int fd, const void *buf, size_t len);
 extern int POSIX_gettimeofday(int *errnop, void *timeval, void *timezone);
 extern char* POSIX_getenv(int *errnop, const char *name);

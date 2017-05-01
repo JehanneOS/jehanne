@@ -21,6 +21,7 @@
 #include "internal.h"
 
 extern int *__libposix_errors_codes;
+extern WaitList **__libposix_wait_list;
 static int __initialized;
 
 static void
@@ -35,14 +36,20 @@ void
 libposix_init(int argc, char *argv[], PosixInit init)
 {
 	extern int main(int, char**);
-	int error_codes[ERRNO_LAST-ERRNO_FIRST];
+	WaitList *wait_list;
 	int status;
+	int error_codes[ERRNO_LAST-ERRNO_FIRST];
+	
 
 	assert(__initialized == 0);
 
 	/* initialize PosixErrors map */
 	memset(error_codes, 0, sizeof(error_codes));
 	__libposix_errors_codes=error_codes;
+	
+	/* initialize wait_list; see also POSIX_fork and POSIX_exit */
+	wait_list = nil;
+	__libposix_wait_list = &wait_list;
 
 	if(!atnotify(__libposix_note_handler, 1))
 		sysfatal("libposix: atnotify");

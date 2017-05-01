@@ -22,15 +22,19 @@
 static char*
 qa_exit_translator(int status)
 {
-	if(status == 0){
-		if(jehanne_getpid() == jehanne_getmainpid()){
+	if(jehanne_getpid() == jehanne_getmainpid()){
+		/* the QA test may fork, but only the main process
+		 * should return PASS/FAIL
+		 */
+		if(status == 0){
 			jehanne_print("PASS\n");
 			return "PASS";
+		} else {
+			jehanne_print("FAIL: " __POSIX_EXIT_PREFIX "%d\n", status);
+			return "FAIL";
 		}
-		return nil;
 	}
-	jehanne_print("FAIL: " __POSIX_EXIT_PREFIX "%d\n", status);
-	return "FAIL";
+	return nil;
 }
 
 void

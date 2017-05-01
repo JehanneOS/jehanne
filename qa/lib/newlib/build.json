@@ -35,7 +35,8 @@
 			"020-waitpid.c",
 			"100-files.c",
 			"101-files.c",
-			"200-signals.c"
+			"200-signals.c",
+			"201-signals.c"
 		]
 	},
 	"NewlibTestsuite": {

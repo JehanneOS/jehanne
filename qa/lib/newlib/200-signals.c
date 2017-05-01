@@ -30,9 +30,9 @@ main() {
 		signal(SIGINT,sigint);
 		signal(SIGQUIT, sigquit);
 		
+		printf("\nChild going to loop...\n\n");
 		close(p[1]);
 		close(p[0]);
-		printf("\nChild going to loop...\n\n");
 		for(;;); /* loop for ever */
 	}
 	else /* parent */

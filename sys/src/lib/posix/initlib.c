@@ -39,14 +39,13 @@ libposix_init(int argc, char *argv[], PosixInit init)
 	WaitList *wait_list;
 	int status;
 	int error_codes[ERRNO_LAST-ERRNO_FIRST];
-	
 
 	assert(__initialized == 0);
 
 	/* initialize PosixErrors map */
 	memset(error_codes, 0, sizeof(error_codes));
 	__libposix_errors_codes=error_codes;
-	
+
 	/* initialize wait_list; see also POSIX_fork and POSIX_exit */
 	wait_list = nil;
 	__libposix_wait_list = &wait_list;

@@ -15,6 +15,14 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with Jehanne.  If not, see <http://www.gnu.org/licenses/>.
  */
+typedef struct WaitList WaitList;
+struct WaitList
+{
+	int pid;
+	int status;
+	WaitList *next;
+};
+
 extern void __libposix_files_check_conf(void);
 extern void __libposix_errors_check_conf(void);
 extern void __libposix_processes_check_conf(void);

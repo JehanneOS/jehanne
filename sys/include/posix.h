@@ -167,3 +167,10 @@ extern int libposix_translate_exit_status(PosixExitStatusTranslator translator);
 typedef int (*PosixSignalTrampoline)(int signal);
 
 extern int libposix_set_signal_trampoline(PosixSignalTrampoline trampoline);
+
+/* Define of WCONTINUED, WNOHANG and WUNTRACED bit flags.
+ *
+ * Note that WCONTINUED and WUNTRACED are not yet supported by libposix
+ * and thus defining them cause an error.
+ */
+int libposix_set_wait_options(int wcontinued, int wnohang, int wuntraced);

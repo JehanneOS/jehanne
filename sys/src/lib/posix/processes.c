@@ -22,17 +22,10 @@
 
 extern char **environ;
 
-typedef struct WaitList WaitList;
-struct WaitList
-{
-	int pid;
-	int status;
-	WaitList *next;
-};
-
 WaitList **__libposix_wait_list;
 static PosixSignalTrampoline __libposix_signal_trampoline;
 static PosixExitStatusTranslator __libposix_exit_status_translator;
+static int __libposix_wnohang;
 
 #define __POSIX_SIGNAL_PREFIX_LEN (sizeof(__POSIX_SIGNAL_PREFIX)-1)
 
@@ -40,7 +33,7 @@ void
 POSIX_exit(int code)
 {
 	char buf[64], *s;
-	WaitList *wl, c;
+	WaitList *wl, *c;
 
 	/* free the wait list as the memory is shared */
 	wl = *__libposix_wait_list;
@@ -52,7 +45,7 @@ POSIX_exit(int code)
 			wl = c->next;
 			free(c);
 		}
-		while (wl != nil)
+		while (wl != nil);
 	}
 
 	if(__libposix_exit_status_translator != nil
@@ -102,15 +95,16 @@ POSIX_wait(int *errnop, int *status)
 	char *s;
 	int ret = 0, pid;
 	
-	l = *__libposix_wait_list; 
+	l = *__libposix_wait_list;
 	if(l != nil){
 		*__libposix_wait_list = l->next;
-		*status = l->status;
+		if(status != nil)
+			*status = l->status;
 		pid = l->pid;
 		free(l);
 		return pid;
 	}
-	
+
 	w = wait();
 	if(w == nil){
 		*errnop = __libposix_get_errno(PosixECHILD);
@@ -128,27 +122,63 @@ POSIX_wait(int *errnop, int *status)
 		}
 	}
 	if(status != nil)
-		*status = ret;
+		*status = ret << 8;
 	free(w);
 	return pid;
 }
 
 int
-POSIX_waitpid(int *errnop, int pid, int *status, int options)
+POSIX_waitpid(int *errnop, int reqpid, int *status, int options)
 {
 	Waitmsg *w;
 	WaitList *c, **nl;
 	char *s;
-	int ret = 0, pid;
+	int ret = 0, nohang = 0, pid;
+
+
+	if(options & __libposix_wnohang){
+		nohang = 1;
+	}
+//	else if(options != 0){
+//		/* WARNING: WCONTINUED and WUNTRACED are not supported */
+//		*errnop = __libposix_get_errno(PosixEINVAL);
+//		return -1;
+//	}
+
+	switch(reqpid){
+	case -1:
+		if(nohang){
+			*errnop = __libposix_get_errno(PosixEINVAL);
+			return -1;
+		}
+		return POSIX_wait(errnop, status);
+	case 0:
+		/* not yet implemented; requires changes to Waitmsg */
+		*errnop = __libposix_get_errno(PosixEINVAL);
+		return -1;
+	default:
+		if(reqpid < -1){
+			/* not yet implemented; requires changes to Waitmsg */
+			*errnop = __libposix_get_errno(PosixEINVAL);
+			return -1;
+		}
+		break;
+	}
 
 	nl = __libposix_wait_list;
-	l = *nl'
-	while(l != nil){
-	}
-	if(l != nil){
-		
+	c = *nl;
+	while(c != nil){
+		*nl = c->next;
+		if(c->pid == reqpid){
+			if(status != nil)
+				*status = c->status;
+			free(c);
+			return reqpid;
+		}
+		c = *nl;
 	}
 
+WaitAgain:
 	w = wait();
 	if(w == nil){
 		*errnop = __libposix_get_errno(PosixECHILD);
@@ -165,11 +195,20 @@ POSIX_waitpid(int *errnop, int pid, int *status, int options)
 			ret = 127;
 		}
 	}
-	if(status != nil)
-		*status = ret;
-	free(w);
-	return pid;
-
+	if(pid == reqpid){
+		if(status != nil)
+			*status = ret << 8;
+		return reqpid;
+	}
+	c = malloc(sizeof(WaitList));
+	c->next = nil;
+	c->pid = pid;
+	c->status = ret << 8;
+	*nl = c;
+	if(!nohang)
+		goto WaitAgain;
+	*errnop = __libposix_get_errno(PosixECHILD);
+	return -1;
 }
 
 static int
@@ -282,10 +321,23 @@ libposix_set_signal_trampoline(PosixSignalTrampoline trampoline)
 	return 1;
 }
 
+int
+libposix_set_wait_options(int wcontinued, int wnohang, int wuntraced)
+{
+	if(wcontinued != 0)
+		sysfatal("libposix: unsupported WCONTINUED");
+	if(wuntraced != 0)
+		sysfatal("libposix: unsupported WUNTRACED");
+	__libposix_wnohang = wnohang;
+	return 1;
+}
+
 void
 __libposix_processes_check_conf(void)
 {
 	if(__libposix_signal_trampoline == nil)
 		sysfatal("libposix: no signal trampoline");
+	if(__libposix_wnohang == 0)
+		sysfatal("libposix: WNOHANG is undefined");
 	/* __libposix_exit_status_translator is optional */
 }

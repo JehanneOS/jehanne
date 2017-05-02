@@ -32,6 +32,7 @@
 typedef unsigned long clock_t;
 
 #define __POSIX_EXIT_PREFIX "posix error "
+#define __POSIX_EXIT_SIGNAL_PREFIX "terminated by posix signal "
 #define __POSIX_SIGNAL_PREFIX "posix: "
 
 extern void POSIX_exit(int code) __attribute__((noreturn));
@@ -62,6 +63,22 @@ extern void *POSIX_calloc(int *errnop, size_t nelem, size_t size);
 extern void POSIX_free(void *ptr);
 extern unsigned int POSIX_sleep(unsigned int seconds);
 extern int POSIX_pipe(int *errnop, int fildes[2]);
+
+typedef enum PosixSignalDisposition
+{
+	SignalHandled = 0,	/* the application handled the signal */
+	TerminateTheProcess,
+	TerminateTheProcessAndCoreDump,
+	StopTheProcess,
+	ResumeTheProcess
+} PosixSignalDisposition;
+
+/* Executes a PosixSignalDisposition for pid.
+ *
+ * MUST be called instead of POSIX_kill for unblockable signals.
+ */
+extern int POSIX_signal_execute(int sig, PosixSignalDisposition action, int pid);
+
 
 /* Library initialization
  */
@@ -164,7 +181,7 @@ extern int libposix_translate_exit_status(PosixExitStatusTranslator translator);
 
 /* Dispatch the signal to the registered handlers.
  */
-typedef int (*PosixSignalTrampoline)(int signal);
+typedef PosixSignalDisposition (*PosixSignalTrampoline)(int signal);
 
 extern int libposix_set_signal_trampoline(PosixSignalTrampoline trampoline);
 

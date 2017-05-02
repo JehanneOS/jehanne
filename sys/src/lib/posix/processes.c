@@ -29,10 +29,9 @@ static int __libposix_wnohang;
 
 #define __POSIX_SIGNAL_PREFIX_LEN (sizeof(__POSIX_SIGNAL_PREFIX)-1)
 
-void
-POSIX_exit(int code)
+static void
+free_wait_list(void)
 {
-	char buf[64], *s;
 	WaitList *wl, *c;
 
 	/* free the wait list as the memory is shared */
@@ -47,6 +46,14 @@ POSIX_exit(int code)
 		}
 		while (wl != nil);
 	}
+}
+
+void
+POSIX_exit(int code)
+{
+	char buf[64], *s;
+
+	free_wait_list();
 
 	if(__libposix_exit_status_translator != nil
 	&&(s = __libposix_exit_status_translator(code)) != nil){
@@ -73,6 +80,8 @@ POSIX_execve(int *errnop, const char *name, char * const*argv, char * const*env)
 		__libposix_setup_exec_environment(env);
 	}
 
+	free_wait_list();
+
 	ret = sys_exec(name, argv);
 	switch(ret){
 	case 0:
@@ -93,7 +102,7 @@ POSIX_wait(int *errnop, int *status)
 	Waitmsg *w;
 	WaitList *l;
 	char *s;
-	int ret = 0, pid;
+	int ret = 0, sig = 0, pid;
 	
 	l = *__libposix_wait_list;
 	if(l != nil){
@@ -117,12 +126,22 @@ POSIX_wait(int *errnop, int *status)
 			s += (sizeof(__POSIX_EXIT_PREFIX)/sizeof(char) - 1);
 			ret = atoi(s);
 		} else {
-			/* TODO: setup configurable interpretations */
-			ret = 127;
+			s = strstr(w->msg, __POSIX_EXIT_SIGNAL_PREFIX);
+			if(s){
+				s += (sizeof(__POSIX_EXIT_SIGNAL_PREFIX)/sizeof(char) - 1);
+				sig = atoi(s);
+			} else {
+				/* TODO: setup configurable interpretations */
+				ret = 127;
+			}
 		}
 	}
-	if(status != nil)
-		*status = ret << 8;
+	if(status != nil){
+		if(sig == 0)
+			*status = ret << 8;
+		else
+			*status = sig;
+	}
 	free(w);
 	return pid;
 }
@@ -133,7 +152,7 @@ POSIX_waitpid(int *errnop, int reqpid, int *status, int options)
 	Waitmsg *w;
 	WaitList *c, **nl;
 	char *s;
-	int ret = 0, nohang = 0, pid;
+	int ret = 0, sig = 0, nohang = 0, pid;
 
 
 	if(options & __libposix_wnohang){
@@ -168,13 +187,14 @@ POSIX_waitpid(int *errnop, int reqpid, int *status, int options)
 	nl = __libposix_wait_list;
 	c = *nl;
 	while(c != nil){
-		*nl = c->next;
 		if(c->pid == reqpid){
 			if(status != nil)
 				*status = c->status;
+			*nl = c->next;
 			free(c);
 			return reqpid;
 		}
+		nl = &c->next;
 		c = *nl;
 	}
 
@@ -191,19 +211,32 @@ WaitAgain:
 			s += (sizeof(__POSIX_EXIT_PREFIX)/sizeof(char) - 1);
 			ret = atoi(s);
 		} else {
-			/* TODO: setup configurable interpretations */
-			ret = 127;
+			s = strstr(w->msg, __POSIX_EXIT_SIGNAL_PREFIX);
+			if(s){
+				s += (sizeof(__POSIX_EXIT_SIGNAL_PREFIX)/sizeof(char) - 1);
+				sig = atoi(s);
+			} else {
+				/* TODO: setup configurable interpretations */
+				ret = 127;
+			}
 		}
 	}
 	if(pid == reqpid){
-		if(status != nil)
-			*status = ret << 8;
+		if(status != nil){
+			if(sig == 0)
+				*status = ret << 8;
+			else
+				*status = sig;
+		}
 		return reqpid;
 	}
 	c = malloc(sizeof(WaitList));
 	c->next = nil;
 	c->pid = pid;
-	c->status = ret << 8;
+	if(sig == 0)
+		c->status= ret << 8;
+	else
+		c->status = sig;
 	*nl = c;
 	if(!nohang)
 		goto WaitAgain;
@@ -289,14 +322,51 @@ translate_jehanne_note(char *note)
 	return 0;
 }
 
+static void
+terminated_by_signal(int sig)
+{
+	char buf[64];
+
+	free_wait_list();
+
+	snprint(buf, sizeof(buf), __POSIX_EXIT_SIGNAL_PREFIX "%d", sig);
+	exits(buf);
+}
+
+int
+POSIX_signal_execute(int sig, PosixSignalDisposition action, int pid)
+{
+	switch(action){
+	case SignalHandled:
+		return 1;
+	case TerminateTheProcess:
+	case TerminateTheProcessAndCoreDump:
+		terminated_by_signal(sig);
+		break;
+	case StopTheProcess:
+		if(pid < 0)
+			sysfatal("libposix: stop signal reached the target process");
+		// TODO: write stop to ctl file
+		return 1;
+	case ResumeTheProcess:
+		if(pid < 0)
+			sysfatal("libposix: continue signal reached the target process");
+		// TODO: write start to ctl file
+		return 1;
+	}
+	return 0;
+}
+
 int
 __libposix_note_handler(void *ureg, char *note)
 {
 	int sig;
+	PosixSignalDisposition action;
 	if(strncmp(note, __POSIX_SIGNAL_PREFIX, __POSIX_SIGNAL_PREFIX_LEN) != 0)
 		return translate_jehanne_note(note); // TODO: should we translate common notes?
 	sig = atoi(note+__POSIX_SIGNAL_PREFIX_LEN);
-	return __libposix_signal_trampoline(sig);
+	action = __libposix_signal_trampoline(sig);
+	return POSIX_signal_execute(sig, action, -1);
 }
 
 int

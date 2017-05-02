@@ -5,7 +5,8 @@
 		],
 		"Install": "/arch/$ARCH/qa/kern",
 		"Post": [
-			"cp *.rc $JEHANNE/arch/$ARCH/qa/kern/"
+			"cp *.rc $JEHANNE/arch/$ARCH/qa/kern/",
+			"cp *.runner $JEHANNE/arch/$ARCH/qa/kern/"
 		],
 		"SourceFilesCmd": [
 			"alarm.c",
@@ -26,6 +27,7 @@
 			"mixedfloat.c",
 			"noexecmem.c",
 			"notify.c",
+			"nested_note.c",
 			"nsec.c",
 			"pipering.c",
 			"postnote.c",

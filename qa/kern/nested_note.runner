@@ -1,0 +1,35 @@
+#!/cmd/rc
+
+# this test ensure that notes are enqueued in kernel
+
+runner=$0
+test = `{echo $runner|sed 's/.runner//'}
+test_output = /tmp/output-`{basename $test}
+
+if ( test -e $test_output) rm $test_output
+
+$test $test_output &
+testpid = $apid
+
+while ( ! test -e $test_output ) { sleep 2 }
+
+echo $test started, output to $test_output, kill at /proc/$testpid/ctl
+
+echo -n first > /proc/$testpid/note
+echo -n second > /proc/$testpid/note
+echo -n stop > /proc/$testpid/note
+
+wait $testpid
+
+if ( cat $test_output | grep 'waiting after first.........................................................................................................................................................................................................' > /dev/null ) {
+if ( cat $test_output | grep 'waiting after second.........................................................................................................................................................................................................' > /dev/null ) {
+if ( cat $test_output | grep 'PASS' > /dev/null ) {
+	rm $test_output
+	echo PASS
+	exit PASS
+}
+}
+}
+cat $test_output
+echo FAIL
+exit FAIL

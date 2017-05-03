@@ -12,6 +12,7 @@
 			"alarm.c",
 			"args.c",
 			"awake.c",
+			"awake_note.c",
 			"brk.c",
 			"execl.c",
 			"float.c",

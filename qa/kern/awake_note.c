@@ -18,31 +18,24 @@
 #include <u.h>
 #include <lib9.h>
 
-int done;
-int waited;
-
 void
 handler(void *v, char *s)
 {
-	int i;
-	if(strcmp(s, "stop") == 0){
-		done = 1;
-		noted(NCONT);
-	}
-	print("waiting after %s", s);
-	for(i = 0; i < 1000*1000; ++i)
-		if(i % 4999 == 0)
-			print(".");
-	print("\n");
-	print("wait after %s terminated\n", s);
-	waited++;
-	noted(NCONT);
+	int64_t wakeup;
+	wakeup = awake(1000);
+	while(rendezvous(&wakeup, (void*)1) == (void*)~0)
+		if(jehanne_awakened(wakeup)){
+			print("PASS\n");
+			exits(nil);
+		}
+	print("FAIL in note handler\n");
+	exits("FAIL");
 }
 
 void
 main(int argc, char**argv)
 {
-	int fd;
+	int fd, i;
 	if(argc > 1){
 		fd = ocreate(argv[1], OWRITE, 0666);
 		dup(fd, 1);
@@ -54,12 +47,13 @@ main(int argc, char**argv)
 		exits("notify fails");
 	}
 
-	print("note handler installed\n");
+	print("%s %d: waiting for note", argv[0], getpid());
+	for(i = 0; i < 10*1000*1000; ++i)
+		if(i % 4999 == 0){
+			sleep(100);
+			print(".");
+		}
 
-	while(!done)
-		sleep(100);
-	if(waited == 2){
-		print("PASS\n");
-		exits(0);
-	}
+	print("FAIL\n");
+	exits("FAIL");
 }

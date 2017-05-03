@@ -16,7 +16,8 @@
 			"initlib.c",
 			"memory.c",
 			"others.c",
-			"processes.c"
+			"processes.c",
+			"signals.c"
 		]
 	}
 }

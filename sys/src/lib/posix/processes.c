@@ -23,14 +23,13 @@
 extern char **environ;
 
 WaitList **__libposix_wait_list;
-static PosixSignalTrampoline __libposix_signal_trampoline;
 static PosixExitStatusTranslator __libposix_exit_status_translator;
 static int __libposix_wnohang;
 
 #define __POSIX_SIGNAL_PREFIX_LEN (sizeof(__POSIX_SIGNAL_PREFIX)-1)
 
-static void
-free_wait_list(void)
+void
+__libposix_free_wait_list(void)
 {
 	WaitList *wl, *c;
 
@@ -53,7 +52,7 @@ POSIX_exit(int code)
 {
 	char buf[64], *s;
 
-	free_wait_list();
+	__libposix_free_wait_list();
 
 	if(__libposix_exit_status_translator != nil
 	&&(s = __libposix_exit_status_translator(code)) != nil){
@@ -80,7 +79,7 @@ POSIX_execve(int *errnop, const char *name, char * const*argv, char * const*env)
 		__libposix_setup_exec_environment(env);
 	}
 
-	free_wait_list();
+	__libposix_free_wait_list();
 
 	ret = sys_exec(name, argv);
 	switch(ret){
@@ -94,6 +93,30 @@ POSIX_execve(int *errnop, const char *name, char * const*argv, char * const*env)
 		break;
 	}
 	return -1;
+}
+
+int
+POSIX_getpid(int *errnop)
+{
+	return getpid();
+}
+
+int
+POSIX_getppid(int *errnop)
+{
+	return getppid();
+}
+
+int
+POSIX_fork(int *errnop)
+{
+	int pid = fork();
+
+	if(pid == 0){
+		/* reset wait list for the child */
+		*__libposix_wait_list = nil;
+	}
+	return pid;
 }
 
 int
@@ -244,131 +267,6 @@ WaitAgain:
 	return -1;
 }
 
-static int
-note_all_writable_processes(int *errnop, char *note)
-{
-	// TODO: loop over writable note files and post note.
-	*errnop = __libposix_get_errno(PosixEPERM);
-	return -1;
-}
-
-int
-POSIX_kill(int *errnop, int pid, int sig)
-{
-	char msg[64], file[128];
-	int mode;
-	int ret;
-
-	snprint(msg, sizeof(msg), __POSIX_SIGNAL_PREFIX "%d", sig);
-	switch(pid){
-	case 0:
-		mode = PNGROUP;
-		break;
-	case -1:
-		return note_all_writable_processes(errnop, msg);
-	default:
-		if(pid < 0){
-			mode = PNGROUP;
-			pid = -pid;
-		} else {
-			mode = PNPROC;
-		}
-	}
-
-	snprint(file, sizeof(file), "/proc/%d/note", pid);
-	if(access(file, AWRITE) != 0){
-		if(access(file, AEXIST) == 0)
-			*errnop = __libposix_get_errno(PosixEPERM);
-		else
-			*errnop = __libposix_get_errno(PosixESRCH);
-		return -1;
-	}
-	ret = postnote(mode, pid, msg);
-	if(ret != 0){
-		*errnop = __libposix_translate_errstr((uintptr_t)POSIX_kill);
-		return -1;
-	}
-	return 0;
-}
-
-int
-POSIX_getpid(int *errnop)
-{
-	return getpid();
-}
-
-int
-POSIX_getppid(int *errnop)
-{
-	return getppid();
-}
-
-int
-POSIX_fork(int *errnop)
-{
-	int pid = fork();
-
-	if(pid == 0){
-		/* reset wait list for the child */
-		*__libposix_wait_list = nil;
-	}
-	return pid;
-}
-
-static int
-translate_jehanne_note(char *note)
-{
-	// TODO: implement
-	return 0;
-}
-
-static void
-terminated_by_signal(int sig)
-{
-	char buf[64];
-
-	free_wait_list();
-
-	snprint(buf, sizeof(buf), __POSIX_EXIT_SIGNAL_PREFIX "%d", sig);
-	exits(buf);
-}
-
-int
-POSIX_signal_execute(int sig, PosixSignalDisposition action, int pid)
-{
-	switch(action){
-	case SignalHandled:
-		return 1;
-	case TerminateTheProcess:
-	case TerminateTheProcessAndCoreDump:
-		terminated_by_signal(sig);
-		break;
-	case StopTheProcess:
-		if(pid < 0)
-			sysfatal("libposix: stop signal reached the target process");
-		// TODO: write stop to ctl file
-		return 1;
-	case ResumeTheProcess:
-		if(pid < 0)
-			sysfatal("libposix: continue signal reached the target process");
-		// TODO: write start to ctl file
-		return 1;
-	}
-	return 0;
-}
-
-int
-__libposix_note_handler(void *ureg, char *note)
-{
-	int sig;
-	PosixSignalDisposition action;
-	if(strncmp(note, __POSIX_SIGNAL_PREFIX, __POSIX_SIGNAL_PREFIX_LEN) != 0)
-		return translate_jehanne_note(note); // TODO: should we translate common notes?
-	sig = atoi(note+__POSIX_SIGNAL_PREFIX_LEN);
-	action = __libposix_signal_trampoline(sig);
-	return POSIX_signal_execute(sig, action, -1);
-}
-
 int
 libposix_translate_exit_status(PosixExitStatusTranslator translator)
 {
@@ -377,17 +275,6 @@ libposix_translate_exit_status(PosixExitStatusTranslator translator)
 	if(translator == nil)
 		return 0;
 	__libposix_exit_status_translator = translator;
-	return 1;
-}
-
-int
-libposix_set_signal_trampoline(PosixSignalTrampoline trampoline)
-{
-	if(__libposix_initialized())
-		return 0;
-	if(trampoline == nil)
-		return 0;
-	__libposix_signal_trampoline = trampoline;
 	return 1;
 }
 
@@ -405,8 +292,6 @@ libposix_set_wait_options(int wcontinued, int wnohang, int wuntraced)
 void
 __libposix_processes_check_conf(void)
 {
-	if(__libposix_signal_trampoline == nil)
-		sysfatal("libposix: no signal trampoline");
 	if(__libposix_wnohang == 0)
 		sysfatal("libposix: WNOHANG is undefined");
 	/* __libposix_exit_status_translator is optional */

@@ -26,6 +26,7 @@ struct WaitList
 extern void __libposix_files_check_conf(void);
 extern void __libposix_errors_check_conf(void);
 extern void __libposix_processes_check_conf(void);
+extern void __libposix_signal_check_conf(void);
 extern int __libposix_initialized(void);
 
 extern int __libposix_get_errno(PosixError e);
@@ -35,3 +36,5 @@ extern void __libposix_setup_exec_environment(char * const *env);
 extern int __libposix_translate_errstr(uintptr_t caller);
 
 extern int __libposix_note_handler(void *ureg, char *note);
+
+extern void __libposix_free_wait_list(void);

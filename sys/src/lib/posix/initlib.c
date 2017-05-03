@@ -30,6 +30,7 @@ libposix_check_configuration(void)
 	__libposix_errors_check_conf();
 	__libposix_files_check_conf();
 	__libposix_processes_check_conf();
+	__libposix_signal_check_conf();
 }
 
 void

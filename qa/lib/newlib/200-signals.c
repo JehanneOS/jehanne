@@ -38,7 +38,10 @@ main() {
 	else /* parent */
 	{
 		close(p[1]);
-		read(p[0], &dummy, 1);
+		if(read(p[0], &dummy, 1) > 0){
+			printf("sync read received data");
+			exit(EXIT_FAILURE);
+		}
 		close(p[0]);
 		printf("\nPARENT: sending SIGHUP\n\n");
 		kill(pid,SIGHUP);

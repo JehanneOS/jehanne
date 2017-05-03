@@ -3,6 +3,7 @@
 #include <string.h>
 int main()
 {
+	int n;
 	char buf[64];
 	FILE *fptr;
 
@@ -16,7 +17,8 @@ int main()
 	fptr = fopen("/tmp/qa-fprint.txt", "r");
 	if(fptr == NULL)
 		exit(2);
-	fread (buf, 1, 64, fptr);
+	n = fread (buf, 1, 64, fptr);
+	buf[n] = '\0';
 	fclose(fptr);
 
 	if(strncmp(buf, "DONE", 4) != 0){

@@ -37,9 +37,16 @@ void
 libposix_init(int argc, char *argv[], PosixInit init)
 {
 	extern int main(int, char**);
+	extern unsigned char *__signals_to_code_map;
+	extern unsigned char *__code_to_signal_map;
+	extern int *__handling_external_signal;
+
 	WaitList *wait_list;
 	int status;
 	int error_codes[ERRNO_LAST-ERRNO_FIRST];
+	unsigned char signals_to_code[256];
+	unsigned char code_to_signal[256];
+	int handling_signal;
 
 	assert(__initialized == 0);
 
@@ -51,6 +58,13 @@ libposix_init(int argc, char *argv[], PosixInit init)
 	wait_list = nil;
 	__libposix_wait_list = &wait_list;
 
+	/* initialize signal handling */
+	memset(signals_to_code, 0, sizeof(signals_to_code));
+	memset(code_to_signal, 0, sizeof(code_to_signal));
+	handling_signal = 0;
+	__signals_to_code_map = signals_to_code;
+	__code_to_signal_map = code_to_signal;
+	__handling_external_signal = &handling_signal;
 	if(!atnotify(__libposix_note_handler, 1))
 		sysfatal("libposix: atnotify");
 

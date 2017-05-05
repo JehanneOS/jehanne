@@ -355,7 +355,7 @@ extern	int32_t	jehanne_strtol(const char*, char**, int);
 extern	uint32_t	jehanne_strtoul(const char*, char**, int);
 extern	int64_t	jehanne_strtoll(const char*, char**, int);
 extern	uint64_t	jehanne_strtoull(const char*, char**, int);
-extern	void	jehanne_sysfatal(const char*, ...);
+extern	void	jehanne_sysfatal(const char*, ...) __attribute__ ((noreturn));
 extern	void	jehanne_syslog(int, const char*, const char*, ...);
 extern	int32_t	jehanne_time(int32_t*);
 extern	int	jehanne_tolower(int);

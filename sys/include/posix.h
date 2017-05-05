@@ -64,30 +64,62 @@ extern void POSIX_free(void *ptr);
 extern unsigned int POSIX_sleep(unsigned int seconds);
 extern int POSIX_pipe(int *errnop, int fildes[2]);
 
-typedef enum PosixSignalDisposition
-{
-	SignalHandled = 0,	/* the application handled the signal */
-	TerminateTheProcess,
-	TerminateTheProcessAndCoreDump,
-	StopTheProcess,
-	ResumeTheProcess
-} PosixSignalDisposition;
-
-/* Executes a PosixSignalDisposition for pid.
- *
- * MUST be called instead of POSIX_kill for unblockable signals.
- */
-extern int POSIX_signal_execute(int sig, PosixSignalDisposition action, int pid);
-
 
 /* Library initialization
  */
 #define _ERRNO_H	// skip the Posix part, we just need the enum
 #include <apw/errno.h>
 
+typedef enum PosixSignals
+{
+	PosixSIGABRT = 1,
+	PosixSIGALRM,
+	PosixSIGBUS,
+	PosixSIGCHLD,
+	PosixSIGCONT,
+	PosixSIGFPE,
+	PosixSIGHUP,
+	PosixSIGILL,
+	PosixSIGINT,
+	PosixSIGKILL,
+	PosixSIGPIPE,
+	PosixSIGQUIT,
+	PosixSIGSEGV,
+	PosixSIGSTOP,
+	PosixSIGTERM,
+	PosixSIGTSTP,
+	PosixSIGTTIN,
+	PosixSIGTTOU,
+	PosixSIGUSR1,
+	PosixSIGUSR2,
+	PosixSIGPOLL,
+	PosixSIGPROF,
+	PosixSIGSYS,
+	PosixSIGTRAP,
+	PosixSIGURG,
+	PosixSIGVTALRM,
+	PosixSIGXCPU,
+	PosixSIGXFSZ,
+
+	/* Optional Signals */
+	PosixSIGIOT,
+	PosixSIGEMT,
+	PosixSIGSTKFLT,
+	PosixSIGIO,
+	PosixSIGCLD,
+	PosixSIGPWR,
+	PosixSIGINFO,
+	PosixSIGLOST,
+	PosixSIGWINCH,
+	PosixSIGUNUSED,
+
+	PosixNumberOfSignals
+} PosixSignals;
+
 /* Initialize libposix. Should call
  *
  *	libposix_define_errno to set the value of each PosixError
+ *	libposix_define_signal to set the value of each PosixSignal
  *	libposix_translate_error to translate error strings to PosixError
  * 	libposix_set_signal_trampoline to dispatch signal received as notes
  *	libposix_set_stat_reader
@@ -181,9 +213,13 @@ extern int libposix_translate_exit_status(PosixExitStatusTranslator translator);
 
 /* Dispatch the signal to the registered handlers.
  */
-typedef PosixSignalDisposition (*PosixSignalTrampoline)(int signal);
+typedef int (*PosixSignalTrampoline)(int signal);
 
 extern int libposix_set_signal_trampoline(PosixSignalTrampoline trampoline);
+
+extern int libposix_define_signal(PosixSignals signal, int code);
+
+extern int libposix_define_realtime_signals(int sigrtmin, int sigrtmax);
 
 /* Define of WCONTINUED, WNOHANG and WUNTRACED bit flags.
  *

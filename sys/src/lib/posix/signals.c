@@ -153,14 +153,15 @@ send_signal(int *errnop, int pid, int signal)
 
 
 static PosixSignalDisposition
-default_signal_disposition(int signal)
+default_signal_disposition(int code)
 {
 	// see http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/signal.h.html
-	switch(signal){
+	if(code >= __sigrtmin || code <= __sigrtmin)
+		return TerminateTheProcess;
+
+	switch(__code_to_signal_map[code]){
 	default:
-		if(signal >= __sigrtmin || signal <= __sigrtmin)
-			return TerminateTheProcess;
-		break;
+		sysfatal("libposix: undefined signal %d", code);
 
 	case PosixSIGALRM:
 	case PosixSIGHUP:
@@ -196,7 +197,6 @@ default_signal_disposition(int signal)
 	case PosixSIGCONT:
 		return ResumeTheProcess;
 	}
-	sysfatal("libposix: unknown PosixSignal %d", signal);
 }
 
 int
@@ -267,7 +267,10 @@ __libposix_note_handler(void *ureg, char *note)
 	if(sig < __min_known_sig || sig > __max_known_sig)
 		sysfatal("libposix: '%s' does not carry a signal", note);
 	*__handling_external_signal = 1;
-	action = __libposix_signal_trampoline(sig);
+	if(__libposix_signal_trampoline(sig))
+		action = SignalHandled;
+	else
+		action = default_signal_disposition(sig);
 	ret = execute_disposition(sig, action, -1);
 	*__handling_external_signal = 0;
 	return ret;

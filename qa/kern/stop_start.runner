@@ -1,0 +1,29 @@
+#!/cmd/rc
+
+runner=$0
+test = `{echo $runner|sed 's/.runner//'}
+test_output = /tmp/output-`{basename $test}
+
+if ( test -e $test_output) rm $test_output
+
+$test > $test_output &
+testpid=$apid
+sleep 5
+
+if ( cat $test_output | grep 'PASS' > /dev/null ) {
+	cat $test_output
+	echo FAIL
+	exit FAIL
+}
+
+echo start > /proc/$testpid/ctl
+wait $testpid
+
+if ( cat $test_output | grep 'PASS' > /dev/null ) {
+	rm $test_output
+	echo PASS
+	exit PASS
+}
+cat $test_output
+echo FAIL
+exit FAIL

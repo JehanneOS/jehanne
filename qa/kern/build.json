@@ -36,6 +36,7 @@
 			"psx.c",
 			"segattach.c",
 			"sched0.c",
+			"stop_start.c",
 			"syscall.c",
 			"sysstatread.c",
 			"tsemacquire.c",

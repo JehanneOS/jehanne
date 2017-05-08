@@ -48,6 +48,14 @@ POSIX_sleep(unsigned int seconds)
 	return 0;
 }
 
+unsigned int
+POSIX_usleep(unsigned int useconds)
+{
+	sleep((microseconds+1000)/1000);
+	return 0;
+}
+
+
 clock_t
 POSIX_times(int *errnop, void *buf)
 {

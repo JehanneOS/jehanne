@@ -49,9 +49,14 @@ POSIX_sleep(unsigned int seconds)
 }
 
 unsigned int
-POSIX_usleep(unsigned int useconds)
+POSIX_usleep(int *errnop, unsigned int usec)
 {
-	sleep((microseconds+1000)/1000);
+	if(usec >= 1000000){
+		*errnop = __libposix_get_errno(PosixEINVAL);
+		return -1;
+	}
+	unsigned int ms = usec == 0 ? 0 : (usec+1000)/1000;
+	sleep(ms);
 	return 0;
 }
 

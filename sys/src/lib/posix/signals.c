@@ -23,8 +23,8 @@
  * SIGABRT, SIGIOT), SIGCHLD/SIGCLD, timers' wakeups
  * (SIGALRM, SIGPROF, SIGVTALRM) and all the others.
  *
- * # TRASMISSION
- *
+ * TRASMISSION
+ * -----------
  * Signal transmission depends on the relation between the sender
  * and the receiver:
  * 1) if sender and receiver have no relation the signal is translated
@@ -48,8 +48,8 @@
  * registered with signal() handled the signal and the library will 
  * invoke the default disposition associated to the signal.
  *
- * # CONTROL MESSAGES
- *
+ * CONTROL MESSAGES
+ * ----------------
  * Control messages are translated by the receiver to equivalent actions:
  * - SIGKILL => write "kill" to the control file of the current process
  * - SIGSTOP => write "stop" to the control file of the current process
@@ -61,8 +61,8 @@
  *              "start" to the control file of the receiver before
  *              sending the note (unless SIGCHLD emulation is enable).
  *
- * # SIGCHLD/SIGCLD
- *
+ * SIGCHLD/SIGCLD
+ * --------------
  * Jehanne (like Plan 9) does not support a SIGCHLD equivalent.
  * The user space emulation provided here is quite expensive, so it's
  * disabled by default.
@@ -95,6 +95,25 @@
  * for forked children in the same way, sending them to P2C.
  * It's P2C's responsibility to translate control messages as required,
  * so that SIGCONT will work as expected.
+ *
+ * TIMERS
+ * ------
+ * The functions alarm() and settimer() generate SIGALRM, SIGPROF
+ * or SIGVTALRM for the current process. We want timers to be able to
+ * expire in a signal handler (interrupting a blocking syscall) but
+ * without giving up the simplicity of notes.
+ *
+ * We allocate these timers on libposix initialization. When normal
+ * code is running timers will be implemented via Jehanne's alarms,
+ * producing a note on expiration that will be mapped to the proper
+ * signal for the trampoline by the receiving process.
+ *
+ * However, when a signal handler is being executed, the timers will
+ * be implemented using the awake syscall that will be able
+ * to interrupt blocking syscalls in the signal handler.
+ * When a signal handler returns, if the timer has not be cleared and
+ * did not expired, the wakeup is cleared and replaced with an alarm
+ * note.
  */
 
 #include <u.h>

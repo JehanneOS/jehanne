@@ -15,6 +15,88 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with Jehanne.  If not, see <http://www.gnu.org/licenses/>.
  */
+
+/* POSIX signals have weird semantics that are hard to emulate in a
+ * sane system without giving up on its sanity.
+ *
+ * We distinguish control signals (SIGKILL, SIGSTOP, SIGCONT,
+ * SIGABRT, SIGIOT), SIGCHLD/SIGCLD, timers' wakeups
+ * (SIGALRM, SIGPROF, SIGVTALRM) and all the others.
+ *
+ * # TRASMISSION
+ *
+ * Signal transmission depends on the relation between the sender
+ * and the receiver:
+ * 1) if sender and receiver have no relation the signal is translated
+ *    to a note and sent to the receiver(s);
+ * 2) if sender == receiver the signal trampoline is directly invoked
+ *    for all signals except control ones and the default disposition occurs if
+ *    the trampoline does not handle the signal
+ * 3) if sender is parent or child of receiver the transmision
+ *    differs from the default if libposix_emulate_SIGCHLD() has been
+ *    called during library initialization
+ *
+ * Since notes in Jehanne are not reentrant, signals translated to
+ * notes will be enqueued in kernel. A special machinery is implemented
+ * for timers, so that they can be used in signal handlers.
+ *
+ * For all the signals except SIGCONT, the burden of interpreting the
+ * signal is on the receiver: the sender just send the signal.
+ *
+ * The receiver will translate the note back to the appropriate signal
+ * number and invoke the trampoline: if trampoline returns 0 no function
+ * registered with signal() handled the signal and the library will 
+ * invoke the default disposition associated to the signal.
+ *
+ * # CONTROL MESSAGES
+ *
+ * Control messages are translated by the receiver to equivalent actions:
+ * - SIGKILL => write "kill" to the control file of the current process
+ * - SIGSTOP => write "stop" to the control file of the current process
+ * - SIGABRT/SIGIOT => invoke the registered signal handlers and abort
+ *                     the current process
+ * - SIGCONT => invoke the registered signal handlers via the signal
+ *              trampoline and continue; note that (since a stopped
+ *              process cannot resume itself) the sender will write
+ *              "start" to the control file of the receiver before
+ *              sending the note (unless SIGCHLD emulation is enable).
+ *
+ * # SIGCHLD/SIGCLD
+ *
+ * Jehanne (like Plan 9) does not support a SIGCHLD equivalent.
+ * The user space emulation provided here is quite expensive, so it's
+ * disabled by default.
+ * Calling libposix_emulate_SIGCHLD() during libposix initialization
+ * will enable this machinery for the whole life of the process.
+ *
+ * Such emulation change the way fork and kill works.
+ *
+ * Each fork() will spawn two additional processes that are designed
+ * to proxy signals between the parent and the desired child:
+ *
+ *   parent
+ *     +- proxy from parent to child (P2C)
+ *          +- proxy from child to parent (C2P)
+ *               +- child
+ *
+ * Fork will return the pid of P2C to the parent, so that the
+ * parent process will see the first proxy as its child; the child will
+ * see the second as its parent. Each proxy waits for its child and
+ * forwards the notes it receive to its designed target.
+ * Finally fork in child will return 0.
+ *
+ * When the child exits, C2P will send a SIGCHLD note to parent and
+ * then exit with the same status. Then P2C will exit with
+ * the same status too.
+ *
+ * As the parent process will see P2C as its child, it will send any
+ * signal to it via kill and will wait it on SIGCHLD.
+ * However, when this machinary is enabled, kill will treat all signals
+ * for forked children in the same way, sending them to P2C.
+ * It's P2C's responsibility to translate control messages as required,
+ * so that SIGCONT will work as expected.
+ */
+
 #include <u.h>
 #include <lib9.h>
 #include <posix.h>

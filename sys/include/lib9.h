@@ -236,6 +236,7 @@
 #define toupper jehanne_toupper
 #define ainc jehanne_ainc
 #define adec jehanne_adec
+#define tsemacquire jehanne_tsemacquire
 #define _tas jehanne__tas
 #define lock jehanne_lock
 #define lockt jehanne_lockt

@@ -306,17 +306,6 @@
 		},
 		{
 			"Args": [
-				"int*",
-				"uint64_t"
-			],
-			"Id": 25,
-			"Name": "tsemacquire",
-			"Ret": [
-				"int"
-			]
-		},
-		{
-			"Args": [
 				"const char*",
 				"const char*"
 			],

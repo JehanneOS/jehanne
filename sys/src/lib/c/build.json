@@ -80,6 +80,7 @@
 			"9sys/times.c",
 			"9sys/tm2sec.c",
 			"9sys/truerand.c",
+			"9sys/tsemacquire.c",
 			"9sys/wait.c",
 			"9sys/waitpid.c",
 			"9sys/werrstr.c",

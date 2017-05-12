@@ -378,6 +378,8 @@ struct Lock {
 	int32_t	sem;
 } Lock;
 
+extern int	jehanne_tsemacquire(int* addr, long ms);
+
 extern int	jehanne__tas(int*);
 
 extern	void	jehanne_lock(Lock*);

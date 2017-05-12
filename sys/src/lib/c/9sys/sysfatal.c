@@ -34,4 +34,5 @@ jehanne_sysfatal(const char *fmt, ...)
 	va_start(arg, fmt);
 	(*_sysfatal)(fmt, arg);
 	va_end(arg);
+	jehanne_exits("sysfatal");
 }

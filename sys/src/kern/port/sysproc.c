@@ -663,6 +663,8 @@ CopyExecArgument:
 	up->notify = 0;
 	up->notified = 0;
 	up->privatemem = 0;
+	up->lastWakeup = 0;
+	up->pendingWakeup = 0;
 	sysprocsetup(up);
 	qunlock(&up->debug);
 	if(up->hang)

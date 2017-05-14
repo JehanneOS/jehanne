@@ -21,8 +21,8 @@ echo -n stop > /proc/$testpid/note
 
 wait $testpid
 
-if ( cat $test_output | grep 'waiting after first.........................................................................................................................................................................................................' > /dev/null ) {
-if ( cat $test_output | grep 'waiting after second.........................................................................................................................................................................................................' > /dev/null ) {
+if ( cat $test_output | grep 'waiting after first.......................' > /dev/null ) {
+if ( cat $test_output | grep 'waiting after second.......................' > /dev/null ) {
 if ( cat $test_output | grep 'PASS' > /dev/null ) {
 	rm $test_output
 	echo PASS

@@ -1,7 +1,7 @@
 /*
  * This file is part of Jehanne.
  *
- * Copyright (C) 2015-2016 Giacomo Tesio <giacomo@tesio.it>
+ * Copyright (C) 2015-2017 Giacomo Tesio <giacomo@tesio.it>
  *
  * Jehanne is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@
 typedef struct PendingWakeup PendingWakeup;
 struct PendingWakeup
 {
+	short notified;
 	uint64_t time;
 	Proc *p;
 	PendingWakeup *next;
@@ -39,11 +40,53 @@ static QLock l;
 
 static Rendez	awaker;
 
+int
+canwakeup(Syscalls scall)
+{
+	if(scall == 0){
+		/* fault set insyscall to 1 */
+		return 0;
+	}
+	switch(scall){
+	default:
+		panic("canwakeup: unknown scall %d\n", scall);
+	case SysFstat:
+	case SysFwstat:
+	case SysOpen:
+	case SysPread:
+	case SysPwrite:
+	case SysRendezvous:
+	case SysSemacquire:
+	case SysSemrelease:
+	case SysAwait:
+		return 1;
+	case SysAwake:
+	case SysBind:
+	case SysClose:
+	case SysCreate:
+	case SysErrstr:
+	case SysExec:
+	case Sys_exits:
+	case SysFauth:
+	case SysFd2path:
+	case SysFversion:
+	case SysMount:
+	case SysNoted:
+	case SysNotify:
+	case SysRemove:
+	case SysRfork:
+	case SysSeek:
+	case SysUnmount:
+	case SysAlarm:
+		return 0;
+	}
+}
+
 /*
  * Actually wakeup a process
  */
 static void
-wakeupProc(Proc *p)
+wakeupProc(Proc *p, unsigned long t)
 {
 	Mpl pl;
 	Rendez *r;
@@ -78,6 +121,7 @@ wakeupProc(Proc *p)
 	unlock(&p->rlock);
 	splx(pl);
 
+	p->pendingWakeup = t;
 	if(p->state != Rendezvous)
 		return;
 
@@ -102,28 +146,50 @@ void
 awakekproc(void* v)
 {
 	Proc *p;
-	PendingWakeup *toAwake, *tail;
+	PendingWakeup *tail, *toAwake, **toAwakeEnd, *toDefer, **toDeferEnd;
 	uint64_t now;
 
 	for(;;){
 		now = sys->ticks;
 		toAwake = nil;
+		toAwakeEnd = &toAwake;
+		toDefer = nil;
+		toDeferEnd = &toDefer;
 
 		/* search for processes to wakeup */
 		qlock(&l);
 		tail = alarms;
 		while(tail && tail->time <= now){
-			if(tail->p->pendingWakeup > tail->p->lastWakeup && tail->p->state >= Ready)
-				break;
-			toAwake = tail;
-			--toAwake->p->wakeups;
-			toAwake->p->pendingWakeup = toAwake->time;
+			if(tail->p->pendingWakeup > tail->p->lastWakeup
+			&& tail->p->state >= Ready){
+				*toDeferEnd = tail;
+				toDeferEnd = &tail->next;
+			} else if (!tail->notified && tail->p->notified){
+				/* If an awake was requested outside of
+				 * a note handler, it cannot expire
+				 * while executing a note handler.
+				 * On the other hand if an awake was
+				 * requeted while executing a note handler,
+				 * it's up to the note handler to
+				 * forgive it if it's not needed anymore.
+				 */
+				*toDeferEnd = tail;
+				toDeferEnd = &tail->next;
+			} else {
+				*toAwakeEnd = tail;
+				toAwakeEnd = &tail->next;
+				--tail->p->wakeups;
+			}
 			tail = tail->next;
 		}
 		if(toAwake != nil){
-			toAwake->next = nil;
-			toAwake = alarms;
-			alarms = tail;
+			*toAwakeEnd = nil;
+			if(toDefer != nil){
+				*toDeferEnd = tail;
+				alarms = toDefer;
+			} else {
+				alarms = tail;
+			}
 		}
 		qunlock(&l);
 
@@ -136,7 +202,7 @@ awakekproc(void* v)
 				 */
 				if(canqlock(&p->debug)){
 					if(!waserror()){
-						wakeupProc(p);
+						wakeupProc(p, toAwake->time);
 						poperror();
 					}
 					qunlock(&p->debug);
@@ -225,6 +291,7 @@ wakeupafter(int64_t ms)
 	if(new == nil)
 		return 0;
 	new->p = up;
+	new->notified = up->notified;
 	new->time = when;
 
 	qlock(&l);

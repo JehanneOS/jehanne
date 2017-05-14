@@ -609,6 +609,7 @@ struct Proc
 	Profbuf*	prof;
 
 	int		insyscall;
+	Syscalls	cursyscall;
 	int32_t		blockingfd;	/* fd currenly read/written */
 
 	QLock		debug;		/* to access debugging elements of User */

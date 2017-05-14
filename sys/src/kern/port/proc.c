@@ -568,6 +568,8 @@ newproc(void)
 	p = psalloc();
 
 	p->state = Scheding;
+	p->insyscall = 0;
+	p->cursyscall = 0;
 	p->psstate = "New";
 	p->mach = 0;
 	p->qnext = 0;
@@ -710,7 +712,9 @@ sleep(Rendez *r, int (*f)(void*), void *arg)
 	 */
 	r->p = up;
 
-	if((*f)(arg) || up->notepending && !up->notedeferred){
+	if((*f)(arg)
+	|| (up->notepending && !up->notedeferred)
+	|| (up->insyscall && awakeOnBlock(up) && canwakeup(up->cursyscall))){
 		/*
 		 *  if condition happened or a note is pending
 		 *  never mind
@@ -751,11 +755,14 @@ sleep(Rendez *r, int (*f)(void*), void *arg)
 
 	if(up->notepending && !up->notedeferred) {
 		up->notepending = 0;
+SleepAwakened:
 		splx(s);
 		if(up->procctl == Proc_exitme && up->closingfgrp)
 			forceclosefgrp();
 		error(Eintr);
 	}
+	if(up->insyscall && awakeOnBlock(up) && canwakeup(up->cursyscall))
+		goto SleepAwakened;
 
 	splx(s);
 }

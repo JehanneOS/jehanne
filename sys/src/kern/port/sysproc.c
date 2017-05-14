@@ -1,7 +1,7 @@
 /*
  * This file is part of Jehanne.
  *
- * Copyright (C) 2015-2016 Giacomo Tesio <giacomo@tesio.it>
+ * Copyright (C) 2015-2017 Giacomo Tesio <giacomo@tesio.it>
  *
  * Jehanne is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -858,7 +858,6 @@ sysrendezvous(void* tagp, void* rendvalp)
 
 	result = UINT2PTR(up->rendval);
 rendezvousDone:
-	awokeproc(up);
 	return result;
 }
 
@@ -1061,50 +1060,6 @@ semacquire(ProcSegment* s, int* addr, int block)
 	return 1;
 }
 
-/* Acquire semaphore or time-out */
-static int
-tsemacquire(ProcSegment* s, int* addr, uint64_t ms)
-{
-	int acquired, timedout;
-	uint64_t t, elms;
-	Sema phore;
-
-	if(canacquire(addr))
-		return 1;
-	if(ms == 0)
-		return 0;
-	acquired = timedout = 0;
-	semqueue(s, addr, &phore);
-	for(;;){
-		phore.waiting = 1;
-		coherence();
-		if(canacquire(addr)){
-			acquired = 1;
-			break;
-		}
-		if(waserror())
-			break;
-		t = sys->ticks;
-		tsleep(&phore.rend, semawoke, &phore, ms);
-		elms = TK2MS(sys->ticks - t);
-		poperror();
-		if(elms >= ms){
-			timedout = 1;
-			break;
-		}
-		ms -= elms;
-	}
-	semdequeue(s, &phore);
-	coherence();	/* not strictly necessary due to lock in semdequeue */
-	if(!phore.waiting)
-		semwakeup(s, addr, 1);
-	if(timedout)
-		return 0;
-	if(!acquired)
-		nexterror();
-	return 1;
-}
-
 int
 syssemacquire(int* addr, int block)
 {
@@ -1122,26 +1077,6 @@ syssemacquire(int* addr, int block)
 		error(Ebadarg);
 
 	return semacquire(s, addr, block);
-}
-
-int
-systsemacquire(int* addr, uint64_t ms)
-{
-	ProcSegment *s;
-
-	addr = validaddr(addr, sizeof(int), 1);
-
-	evenaddr(PTR2UINT(addr));
-
-	s = proc_segment(up, PTR2UINT(addr));
-	if(s == nil || (s->permissions&SgWrite) == 0 || (uintptr_t)addr+sizeof(int) > s->top){
-		validaddr(addr, sizeof(int), 1);
-		error(Ebadarg);
-	}
-	if(*addr < 0)
-		error(Ebadarg);
-
-	return tsemacquire(s, addr, ms);
 }
 
 int

@@ -27,15 +27,15 @@ handler(void *v, char *s)
 	int i;
 	if(strcmp(s, "stop") == 0){
 		done = 1;
-		noted(NCONT);
+	}else{
+		print("waiting after %s", s);
+		for(i = 0; i < 1000*1000; ++i)
+			if(i % 4999 == 0)
+				print(".");
+		print("\n");
+		print("wait after %s terminated\n", s);
+		waited++;
 	}
-	print("waiting after %s", s);
-	for(i = 0; i < 1000*1000; ++i)
-		if(i % 4999 == 0)
-			print(".");
-	print("\n");
-	print("wait after %s terminated\n", s);
-	waited++;
 	noted(NCONT);
 }
 
@@ -60,6 +60,8 @@ main(int argc, char**argv)
 		sleep(100);
 	if(waited == 2){
 		print("PASS\n");
-		exits(0);
+		exits("PASS");
 	}
+	print("%d notes received\n");
+	exits("FAIL");
 }

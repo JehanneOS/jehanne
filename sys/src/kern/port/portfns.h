@@ -48,6 +48,7 @@ char*		chanpath(Chan*);
 int		canlock(Lock*);
 int		canqlock(QLock*);
 int		canrlock(RWlock*);
+int		canwakeup(Syscalls scall);
 Chan*		cclone(Chan*);
 void		cclose(Chan*);
 void		ccloseq(Chan*);

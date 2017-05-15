@@ -73,6 +73,17 @@ tree3(int type, tree *c0, tree *c1, tree *c2)
 }
 
 tree*
+treeeq(int type, tree *c0, tree *c1)
+{
+	char *old;
+	old = c0->str;
+	c0->str = smprint("%s=", old);
+	c0->quoted = 1;
+	free(old);
+	return tree2('^', c0, c1);
+}
+
+tree*
 mung1(tree *t, tree *c0)
 {
 	t->child[0] = c0;

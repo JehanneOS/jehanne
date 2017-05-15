@@ -18,6 +18,7 @@
 };
 %type<tree> line paren brace body cmdsa cmdsan assign epilog redir
 %type<tree> cmd simple first word comword keyword words
+%type<tree> qcmd qsimple qpareq qfirst qword qcomword
 %type<tree> NOT FOR IN WHILE IF TWIDDLE BANG SUBSHELL SWITCH FN
 %type<tree> WORD REDIR DUP PIPE
 %%
@@ -33,12 +34,31 @@ cmdsan:	cmdsa
 |	cmd '\n'
 brace:	'{' body '}'		{$$=tree1(BRACE, $2);}
 paren:	'(' body ')'		{$$=tree1(PCMD, $2);}
+	/* auto-quoted mini syntax */
+qfirst:	qcomword
+|	qfirst '^' qword	{$$=tree2('^', $1, $3);}
+qword:	keyword			{lastword=1; $1->type=WORD;}
+|	qcomword
+|	qword '^' qword		{$$=tree2('^', $1, $3);}
+qcomword: '$' qword		{$$=tree1('$', $2);}
+|	'$' qword SUB words ')'	{$$=tree2(SUB, $2, $4);}
+|	'"' qword		{$$=tree1('"', $2);}
+|	COUNT qword		{$$=tree1(COUNT, $2);}
+|	WORD
+qpareq:	qword '=' qword		{$$=treeeq('^', $1, $3);}
+qsimple: qfirst
+|	qsimple '{' '}'		{$$=tree2(ARGLIST, $1, token("{}", WORD));}
+|	qsimple qpareq		{$$=tree2(ARGLIST, $1, $2);}
+|	qsimple qword		{$$=tree2(ARGLIST, $1, $2);}
+|	qsimple redir		{$$=tree2(ARGLIST, $1, $2);}
+qcmd:	'$' qsimple		{$$=simplemung($2);}
 assign:	first '=' word		{$$=tree2('=', $1, $3);}
 epilog:				{$$=0;}
 |	redir epilog		{$$=mung2($1, $1->child[0], $2);}
 redir:	REDIR word		{$$=mung1($1, $1->rtype==HERE?heredoc($2):$2);}
 |	DUP
 cmd:				{$$=0;}
+|	qcmd
 |	brace epilog		{$$=epimung($1, $2);}
 |	IF paren {skipnl();} cmd
 				{$$=mung2($1, $2, $4);}

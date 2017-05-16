@@ -236,7 +236,7 @@ syscall(Syscalls scallnr, Ureg* ureg)
 	cycles(&up->kentry);
 
 	m->syscall++;
-	up->insyscall = 1;
+	up->inkernel = 1;
 	up->cursyscall = (Syscalls)scallnr;
 	up->pc = ureg->ip;
 	up->dbgreg = ureg;
@@ -344,7 +344,7 @@ syscall(Syscalls scallnr, Ureg* ureg)
 		splx(s);
 	}
 
-	up->insyscall = 0;
+	up->inkernel = 0;
 	up->psstate = 0;
 	up->cursyscall = 0;
 
@@ -444,7 +444,7 @@ sysrforkchild(Proc* child, Proc* parent)
 
 	/* Things from bottom of syscall which were never executed */
 	child->psstate = 0;
-	child->insyscall = 0;
+	child->inkernel = 0;
 
 	fpusysrforkchild(child, parent);
 }

@@ -608,8 +608,9 @@ struct Proc
 	int64_t		pcycles;
 	Profbuf*	prof;
 
-	int		insyscall;
-	Syscalls	cursyscall;
+	int		inkernel;	/* either on syscall or fault */
+	Syscalls	cursyscall;	/* zero on fault */
+
 	int32_t		blockingfd;	/* fd currenly read/written */
 
 	QLock		debug;		/* to access debugging elements of User */

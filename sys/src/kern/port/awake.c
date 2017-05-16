@@ -44,7 +44,7 @@ int
 canwakeup(Syscalls scall)
 {
 	if(scall == 0){
-		/* fault set insyscall to 1 */
+		/* on page fault */
 		return 0;
 	}
 	switch(scall){

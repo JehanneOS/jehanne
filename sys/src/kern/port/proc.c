@@ -568,7 +568,7 @@ newproc(void)
 	p = psalloc();
 
 	p->state = Scheding;
-	p->insyscall = 0;
+	p->inkernel = 0;
 	p->cursyscall = 0;
 	p->psstate = "New";
 	p->mach = 0;
@@ -714,7 +714,7 @@ sleep(Rendez *r, int (*f)(void*), void *arg)
 
 	if((*f)(arg)
 	|| (up->notepending && !up->notedeferred)
-	|| (up->insyscall && awakeOnBlock(up) && canwakeup(up->cursyscall))){
+	|| (up->inkernel && awakeOnBlock(up) && canwakeup(up->cursyscall))){
 		/*
 		 *  if condition happened or a note is pending
 		 *  never mind
@@ -761,7 +761,7 @@ SleepAwakened:
 			forceclosefgrp();
 		error(Eintr);
 	}
-	if(up->insyscall && awakeOnBlock(up) && canwakeup(up->cursyscall))
+	if(up->inkernel && awakeOnBlock(up) && canwakeup(up->cursyscall))
 		goto SleepAwakened;
 
 	splx(s);
@@ -1690,7 +1690,7 @@ accounttime(void)
 	p = m->proc;
 	if(p) {
 		nrun++;
-		p->time[p->insyscall]++;
+		p->time[p->inkernel]++;
 	}
 
 	/* calculate decaying duty cycles */

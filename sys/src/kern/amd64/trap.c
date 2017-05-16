@@ -575,7 +575,8 @@ static void
 faultamd64(Ureg* ureg, void* _1)
 {
 	uint64_t addr, arg;
-	int ftype, user, insyscall;
+	int ftype, user, inkernel;
+	Syscalls cursyscall;
 	char buf[ERRMAX];
 	void (*pt)(Proc*, int, int64_t, int64_t);
 
@@ -606,8 +607,10 @@ faultamd64(Ureg* ureg, void* _1)
 		pt(up, STrap, 0, arg);
 	}
 
-	insyscall = up->insyscall;
-	up->insyscall = 1;
+	inkernel = up->inkernel;
+	cursyscall = up->cursyscall;
+	up->inkernel = 1;
+	up->cursyscall = 0;
 if(iskaddr(addr)){
 	jehanne_print("kaddr %#llux pc %#p\n", addr, ureg->ip);
 //	prflush();
@@ -623,10 +626,13 @@ if(iskaddr(addr)){
 			fault_types[ftype], addr);
 		proc_check_pages();
 		postnote(up, 1, buf, NDebug);
-		if(insyscall)
+		if(inkernel){
+			up->cursyscall = cursyscall;
 			error(buf);
+		}
 	}
-	up->insyscall = insyscall;
+	up->cursyscall = cursyscall;
+	up->inkernel = inkernel;
 }
 
 /*

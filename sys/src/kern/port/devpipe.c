@@ -1,3 +1,20 @@
+/*
+ * This file is part of Jehanne.
+ *
+ * Copyright (C) 2017 Giacomo Tesio <giacomo@tesio.it>
+ *
+ * Jehanne is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 2 of the License.
+ *
+ * Jehanne is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Jehanne.  If not, see <http://www.gnu.org/licenses/>.
+ */
 #include	"u.h"
 #include	"../port/lib.h"
 #include	"mem.h"
@@ -300,31 +317,33 @@ static long
 pipewrite(Chan *c, void *va, long n, int64_t _1)
 {
 	Pipe *p;
+	Queue *q;
 
 	if(!islo())
 		jehanne_print("pipewrite hi %#p\n", getcallerpc());
-	if(waserror()) {
-		/* avoid notes when pipe is a mounted queue */
-		if((c->flag & CMSG) == 0)
-			postnote(up, 1, "sys: write on closed pipe", NUser);
-		nexterror();
-	}
 
 	p = c->aux;
-
 	switch(PIPETYPE(c->qid.path)){
 	case Qdata0:
-		n = qwrite(p->q[1], va, n);
+		q = p->q[1];
 		break;
-
 	case Qdata1:
-		n = qwrite(p->q[0], va, n);
+		q = p->q[0];
 		break;
-
 	default:
 		panic("pipewrite");
 	}
 
+	if(waserror()) {
+		/* avoid notes when pipe is a mounted queue */
+		if((c->flag & CMSG) == 0
+		&& (qstate(q) & Qclosed)
+		&& (jehanne_strcmp(Ehungup, up->errstr) == 0)) // do not obscure other errors
+			postnote(up, 1, "sys: write on closed pipe", NUser);
+		nexterror();
+	}
+
+	n = qwrite(q, va, n);
 	poperror();
 	return n;
 }
@@ -334,29 +353,30 @@ pipebwrite(Chan *c, Block *bp, int64_t _1)
 {
 	long n;
 	Pipe *p;
-
-	if(waserror()) {
-		/* avoid notes when pipe is a mounted queue */
-		if((c->flag & CMSG) == 0)
-			postnote(up, 1, "sys: write on closed pipe", NUser);
-		nexterror();
-	}
+	Queue *q;
 
 	p = c->aux;
 	switch(PIPETYPE(c->qid.path)){
 	case Qdata0:
-		n = qbwrite(p->q[1], bp);
+		q = p->q[1];
 		break;
-
 	case Qdata1:
-		n = qbwrite(p->q[0], bp);
+		q = p->q[0];
 		break;
-
 	default:
-		n = 0;
 		panic("pipebwrite");
 	}
 
+	if(waserror()) {
+		/* avoid notes when pipe is a mounted queue */
+		if((c->flag & CMSG) == 0
+		&& (qstate(q) & Qclosed)
+		&& (jehanne_strcmp(Ehungup, up->errstr) == 0)) // do not obscure other errors
+			postnote(up, 1, "sys: write on closed pipe", NUser);
+		nexterror();
+	}
+
+	n = qbwrite(q, bp);
 	poperror();
 	return n;
 }

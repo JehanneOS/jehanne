@@ -314,6 +314,7 @@ void		qreopen(Queue*);
 void		qsetbypass(Queue*, void (*)(void*, Block*), void*);
 void		qsetlimit(Queue*, int);
 void		qsleep(Queue*);
+int		qstate(Queue *q);
 void		qunlock(QLock*);
 int		qwindow(Queue*);
 int		qwrite(Queue*, void*, int);

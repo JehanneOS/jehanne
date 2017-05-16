@@ -32,11 +32,29 @@ failOnTimeout(void *v, char *s)
 	return 0;
 }
 
+int
+writeTillBlock(int fd)
+{
+	int i = 0;
+	char buf[1025];
+	memset(buf, 1, sizeof(buf));
+	while(i < 300)	/* pipes should block after at most 256kb */
+	{
+		if(write(fd, buf, sizeof(buf)) < 0){
+			break;
+		}
+		++i;
+	}
+	return i;
+}
+
 void
 main(void)
 {
 	int64_t start, elapsed, wkup, res;
 	int32_t sem = 0;
+	int fds[2];
+	char buf[1];
 
 	semacquire(&sem, 0);
 
@@ -46,7 +64,7 @@ main(void)
 		exits("atnotify fails");
 	}
 
-	awake(80000);	/* this will be handled by the kernel, see pexit */
+	awake(100000);	/* this will be handled by the kernel, see pexit */
 
 	/* verify that rendezvous are interrupted */
 	fprint(2, "verify that rendezvous are interrupted\n", elapsed);
@@ -58,19 +76,6 @@ main(void)
 		fprint(2, "rendezvous interrupted, returned %#p, elapsed = %d ms\n", res, elapsed);
 	if(!awakened(wkup) || elapsed < 900 || elapsed > 1300){
 		print("FAIL: rendezvous\n");
-		exits("FAIL");
-	}
-
-	/* verify that tsemacquire are NOT interrupted */
-	fprint(2, "verify that tsemacquire are NOT interrupted\n", elapsed);
-	wkup = awake(700);
-	start = nsec();
-	res = tsemacquire(&sem, 1500);
-	elapsed = (nsec() - start) / (1000 * 1000);
-	if(verbose)
-		fprint(2, "tsemacquire(&sem, 1500) returned %lld, elapsed = %d ms\n", res, elapsed);
-	if(res != 0 || elapsed < 1300){
-		print("FAIL: tsemacquire\n");
 		exits("FAIL");
 	}
 
@@ -88,9 +93,8 @@ main(void)
 	}
 
 	/* verify that semacquires are interrupted */
-	/* MEMENTO: this requires deeper modifications to semacquire() in
-	 * 9/port/sysproc.c, but it will enable tsemacquire to be moved to
-	 * libc (one less syscall!)
+	fprint(2, "verify that semacquires are interrupted\n", elapsed);
+	pipe(fds);
 	wkup = awake(1000);
 	start = nsec();
 	if(verbose)
@@ -103,9 +107,55 @@ main(void)
 		print("FAIL: semacquire\n");
 		exits("FAIL");
 	}
-	*/
 
-	/* do not forgivewkp the awake(60000): the kernel must handle it */
+	/* verify that tsemacquire are NOT interrupted */
+	fprint(2, "verify that tsemacquire are NOT interrupted\n", elapsed);
+	wkup = awake(700);
+	start = nsec();
+	res = tsemacquire(&sem, 1500);
+	elapsed = (nsec() - start) / (1000 * 1000);
+	if(verbose)
+		fprint(2, "tsemacquire(&sem, 1500) returned %lld, elapsed = %d ms\n", res, elapsed);
+	if(res != 0 || elapsed < 1300){
+		print("FAIL: tsemacquire\n");
+		exits("FAIL");
+	}
+
+	/* verify that reads are interrupted */
+	fprint(2, "verify that reads are interrupted\n", elapsed);
+	if(pipe(fds) < 0){
+		print("FAIL: pipe\n");
+		exits("FAIL");
+	}
+	wkup = awake(1000);
+	start = nsec();
+	res = read(fds[0], buf, 1);
+	elapsed = (nsec() - start) / (1000 * 1000);
+	if(verbose)
+		fprint(2, "read(fds[0], buf, 1) returned %lld, elapsed = %d ms\n", res, elapsed);
+	if(!awakened(wkup) || res != -1 || elapsed < 900 || elapsed > 1300){
+		print("FAIL: read\n");
+		exits("FAIL");
+	}
+
+	/* verify that writes are interrupted */
+	fprint(2, "verify that writes are interrupted\n", elapsed);
+	if(pipe(fds) < 0){
+		print("FAIL: pipe\n");
+		exits("FAIL");
+	}
+	wkup = awake(1000);
+	start = nsec();
+	res = writeTillBlock(fds[0]);
+	elapsed = (nsec() - start) / (1000 * 1000);
+	if(verbose)
+		fprint(2, "writeTillBlock(fds[0]) returned %lld, elapsed = %d ms\n", res, elapsed);
+	if(!awakened(wkup) || res >= 256 || elapsed < 900 || elapsed > 1300){
+		print("FAIL: write\n");
+		exits("FAIL");
+	}
+
+	/* do not forgivewkp the awake(100000): the kernel must handle it */
 	print("PASS\n");
 	exits("PASS");
 }

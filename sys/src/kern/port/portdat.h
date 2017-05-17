@@ -610,6 +610,9 @@ struct Proc
 
 	int		inkernel;	/* either on syscall or fault */
 	Syscalls	cursyscall;	/* zero on fault */
+	Syscalls	blockingsc;	/* set to cursyscall on sleep() and sysrendevouz
+					 * reset by syscall
+					 */
 
 	int32_t		blockingfd;	/* fd currenly read/written */
 

@@ -43,10 +43,9 @@ static Rendez	awaker;
 int
 canwakeup(Syscalls scall)
 {
-	if(scall == 0){
-		/* on page fault */
-		return 0;
-	}
+	if(scall == 0)
+		panic("canwakeup on page fault");
+
 	switch(scall){
 	default:
 		panic("canwakeup: unknown scall %d\n", scall);

@@ -839,6 +839,7 @@ sysrendezvous(void* tagp, void* rendvalp)
 		l = &p->rendhash;
 	}
 
+	up->blockingsc = up->cursyscall;
 	if(awakeOnBlock(up)){
 		unlock(&up->rgrp->l);
 		result = UINT2PTR(up->rendval);

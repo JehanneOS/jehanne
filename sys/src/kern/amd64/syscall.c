@@ -238,6 +238,7 @@ syscall(Syscalls scallnr, Ureg* ureg)
 	m->syscall++;
 	up->inkernel = 1;
 	up->cursyscall = (Syscalls)scallnr;
+	up->blockingsc = 0;
 	up->pc = ureg->ip;
 	up->dbgreg = ureg;
 	if(up->trace && (pt = proctrace) != nil)
@@ -354,8 +355,13 @@ syscall(Syscalls scallnr, Ureg* ureg)
 	splhi();
 	if(scallnr != SysRfork && (up->procctl || up->nnote))
 		notify(ureg);
-	else if(canwakeup(scallnr))
-		awokeproc(up);
+	else if(up->blockingsc){
+		if(up->blockingsc != scallnr)
+			panic("syscall: up->blockingsc dirty");
+		if(canwakeup(scallnr))
+			awokeproc(up);
+		up->blockingsc = 0;
+	}
 
 	/* if we delayed sched because we held a lock, sched now */
 	if(up->delaysched){

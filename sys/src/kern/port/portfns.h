@@ -33,7 +33,7 @@ int		anyhigher(void);
 int		anyready(void);
 void		awakekproc(void*);
 #define	awokeproc(p)	(p->lastWakeup = p->pendingWakeup)
-#define	awakeOnBlock(p)	(p->lastWakeup < p->pendingWakeup)
+#define	awakeOnBlock(p)	(p->blockingsc && p->lastWakeup < p->pendingWakeup)
 Block*		bl2mem(uint8_t*, Block*, int);
 int		blocklen(Block*);
 void		bootlinks(void);

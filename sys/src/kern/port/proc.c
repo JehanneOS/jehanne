@@ -712,6 +712,7 @@ sleep(Rendez *r, int (*f)(void*), void *arg)
 	 */
 	r->p = up;
 
+	up->blockingsc = up->cursyscall;
 	if((*f)(arg)
 	|| (up->notepending && !up->notedeferred)
 	|| (up->inkernel && awakeOnBlock(up) && canwakeup(up->cursyscall))){

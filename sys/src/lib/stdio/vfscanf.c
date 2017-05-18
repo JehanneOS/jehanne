@@ -300,7 +300,7 @@ Done:
 static int icvt_s(FILE *f, va_list *args, int store, int width, int type){
 #pragma ref type
 	int c, nn;
-	register char *s;
+	register char *s = nil;
 	if(store) s=va_arg(*args, char *);
 	do
 		c=ngetc(f);
@@ -328,7 +328,7 @@ Done:
 static int icvt_c(FILE *f, va_list *args, int store, int width, int type){
 #pragma ref type
 	int c;
-	register char *s;
+	register char *s = nil;
 	if(store) s=va_arg(*args, char *);
 	if(width<0) width=1;
 	for(;;){
@@ -360,7 +360,7 @@ static int match(int c, const char *pat){
 static int icvt_sq(FILE *f, va_list *args, int store, int width, int type){
 #pragma ref type
 	int c, nn;
-	register char *s;
+	register char *s = nil;
 	register const char *pat;
 	pat=++fmtp;
 	if(*fmtp=='^') fmtp++;

@@ -29,14 +29,31 @@ tstdiv(double p)
 	fprint(2, "1/%0.20g = %0.20g\n", p, r);
 } 
 
+typedef union I2UL
+{
+	int d[2];
+	unsigned long l;
+}I2UL;
+typedef union D2UL
+{
+	double d;
+	unsigned long l;
+}D2UL;
+
 void
 main(void)
 {
 	double p = DPREC;
 	int d[2] = { DIEEELO, DIEEEHI };
+	I2UL i2l;
+	D2UL d2l;
 	uint64_t dieee, q;
-	dieee = *(uint64_t*)d;
-	q = *(uint64_t*)&p;
+
+	i2l.d[0] = d[0];
+	i2l.d[1] = d[1];
+	dieee = i2l.l;
+	d2l.d = p;
+	q = d2l.l;
 
 	err = 0;
 	notify(catcher);

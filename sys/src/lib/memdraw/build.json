@@ -3,6 +3,9 @@
 		"Include": [
 			"../lib.json"
 		],
+		"Cflags": [
+			"-fno-strict-aliasing"
+		],
 		"Install": "/arch/$ARCH/lib/",
 		"Library": "libmemdraw.a",
 		"SourceFiles": [

@@ -3,6 +3,9 @@
 		"Include": [
 			"/sys/src/cmd/cmd.json"
 		],
+		"Cflags": [
+			"-fno-strict-aliasing"
+		],
 		"Install": "/arch/$ARCH/cmd/ip",
 		"Projects": [
 			"dhcpd/dhcpd.json",

@@ -3,6 +3,10 @@
 		"Include": [
 			"../cmd.json"
 		],
+		"Cflags": [
+			"-fno-aggressive-loop-optimizations",
+			"-Wno-array-bounds"
+		],
 		"Install": "/arch/$ARCH/cmd/",
 		"Program": "dossrv",
 		"SourceFiles": [

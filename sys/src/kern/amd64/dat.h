@@ -198,6 +198,8 @@ struct Mach
 	uint64_t	machno;		/* physical id of processor */
 	uint64_t	splpc;		/* pc of last caller to splhi */
 	Proc*		proc;		/* current process on this processor */
+	uint64_t	tmp0;		/* for syscallentry */
+	uint64_t	tmp1;		/* for syscallentry */
 
 	int		apicno;
 	int		online;

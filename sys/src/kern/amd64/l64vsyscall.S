@@ -28,10 +28,14 @@ touser:
 syscallentry:
 	swapgs
 
-	movq	%gs:0, %r15			/* m-> (movq GS:0x0, R15) */
+	xchgq	%gs:0, %r15
+	movq	%r14, 24(%r15)			/* save %r14 to m->tmp0 */
 	movq	16(%r15), %r14			/* m->proc (set up->) */
+	movq	%r13, 32(%r15)			/* save %r13 to m->tmp1 */
 	movq	16*8(%r14), %r13		/* m->proc->kstack (after the Label) */
 	xchgq	%r13, %rsp
+	movq	24(%r15), %r14			/* restore %r14 */
+
 	addq	$KSTACK, %rsp
 
 	/* build Ureg */
@@ -40,6 +44,10 @@ syscallentry:
 	pushq	%r11				/* old flags */
 	pushq	$SSEL(SiUCS, SsRPL3)		/* old code segment */
 	pushq	%rcx				/* old ip */
+
+	movq	%r14, 24(%r15)			/* restore %r14 from m->tmp0 */
+	movq	%r13, 32(%r15)			/* restore %r13 from m->tmp1 */
+	xchgq	%gs:0, %r15			/* restore %r15 */
 
 	subq	$(17*8), %rsp
 
@@ -60,6 +68,10 @@ syscallentry:
 	movq	%r15, (14*8)(%rsp)
 	// (15*8)(%rsp)	// ureg.type
 	// (16*8)(%rsp) // ureg.error
+
+	/* prepare m-> and up-> for the kernel */
+	movq	%gs:0, %r15
+	movq	16(%r15), %r14
 
 	movq	%rsp, %rsi 				/* Ureg* */
 	// system call number is in %rax, as per linux.

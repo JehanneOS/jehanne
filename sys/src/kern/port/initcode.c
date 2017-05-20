@@ -88,7 +88,7 @@ initboot(void)
 }
 
 void
-startboot(char *argv0, char **argv)
+startboot(int argc, char **argv)
 {
 	/* Initialize per process structures on the stack */
 	int i;
@@ -97,15 +97,6 @@ startboot(char *argv0, char **argv)
 		bootname,
 		nil
 	};
-
-	void *privates[NPRIVATES];
-	NativeTypes sysargs[6];
-
-	_nprivates = NPRIVATES;
-	for(_nprivates = 0; _nprivates < NPRIVATES; ++_nprivates)
-		privates[_nprivates] = nil;
-	_privates = privates;
-	_sysargs = &sysargs[0];
 
 	for(i = 0; i < sizeof buf; ++i)
 		buf[i] = '\0';

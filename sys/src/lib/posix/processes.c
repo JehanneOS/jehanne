@@ -28,6 +28,25 @@ static int __libposix_wnohang;
 
 #define __POSIX_SIGNAL_PREFIX_LEN (sizeof(__POSIX_SIGNAL_PREFIX)-1)
 
+static int
+fork_without_sigchld(int *errnop)
+{
+	int pid = fork();
+
+	if(pid == 0)
+		__libposix_setup_new_process();
+	return pid;
+}
+
+int (*__libposix_fork)(int *errnop) = fork_without_sigchld;
+
+void
+__libposix_setup_new_process(void)
+{
+	/* reset wait list for the child */
+	*__libposix_wait_list = nil;
+}
+
 void
 __libposix_free_wait_list(void)
 {
@@ -110,13 +129,7 @@ POSIX_getppid(int *errnop)
 int
 POSIX_fork(int *errnop)
 {
-	int pid = fork();
-
-	if(pid == 0){
-		/* reset wait list for the child */
-		*__libposix_wait_list = nil;
-	}
-	return pid;
+	return __libposix_fork(errnop);
 }
 
 int

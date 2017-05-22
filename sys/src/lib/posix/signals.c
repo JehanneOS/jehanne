@@ -161,7 +161,7 @@ terminated_by_signal(int sig)
 	exits(buf);
 }
 
-static int
+int
 send_control_msg(int pid, char *msg)
 {
 	int fd, n;

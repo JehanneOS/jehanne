@@ -221,6 +221,10 @@ extern int libposix_define_signal(PosixSignals signal, int code);
 
 extern int libposix_define_realtime_signals(int sigrtmin, int sigrtmax);
 
+/* Enable SIGCHLD emulation
+ */
+extern int libposix_emulate_SIGCHLD(void);
+
 /* Define of WCONTINUED, WNOHANG and WUNTRACED bit flags.
  *
  * Note that WCONTINUED and WUNTRACED are not yet supported by libposix

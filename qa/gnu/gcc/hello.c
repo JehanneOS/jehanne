@@ -20,7 +20,7 @@
 
 #define Mb (1024*1024)
 
-/*
+/* This program cause an exception if libc is compiled with -O2
  */
 void
 main(int argc, char**argv)
@@ -29,18 +29,10 @@ main(int argc, char**argv)
 	int i, j;
 
 	j = 5;
-/*	
-	for(j = 5; i > 0; j--){
-		v = malloc(j*Mb);
-		for(i = 0; i < j*Mb; i += 512)
-			v[i] = 'a';
-		free(v);
-	}
-*/
-		v = malloc(j*Mb);
-		for(i = 0; i < j*Mb; i += 512)
-			v[i] = 'a';
-		free(v);
+	v = malloc(j*Mb);
+	for(i = 0; i < j*Mb; i += 512)
+		v[i] = 'a';
+	free(v);
 	
 	print("PASS\n");
 	exits("PASS");

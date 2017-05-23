@@ -22,7 +22,7 @@
 
 extern int *__libposix_errors_codes;
 extern WaitList **__libposix_wait_list;
-extern Child **__libposix_child_list;
+extern ChildList **__libposix_child_list;
 static int __initialized;
 
 static void
@@ -44,7 +44,7 @@ libposix_init(int argc, char *argv[], PosixInit init)
 	extern int *__libposix_sigchld_target_pid;
 
 	WaitList *wait_list;
-	Child *child_list;
+	ChildList *child_list;
 	int status;
 	int error_codes[ERRNO_LAST-ERRNO_FIRST];
 	unsigned char signals_to_code[256];
@@ -64,7 +64,7 @@ libposix_init(int argc, char *argv[], PosixInit init)
 
 	/* initialize child_list; used when SIGCHLD is enabled */
 	child_list = nil;
-	__libposix_wait_list = &child_list;
+	__libposix_child_list = &child_list;
 
 	/* initialize signal handling */
 	memset(signals_to_code, 0, sizeof(signals_to_code));

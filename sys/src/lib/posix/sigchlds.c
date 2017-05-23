@@ -24,7 +24,7 @@
 /* rendezvous points */
 extern unsigned char *__signals_to_code_map;
 extern unsigned char *__code_to_signal_map;
-extern Child **__libposix_child_list;
+extern ChildList **__libposix_child_list;
 
 /* pointer to the pid to forward notes to */
 int *__libposix_sigchld_target_pid;
@@ -44,8 +44,24 @@ release_inherited_resources(void)
 static void
 forwarding_note_handler(void *ureg, char *note)
 {
-	postnote(PNPROC, *__libposix_sigchld_target_pid, note);
-	noted(NCONT);
+	int sig;
+	PosixSignals psig;
+	if(strncmp(note, __POSIX_SIGNAL_PREFIX, __POSIX_SIGNAL_PREFIX_LEN) == 0){
+		sig = __libposix_note_to_signal(note);
+		if(sig < __min_known_sig || sig > __max_known_sig){
+			/* Ignore unknown signals */
+			noted(NCONT);
+		}
+		psig = __code_to_signal_map[sig];
+		switch(psig){
+			
+		}
+		postnote(PNPROC, *__libposix_sigchld_target_pid, note);
+		noted(NCONT);
+	} else {
+		/* what happened? */
+		noted(NDFLT);
+	}
 }
 
 static void
@@ -93,6 +109,7 @@ fork_with_sigchld(int *errnop)
 	int p2c;
 	long c2p = -1, child = -1;
 	char proxy_name[256];
+	ChildList *c;
 
 	/* Father here:
 	 * - create P2C
@@ -173,9 +190,11 @@ fork_with_sigchld(int *errnop)
 		break;
 	}
 
-	/* TODO: register p2c among known children so that kill can
-	 * handle them properly.
-	 */
+	/* no need to lock: the child list is private */
+	c = malloc(sizeof(ChildList));
+	c->pid = p2c;
+	c->next = *__libposix_child_list;
+	*__libposix_child_list = c;
 
 	return p2c;
 }

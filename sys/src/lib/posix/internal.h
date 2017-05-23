@@ -23,11 +23,11 @@ struct WaitList
 	WaitList *next;
 };
 
-typedef struct Child Child;
-struct Child
+typedef struct ChildList ChildList;
+struct ChildList
 {
 	int pid;
-	Child *next;
+	ChildList *next;
 };
 
 extern void __libposix_files_check_conf(void);
@@ -48,3 +48,4 @@ extern void __libposix_free_wait_list(void);
 
 extern void __libposix_setup_new_process(void);
 
+extern int __libposix_note_to_signal(char *note);

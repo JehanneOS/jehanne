@@ -69,7 +69,7 @@
  * Calling libposix_emulate_SIGCHLD() during libposix initialization
  * will enable this machinery for the whole life of the process.
  *
- * Such emulation change the way fork and kill works.
+ * Such emulation changes the way POSIX_fork and POSIX_kill works.
  *
  * Each fork() will spawn two additional processes that are designed
  * to proxy signals between the parent and the desired child:
@@ -162,7 +162,7 @@ terminated_by_signal(int sig)
 }
 
 int
-send_control_msg(int pid, char *msg)
+__libposix_send_control_msg(int pid, char *msg)
 {
 	int fd, n;
 	char buf[256];
@@ -187,14 +187,13 @@ ErrorBeforeOpen:
 	return 0;
 }
 
-/* Executes a PosixSignalDisposition for pid.
- *
- * MUST be called by POSIX_kill for unblockable signals.
+/* Executes a PosixSignalDisposition.
  */
 static int
-execute_disposition(int sig, PosixSignalDisposition action, int pid)
+execute_disposition(int sig, PosixSignalDisposition action)
 {
 	switch(action){
+	case ResumeTheProcess:	// the sender resumed us already
 	case SignalHandled:
 		return 1;
 	case TerminateTheProcess:
@@ -202,14 +201,43 @@ execute_disposition(int sig, PosixSignalDisposition action, int pid)
 		terminated_by_signal(sig);
 		break;
 	case StopTheProcess:
-		if(pid < 0)
-			sysfatal("libposix: signal %d with stop disposition reached process %d", sig, pid);
-		return send_control_msg(pid, "stop");
-	case ResumeTheProcess:
-		if(pid < 0)
-			sysfatal("libposix: signal %d with continue disposition reached process %d", sig, pid);
-		return send_control_msg(pid, "start");
+		return __libposix_send_control_msg(getpid(), "stop");
 	}
+	return 0;
+}
+
+PosixError
+__libposix_receive_signal(int sig)
+{
+	if(__libposix_signal_trampoline(sig))
+		action = SignalHandled;
+	else
+		action = default_signal_disposition(sig);
+	if(!execute_disposition(sig, action))
+		return PosixEPERM;
+	return 0;
+}
+
+PosixError
+__libposix_notify_signal_to_process(int pid, int signal)
+{
+	char buf[128];
+	int fd, n;
+
+	snprint(buf, sizeof(buf), "/proc/%d/note", pid);
+	if(access(file, AWRITE) != 0){
+		if(access(file, AEXIST) == 0)
+			return PosixEPERM;
+		else
+			return PosixESRCH;
+	}
+
+	fd = open(buf, OWRITE);
+	if(fd < 0)
+		return PosixEPERM;
+	n = snprint(buf, sizeof(buf), __POSIX_SIGNAL_PREFIX "%d", signal);
+	write(fd, buf, n);
+	close(fd);
 	return 0;
 }
 
@@ -324,21 +352,21 @@ POSIX_kill(int *errnop, int pid, int sig)
 	switch(signal){
 	case PosixSIGKILL:
 		if(pid > 0)
-		if(!send_control_msg(pid, "kill")){
+		if(!__libposix_send_control_msg(pid, "kill")){
 			*errnop = __libposix_get_errno(PosixEPERM);
 			return -1;
 		}
 		break;
 	case PosixSIGSTOP:
 		if(pid > 0)
-		if(!send_control_msg(pid, "stop")){
+		if(!__libposix_send_control_msg(pid, "stop")){
 			*errnop = __libposix_get_errno(PosixEPERM);
 			return -1;
 		}
 		break;
 	case PosixSIGCONT:
 		if(pid > 0)
-		if(!send_control_msg(pid, "start")){
+		if(!__libposix_send_control_msg(pid, "start")){
 			*errnop = __libposix_get_errno(PosixEPERM);
 			return -1;
 		}
@@ -356,6 +384,11 @@ translate_jehanne_note(char *note)
 	return 0;
 }
 
+int
+__libposix_note_to_signal(char *note)
+{
+	return atoi(note+__POSIX_SIGNAL_PREFIX_LEN);
+}
 
 int
 __libposix_note_handler(void *ureg, char *note)
@@ -364,7 +397,7 @@ __libposix_note_handler(void *ureg, char *note)
 	PosixSignalDisposition action;
 	if(strncmp(note, __POSIX_SIGNAL_PREFIX, __POSIX_SIGNAL_PREFIX_LEN) != 0)
 		return translate_jehanne_note(note); // TODO: should we translate common notes?
-	sig = atoi(note+__POSIX_SIGNAL_PREFIX_LEN);
+	sig = __libposix_note_to_signal(note);
 	if(sig < __min_known_sig || sig > __max_known_sig)
 		sysfatal("libposix: '%s' does not carry a signal", note);
 	*__handling_external_signal = 1;

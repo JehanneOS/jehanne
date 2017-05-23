@@ -23,7 +23,7 @@
 extern char **environ;
 
 WaitList **__libposix_wait_list;
-Child **__libposix_child_list;
+ChildList **__libposix_child_list;
 
 static PosixExitStatusTranslator __libposix_exit_status_translator;
 static int __libposix_wnohang;
@@ -34,21 +34,12 @@ static int
 fork_without_sigchld(int *errnop)
 {
 	int pid = fork();
-
 	if(pid == 0)
 		__libposix_setup_new_process();
 	return pid;
 }
 
 int (*__libposix_fork)(int *errnop) = fork_without_sigchld;
-
-void
-__libposix_setup_new_process(void)
-{
-	/* reset wait list for the child */
-	*__libposix_wait_list = nil;
-	*__libposix_child_list = nil;
-}
 
 void
 __libposix_free_wait_list(void)
@@ -67,6 +58,33 @@ __libposix_free_wait_list(void)
 		}
 		while (wl != nil);
 	}
+}
+
+void
+__libposix_free_child_list(void)
+{
+	ChildList *l, *c;
+
+	/* free the wait list as the memory is shared */
+	l = *__libposix_child_list;
+	if(l != nil){
+		*__libposix_child_list = nil;
+		do
+		{
+			c = l;
+			l = c->next;
+			free(c);
+		}
+		while (l != nil);
+	}
+}
+
+void
+__libposix_setup_new_process(void)
+{
+	/* reset wait list for the child */
+	__libposix_free_wait_list();
+	__libposix_free_child_list();
 }
 
 void

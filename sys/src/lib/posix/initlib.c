@@ -40,6 +40,7 @@ libposix_init(int argc, char *argv[], PosixInit init)
 	extern unsigned char *__signals_to_code_map;
 	extern unsigned char *__code_to_signal_map;
 	extern int *__handling_external_signal;
+	extern int *__libposix_sigchld_target_pid;
 
 	WaitList *wait_list;
 	int status;
@@ -47,6 +48,7 @@ libposix_init(int argc, char *argv[], PosixInit init)
 	unsigned char signals_to_code[256];
 	unsigned char code_to_signal[256];
 	int handling_signal;
+	int sigchld_target_pid;
 
 	assert(__initialized == 0);
 
@@ -62,9 +64,11 @@ libposix_init(int argc, char *argv[], PosixInit init)
 	memset(signals_to_code, 0, sizeof(signals_to_code));
 	memset(code_to_signal, 0, sizeof(code_to_signal));
 	handling_signal = 0;
+	sigchld_target_pid = 0;
 	__signals_to_code_map = signals_to_code;
 	__code_to_signal_map = code_to_signal;
 	__handling_external_signal = &handling_signal;
+	__libposix_sigchld_target_pid = &sigchld_target_pid;
 	if(!atnotify(__libposix_note_handler, 1))
 		sysfatal("libposix: atnotify");
 

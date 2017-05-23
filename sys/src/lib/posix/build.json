@@ -17,6 +17,7 @@
 			"memory.c",
 			"others.c",
 			"processes.c",
+			"sigchlds.c",
 			"signals.c"
 		]
 	}

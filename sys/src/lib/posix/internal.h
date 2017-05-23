@@ -39,5 +39,5 @@ extern int __libposix_note_handler(void *ureg, char *note);
 
 extern void __libposix_free_wait_list(void);
 
-
+extern void __libposix_setup_new_process(void);
 

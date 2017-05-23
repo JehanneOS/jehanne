@@ -23,6 +23,8 @@
 extern char **environ;
 
 WaitList **__libposix_wait_list;
+Child **__libposix_child_list;
+
 static PosixExitStatusTranslator __libposix_exit_status_translator;
 static int __libposix_wnohang;
 
@@ -45,6 +47,7 @@ __libposix_setup_new_process(void)
 {
 	/* reset wait list for the child */
 	*__libposix_wait_list = nil;
+	*__libposix_child_list = nil;
 }
 
 void

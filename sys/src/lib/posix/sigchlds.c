@@ -24,7 +24,7 @@
 /* rendezvous points */
 extern unsigned char *__signals_to_code_map;
 extern unsigned char *__code_to_signal_map;
-extern Child *__libposix_child_list;
+extern Child **__libposix_child_list;
 
 /* pointer to the pid to forward notes to */
 int *__libposix_sigchld_target_pid;

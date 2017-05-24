@@ -25,6 +25,8 @@ extern WaitList **__libposix_wait_list;
 extern ChildList **__libposix_child_list;
 static int __initialized;
 
+int *__libposix_sigchld_target_pid;
+
 static void
 libposix_check_configuration(void)
 {

@@ -143,7 +143,7 @@ typedef enum PosixSignalDisposition
 } PosixSignalDisposition;
 
 static int
-note_all_writable_processes(int *errnop, char *note)
+note_all_writable_processes(int *errnop, int sig)
 {
 	// TODO: loop over writable note files and post note.
 	*errnop = __libposix_get_errno(PosixEPERM);
@@ -206,81 +206,6 @@ execute_disposition(int sig, PosixSignalDisposition action)
 	return 0;
 }
 
-PosixError
-__libposix_receive_signal(int sig)
-{
-	if(__libposix_signal_trampoline(sig))
-		action = SignalHandled;
-	else
-		action = default_signal_disposition(sig);
-	if(!execute_disposition(sig, action))
-		return PosixEPERM;
-	return 0;
-}
-
-PosixError
-__libposix_notify_signal_to_process(int pid, int signal)
-{
-	char buf[128];
-	int fd, n;
-
-	snprint(buf, sizeof(buf), "/proc/%d/note", pid);
-	if(access(file, AWRITE) != 0){
-		if(access(file, AEXIST) == 0)
-			return PosixEPERM;
-		else
-			return PosixESRCH;
-	}
-
-	fd = open(buf, OWRITE);
-	if(fd < 0)
-		return PosixEPERM;
-	n = snprint(buf, sizeof(buf), __POSIX_SIGNAL_PREFIX "%d", signal);
-	write(fd, buf, n);
-	close(fd);
-	return 0;
-}
-
-static int
-send_signal(int *errnop, int pid, int signal)
-{
-	char msg[64], file[128];
-	int mode;
-	int ret;
-
-	snprint(msg, sizeof(msg), __POSIX_SIGNAL_PREFIX "%d", signal);
-	switch(pid){
-	case 0:
-		mode = PNGROUP;
-		break;
-	case -1:
-		return note_all_writable_processes(errnop, msg);
-	default:
-		if(pid < 0){
-			mode = PNGROUP;
-			pid = -pid;
-		} else {
-			mode = PNPROC;
-		}
-	}
-
-	snprint(file, sizeof(file), "/proc/%d/note", pid);
-	if(access(file, AWRITE) != 0){
-		if(access(file, AEXIST) == 0)
-			*errnop = __libposix_get_errno(PosixEPERM);
-		else
-			*errnop = __libposix_get_errno(PosixESRCH);
-		return -1;
-	}
-	ret = postnote(mode, pid, msg);
-	if(ret != 0){
-		*errnop = __libposix_translate_errstr((uintptr_t)POSIX_kill);
-		return -1;
-	}
-	return 0;
-}
-
-
 static PosixSignalDisposition
 default_signal_disposition(int code)
 {
@@ -328,53 +253,102 @@ default_signal_disposition(int code)
 	}
 }
 
+PosixError
+__libposix_receive_signal(int sig)
+{
+	PosixSignalDisposition action;
+	PosixSignals psig = __code_to_signal_map[sig];
+	
+	if(psig != PosixSIGKILL && psig != PosixSIGSTOP
+	&& __libposix_signal_trampoline(sig))
+		action = SignalHandled;
+	else
+		action = default_signal_disposition(sig);
+	if(!execute_disposition(sig, action))
+		return PosixEPERM;
+	return 0;
+}
+
+PosixError
+__libposix_notify_signal_to_process(int pid, int signal)
+{
+	char buf[128];
+	int fd, n;
+
+	snprint(buf, sizeof(buf), "/proc/%d/note", pid);
+	if((fd = open(buf, OWRITE)) < 0){
+		if(access(buf, AEXIST) == 0)
+			return PosixEPERM;
+		else
+			return PosixESRCH;
+	}
+	n = snprint(buf, sizeof(buf), __POSIX_SIGNAL_PREFIX "%d", signal);
+	write(fd, buf, n);
+	close(fd);
+	return 0;
+}
+
+PosixError
+__libposix_notify_signal_to_group(int pid, int signal)
+{
+	char buf[128];
+	int fd, n;
+
+	snprint(buf, sizeof(buf), "/proc/%d/notepg", pid);
+	if((fd = open(buf, OWRITE)) < 0){
+		if(access(buf, AEXIST) == 0)
+			return PosixEPERM;
+		else
+			return PosixESRCH;
+	}
+	n = snprint(buf, sizeof(buf), __POSIX_SIGNAL_PREFIX "%d", signal);
+	write(fd, buf, n);
+	close(fd);
+	return 0;
+}
+
+static PosixError
+dispatch_signal(int pid, int sig)
+{
+	PosixSignals signal;
+	PosixError error;
+	switch(pid){
+	case 0:
+		return __libposix_notify_signal_to_group(getpid(), sig);
+	case -1:
+		return note_all_writable_processes(sig);
+	default:
+		if(pid < 0)
+			return __libposix_notify_signal_to_group(-pid, sig);
+		break;
+	}
+	signal = __code_to_signal_map[sig];
+	error = __libposix_notify_signal_to_process(pid, sig);
+	if(signal == PosixSIGCONT && !__libposix_is_child(pid))
+		__libposix_send_control_msg(pid, "start");
+	return error;
+}
+
 int
 POSIX_kill(int *errnop, int pid, int sig)
 {
 	PosixSignals signal;
 	PosixSignalDisposition action;
+	PosixError perror;
 
 	signal = __code_to_signal_map[sig];
 	if(signal == 0
 	&&(sig < __sigrtmin || sig > __sigrtmax))
 		sysfatal("libposix: undefined signal %d", sig);
-	if(pid == getpid()){
-		if(__libposix_signal_trampoline(sig))
-			action = SignalHandled;
-		else
-			action = default_signal_disposition(sig);
-		if(!execute_disposition(sig, action, -1)){
-			*errnop = __libposix_get_errno(PosixEPERM);
-			return -1;
-		}
+	if(pid == getpid())
+		perror = __libposix_receive_signal(sig);
+	else
+		perror = dispatch_signal(pid, sig);
+	if(perror != 0){
+		*errnop = __libposix_get_errno(perror);
+		return -1;
 	}
-
-	switch(signal){
-	case PosixSIGKILL:
-		if(pid > 0)
-		if(!__libposix_send_control_msg(pid, "kill")){
-			*errnop = __libposix_get_errno(PosixEPERM);
-			return -1;
-		}
-		break;
-	case PosixSIGSTOP:
-		if(pid > 0)
-		if(!__libposix_send_control_msg(pid, "stop")){
-			*errnop = __libposix_get_errno(PosixEPERM);
-			return -1;
-		}
-		break;
-	case PosixSIGCONT:
-		if(pid > 0)
-		if(!__libposix_send_control_msg(pid, "start")){
-			*errnop = __libposix_get_errno(PosixEPERM);
-			return -1;
-		}
-		break;
-	default:
-		break;
-	}
-	return send_signal(errnop, pid, sig);
+	return 0;
 }
 
 static int

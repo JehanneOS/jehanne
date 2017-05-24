@@ -79,6 +79,39 @@ __libposix_free_child_list(void)
 	}
 }
 
+int
+__libposix_is_child(int pid)
+{
+	ChildList *l;
+
+	/* free the wait list as the memory is shared */
+	l = *__libposix_child_list;
+	while(l != nil){
+		if(l->pid == pid)
+			return 1;
+		l = l->next;
+	}
+	return 0;
+}
+
+void
+__libposix_forget_child(int pid)
+{
+	ChildList **l, *c;
+
+	/* free the wait list as the memory is shared */
+	l = __libposix_child_list;
+	while(*l != nil){
+		c = *l
+		if(c->pid == pid){
+			*l = c->next;
+			free(c);
+			return;
+		}
+		l = &c->next;
+	}
+}
+
 void
 __libposix_setup_new_process(void)
 {
@@ -177,6 +210,7 @@ POSIX_wait(int *errnop, int *status)
 		return -1;
 	}
 	pid = w->pid;
+	__libposix_forget_child(pid);
 	if(w->msg[0] != 0){
 		s = strstr(w->msg, __POSIX_EXIT_PREFIX);
 		if(s){
@@ -262,6 +296,7 @@ WaitAgain:
 		return -1;
 	}
 	pid = w->pid;
+	__libposix_forget_child(pid);
 	if(w->msg[0] != 0){
 		s = strstr(w->msg, __POSIX_EXIT_PREFIX);
 		if(s){

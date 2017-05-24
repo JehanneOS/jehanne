@@ -49,3 +49,7 @@ extern void __libposix_free_wait_list(void);
 extern void __libposix_setup_new_process(void);
 
 extern int __libposix_note_to_signal(char *note);
+
+extern int __libposix_is_child(int pid);
+
+extern void __libposix_forget_child(int pid);

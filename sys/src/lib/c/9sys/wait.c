@@ -34,7 +34,6 @@ jehanne_wait(void)
 	w->time[0] = jehanne_atoi(fld[1]);
 	w->time[1] = jehanne_atoi(fld[2]);
 	w->time[2] = jehanne_atoi(fld[3]);
-	w->msg = (char*)&w[1];
 	jehanne_memmove(w->msg, fld[4], l);
 	return w;
 }

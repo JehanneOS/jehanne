@@ -594,7 +594,7 @@ struct Waitmsg
 {
 	pid_t		pid;		/* of loved one */
 	uint32_t	time[3];	/* of loved one & descendants */
-	char		*msg;
+	char		msg[];
 } Waitmsg;
 
 extern	int	jehanne_access(const char*, int);

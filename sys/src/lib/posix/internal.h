@@ -15,6 +15,9 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with Jehanne.  If not, see <http://www.gnu.org/licenses/>.
  */
+
+#define __POSIX_SIGNAL_PREFIX_LEN (sizeof(__POSIX_SIGNAL_PREFIX)-1)
+
 typedef struct WaitList WaitList;
 struct WaitList
 {
@@ -53,3 +56,9 @@ extern int __libposix_note_to_signal(char *note);
 extern int __libposix_is_child(int pid);
 
 extern void __libposix_forget_child(int pid);
+
+extern int __libposix_send_control_msg(int pid, char *msg);
+
+extern PosixError __libposix_notify_signal_to_process(int pid, int signal);
+
+extern PosixError __libposix_receive_signal(int sig);

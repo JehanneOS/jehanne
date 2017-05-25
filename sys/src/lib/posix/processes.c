@@ -102,7 +102,7 @@ __libposix_forget_child(int pid)
 	/* free the wait list as the memory is shared */
 	l = __libposix_child_list;
 	while(*l != nil){
-		c = *l
+		c = *l;
 		if(c->pid == pid){
 			*l = c->next;
 			free(c);

@@ -44,19 +44,20 @@ release_inherited_resources(void)
 static void
 forwarding_note_handler(void *ureg, char *note)
 {
+	extern int __min_known_sig;
+	extern int __max_known_sig;
 	int sig;
-	PosixSignals psig;
+	PosixSignals signal;
 	if(strncmp(note, __POSIX_SIGNAL_PREFIX, __POSIX_SIGNAL_PREFIX_LEN) == 0){
 		sig = __libposix_note_to_signal(note);
 		if(sig < __min_known_sig || sig > __max_known_sig){
 			/* Ignore unknown signals */
 			noted(NCONT);
 		}
-		psig = __code_to_signal_map[sig];
-		switch(psig){
-			
-		}
-		postnote(PNPROC, *__libposix_sigchld_target_pid, note);
+		signal = __code_to_signal_map[sig];
+		__libposix_notify_signal_to_process(*__libposix_sigchld_target_pid, sig);
+		if(signal == PosixSIGCONT)
+			__libposix_send_control_msg(*__libposix_sigchld_target_pid, "start");
 		noted(NCONT);
 	} else {
 		/* what happened? */

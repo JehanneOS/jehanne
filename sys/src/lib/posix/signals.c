@@ -121,16 +121,14 @@
 #include <posix.h>
 #include "internal.h"
 
-#define __POSIX_SIGNAL_PREFIX_LEN (sizeof(__POSIX_SIGNAL_PREFIX)-1)
-
 unsigned char *__signals_to_code_map;
 unsigned char *__code_to_signal_map;
 int *__handling_external_signal;
 
 static int __sigrtmin;
 static int __sigrtmax;
-static int __min_known_sig;
-static int __max_known_sig;
+int __min_known_sig;
+int __max_known_sig;
 static PosixSignalTrampoline __libposix_signal_trampoline;
 
 typedef enum PosixSignalDisposition
@@ -142,12 +140,11 @@ typedef enum PosixSignalDisposition
 	ResumeTheProcess
 } PosixSignalDisposition;
 
-static int
-note_all_writable_processes(int *errnop, int sig)
+static PosixError
+note_all_writable_processes(int sig)
 {
 	// TODO: loop over writable note files and post note.
-	*errnop = __libposix_get_errno(PosixEPERM);
-	return -1;
+	return PosixEPERM;
 }
 
 static void
@@ -288,8 +285,8 @@ __libposix_notify_signal_to_process(int pid, int signal)
 	return 0;
 }
 
-PosixError
-__libposix_notify_signal_to_group(int pid, int signal)
+static PosixError
+notify_signal_to_group(int pid, int signal)
 {
 	char buf[128];
 	int fd, n;
@@ -314,12 +311,12 @@ dispatch_signal(int pid, int sig)
 	PosixError error;
 	switch(pid){
 	case 0:
-		return __libposix_notify_signal_to_group(getpid(), sig);
+		return notify_signal_to_group(getpid(), sig);
 	case -1:
 		return note_all_writable_processes(sig);
 	default:
 		if(pid < 0)
-			return __libposix_notify_signal_to_group(-pid, sig);
+			return notify_signal_to_group(-pid, sig);
 		break;
 	}
 	signal = __code_to_signal_map[sig];
@@ -333,7 +330,6 @@ int
 POSIX_kill(int *errnop, int pid, int sig)
 {
 	PosixSignals signal;
-	PosixSignalDisposition action;
 	PosixError perror;
 
 	signal = __code_to_signal_map[sig];
@@ -367,21 +363,17 @@ __libposix_note_to_signal(char *note)
 int
 __libposix_note_handler(void *ureg, char *note)
 {
-	int sig, ret;
-	PosixSignalDisposition action;
+	int sig;
+	PosixError error;
 	if(strncmp(note, __POSIX_SIGNAL_PREFIX, __POSIX_SIGNAL_PREFIX_LEN) != 0)
 		return translate_jehanne_note(note); // TODO: should we translate common notes?
 	sig = __libposix_note_to_signal(note);
 	if(sig < __min_known_sig || sig > __max_known_sig)
 		sysfatal("libposix: '%s' does not carry a signal", note);
 	*__handling_external_signal = 1;
-	if(__libposix_signal_trampoline(sig))
-		action = SignalHandled;
-	else
-		action = default_signal_disposition(sig);
-	ret = execute_disposition(sig, action, -1);
+	error = __libposix_receive_signal(sig);
 	*__handling_external_signal = 0;
-	return ret;
+	return error == 0;
 }
 
 int

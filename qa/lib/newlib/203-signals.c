@@ -4,6 +4,8 @@
 #include <signal.h>
 #include <sys/wait.h>
 
+int p[2];
+
 void sigcont() {
 	signal(SIGCONT,sigcont); /* reset signal */
 	printf("CHILD: Got SIGCONT\n");
@@ -16,9 +18,24 @@ void sigstop() {
 	exit(1);
 }
 
+void childloop(void)
+{
+	signal(SIGCONT,sigcont); /* set function calls */
+	signal(SIGSTOP,sigstop); /* set function calls */
+	printf("Child going to loop...\n");
+	close(p[1]);
+	close(p[0]);
+	for(;;){
+		/* loop for ever */
+		printf(".");
+		usleep(500);
+	}
+	exit(0);
+}
+
 int
 main() { 
-	int pid, p[2], child, cstatus;
+	int pid, child, cstatus;
 	char dummy[1];
 
 	/* get child process */
@@ -33,16 +50,7 @@ main() {
 	}
 
 	if (pid == 0) {
-		signal(SIGCONT,sigcont); /* set function calls */
-		signal(SIGSTOP,sigstop); /* set function calls */
-		printf("Child going to loop...\n");
-		close(p[1]);
-		close(p[0]);
-		for(;;){
-			/* loop for ever */
-			printf(".");
-			usleep(1000);
-		}
+		childloop();
 	}
 	else /* parent */
 	{

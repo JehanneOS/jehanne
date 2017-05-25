@@ -207,7 +207,8 @@ static PosixSignalDisposition
 default_signal_disposition(int code)
 {
 	// see http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/signal.h.html
-	if(code >= __sigrtmin || code <= __sigrtmin)
+	if(__sigrtmin != 0 && __sigrtmax != 0
+	&&(code >= __sigrtmin || code <= __sigrtmax))
 		return TerminateTheProcess;
 
 	switch(__code_to_signal_map[code]){

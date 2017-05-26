@@ -21,13 +21,57 @@
 		"Install": "/arch/$ARCH/qa/lib/newlib",
 		"Post": [
 			"rm -f *.o",
-			"cp *.runner $JEHANNE/arch/$ARCH/qa/lib/newlib/"
+			"cp *.runner $JEHANNE/arch/$ARCH/qa/lib/newlib/",
+			"git clean -xdf ."
 		],
 		"Pre": [
 			"rm -f *.tag.*"
 		],
 		"SourceFiles": [
 			"libposix_customization.c"
+		],
+		"SourceFilesCmd": [
+			"000-hello.c",
+			"010-fork.c",
+			"020-waitpid.c",
+			"100-files.c",
+			"101-files.c",
+			"200-signals.c",
+			"201-signals.c",
+			"202-signals.c",
+			"203-signals.c"
+		]
+	},
+	"SIGCHLDTests": {
+		"Include": [
+			"/arch/$ARCH/include/cflags.json"
+		],
+		"Cflags": [
+			"-fstack-check",
+			"-fstack-protector-all",
+			"/arch/$ARCH/lib/newlib/libc.a",
+			"/arch/$ARCH/lib/newlib/libm.a",
+			"/arch/$ARCH/lib/newlib/libg.a",
+			"-I", "/sys/posix/newlib",
+			"-O2",
+			"-std=gnu11"
+		],
+		"Oflags": [
+			"-static",
+			"-lposix",
+			"-lc"
+		],
+		"Install": "/arch/$ARCH/qa/lib/newlib/sigchld",
+		"Post": [
+			"rm -f *.o",
+			"cp *.runner $JEHANNE/arch/$ARCH/qa/lib/newlib/sigchld/",
+			"git clean -xdf ."
+		],
+		"Pre": [
+			"rm -f *.tag.*"
+		],
+		"SourceFiles": [
+			"libposix_sigchld.c"
 		],
 		"SourceFilesCmd": [
 			"000-hello.c",

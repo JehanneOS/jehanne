@@ -39,7 +39,9 @@
 			"200-signals.c",
 			"201-signals.c",
 			"202-signals.c",
-			"203-signals.c"
+			"203-signals.c",
+			"204-signals.c",
+			"205-signals.c"
 		]
 	},
 	"SIGCHLDTests": {

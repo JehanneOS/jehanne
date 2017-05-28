@@ -54,6 +54,7 @@
 			"/arch/$ARCH/lib/newlib/libg.a",
 			"-I", "/sys/posix/newlib",
 			"-O2",
+			"-DWITH_SIGCHLD",
 			"-std=gnu11"
 		],
 		"Oflags": [

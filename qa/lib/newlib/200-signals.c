@@ -4,13 +4,40 @@
 #include <signal.h>
 #include <sys/wait.h>
 
-void sighup(); /* routines child will call upon sigtrap */
-void sigint();
-void sigquit();
+int child, cstatus;
+
+void sighup() {
+	signal(SIGHUP,sighup); /* reset signal */
+	printf("CHILD: I have received a SIGHUP\n");
+}
+
+void sigint() {
+	signal(SIGINT,sigint); /* reset signal */
+	printf("CHILD: I have received a SIGINT\n");
+}
+
+void sigquit() {
+	printf("My DADDY has Killed me!!!\n");
+	exit(0);
+}
+
+void sigchld() {
+	printf("PARENT: got SIGCHLD\n");
+#ifdef WITH_SIGCHLD
+	child = wait(&cstatus);
+	if(cstatus == 0)
+		exit(0);
+	else
+	{
+		printf("PARENT: child exited with status %d\n", cstatus);
+		exit(1);
+	}
+#endif
+}
 
 int
 main() { 
-	int pid, p[2], child, cstatus;
+	int pid, p[2];
 	char dummy[1];
 
 	/* get child process */
@@ -37,6 +64,7 @@ main() {
 	}
 	else /* parent */
 	{
+		signal(SIGCHLD,sigchld);
 		close(p[1]);
 		if(read(p[0], &dummy, 1) > 0){
 			printf("sync read received data");
@@ -51,6 +79,11 @@ main() {
 		sleep(3); /* pause for 3 secs */
 		printf("\nPARENT: sending SIGQUIT\n\n");
 		kill(pid,SIGQUIT);
+
+#ifdef WITH_SIGCHLD
+		sleep(10000);
+		exit(1);
+#else
 		child = wait(&cstatus);
 		if(child == pid && cstatus == 0)
 			exit(0);
@@ -59,20 +92,6 @@ main() {
 			printf("PARENT: child exited with status %d\n", cstatus);
 			exit(1);
 		}
+#endif
 	}
-}
-
-void sighup() {
-	signal(SIGHUP,sighup); /* reset signal */
-	printf("CHILD: I have received a SIGHUP\n");
-}
-
-void sigint() {
-	signal(SIGINT,sigint); /* reset signal */
-	printf("CHILD: I have received a SIGINT\n");
-}
-
-void sigquit() {
-	printf("My DADDY has Killed me!!!\n");
-	exit(0);
 }

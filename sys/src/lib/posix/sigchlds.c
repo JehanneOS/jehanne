@@ -37,7 +37,7 @@ release_inherited_resources(void)
 {
 	notify(nil);
 	rfork(RFCNAMEG|RFCENVG|RFNOTEG|RFCFDG);
-	bind("#P", "/proc", MREPL);
+	bind("#p", "/proc", MREPL);
 	rfork(RFNOMNT);
 }
 
@@ -138,6 +138,7 @@ fork_with_sigchld(int *errnop)
 		case 0:
 			/* C2P here:
 			 * - create child
+			 * - wait for it to get a copy of everything
 			 * - release all inherited resources
 			 * - install forwarding_note_handler
 			 * - send to P2C the child pid

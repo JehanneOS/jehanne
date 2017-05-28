@@ -335,6 +335,7 @@ POSIX_kill(int *errnop, int pid, int sig)
 
 	signal = __code_to_signal_map[sig];
 	if(signal == 0
+	&&(__sigrtmin != 0 && __sigrtmax != 0)
 	&&(sig < __sigrtmin || sig > __sigrtmax))
 		sysfatal("libposix: undefined signal %d", sig);
 	if(pid == getpid())

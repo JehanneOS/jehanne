@@ -134,7 +134,7 @@ static PosixSignalTrampoline __libposix_signal_trampoline;
 
 typedef enum PosixSignalDisposition
 {
-	SignalHandled = 0,	/* the application handled the signal */
+	IgnoreWithNoEffect = 0,
 	TerminateTheProcess,
 	TerminateTheProcessAndCoreDump,
 	StopTheProcess,
@@ -194,7 +194,8 @@ execute_disposition(int sig, PosixSignalDisposition action)
 
 	switch(action){
 	case ResumeTheProcess:	// the sender resumed us already
-	case SignalHandled:
+	case IgnoreWithNoEffect:
+		*__restart_syscall = 1;
 		return 1;
 	case TerminateTheProcess:
 		terminated_by_signal(sig);
@@ -255,7 +256,7 @@ default_signal_disposition(int code)
 	case PosixSIGCHLD:
 	case PosixSIGCLD:
 	case PosixSIGURG:
-		return SignalHandled;
+		return IgnoreWithNoEffect;
 	case PosixSIGCONT:
 		return ResumeTheProcess;
 	}

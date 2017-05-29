@@ -124,6 +124,7 @@
 unsigned char *__signals_to_code_map;
 unsigned char *__code_to_signal_map;
 int *__handling_external_signal;
+int *__restart_syscall;
 
 static int __sigrtmin;
 static int __sigrtmax;
@@ -189,13 +190,18 @@ ErrorBeforeOpen:
 static int
 execute_disposition(int sig, PosixSignalDisposition action)
 {
+	int aborted_by_signal;
+
 	switch(action){
 	case ResumeTheProcess:	// the sender resumed us already
 	case SignalHandled:
 		return 1;
 	case TerminateTheProcess:
-	case TerminateTheProcessAndCoreDump:
 		terminated_by_signal(sig);
+		break;
+	case TerminateTheProcessAndCoreDump:
+		aborted_by_signal = 0;
+		assert(aborted_by_signal);
 		break;
 	case StopTheProcess:
 		return __libposix_send_control_msg(getpid(), "stop");
@@ -254,16 +260,29 @@ default_signal_disposition(int code)
 PosixError
 __libposix_receive_signal(int sig)
 {
-	PosixSignalDisposition action;
+	PosixSignalAction action = SignalDefault;
 	PosixSignals psig = __code_to_signal_map[sig];
+	PosixSignalDisposition disposition;
 	
-	if(psig != PosixSIGKILL && psig != PosixSIGSTOP
-	&& __libposix_signal_trampoline(sig))
-		action = SignalHandled;
-	else
-		action = default_signal_disposition(sig);
-	if(!execute_disposition(sig, action))
-		return PosixEPERM;
+	if(psig != PosixSIGKILL && psig != PosixSIGSTOP)
+		action = __libposix_signal_trampoline(sig);
+	if(psig == PosixSIGABRT)
+		action = SignalDefault;	// lets abort despite the user will
+
+	switch(action){
+	case SignalCatched:
+		return 0;
+	case SignalIgnored:
+		*__restart_syscall = 1;
+		return 0;
+	case SignalDefault:
+		disposition = default_signal_disposition(sig);
+		if(!execute_disposition(sig, disposition))
+			return PosixEPERM;
+		break;
+	case SignalError:
+		return PosixEINVAL;
+	}
 	return 0;
 }
 
@@ -425,6 +444,14 @@ libposix_set_signal_trampoline(PosixSignalTrampoline trampoline)
 		return 0;
 	__libposix_signal_trampoline = trampoline;
 	return 1;
+}
+
+int
+__libposix_restart_syscall(void)
+{
+	int r = *__restart_syscall;
+	*__restart_syscall = 0;
+	return r;
 }
 
 void

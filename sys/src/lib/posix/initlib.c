@@ -24,6 +24,9 @@ extern int *__libposix_errors_codes;
 extern WaitList **__libposix_wait_list;
 extern ChildList **__libposix_child_list;
 static int __initialized;
+static unsigned char signals_to_code[256];
+static unsigned char code_to_signal[256];
+
 
 int *__libposix_sigchld_target_pid;
 
@@ -43,16 +46,16 @@ libposix_init(int argc, char *argv[], PosixInit init)
 	extern unsigned char *__signals_to_code_map;
 	extern unsigned char *__code_to_signal_map;
 	extern int *__handling_external_signal;
+	extern int *__restart_syscall;
 	extern int *__libposix_sigchld_target_pid;
 
 	WaitList *wait_list;
 	ChildList *child_list;
 	int status;
 	int error_codes[ERRNO_LAST-ERRNO_FIRST];
-	unsigned char signals_to_code[256];
-	unsigned char code_to_signal[256];
 	int handling_signal;
 	int sigchld_target_pid;
+	int restart_syscall;
 
 	assert(__initialized == 0);
 
@@ -69,10 +72,10 @@ libposix_init(int argc, char *argv[], PosixInit init)
 	__libposix_child_list = &child_list;
 
 	/* initialize signal handling */
-	memset(signals_to_code, 0, sizeof(signals_to_code));
-	memset(code_to_signal, 0, sizeof(code_to_signal));
+	restart_syscall = 0;
 	handling_signal = 0;
 	sigchld_target_pid = 0;
+	__restart_syscall = &restart_syscall;
 	__signals_to_code_map = signals_to_code;
 	__code_to_signal_map = code_to_signal;
 	__handling_external_signal = &handling_signal;

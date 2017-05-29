@@ -62,3 +62,5 @@ extern int __libposix_send_control_msg(int pid, char *msg);
 extern PosixError __libposix_notify_signal_to_process(int pid, int signal);
 
 extern PosixError __libposix_receive_signal(int sig);
+
+extern int __libposix_restart_syscall(void);

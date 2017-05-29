@@ -213,13 +213,21 @@ extern int libposix_translate_exit_status(PosixExitStatusTranslator translator);
 
 /* Dispatch the signal to the registered handlers.
  */
-typedef int (*PosixSignalTrampoline)(int signal);
+typedef enum PosixSignalAction
+{
+	SignalCatched = 1,
+	SignalIgnored,
+	SignalError,
+	SignalDefault
+} PosixSignalAction;
+typedef PosixSignalAction (*PosixSignalTrampoline)(int signal);
 
 extern int libposix_set_signal_trampoline(PosixSignalTrampoline trampoline);
 
 extern int libposix_define_signal(PosixSignals signal, int code);
 
 extern int libposix_define_realtime_signals(int sigrtmin, int sigrtmax);
+
 
 /* Enable SIGCHLD emulation
  */

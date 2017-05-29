@@ -143,8 +143,11 @@ POSIX_read(int *errnop, int fd, char *buf, size_t len)
 		*errnop = __libposix_get_errno(PosixEBADF);
 		return -1;
 	}
+SignalReenter:
 	r = sys_pread(fd, buf, len, -1);
 	if(r < 0){
+		if(__libposix_restart_syscall())
+			goto SignalReenter;
 		*errnop = __libposix_translate_errstr((uintptr_t)POSIX_read);
 		return -1;
 	}
@@ -160,8 +163,11 @@ POSIX_write(int *errnop, int fd, const void *buf, size_t len)
 		*errnop = __libposix_get_errno(PosixEBADF);
 		return -1;
 	}
+SignalReenter:
 	w = sys_pwrite(fd, buf, len, -1);
 	if(w < 0){
+		if(__libposix_restart_syscall())
+			goto SignalReenter;
 		*errnop = __libposix_translate_errstr((uintptr_t)POSIX_write);
 		return -1;
 	}
@@ -269,9 +275,12 @@ POSIX_fstat(int *errnop, int file, void *pstat)
 		*errnop = __libposix_get_errno(PosixEBADF);
 		return -1;
 	}
+SignalReenter:
 	d = dirfstat(file);
 	if(d == nil)
 	{
+		if(__libposix_restart_syscall())
+			goto SignalReenter;
 		*errnop = __libposix_translate_errstr((uintptr_t)POSIX_fstat);
 		return -1;
 	}

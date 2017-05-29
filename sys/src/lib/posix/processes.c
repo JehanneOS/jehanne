@@ -204,8 +204,11 @@ POSIX_wait(int *errnop, int *status)
 		return pid;
 	}
 
+SignalReenter:
 	w = wait();
 	if(w == nil){
+		if(__libposix_restart_syscall())
+			goto SignalReenter;
 		*errnop = __libposix_get_errno(PosixECHILD);
 		return -1;
 	}
@@ -290,8 +293,11 @@ POSIX_waitpid(int *errnop, int reqpid, int *status, int options)
 	}
 
 WaitAgain:
+SignalReenter:
 	w = wait();
 	if(w == nil){
+		if(__libposix_restart_syscall())
+			goto SignalReenter;
 		*errnop = __libposix_get_errno(PosixECHILD);
 		return -1;
 	}

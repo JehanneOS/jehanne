@@ -38,8 +38,8 @@ main() {
 			exit(EXIT_FAILURE);
 		}
 		close(p[0]);
-		printf("\nPARENT: sending SIGQUIT\n\n");
-		kill(pid,SIGQUIT);
+		printf("\nPARENT: sending SIGINT\n\n");
+		kill(pid,SIGINT);
 		do {
 			w = waitpid(pid, &status, WUNTRACED);
 			if (w == -1) {
@@ -52,8 +52,8 @@ main() {
 				exit(EXIT_FAILURE);
 			} else if (WIFSIGNALED(status)) {
 				sig = WTERMSIG(status);
-				if(sig == SIGQUIT){
-					printf("killed by SIGQUIT\n");
+				if(sig == SIGINT){
+					printf("killed by SIGINT\n");
 				}else{
 					printf("killed by signal %d\n", sig);
 					exit(EXIT_FAILURE);

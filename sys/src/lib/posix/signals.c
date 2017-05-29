@@ -212,12 +212,15 @@ execute_disposition(int sig, PosixSignalDisposition action)
 static PosixSignalDisposition
 default_signal_disposition(int code)
 {
+	PosixSignals signal;
+
 	// see http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/signal.h.html
 	if(__sigrtmin != 0 && __sigrtmax != 0
 	&&(code >= __sigrtmin || code <= __sigrtmax))
 		return TerminateTheProcess;
 
-	switch(__code_to_signal_map[code]){
+	signal = __code_to_signal_map[code];
+	switch(signal){
 	default:
 		sysfatal("libposix: undefined signal %d", code);
 
@@ -250,6 +253,7 @@ default_signal_disposition(int code)
 	case PosixSIGXFSZ:
 		return TerminateTheProcessAndCoreDump;
 	case PosixSIGCHLD:
+	case PosixSIGCLD:
 	case PosixSIGURG:
 		return SignalHandled;
 	case PosixSIGCONT:
@@ -427,7 +431,10 @@ libposix_define_signal(PosixSignals signal, int code)
 	if(__libposix_initialized())
 		return 0;
 	__signals_to_code_map[signal] = (unsigned char)code;
-	__code_to_signal_map[code] = (unsigned char)signal;
+	if(signal != PosixSIGCLD || code != __signals_to_code_map[PosixSIGCHLD]){
+		/* if SIGCHLD == SIGCLD then we use PosixSIGCHLD to identify the signal */
+		__code_to_signal_map[code] = (unsigned char)signal;
+	}
 	if(code < __min_known_sig || __min_known_sig == 0)
 		__min_known_sig = code;
 	if(code > __max_known_sig || __max_known_sig == 0)

@@ -643,7 +643,7 @@ rversion(Fcall *req, Fcall *rep)
 static int
 rflush(Fcall *req, Fcall *rep)
 {
-	if(req->tag == outputread->tag){
+	if(outputread != nil && req->tag == outputread->tag){
 		free(outputread);
 		outputread = nil;
 	}else

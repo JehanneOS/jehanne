@@ -271,10 +271,10 @@ __libposix_receive_signal(int sig)
 
 	switch(action){
 	case SignalCatched:
-		return 0;
+		break;
 	case SignalIgnored:
 		*__restart_syscall = 1;
-		return 0;
+		break;
 	case SignalDefault:
 		disposition = default_signal_disposition(sig);
 		if(!execute_disposition(sig, disposition))

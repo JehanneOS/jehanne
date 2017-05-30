@@ -5,6 +5,7 @@
 #include "fns.h"
 
 #include "amd64.h"
+#define DO_mmuptpcheck
 
 //#undef DBG
 //#define DBG(...)	jehanne_print(__VA_ARGS__)
@@ -759,19 +760,15 @@ dumpmmuwalk(uintmem addr)
 static void
 mmuptpcheck(Proc *proc)
 {
+	enum{Tsize = 512};
 	int lvl, npgs, i;
 	Mpl pl;
-	Ptpage *lp, *p, **pgs, *fp;
-	enum{Tsize = 512};
-	static Ptpage *pgtab[MACHMAX][Tsize];
-	static uint32_t idxtab[MACHMAX][Tsize];
-	uint32_t *idx;
+	Ptpage *lp, *p, *pgs[Tsize], *fp;
+	uint32_t idx[Tsize];
 
 	if(proc == nil)
 		return;
 	pl = splhi();
-	pgs = pgtab[m->machno];
-	idx = idxtab[m->machno];
 	lp = m->pml4;
 	for(lvl = 3; lvl >= 1; lvl--){
 		npgs = 0;

@@ -36,6 +36,8 @@ static struct{
 } ptpfreelist;
 int	ptpcount;
 
+#define DO_mmuptpcheck
+
 #ifdef DO_mmuptpcheck
 static void mmuptpcheck(Proc*);
 #endif
@@ -232,39 +234,30 @@ void
 mmuput(uintptr_t va, uintptr_t pa)
 {
 	Mpl pl;
-	int l, x, tl;
-	PTE *pte, *ptp;
+	int l, x;
+	PTE *pte, *ptp, opte;
 	Ptpage *prev;
-	uint32_t attr;
 
-	tl = (PGSHFT-12)/9;
 	pl = splhi();
-#ifdef DO_mmuptpcheck
-	mmuptpcheck(up);
-#endif
-	for(l = 3; l != tl; l--){
+	for(l = 3; l > 0; l--){
 		ptp = mmuptpget(va, l);
 		pte = &ptp[PTLX(va,l)];
-		if(l == tl)
-			break;
-		if((*pte & PteP) == 0 || *pte & PtePS)
+		if(l == 0 || (*pte & PteP) == 0 || (*pte & PtePS))
 			break;
 	}
-	if(l != tl){
+	if(l != 0){
 		/* add missing intermediate level */
 		prev = m->pml4;
-		for(l = 3; l > tl; l--){
+		for(l = 3; l > 0; l--){
 			ptp = mmuptpget(va, l);
 			x = PTLX(va, l);
 			prev = makeptp(prev, l, ptp, x);
 		}
 	}
-	ptp = mmuptpget(va, tl);
-	pte = &ptp[PTLX(va, tl)];
-	attr = 0;
-	if(tl > 0)
-		attr |= PtePS;
-	*pte = pa | attr | PteU;
+	ptp = mmuptpget(va, 0);
+	pte = &ptp[PTLX(va, 0)];
+	opte = *pte;
+	*pte = pa | PteU;
 	DBG("%d mach%d: put pte %#p: %#p -> %#P\n", up->pid, m->machno, pte, va, *pte);
 
 	/* Simple and safe: programs can either write memory or execute it.
@@ -273,8 +266,12 @@ mmuput(uintptr_t va, uintptr_t pa)
 	if(pa & PteRW)
 		*pte |= PteNX;
 
+#ifdef DO_mmuptpcheck
+	mmuptpcheck(up);
+#endif
 	splx(pl);
-	invlpg(va);			/* only if old entry valid? */
+	if(opte & PTEVALID)
+		invlpg(va);
 }
 
 static PTE

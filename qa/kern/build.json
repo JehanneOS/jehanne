@@ -18,6 +18,7 @@
 			"execl.c",
 			"float.c",
 			"fork.c",
+			"fork_chain.c",
 			"frexp.c",
 			"getmainpid.c",
 			"getpid.c",

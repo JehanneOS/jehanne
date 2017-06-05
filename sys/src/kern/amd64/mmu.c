@@ -5,7 +5,7 @@
 #include "fns.h"
 
 #include "amd64.h"
-#define DO_mmuptpcheck
+//#define DO_mmuptpcheck
 
 //#undef DBG
 //#define DBG(...)	jehanne_print(__VA_ARGS__)
@@ -36,8 +36,6 @@ static struct{
 	Ptpage*	next;
 } ptpfreelist;
 int	ptpcount;
-
-#define DO_mmuptpcheck
 
 #ifdef DO_mmuptpcheck
 static void mmuptpcheck(Proc*);
@@ -785,7 +783,7 @@ mmuptpcheck(Proc *proc)
 				}
 				if(idx[i] == p->ptoff){
 					dumpmmu(proc);
-					panic("ptcheck: dup daddr");
+					panic("ptcheck: dup ptoff %d (%#p == %#p)", p->ptoff, pgs[i], p);
 				}
 			}
 			if(npgs >= Tsize)

@@ -8,6 +8,9 @@
 			"cp *.rc $JEHANNE/arch/$ARCH/qa/kern/",
 			"cp *.runner $JEHANNE/arch/$ARCH/qa/kern/"
 		],
+		"Disabled": [
+			"fork_chain.c"
+		],
 		"SourceFilesCmd": [
 			"alarm.c",
 			"args.c",
@@ -18,7 +21,6 @@
 			"execl.c",
 			"float.c",
 			"fork.c",
-			"fork_chain.c",
 			"frexp.c",
 			"getmainpid.c",
 			"getpid.c",

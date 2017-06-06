@@ -37,7 +37,7 @@ static void
 donothing(void)
 {
 	int i = 0;
-	while(i < 100)
+	while(++i < 100)
 		sleep(3000);
 	exits(nil);
 }

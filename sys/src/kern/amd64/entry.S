@@ -278,7 +278,7 @@ _gdt64v:
 	.quad	0x0020980000000000		/* CS */
 
 _gdtptr64v:
-	.word	3*8-1
+	.word	2*8-1
 	.quad	_gdt64v
 
 // At this point, we are safe to use kernel addresses, as we are in

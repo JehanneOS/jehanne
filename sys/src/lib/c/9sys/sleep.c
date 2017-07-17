@@ -26,7 +26,7 @@ jehanne_sleep(int32_t millisecs)
 
 	wakeup = awake(millisecs);	// give up the processor, in any case
 	if(millisecs > 0)
-		while(rendezvous(&wakeup, (void*)1) == (void*)~0)
+		while(rendezvous((void*)~0, (void*)1) == (void*)~0)
 			if(jehanne_awakened(wakeup))
 				return;
 }

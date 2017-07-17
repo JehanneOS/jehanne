@@ -821,6 +821,15 @@ sysrendezvous(void* tagp, void* rendvalp)
 	up->rendval = ~0;
 
 	lock(&up->rgrp->l);
+
+	/* NOTE:
+	 * In Jehanne, the rendezvous point ~0 is always private:
+	 * it can only be interrupted from a scheduled wakeup
+	 * (see sysawake) or from a note
+	 */
+	if(tag == (uintptr_t)~0)
+		goto rendezvousBlocks;
+
 	for(p = *l; p; p = p->rendhash) {
 		if(p->rendtag == tag) {
 			*l = p->rendhash;
@@ -839,6 +848,7 @@ sysrendezvous(void* tagp, void* rendvalp)
 		l = &p->rendhash;
 	}
 
+rendezvousBlocks:
 	up->blockingsc = up->cursyscall;
 	if(awakeOnBlock(up)){
 		unlock(&up->rgrp->l);

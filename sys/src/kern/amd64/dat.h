@@ -1,7 +1,7 @@
 /*
  * This file is part of Jehanne.
  *
- * Copyright (C) 2015-2016 Giacomo Tesio <giacomo@tesio.it>
+ * Copyright (C) 2015-2017 Giacomo Tesio <giacomo@tesio.it>
  *
  * Jehanne is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,6 +17,7 @@
  */
 typedef struct BIOS32si	BIOS32si;
 typedef struct BIOS32ci	BIOS32ci;
+typedef struct Confmem Confmem;
 typedef struct Fxsave Fxsave;
 typedef struct IOConf IOConf;
 typedef struct ISAConf ISAConf;
@@ -25,27 +26,35 @@ typedef struct Lock Lock;
 typedef struct LockEntry LockEntry;
 typedef struct MCPU MCPU;
 typedef struct MFPU MFPU;
+typedef struct MMU MMU;
 typedef struct MMMU MMMU;
 typedef struct Mach Mach;
 typedef uint64_t Mpl;
 typedef Mpl Mreg;				/* GAK */
-typedef struct Ptpage Ptpage;
+typedef struct Segdesc Segdesc;
 typedef struct Pcidev Pcidev;
 typedef struct PFPU PFPU;
 typedef struct PMMU PMMU;
 typedef struct PNOTIFY PNOTIFY;
 typedef struct PPAGE PPAGE;
 typedef uint64_t PTE;
+typedef struct RMap RMap;
 typedef struct Proc Proc;
 typedef struct Sys Sys;
 typedef uint64_t uintmem;			/* horrible name */
+typedef long Tval;
 typedef struct Ureg Ureg;
 typedef struct Vctl Vctl;
+typedef struct PCArch PCArch;
+typedef union  FPsave	FPsave;
+typedef struct Fxsave	Fxsave;
+typedef struct FPstate	FPstate;
+typedef struct PCMmap	PCMmap;
 
 #pragma incomplete BIOS32si
 #pragma incomplete Ureg
 
-#define MAXSYSARG	5	/* for mount(fd, afd, mpt, flag, arg) */
+#define MAXSYSARG	6	/* for mount(fd, afd, mpt, flag, arg, dc) */
 
 /*
  *  parameters for sysproc.c
@@ -58,9 +67,15 @@ typedef struct Vctl Vctl;
  */
 struct Lock
 {
-	LockEntry*	head;
-	LockEntry*	e;
+	uint64_t	sr;
+	uintptr_t	pc;
+	Proc		*lp;
+	Mach		*lm;
+	uint32_t	key;
+	uint16_t	isilock;
+	long		lockcycles;
 };
+
 
 struct Label
 {
@@ -69,6 +84,24 @@ struct Label
 	uintptr_t	regs[14];
 };
 
+/*
+ * FPsave.status
+ */
+enum
+{
+	/* this is a state */
+	FPinit=		0,
+	FPactive=	1,
+	FPinactive=	2,
+
+	/* the following is a bit that can be or'd into the state */
+	FPillegal=	0x100,
+};
+
+/*
+ * the FP regs must be stored here, not somewhere pointed to from here.
+ * port code assumes this.
+ */
 struct Fxsave {
 	uint16_t	fcw;		/* x87 control word */
 	uint16_t	fsw;		/* x87 status word */
@@ -84,40 +117,41 @@ struct Fxsave {
 	uint8_t		ign[96];	/* reserved, ignored */
 };
 
-/*
- *  FPU stuff in Proc
- */
-struct PFPU {
-	int		fpustate;
-	uint8_t		fxsave[sizeof(Fxsave)+15];
-	void*		fpusave;
+union FPsave {
+	uint8_t align[512+15];
+	Fxsave;
 };
 
-struct Ptpage
+struct Segdesc
 {
-	PTE*		pte;		/* kernel-addressible page table entries */
-	uintmem		pa;		/* physical address (from physalloc) */
-	Ptpage*		next;		/* next in level's set, or free list */
-	Ptpage*		parent;		/* parent page table page or page directory */
-	uint32_t	ptoff;		/* index of this table's entry in parent */
+	uint32_t	d0;
+	uint32_t	d1;
+};
+
+/*
+ *  MMU structure for PDP, PD, PT pages.
+ */
+struct MMU
+{
+	MMU*		next;
+	uintptr_t*	page;
+	int		index;
+	int		level;
 };
 
 /*
  *  MMU stuff in Proc
  */
+#define NCOLOR 1
 struct PMMU
 {
-	Ptpage*		mmuptp[4];	/* page table pages for each level */
-	Ptpage*		ptpfree;
-	int		nptpbusy;
-};
-
-/*
- * MMU stuff in Page
- */
-struct PPAGE
-{
-	uint8_t*	nothing;
+	MMU*		mmuhead;
+	MMU*		mmutail;
+	MMU*		kmaphead;
+	MMU*		kmaptail;
+	unsigned long	kmapcount;
+	unsigned long	kmapindex;
+	unsigned long	mmucount;
 };
 
 /*
@@ -137,8 +171,6 @@ struct IOConf
 	int		nocmos;
 };
 extern IOConf ioconf;
-
-#define MAXMDOM	8	/* maximum memory/cpu domains */
 
 #include "../port/portdat.h"
 
@@ -164,24 +196,26 @@ struct MFPU {
 /*
  *  MMU stuff in Mach.
  */
-enum
-{
-	NPGSZ = 4
-};
+typedef struct {
+	uint32_t	_0_;
+	uint32_t	rsp0[2];
+	uint32_t	rsp1[2];
+	uint32_t	rsp2[2];
+	uint32_t	_28_[2];
+	uint32_t	ist[14];
+	uint16_t	_92_[5];
+	uint16_t	iomap;
+} Tss;
 
 struct MMMU
 {
-	Ptpage*		pml4;			/* pml4 for this processor */
-	PTE*		pmap;			/* unused as of yet */
-	Ptpage*		ptpfree;		/* per-mach free list */
-	int		nptpfree;
+	uint64_t*	pml4;		/* pml4 base for this processor (va) */
+	Tss*		tss;		/* tss for this processor */
+	Segdesc*	gdt;		/* gdt for this processor */
 
-	uint32_t	pgszlg2[NPGSZ];		/* per Mach or per Sys? */
-	uintmem		pgszmask[NPGSZ];
-	uint32_t	pgsz[NPGSZ];
-	int		npgsz;
-
-	Ptpage		pml4kludge;
+	uint64_t	mmumap[4];	/* bitmap of pml4 entries for zapping */
+	MMU*		mmufree;	/* freelist for MMU structures */
+	unsigned long	mmucount;	/* number of MMU structures in freelist */
 };
 
 /*
@@ -212,8 +246,6 @@ struct Mach
 
 	uintptr_t	stack;
 	uint8_t*	vsvm;
-	void*		gdt;
-	void*		tss;
 
 	uint64_t	ticks;		/* of the clock since boot time */
 	Label		sched;		/* scheduler wakeup */
@@ -241,16 +273,34 @@ struct Mach
 
 	int		lastintr;
 
+	int		loopconst;
+
 	Lock		apictimerlock;
 	uint64_t	cyclefreq;	/* Frequency of user readable cycle counter */
-	int64_t		cpuhz;
+	uint64_t	cpuhz;
 	int		cpumhz;
+	int		cpuidax;
+	int		cpuidcx;
+	int		cpuiddx;
+	char		cpuidid[16];
+	char*		cpuidtype;
+	int		havetsc;
+	int		havepge;
+	uint64_t	tscticks;
 	uint64_t	rdtsc;
 
-	LockEntry	locks[8];
+//	LockEntry	locks[8];
 
 	MFPU	FPU;
 	MCPU;
+};
+
+struct Confmem
+{
+	uintptr_t	base;
+	unsigned long	npage;
+	uintptr_t	kbase;
+	uintptr_t	klimit;
 };
 
 /*
@@ -265,62 +315,102 @@ struct Mach
  * Some of the elements must be aligned on page boundaries, hence
  * the unions.
  */
-struct Sys {
-	uint8_t	machstk[MACHSTKSZ];
+struct Sys
+{
+	Ureg*		boot_regs;
+	unsigned int	nmach;		/* processors */
+	unsigned int	nproc;		/* processes */
+	unsigned int	monitor;	/* has monitor? */
+	unsigned int	npages;		/* total physical pages of memory */
+	unsigned int	upages;		/* user page pool */
+	unsigned int	nimage;		/* number of images */
+	Confmem		mem[16];	/* physical memory */
 
-	PTE	pml4[PTSZ/sizeof(PTE)];	/*  */
-	PTE	pdp[PTSZ/sizeof(PTE)];
-	PTE	pd[PTSZ/sizeof(PTE)];
-	PTE	pt[PTSZ/sizeof(PTE)];
+	unsigned int	copymode;	/* 0 is copy on write, 1 is copy on reference */
+	unsigned int	ialloc;		/* max interrupt time allocation in bytes */
+	unsigned int	pipeqsize;	/* size in bytes of pipe queues */
+	int		nuart;		/* number of uart devices */
 
-	uint8_t	vsvmpage[4*KiB];
+	char*		architecture;
+	uint64_t	ticks;
+	Mach*		machptr[MACHMAX];
 
-	union {
-		Mach	mach;
-		uint8_t	machpage[MACHSZ];
-	};
-
-	union {
-		struct {
-			uint64_t	pmstart;	/* physical memory */
-			uint64_t	pmoccupied;	/* how much is occupied */
-			uint64_t	pmunassigned;	/* how much to keep back  from page pool */
-			uint64_t	pmpaged;	/* how much assigned to page pool */
-
-			uintptr_t	vmstart;	/* base address for malloc */
-			uintptr_t	vmunused;	/* 1st unused va */
-			uintptr_t	vmunmapped;	/* 1st unmapped va in KSEG0 */
-
-			uint64_t	epoch;		/* crude time synchronisation */
-			int		nmach;		/* how many machs */
-			int		nonline;	/* how many machs are online */
-			uint64_t	ticks;		/* since boot (type?) */
-			uint32_t	copymode;	/* 0=copy on write; 1=copy on reference */
-		};
-		uint8_t	syspage[4*KiB];
-	};
-
-	union {
-		Mach*	machptr[MACHMAX];
-		uint8_t	ptrpage[4*KiB];
-	};
-
-	uint8_t	_57344_[2][4*KiB];		/* unused */
+	uint64_t	pmstart;	/* physical memory */
+	uint64_t	pmoccupied;	/* how much is occupied */
+	uint64_t	pmunassigned;	/* how much to keep back  from page pool */
+	uint64_t	pmpaged;	/* how much assigned to page pool */
 };
 
 extern Sys* sys;
+extern uint32_t	MemMin;		/* set by entry.S */
 
 /*
  * KMap
  */
 typedef void KMap;
 
-#define kunmap(k)
 #define VA(k)		(void*)(k)
 
+/*
+ *  routines for things outside the PC model, like power management
+ */
+struct PCArch
+{
+	char*		id;
+	int		(*ident)(void);		/* this should be in the model */
+	void		(*reset)(void);		/* this should be in the model */
+	int		(*serialpower)(int);	/* 1 == on, 0 == off */
+	int		(*modempower)(int);	/* 1 == on, 0 == off */
+
+	void		(*intrinit)(void);
+	int		(*intrenable)(Vctl*);
+	int		(*intrvecno)(int);
+	int		(*intrdisable)(int);
+	void		(*introff)(void);
+	void		(*intron)(void);
+
+	void		(*clockenable)(void);
+	uint64_t	(*fastclock)(uint64_t*);
+	void		(*timerset)(uint64_t);
+};
+
+extern PCArch	*arch;			/* PC architecture */
+
+/* cpuid instruction result register bits */
+enum {
+	/* cx */
+	Monitor	= 1<<3,
+
+	/* dx */
+	Fpuonchip = 1<<0,
+	Vmex	= 1<<1,		/* virtual-mode extensions */
+	Pse	= 1<<3,		/* page size extensions */
+	Tsc	= 1<<4,		/* time-stamp counter */
+	Cpumsr	= 1<<5,		/* model-specific registers, rdmsr/wrmsr */
+	Pae	= 1<<6,		/* physical-addr extensions */
+	Mce	= 1<<7,		/* machine-check exception */
+	Cmpxchg8b = 1<<8,
+	Cpuapic	= 1<<9,
+	Mtrr	= 1<<12,	/* memory-type range regs.  */
+	Pge	= 1<<13,	/* page global extension */
+	Mca	= 1<<14,	/* machine-check architecture */
+	Pat	= 1<<16,	/* page attribute table */
+	Pse2	= 1<<17,	/* more page size extensions */
+	Clflush = 1<<19,
+	Acpif	= 1<<22,	/* therm control msr */
+	Mmx	= 1<<23,
+	Fxsr	= 1<<24,	/* have SSE FXSAVE/FXRSTOR */
+	Sse	= 1<<25,	/* thus sfence instr. */
+	Sse2	= 1<<26,	/* thus mfence & lfence instr.s */
+	Rdrnd	= 1<<30,	/* RDRAND support bit */
+};
+
+/* Informations about active processors for
+ * bootstrap and shutdown.
+ */
 struct
 {
-	Lock;
+	char	machs[MACHMAX];		/* bitmap of active CPUs */
 	int	exiting;		/* shutdown */
 	int	ispanic;		/* shutdown in response to a panic */
 	int	thunderbirdsarego;	/* F.A.B. */
@@ -353,6 +443,8 @@ typedef struct BIOS32ci {		/* BIOS32 Calling Interface */
 	uint32_t	esi;
 	uint32_t	edi;
 } BIOS32ci;
+
+#define	MACHP(n)	(sys->machptr[n])
 
 /*
  * The Mach structures must be available via the per-processor

@@ -149,6 +149,7 @@ hzclock(Ureg *ur)
 	if(m->proc)
 		m->proc->pc = ur->ip;
 
+	checkflushmmu();
 	accounttime();
 	kmapinval();
 
@@ -165,7 +166,7 @@ hzclock(Ureg *ur)
 
 	if(m->machno == 0){
 		checkalarms();
-		checkwakeups();
+		awake_tick(m->ticks);
 	}
 
 	if(up && up->state == Running)

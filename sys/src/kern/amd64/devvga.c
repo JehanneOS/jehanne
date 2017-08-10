@@ -24,9 +24,6 @@
 #include <cursor.h>
 #include "screen.h"
 
-#define RMBUF ((void*)(KZERO + 0x9000))	// see 9/386/vgavesa.c
-#define LORMBUF (0x9000)
-
 enum {
 	Qdir,
 	Qvgabios,
@@ -45,8 +42,6 @@ static Dirtab vgadir[] = {
 
 enum {
 	CMactualsize,
-	CMblank,
-	CMblanktime,
 	CMdrawinit,
 	CMhwaccel,
 	CMhwblank,
@@ -57,13 +52,12 @@ enum {
 	CMsize,
 	CMtextmode,
 	CMtype,
-	CMunblank,
+	CMsoftscreen,
+	CMpcidev,
 };
 
 static Cmdtab vgactlmsg[] = {
 	CMactualsize,	"actualsize",	2,
-	CMblank,	"blank",	1,
-	CMblanktime,	"blanktime",	2,
 	CMdrawinit,	"drawinit",	1,
 	CMhwaccel,	"hwaccel",	2,
 	CMhwblank,	"hwblank",	2,
@@ -74,66 +68,39 @@ static Cmdtab vgactlmsg[] = {
 	CMsize,		"size",		3,
 	CMtextmode,	"textmode",	1,
 	CMtype,		"type",		2,
-	CMunblank,	"unblank",	1,
+	CMsoftscreen,	"softscreen",	2,
+	CMpcidev,	"pcidev",	2,
 };
-
-static long
-rmemrw(int isr, void *a, long n, int64_t off)
-{
-	if(off < 0 || n < 0)
-		error("bad offset/count");
-	if(isr){
-		if(off >= MB)
-			return 0;
-		if(off+n >= MB)
-			n = MB - off;
-		jehanne_memmove(a, KADDR((uintptr_t)off), n);
-	}else{
-		/* realmode buf page ok, allow vga framebuf's access */
-		if(off >= MB)
-			error("Offset > MB");
-		if (off+n > MB)
-			error("off+n > MB");
-		if (off < LORMBUF)
-			error("off < LORMBUF");
-		if (off+n > LORMBUF+PGSZ)
-			error("off+n > LORMBUF+BY2PG");
-		if (off < 0xA0000)
-			error("off < 0xa0000");
-		if (off+n > 0xB0000+0x10000)
-			error("off+n > 0xb0000+0x10000");
-		jehanne_memmove(KADDR((uintptr_t)off), a, n);
-	}
-	return n;
-}
-
-static long
-rmemread(Chan*_, void *a, long n, int64_t off)
-{
-	return rmemrw(1, a, n, off);
-}
-
-static long
-rmemwrite(Chan*_, void *a, long n, int64_t off)
-{
-	return rmemrw(0, a, n, off);
-}
 
 static void
 vgareset(void)
 {
+	Pcidev *pci;
+	VGAscr *scr;
+
 	/* reserve the 'standard' vga registers */
 	if(ioalloc(0x2b0, 0x2df-0x2b0+1, 0, "vga") < 0)
 		panic("vga ports already allocated");
 	if(ioalloc(0x3c0, 0x3da-0x3c0+1, 0, "vga") < 0)
 		panic("vga ports already allocated");
-	addarchfile("realmodemem", 0660, rmemread, rmemwrite);
+
+	/* find graphics card pci device */
+	scr = &vgascreen[0];
+	scr->pci = pci = nil;
+	while((pci = pcimatch(pci, 0, 0)) != nil){
+		if(pci->ccrb == Pcibcdisp){
+			scr->pci = pci;
+			break;
+		}
+	}
+
+	sys->monitor = 1;
 }
 
 static Chan*
 vgaattach(Chan *c, Chan *ac, char *spec, int flags)
 {
-	if(*spec && jehanne_strcmp(spec, "0"))
+	if(*spec && strcmp(spec, "0"))
 		error(Eio);
 	return devattach('v', spec);
 }
@@ -159,7 +126,7 @@ vgaopen(Chan* c, unsigned long omode)
 	scr = &vgascreen[0];
 	if ((uint32_t)c->qid.path == Qvgaovlctl) {
 		if (scr->dev && scr->dev->ovlctl)
-			scr->dev->ovlctl(scr, c, openctl, jehanne_strlen(openctl));
+			scr->dev->ovlctl(scr, c, openctl, strlen(openctl));
 		else
 			error(Enonexist);
 	}
@@ -176,10 +143,10 @@ vgaclose(Chan* c)
 	if((uint32_t)c->qid.path == Qvgaovlctl)
 		if(scr->dev && scr->dev->ovlctl){
 			if(waserror()){
-				jehanne_print("ovlctl error: %s\n", up->errstr);
+				print("ovlctl error: %s\n", up->errstr);
 				return;
 			}
-			scr->dev->ovlctl(scr, c, closectl, jehanne_strlen(closectl));
+			scr->dev->ovlctl(scr, c, closectl, strlen(closectl));
 			poperror();
 		}
 }
@@ -187,8 +154,7 @@ vgaclose(Chan* c)
 static long
 vgaread(Chan* c, void* a, long n, int64_t off)
 {
-	int len;
-	char *p, *s;
+	char *p, *s, *e;
 	VGAscr *scr;
 	uint32_t offset = off;
 	char chbuf[30];
@@ -203,50 +169,41 @@ vgaread(Chan* c, void* a, long n, int64_t off)
 			return 0;
 		if(offset+n >= 0x100000)
 			n = 0x100000 - offset;
-		jehanne_memmove(a, (unsigned char*)KADDR(0)+offset, n);
+		memmove(a, (uint8_t*)KADDR(0)+offset, n);
 		return n;
 
 	case Qvgactl:
 		scr = &vgascreen[0];
 
-		p = jehanne_malloc(READSTR);
-		if(p == nil)
-			error(Enomem);
+		s = smalloc(READSTR);
 		if(waserror()){
-			jehanne_free(p);
+			free(s);
 			nexterror();
 		}
-
-		len = 0;
-
-		if(scr->dev)
-			s = scr->dev->name;
-		else
-			s = "cga";
-		len += jehanne_snprint(p+len, READSTR-len, "type %s\n", s);
-
-		if(scr->gscreen) {
-			len += jehanne_snprint(p+len, READSTR-len, "size %dx%dx%d %s\n",
+		p = s, e = s+READSTR;
+		p = seprint(p, e, "type %s\n",
+			scr->dev != nil ? scr->dev->name : "cga");
+		if(scr->gscreen != nil) {
+			p = seprint(p, e, "size %dx%dx%d %s\n",
 				scr->gscreen->r.max.x, scr->gscreen->r.max.y,
 				scr->gscreen->depth, chantostr(chbuf, scr->gscreen->chan));
-
 			if(Dx(scr->gscreen->r) != Dx(physgscreenr)
 			|| Dy(scr->gscreen->r) != Dy(physgscreenr))
-				len += jehanne_snprint(p+len, READSTR-len, "actualsize %dx%d\n",
+				p = seprint(p, e, "actualsize %dx%d\n",
 					physgscreenr.max.x, physgscreenr.max.y);
 		}
-
-		len += jehanne_snprint(p+len, READSTR-len, "blank time %lud idle %d state %s\n",
-			blanktime, drawidletime(), scr->isblank ? "off" : "on");
-		len += jehanne_snprint(p+len, READSTR-len, "hwaccel %s\n", hwaccel ? "on" : "off");
-		len += jehanne_snprint(p+len, READSTR-len, "hwblank %s\n", hwblank ? "on" : "off");
-		len += jehanne_snprint(p+len, READSTR-len, "panning %s\n", panning ? "on" : "off");
-		len += jehanne_snprint(p+len, READSTR-len, "addr p 0x%lux v 0x%p size 0x%ux\n", scr->paddr, scr->vaddr, scr->apsize);
-		USED(len);
-
-		n = readstr(offset, a, n, p);
+		p = seprint(p, e, "hwgc %s\n",
+			scr->cur != nil ? scr->cur->name : "off");
+		p = seprint(p, e, "hwaccel %s\n", hwaccel ? "on" : "off");
+		p = seprint(p, e, "hwblank %s\n", hwblank ? "on" : "off");
+		p = seprint(p, e, "panning %s\n", panning ? "on" : "off");
+		p = seprint(p, e, "addr p %#p v %#p size %#ux\n",
+			scr->paddr, scr->vaddr, scr->apsize);
+		p = seprint(p, e, "softscreen %s\n", scr->softscreen ? "on" : "off");
+		USED(p);
+		n = readstr(offset, a, n, s);
 		poperror();
-		jehanne_free(p);
+		free(s);
 
 		return n;
 
@@ -263,6 +220,8 @@ vgaread(Chan* c, void* a, long n, int64_t off)
 	return 0;
 }
 
+//static char Ebusy[] = "vga already configured";
+
 static void
 vgactl(Cmdbuf *cb)
 {
@@ -278,47 +237,69 @@ vgactl(Cmdbuf *cb)
 	ct = lookupcmd(cb, vgactlmsg, nelem(vgactlmsg));
 	switch(ct->index){
 	case CMhwgc:
-		if(jehanne_strcmp(cb->f[1], "off") == 0){
-			lock(&cursor.l);
+		if(scr->gscreen == nil)
+			error("hwgc: no gscreen");
+
+		if(strcmp(cb->f[1], "off") == 0){
+			lock(&cursor);
 			if(scr->cur){
 				if(scr->cur->disable)
 					scr->cur->disable(scr);
 				scr->cur = nil;
 			}
-			unlock(&cursor.l);
+			unlock(&cursor);
 			return;
 		}
-		if(jehanne_strcmp(cb->f[1], "soft") == 0){
-			lock(&cursor.l);
+		if(strcmp(cb->f[1], "soft") == 0){
+			lock(&cursor);
 			swcursorinit();
 			if(scr->cur && scr->cur->disable)
 				scr->cur->disable(scr);
 			scr->cur = &swcursor;
 			if(scr->cur->enable)
 				scr->cur->enable(scr);
-			unlock(&cursor.l);
+			unlock(&cursor);
 			return;
 		}
 		for(i = 0; vgacur[i]; i++){
-			if(jehanne_strcmp(cb->f[1], vgacur[i]->name))
+			if(strcmp(cb->f[1], vgacur[i]->name))
 				continue;
-			lock(&cursor.l);
+			lock(&cursor);
 			if(scr->cur && scr->cur->disable)
 				scr->cur->disable(scr);
 			scr->cur = vgacur[i];
 			if(scr->cur->enable)
 				scr->cur->enable(scr);
-			unlock(&cursor.l);
+			unlock(&cursor);
 			return;
 		}
 		break;
 
+	case CMpcidev:
+		if(cb->nf == 2){
+			Pcidev *p;
+
+			if((p = pcimatchtbdf(strtoul(cb->f[1], 0, 16))) != nil)
+				scr->pci = p;
+		} else
+			error(Ebadarg);
+		return;
+
 	case CMtype:
 		for(i = 0; vgadev[i]; i++){
-			if(jehanne_strcmp(cb->f[1], vgadev[i]->name))
+			if(strcmp(cb->f[1], vgadev[i]->name))
 				continue;
-			if(scr->dev && scr->dev->disable)
-				scr->dev->disable(scr);
+			if(scr->dev){
+				qlock(&drawlock);
+				scr->fill = nil;
+				scr->scroll = nil;
+				scr->blank = nil;
+				hwblank = 0;
+				hwaccel = 0;
+				qunlock(&drawlock);
+				if(scr->dev->disable)
+					scr->dev->disable(scr);
+			}
 			scr->dev = vgadev[i];
 			if(scr->dev->enable)
 				scr->dev->enable(scr);
@@ -327,23 +308,24 @@ vgactl(Cmdbuf *cb)
 		break;
 
 	case CMtextmode:
-		cgainit();
+		screen_init();
+		bootscreenconf(nil);
 		return;
 
 	case CMsize:
-		x = jehanne_strtoul(cb->f[1], &p, 0);
+		x = strtoul(cb->f[1], &p, 0);
 		if(x == 0 || x > 10240)
 			error(Ebadarg);
 		if(*p)
 			p++;
 
-		y = jehanne_strtoul(p, &p, 0);
+		y = strtoul(p, &p, 0);
 		if(y == 0 || y > 10240)
 			error(Ebadarg);
 		if(*p)
 			p++;
 
-		z = jehanne_strtoul(p, &p, 0);
+		z = strtoul(p, &p, 0);
 
 		chanstr = cb->f[2];
 		if((chan = strtochan(chanstr)) == 0)
@@ -352,26 +334,24 @@ vgactl(Cmdbuf *cb)
 		if(chantodepth(chan) != z)
 			error("depth, channel do not match");
 
-		cursoroff(1);
+		cursoroff();
 		deletescreenimage();
 		if(screensize(x, y, z, chan))
 			error(Egreg);
-		vgascreenwin(scr);
-		resetscreenimage();
-		cursoron(1);
+		bootscreenconf(scr);
 		return;
 
 	case CMactualsize:
 		if(scr->gscreen == nil)
 			error("set the screen size first");
 
-		x = jehanne_strtoul(cb->f[1], &p, 0);
+		x = strtoul(cb->f[1], &p, 0);
 		if(x == 0 || x > 2048)
 			error(Ebadarg);
 		if(*p)
 			p++;
 
-		y = jehanne_strtoul(p, nil, 0);
+		y = strtoul(p, nil, 0);
 		if(y == 0 || y > 2048)
 			error(Ebadarg);
 
@@ -383,51 +363,57 @@ vgactl(Cmdbuf *cb)
 		return;
 
 	case CMpalettedepth:
-		x = jehanne_strtoul(cb->f[1], &p, 0);
+		x = strtoul(cb->f[1], &p, 0);
 		if(x != 8 && x != 6)
 			error(Ebadarg);
 
 		scr->palettedepth = x;
 		return;
 
+	case CMsoftscreen:
+		if(strcmp(cb->f[1], "on") == 0)
+			scr->softscreen = 1;
+		else if(strcmp(cb->f[1], "off") == 0)
+			scr->softscreen = 0;
+		else
+			break;
+		if(scr->gscreen == nil)
+			return;
+		x = scr->gscreen->r.max.x;
+		y = scr->gscreen->r.max.y;
+		z = scr->gscreen->depth;
+		chan = scr->gscreen->chan;
+		cursoroff();
+		deletescreenimage();
+		if(screensize(x, y, z, chan))
+			error(Egreg);
+		/* no break */
 	case CMdrawinit:
 		if(scr->gscreen == nil)
 			error("drawinit: no gscreen");
 		if(scr->dev && scr->dev->drawinit)
 			scr->dev->drawinit(scr);
+		hwblank = scr->blank != nil;
+		hwaccel = scr->fill != nil || scr->scroll != nil;
+		vgascreenwin(scr);
+		resetscreenimage();
+		cursoron();
 		return;
 
 	case CMlinear:
 		if(cb->nf!=2 && cb->nf!=3)
 			error(Ebadarg);
-		size = jehanne_strtoul(cb->f[1], 0, 0);
+		size = strtoul(cb->f[1], 0, 0);
 		if(cb->nf == 2)
 			align = 0;
 		else
-			align = jehanne_strtoul(cb->f[2], 0, 0);
+			align = strtoul(cb->f[2], 0, 0);
 		if(screenaperture(size, align) < 0)
 			error("not enough free address space");
 		return;
-/*
-	case CMmemset:
-		jehanne_memset((void*)jehanne_strtoul(cb->f[1], 0, 0), jehanne_atoi(cb->f[2]), jehanne_atoi(cb->f[3]));
-		return;
-*/
-
-	case CMblank:
-		drawblankscreen(1);
-		return;
-
-	case CMunblank:
-		drawblankscreen(0);
-		return;
-
-	case CMblanktime:
-		blanktime = jehanne_strtoul(cb->f[1], 0, 0);
-		return;
 
 	case CMpanning:
-		if(jehanne_strcmp(cb->f[1], "on") == 0){
+		if(strcmp(cb->f[1], "on") == 0){
 			if(scr == nil || scr->cur == nil)
 				error("set screen first");
 			if(!scr->cur->doespanning)
@@ -435,7 +421,7 @@ vgactl(Cmdbuf *cb)
 			scr->gscreen->clipr = scr->gscreen->r;
 			panning = 1;
 		}
-		else if(jehanne_strcmp(cb->f[1], "off") == 0){
+		else if(strcmp(cb->f[1], "off") == 0){
 			scr->gscreen->clipr = physgscreenr;
 			panning = 0;
 		}else
@@ -443,18 +429,18 @@ vgactl(Cmdbuf *cb)
 		return;
 
 	case CMhwaccel:
-		if(jehanne_strcmp(cb->f[1], "on") == 0)
+		if(strcmp(cb->f[1], "on") == 0)
 			hwaccel = 1;
-		else if(jehanne_strcmp(cb->f[1], "off") == 0)
+		else if(strcmp(cb->f[1], "off") == 0)
 			hwaccel = 0;
 		else
 			break;
 		return;
 
 	case CMhwblank:
-		if(jehanne_strcmp(cb->f[1], "on") == 0)
+		if(strcmp(cb->f[1], "on") == 0)
 			hwblank = 1;
-		else if(jehanne_strcmp(cb->f[1], "off") == 0)
+		else if(strcmp(cb->f[1], "off") == 0)
 			hwblank = 0;
 		else
 			break;
@@ -483,12 +469,12 @@ vgawrite(Chan* c, void* a, long n, int64_t off)
 			error(Ebadarg);
 		cb = parsecmd(a, n);
 		if(waserror()){
-			jehanne_free(cb);
+			free(cb);
 			nexterror();
 		}
 		vgactl(cb);
 		poperror();
-		jehanne_free(cb);
+		free(cb);
 		return n;
 
 	case Qvgaovl:

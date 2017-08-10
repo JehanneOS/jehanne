@@ -14,7 +14,8 @@
 		"SourceFiles": [
 			"../port/devdraw.c",
 			"../port/devmouse.c",
-			"../386/vgavesa.c",
+			"../port/swcursor.c",
+			"vgavesa.c",
 			"screen.c",
 			"devvga.c",
 			"mouse.c",

@@ -52,6 +52,15 @@ psindex(int pid)
 }
 
 Proc*
+debug_get_proc_by_pid(int pid)
+{
+	int i = psindex(pid);
+	if(i < 0)
+		return nil;
+	return procalloc.arena + i;
+}
+
+Proc*
 psincref(int i)
 {
 	/*
@@ -105,13 +114,13 @@ psalloc(void)
 }
 
 void
-psinit(int nproc)
+psinit(unsigned int nproc)
 {
 	Proc *p;
 	int i;
 
 	procalloc.nproc = nproc;
-	procalloc.free = jehanne_malloc(nproc*sizeof(Proc));
+	procalloc.free = xalloc(nproc*sizeof(Proc));
 	if(procalloc.free == nil)
 		panic("cannot allocate %ud procs (%udMB)\n", nproc, nproc*sizeof(Proc)/(1024*1024));
 	procalloc.arena = procalloc.free;

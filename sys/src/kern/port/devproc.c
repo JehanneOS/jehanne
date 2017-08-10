@@ -684,8 +684,6 @@ int2flag(int flag, char *s)
 		*s++ = 'b';
 	if(flag & MCREATE)
 		*s++ = 'c';
-	if(flag & MCACHE)
-		*s++ = 'C';
 	*s = '\0';
 }
 
@@ -693,11 +691,11 @@ static int
 procargs(Proc *p, char *buf, int nbuf)
 {
 	int i;
-	char **args, *e;
+	char **args, **margs, *e;
 	ProcSegment *s;
 	PagePointer page = 0;
-	char *pbase;
-	uintptr_t argaddr;
+	char *pbase, *marg;
+	uintptr_t argaddr, ptop;
 
 	args = p->args;
 	if(args == nil)
@@ -721,25 +719,35 @@ procargs(Proc *p, char *buf, int nbuf)
 	 * page's ref count, but this should be safe in this very specific
 	 * case (top of the stack with seglock rlocked)
 	 */
-	page = segment_page(s, USTKTOP - PGSZ);
+	page = segment_page(s, (uintptr_t)args);
 	if(page == 0){
 		buf = jehanne_seprint(buf, e, "cannot print args for %s %d: stack gone", p->text, p->pid);
 		goto ArgsPrinted;
 	}
 
 	pbase = page_kmap(page);
+	ptop = (uintptr_t)(pbase + PGSZ);
 
+	margs = (char**)(pbase + (((uintptr_t)args)&(PGSZ-1)));
+	if(((uintptr_t)&margs[p->nargs - 1]) > ptop){
+		buf = jehanne_seprint(buf, e, "%s: too many arguments", p->text);
+		goto DoneWithMappedPage;
+	}
 	for(i = 0; i < p->nargs; ++i){
 		if(buf >= e)
 			break;
-		argaddr = (uintptr_t)args[i];
-		if(argaddr > USTKTOP || argaddr < USTKTOP - PGSZ || argaddr < (uintptr_t)args[p->nargs-1]){
-			buf = jehanne_seprint(buf, e, i?" *%#p":"*%#p", args[i]);
+		argaddr = (uintptr_t)margs[i];
+		if(argaddr < (uintptr_t)args || argaddr >= s->top){
+			buf = jehanne_seprint(buf, e, i?" %#p":"%#p", argaddr);
+		} else if(argaddr - (uintptr_t)args > PGSZ){
+			buf = jehanne_seprint(buf, e, " ...");
+			break;
 		} else {
-			buf = jehanne_seprint(buf, e, i?" %q":"%q", pbase + (argaddr&(PGSZ-1)));
+			marg = pbase + (argaddr&(PGSZ-1));
+			buf = jehanne_seprint(buf, e, i?" %q":"%q", marg);
 		}
 	}
-
+DoneWithMappedPage:
 	page_kunmap(page, &pbase);
 
 ArgsPrinted:
@@ -765,7 +773,7 @@ procread(Chan *c, void *va, long n, int64_t off)
 	Mntwalk *mw;
 	ProcSegment *sg, *s;
 	int i, j, navail, ne, pid, rsize;
-	char flag[10], *sps, *srv, statbuf[NSEG*STATSIZE];
+	char flag[10],  *a, *sps, *srv, statbuf[NSEG*STATSIZE];
 	uintptr_t offset;
 	uintmem paddr, plimit, psize;
 	uint64_t u;
@@ -773,6 +781,7 @@ procread(Chan *c, void *va, long n, int64_t off)
 	if(c->qid.type & QTDIR)
 		return devdirread(c, va, n, 0, 0, procgen);
 
+	a = va;
 	offset = off;
 
 	if(QID(c->qid) == Qtrace){
@@ -846,7 +855,7 @@ procread(Chan *c, void *va, long n, int64_t off)
 			return n;
 		}
 		paddr = PADDR(UINT2PTR(offset));
-		if(!isrmapped(&rmapram, paddr, &psize)){
+		if(!ismapped(&rmapram, paddr, &psize)){
 			psdecref(p);
 			error(Ebadarg);
 		}
@@ -903,32 +912,27 @@ procread(Chan *c, void *va, long n, int64_t off)
 	case Qregs:
 		rptr = (uint8_t*)p->dbgreg;
 		rsize = sizeof(Ureg);
-	regread:
-		if(rptr == 0){
-			psdecref(p);
-			error(Enoreg);
-		}
-		if(offset >= rsize){
-			psdecref(p);
-			return 0;
-		}
-		if(offset+n > rsize)
-			n = rsize - offset;
-		jehanne_memmove(va, rptr+offset, n);
-		psdecref(p);
-		return n;
+		goto regread;
 
 	case Qkregs:
-		jehanne_memset(&kur, 0, sizeof(Ureg));
+		memset(&kur, 0, sizeof(Ureg));
 		setkernur(&kur, p);
 		rptr = (uint8_t*)&kur;
 		rsize = sizeof(Ureg);
 		goto regread;
 
 	case Qfpregs:
-		r = fpudevprocio(p, va, n, offset, 0);
-		psdecref(p);
-		return r;
+		rptr = (uint8_t*)&p->fpsave;
+		rsize = sizeof(FPsave);
+	regread:
+		if(rptr == nil)
+			error(Enoreg);
+		if(offset >= rsize)
+			return 0;
+		if(offset+n > rsize)
+			n = rsize - offset;
+		memmove(a, rptr+offset, n);
+		return n;
 
 	case Qstatus:
 		if(offset >= sizeof statbuf){
@@ -1201,13 +1205,17 @@ procwrite(Chan *c, void *va, long n, int64_t off)
 			n = 0;
 		else if(offset+n > sizeof(Ureg))
 			n = sizeof(Ureg) - offset;
-		if(p->dbgreg == 0)
+		if(p->dbgreg == nil)
 			error(Enoreg);
 		setregisters(p->dbgreg, (char*)(p->dbgreg)+offset, va, n);
 		break;
 
 	case Qfpregs:
-		n = fpudevprocio(p, va, n, offset, 1);
+		if(offset >= sizeof(FPsave))
+			n = 0;
+		else if(offset+n > sizeof(FPsave))
+			n = sizeof(FPsave) - offset;
+		memmove((uint8_t*)&p->fpsave+offset, va, n);
 		break;
 
 	case Qctl:

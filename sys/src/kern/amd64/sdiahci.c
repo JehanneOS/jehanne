@@ -1471,7 +1471,7 @@ iadisable(SDev *s)
 	ilock(c);
 	ahcidisable(c->hba);
 	jehanne_snprint(name, sizeof name, "%s (%s)", s->name, s->ifc->name);
-	intrdisable(c->vector);
+	intrdisable(c->pci->intl, iainterrupt, c, c->pci->tbdf, name);
 	c->enabled = 0;
 	iunlock(c);
 	return 1;

@@ -2,6 +2,7 @@
  * Interrupt/exception handling.
  */
 #include "amd64.h"
+#include "mem.h"
 
 .code64
 
@@ -81,7 +82,7 @@ _intrcommon:
 	xchgq	%rax, 0(%rsp)
 	// 0(%rsp) now has the vno
 	subq	$16, %rsp				/* R1[45] */
-	cmpw	$SSEL(SiCS, SsTIGDT|SsRPL0), 40(%rsp) 	/* old CS */
+	cmpw	$KESEL, 40(%rsp) 	/* old CS */
 	je	_intrnested
 
 	movq	%r14, 0(%rsp)
@@ -131,7 +132,7 @@ _intrr:
 	popq	%r12
 	popq	%r13
 
-	cmpw	$SSEL(SiCS, SsTIGDT|SsRPL0), 40(%rsp) 	/* old CS */
+	cmpw	$KESEL, 40(%rsp) 	/* old CS */
 	je	_iretnested
 
 	swapgs

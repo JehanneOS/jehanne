@@ -2185,7 +2185,7 @@ atadisable(SDev *sdev)
 	if (ctlr->idisable)
 		ctlr->idisable(ctlr);
 	jehanne_snprint(name, sizeof(name), "%s (%s)", sdev->name, sdev->ifc->name);
-	intrdisable(ctlr->vector);
+	intrdisable(ctlr->irq, atainterrupt, ctlr, ctlr->tbdf, name);
 	if (ctlr->bmiba) {
 		if (ctlr->pcidev)
 			pciclrbme(ctlr->pcidev);

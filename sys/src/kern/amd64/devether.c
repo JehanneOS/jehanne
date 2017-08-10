@@ -503,8 +503,6 @@ ethershutdown(void)
 		ether = etherxx[i];
 		if(ether == nil)
 			continue;
-		if(ether->irq >= 0)
-			intrdisable(ether->vector);
 		if(ether->shutdown == nil) {
 			jehanne_print("#l%d: no shutdown function\n", i);
 			continue;

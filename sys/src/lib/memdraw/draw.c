@@ -51,16 +51,15 @@ Memimage *memopaque;
 
 int	_ifmt(Fmt*);
 
-void
+int
 memimageinit(void)
 {
 	static int didinit = 0;
 
 	if(didinit)
-		return;
+		return 0;
 
-	didinit = 1;
-
+	if(imagmem != nil)
 	if(jehanne_strcmp(imagmem->name, "Image") == 0 || jehanne_strcmp(imagmem->name, "image") == 0)
 		imagmem->move = memimagemove;
 
@@ -72,22 +71,25 @@ memimageinit(void)
 	jehanne_fmtinstall('b', _ifmt);
 
 	memones = allocmemimage(Rect(0,0,1,1), GREY1);
+	memzeros = allocmemimage(Rect(0,0,1,1), GREY1);
+	if(memones == nil || memzeros == nil)
+		return -1;
+
 	memones->flags |= Frepl;
 	memones->clipr = Rect(-0x3FFFFFF, -0x3FFFFFF, 0x3FFFFFF, 0x3FFFFFF);
 	*byteaddr(memones, ZP) = ~0;
 
-	memzeros = allocmemimage(Rect(0,0,1,1), GREY1);
 	memzeros->flags |= Frepl;
 	memzeros->clipr = Rect(-0x3FFFFFF, -0x3FFFFFF, 0x3FFFFFF, 0x3FFFFFF);
 	*byteaddr(memzeros, ZP) = 0;
-
-	if(memones == nil || memzeros == nil)
-		assert(0 /*cannot initialize memimage library */);	/* RSC BUG */
 
 	memwhite = memones;
 	memblack = memzeros;
 	memopaque = memones;
 	memtransparent = memzeros;
+
+	didinit = 1;
+	return 0;
 }
 
 static uint32_t imgtorgba(Memimage*, uint32_t);

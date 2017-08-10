@@ -1,7 +1,7 @@
 /*
  * This file is part of Jehanne.
  *
- * Copyright (C) 2016 Giacomo Tesio <giacomo@tesio.it>
+ * Copyright (C) 2016-2017 Giacomo Tesio <giacomo@tesio.it>
  *
  * Jehanne is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -64,6 +64,7 @@ enum
 };
 
 #if 0
+
 typedef struct RendezvousLog
 {
 	void *tag;
@@ -106,15 +107,21 @@ printdebugrendezvouslogs(void)
 		jehanne_print("[%d] %#p @ %#p rendezvous(%#p, %#p) -> %#p @ %#p\n", logs[i].pid, logs[i].caller, logs[i].start, logs[i].tag, logs[i].addr, logs[i].r, logs[i].end);
 }
 static void*	(*_rendezvousp)(void*, void*) = debugrendezvous;
+
 #else
+
 static void*
 __rendezvous(void* tag, void* val)
 {
 	return rendezvous(tag, val);
 }
 static void*	(*_rendezvousp)(void*, void*) = __rendezvous;
+
 #endif
 
+//# define RENDEZVOUS(...) (*_rendezvousp)(__VA_ARGS__)
+//# define RENDEZVOUS(...) sys_rendezvous(__VA_ARGS__)
+# define RENDEZVOUS(tag, val) __rendezvous(tag, __builtin_return_address(0))
 
 /* this gets called by the thread library ONLY to get us to use its rendezvous */
 void
@@ -168,19 +175,18 @@ jehanne_qlock(QLock *q)
 	jehanne_unlock(&q->lock);
 
 	/* wait */
-	while((*_rendezvousp)(mp, (void*)1) == (void*)~0)
+	while(RENDEZVOUS(mp, (void*)1) == (void*)~0)
 		;
-	if(mp->state != Done){
+	if(!cas(&mp->state, Done, Free)){
 		jehanne_print("mp %#p: state %d pc %#p\n", mp, mp->state, __builtin_return_address(0));
 		abort();
 	}
-	mp->state = Free;
 }
 
 void
 jehanne_qunlock(QLock *q)
 {
-	QLp *p;
+	QLp *p, *tmp;
 
 	jehanne_lock(&q->lock);
 	if (q->locked == 0)
@@ -193,8 +199,9 @@ jehanne_qunlock(QLock *q)
 			jehanne_print("qunlock mp %#p: state %d (should be Timedout) pc %#p\n", p, p->state, (uintptr_t)__builtin_return_address(0));
 			abort();
 		}
+		tmp = p->next;
 		p->state = Free;
-		p = p->next;
+		p = tmp;
 	}
 	if(p != nil){
 		/* wakeup head waiting process */
@@ -206,7 +213,7 @@ jehanne_qunlock(QLock *q)
 		if(q->head == nil)
 			q->tail = nil;
 		jehanne_unlock(&q->lock);
-		while((*_rendezvousp)(p, (void*)0x12345) == (void*)~0)
+		while(RENDEZVOUS(p, (void*)0x12345) == (void*)~0)
 			;
 		return;
 	} else {
@@ -224,16 +231,10 @@ jehanne_qlockt(QLock *q, uint32_t ms)
 	QLp *p, *mp;
 	int64_t wkup;
 
-	/* set up awake to interrupt rendezvous */
-	wkup = awake(ms);
-
-	if(!jehanne_lockt(&q->lock, ms)){
-		jehanne_forgivewkp(wkup);
+	if(!jehanne_lockt(&q->lock, ms))
 		return 0;
-	}
 
 	if(!q->locked){
-		jehanne_forgivewkp(wkup);
 		q->locked = 1;
 		jehanne_unlock(&q->lock);
 		return 1;
@@ -250,8 +251,11 @@ jehanne_qlockt(QLock *q, uint32_t ms)
 
 	jehanne_unlock(&q->lock);
 
+	/* set up awake to interrupt rendezvous */
+	wkup = awake(ms);
+
 	/* wait */
-	while((*_rendezvousp)(mp, (void*)1) == (void*)~0)
+	while(RENDEZVOUS(mp, (void*)1) == (void*)~0)
 		if (jehanne_awakened(wkup)){
 			/* interrupted by awake */
 			if(cas(&mp->state, Queuing, Timedout))
@@ -262,12 +266,14 @@ jehanne_qlockt(QLock *q, uint32_t ms)
 			/* ... otherwise we are going to take the lock
 			 * on the next rendezvous from qunlock
 			 */
+			assert(mp->state == Done);
 		}
 
 	jehanne_forgivewkp(wkup);
-	if(mp->state != Done)
+	if(!cas(&mp->state, Done, Free)){
+		jehanne_print("mp %#p: state %d pc %#p\n", mp, mp->state, __builtin_return_address(0));
 		abort();
-	mp->state = Free;
+	}
 
 	return 1;
 }
@@ -310,11 +316,12 @@ jehanne_rlock(RWLock *q)
 	jehanne_unlock(&q->lock);
 
 	/* wait in kernel */
-	while((*_rendezvousp)(mp, (void*)1) == (void*)~0)
+	while(RENDEZVOUS(mp, (void*)1) == (void*)~0)
 		;
-	if(mp->state != Done)
+	if(!cas(&mp->state, Done, Free)){
+		jehanne_print("mp %#p: state %d pc %#p\n", mp, mp->state, __builtin_return_address(0));
 		abort();
-	mp->state = Free;
+	}
 }
 
 int
@@ -323,17 +330,11 @@ jehanne_rlockt(RWLock *q, uint32_t ms)
 	QLp *p, *mp;
 	int64_t wkup;
 
-	/* set up awake to interrupt rendezvous */
-	wkup = awake(ms);
-
-	if(!jehanne_lockt(&q->lock, ms)) {
-		jehanne_forgivewkp(wkup);
+	if(!jehanne_lockt(&q->lock, ms))
 		return 0;
-	}
 
 	if(q->writer == 0 && q->head == nil){
 		/* no writer, go for it */
-		jehanne_forgivewkp(wkup);
 		q->_readers++;
 		jehanne_unlock(&q->lock);
 		return 1;
@@ -351,8 +352,11 @@ jehanne_rlockt(RWLock *q, uint32_t ms)
 
 	jehanne_unlock(&q->lock);
 
+	/* set up awake to interrupt rendezvous */
+	wkup = awake(ms);
+
 	/* wait in kernel */
-	while((*_rendezvousp)(mp, (void*)1) == (void*)~0)
+	while(RENDEZVOUS(mp, (void*)1) == (void*)~0)
 		if (jehanne_awakened(wkup)){
 			/* interrupted by awake */
 			if(cas(&mp->state, QueuingR, Timedout))
@@ -363,12 +367,14 @@ jehanne_rlockt(RWLock *q, uint32_t ms)
 			/* ... otherwise we are going to take the lock
 			 * on the next rendezvous from wunlock
 			 */
+			assert(mp->state == Done);
 		}
 
 	jehanne_forgivewkp(wkup);
-	if(mp->state != Done)
+	if(!cas(&mp->state, Done, Free)){
+		jehanne_print("mp %#p: state %d pc %#p\n", mp, mp->state, __builtin_return_address(0));
 		abort();
-	mp->state = Free;
+	}
 
 	return 1;
 }
@@ -390,7 +396,7 @@ jehanne_canrlock(RWLock *q)
 void
 jehanne_runlock(RWLock *q)
 {
-	QLp *p;
+	QLp *p, *tmp;
 
 	jehanne_lock(&q->lock);
 	if(q->_readers <= 0)
@@ -412,8 +418,9 @@ runlockWithoutWriters:
 		 */
 		if(p->state != Timedout)
 			abort();
+		tmp = p->next;
 		p->state = Free;
-		p = p->next;
+		p = tmp;
 	}
 	if(p == nil)
 		goto runlockWithoutWriters;
@@ -425,7 +432,7 @@ runlockWithoutWriters:
 	jehanne_unlock(&q->lock);
 
 	/* wakeup waiter */
-	while((*_rendezvousp)(p, 0) == (void*)~0)
+	while(RENDEZVOUS(p, 0) == (void*)~0)
 		;
 }
 
@@ -454,12 +461,13 @@ jehanne_wlock(RWLock *q)
 	jehanne_unlock(&q->lock);
 
 	/* wait in kernel */
-	while((*_rendezvousp)(mp, (void*)1) == (void*)~0)
+	while(RENDEZVOUS(mp, (void*)1) == (void*)~0)
 		;
 
-	if(mp->state != Done)
+	if(!cas(&mp->state, Done, Free)){
+		jehanne_print("mp %#p: state %d pc %#p\n", mp, mp->state, __builtin_return_address(0));
 		abort();
-	mp->state = Free;
+	}
 }
 
 
@@ -469,17 +477,11 @@ jehanne_wlockt(RWLock *q, uint32_t ms)
 	QLp *p, *mp;
 	int64_t wkup;
 
-	/* set up awake to interrupt rendezvous */
-	wkup = awake(ms);
-
-	if(!jehanne_lockt(&q->lock, ms)) {
-		jehanne_forgivewkp(wkup);
+	if(!jehanne_lockt(&q->lock, ms))
 		return 0;
-	}
 
 	if(q->_readers == 0 && q->writer == 0){
 		/* noone waiting, go for it */
-		jehanne_forgivewkp(wkup);
 		q->writer = 1;
 		jehanne_unlock(&q->lock);
 		return 1;
@@ -497,8 +499,11 @@ jehanne_wlockt(RWLock *q, uint32_t ms)
 
 	jehanne_unlock(&q->lock);
 
+	/* set up awake to interrupt rendezvous */
+	wkup = awake(ms);
+
 	/* wait in kernel */
-	while((*_rendezvousp)(mp, (void*)1) == (void*)~0)
+	while(RENDEZVOUS(mp, (void*)1) == (void*)~0)
 		if (jehanne_awakened(wkup)){
 			/* interrupted by awake */
 			if(cas(&mp->state, QueuingW, Timedout))
@@ -509,11 +514,13 @@ jehanne_wlockt(RWLock *q, uint32_t ms)
 			/* ... otherwise we are going to take the lock
 			 * on the next rendezvous from runlock/wunlock
 			 */
+			assert(mp->state == Done);
 		}
 	jehanne_forgivewkp(wkup);
-	if(mp->state != Done)
+	if(!cas(&mp->state, Done, Free)){
+		jehanne_print("mp %#p: state %d pc %#p\n", mp, mp->state, __builtin_return_address(0));
 		abort();
-	mp->state = Free;
+	}
 
 	return 1;
 }
@@ -556,13 +563,14 @@ wakeupPendingWriter:	/* when we jump here, we know p is not nil */
 				if(q->head == nil)
 					q->tail = nil;
 				jehanne_unlock(&q->lock);
-				while((*_rendezvousp)(p, 0) == (void*)~0)
+				while(RENDEZVOUS(p, 0) == (void*)~0)
 					;
 				return;
 			case Timedout:
 				/* R and W have the same fate, once Timedout */
+				tmp = p->next;
 				p->state = Free;
-				p = p->next;
+				p = tmp;
 				break;
 			case QueuingR:
 				/* wakeup pending readers */
@@ -581,18 +589,22 @@ wakeupPendingReaders:	/* when we jump here, we know p is not nil */
 			case QueuingR:
 				q->_readers++;
 				tmp = p->next;
-				while((*_rendezvousp)(p, 0) == (void*)~0)
+				jehanne_unlock(&q->lock);
+				while(RENDEZVOUS(p, 0) == (void*)~0)
 					;
 				/* after the rendezvous, p->state will be set to Free
 				 * from the reader we are going to wakeup, thus p could
 				 * be reused before we are scheduled again: we need tmp
 				 * to keep track of the next QLp to test
 				 */
+				jehanne_lock(&q->lock);
 				p = tmp;
 				break;
 			case Timedout:
+				/* R and W have the same fate, once Timedout */
+				tmp = p->next;
 				p->state = Free;
-				p = p->next;
+				p = tmp;
 				break;
 			case QueuingW:
 				if(q->_readers > 0){
@@ -619,7 +631,7 @@ allPendingReadersStarted:
 void
 jehanne_rsleep(Rendez *r)
 {
-	QLp *t, *me;
+	QLp *t, *me, *tmp;
 
 	if(!r->l)
 		abort();
@@ -645,15 +657,16 @@ jehanne_rsleep(Rendez *r)
 			jehanne_print("rsleep mp %#p: state %d (should be Timedout) pc %#p\n", t, t->state, __builtin_return_address(0));
 			abort();
 		}
+		tmp = t->next;
 		t->state = Free;
-		t = t->next;
+		t = tmp;
 	}
 	if(t != nil){
 		r->l->head = t->next;
 		if(r->l->head == nil)
 			r->l->tail = nil;
 		jehanne_unlock(&r->l->lock);
-		while((*_rendezvousp)(t, (void*)0x12345) == (void*)~0)
+		while(RENDEZVOUS(t, (void*)0x12345) == (void*)~0)
 			;
 	}else{
 		r->l->head = nil;
@@ -663,17 +676,18 @@ jehanne_rsleep(Rendez *r)
 	}
 
 	/* wait for a wakeup */
-	while((*_rendezvousp)(me, (void*)1) == (void*)~0)
+	while(RENDEZVOUS(me, (void*)1) == (void*)~0)
 		;
-	if(me->state != Done)
+	if(!cas(&me->state, Done, Free)){
+		jehanne_print("mp %#p: state %d pc %#p\n", me, me->state, __builtin_return_address(0));
 		abort();
-	me->state = Free;
+	}
 }
 
 int
 jehanne_rsleept(Rendez *r, uint32_t ms)
 {
-	QLp *t, *me;
+	QLp *t, *me, *tmp;
 	int64_t wkup;
 
 	if(!r->l)
@@ -703,8 +717,9 @@ jehanne_rsleept(Rendez *r, uint32_t ms)
 			jehanne_print("rsleept mp %#p: state %d (should be Timedout) pc %#p\n", t, t->state, __builtin_return_address(0));
 			abort();
 		}
+		tmp = t->next;
 		t->state = Free;
-		t = t->next;
+		t = tmp;
 	}
 	if(t != nil){
 		r->l->head = t->next;
@@ -712,7 +727,7 @@ jehanne_rsleept(Rendez *r, uint32_t ms)
 			r->l->tail = nil;
 		jehanne_unlock(&r->l->lock);
 
-		while((*_rendezvousp)(t, (void*)0x12345) == (void*)~0)
+		while(RENDEZVOUS(t, (void*)0x12345) == (void*)~0)
 			;
 	}else{
 		r->l->head = nil;
@@ -725,7 +740,7 @@ jehanne_rsleept(Rendez *r, uint32_t ms)
 	wkup = awake(ms);
 
 	/* wait for a rwakeup (or a timeout) */
-	while((*_rendezvousp)(me, (void*)1) == (void*)~0)
+	while(RENDEZVOUS(me, (void*)1) == (void*)~0)
 		if (jehanne_awakened(wkup)){
 			if(cas(&me->state, Sleeping, Timedout)){
 				/* if we can atomically mark the QLp
@@ -737,12 +752,14 @@ jehanne_rsleept(Rendez *r, uint32_t ms)
 			/* ... otherwise we are going to take the lock
 			 * on the next rendezvous from rwakeup
 			 */
+			assert(me->state == Done);
 		}
 
 	jehanne_forgivewkp(wkup);
-	if(me->state != Done)
+	if(!cas(&me->state, Done, Free)){
+		jehanne_print("mp %#p: state %d pc %#p\n", me, me->state, __builtin_return_address(0));
 		abort();
-	me->state = Free;
+	}
 
 	return 1;
 }
@@ -750,7 +767,7 @@ jehanne_rsleept(Rendez *r, uint32_t ms)
 int
 jehanne_rwakeup(Rendez *r)
 {
-	QLp *t;
+	QLp *t, *tmp;
 
 	/*
 	 * take off wait and put on front of queue
@@ -763,18 +780,18 @@ jehanne_rwakeup(Rendez *r)
 	if(!r->l->locked)
 		abort();
 
-	if(r->head && r->head->state == Free)
-		r->head = nil;
-
 	t = r->head;
+	if(t != nil && t->state == Free)
+		abort();
 
 	while(t != nil && !cas(&t->state, Sleeping, Queuing)){
 		if(t->state != Timedout){
 			jehanne_print("rwakeup mp %#p: state %d (should be Timedout) pc %#p\n", t, t->state, __builtin_return_address(0));
 			abort();
 		}
+		tmp = t->next;
 		t->state = Free;
-		t = t->next;
+		t = tmp;
 	}
 	if(t == nil){
 		r->head = nil;

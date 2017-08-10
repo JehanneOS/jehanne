@@ -4,7 +4,7 @@
 #include "dat.h"
 #include "fns.h"
 
-#define	D(c)	if(0)cgapost((c))
+#define	D(c)
 
 static void
 mcslock(Lock *lk, LockEntry *ql)

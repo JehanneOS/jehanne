@@ -9,40 +9,39 @@
 
 typedef struct Pool Pool;
 struct Pool {
-	char*	name;
-	uint32_t	maxsize;
+	char*		name;
+	uintptr_t	maxsize;
 
-	uint32_t	cursize;
-	uint32_t	curfree;
-	uint32_t	curalloc;
+	uintptr_t	cursize;
+	uintptr_t	curfree;
+	uintptr_t	curalloc;
 
 	uint32_t	minarena;	/* smallest size of new arena */
 	uint32_t	quantum;	/* allocated blocks should be multiple of */
 	uint32_t	minblock;	/* smallest newly allocated block */
 
-	void*	freeroot;	/* actually Free* */
-	void*	arenalist;	/* actually Arena* */
+	int		flags;
+	int		nfree;
+	int		lastcompact;
 
-	void*	(*alloc)(uint32_t);
-	int	(*merge)(void*, void*);
-	void	(*move)(void* from, void* to);
+	void*		freeroot;	/* actually Free* */
+	void*		arenalist;	/* actually Arena* */
 
-	int	flags;
-	int	nfree;
-	int	lastcompact;
+	void*		(*alloc)(uint32_t);
+	int		(*merge)(void*, void*);
+	void		(*move)(void* from, void* to);
 
-	void	(*lock)(Pool*);
-	void	(*unlock)(Pool*);
-	void	(*print)(Pool*, char*, ...);
-	void	(*panic)(Pool*, char*, ...);
-	void	(*logstack)(Pool*);
+	void		(*lock)(Pool*);
+	void		(*unlock)(Pool*);
+	void		(*print)(Pool*, char*, ...);
+	void		(*panic)(Pool*, char*, ...);
+	void		(*logstack)(Pool*);
 
-	void*	private;
+	void*		private;
 };
 
 extern void*	poolalloc(Pool*, uint32_t);
-extern void*	poolallocalign(Pool*, uint32_t, uint32_t, int32_t,
-				   uint32_t);
+extern void*	poolallocalign(Pool*, uint32_t, uint32_t, int32_t, uint32_t);
 extern void	poolfree(Pool*, void*);
 extern uint32_t	poolmsize(Pool*, void*);
 extern void*	poolrealloc(Pool*, void*, uint32_t);

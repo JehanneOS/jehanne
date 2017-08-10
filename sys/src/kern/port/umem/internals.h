@@ -90,4 +90,4 @@ extern void elfsegment_assign(ElfSegPointer *target, ElfSegPointer img);
 
 extern void rawmem_init(void);
 
-extern void imagepool_init(void);
+extern void imagepool_init(short max_images);

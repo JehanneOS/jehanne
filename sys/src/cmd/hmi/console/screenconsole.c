@@ -57,8 +57,8 @@ main(int argc, char *argv[])
 		srv = "screenconsole";
 
 	/* first try in /dev so that binding can work */
-	if((fd = open("/dev/ps2keyb", OREAD)) <= 0)
-		if((fd = open("#P/ps2keyb", OREAD)) <= 0)
+	if((fd = open("/dev/scancode", OREAD)) <= 0)
+		if((fd = open("#b/scancode", OREAD)) <= 0)
 			sysfatal("open keyboard: %r");
 	dup(fd, 0);
 	close(fd);

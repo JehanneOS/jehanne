@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Giacomo Tesio <giacomo@tesio.it>
+ * Copyright (C) 2016-2017 Giacomo Tesio <giacomo@tesio.it>
  *
  * This file is part of the UCB release of Plan 9. It is subject to the license
  * terms in the LICENSE file found in the top-level directory of this
@@ -12,7 +12,7 @@
 /*
  * SIMD Floating Point.
  * Assembler support to get at the individual instructions
- * is in l64fpu.s.
+ * is in l64fpu.S.
  * There are opportunities to be lazier about saving and
  * restoring the state and allocating the storage needed.
  */
@@ -21,6 +21,7 @@
 #include "mem.h"
 #include "dat.h"
 #include "fns.h"
+#include "io.h"
 
 #include "amd64.h"
 #include "ureg.h"
@@ -87,368 +88,116 @@ extern void _fwait(void);
 extern void _ldmxcsr(uint32_t*);
 extern void _stts(void);
 
-int
-fpudevprocio(Proc* proc, void* a, int32_t n, uintptr_t offset, int write)
-{
-	uint8_t *p;
-
-	/*
-	 * Called from procdevtab.read and procdevtab.write
-	 * allow user process access to the FPU registers.
-	 * This is the only FPU routine which is called directly
-	 * from the port code; it would be nice to have dynamic
-	 * creation of entries in the device file trees...
-	 */
-	if(offset >= sizeof(Fxsave))
-		return 0;
-	if((p = proc->FPU.fpusave) == nil)
-		return 0;
-	switch(write){
-	default:
-		if(offset+n > sizeof(Fxsave))
-			n = sizeof(Fxsave) - offset;
-		jehanne_memmove(p+offset, a, n);
-		break;
-	case 0:
-		if(offset+n > sizeof(Fxsave))
-			n = sizeof(Fxsave) - offset;
-		jehanne_memmove(a, p+offset, n);
-		break;
-	}
-
-	return n;
-}
-
 void
-fpunotify(Ureg* u)
+fpclear(void)
 {
-	/*
-	 * Called when a note is about to be delivered to a
-	 * user process, usually at the end of a system call.
-	 * Note handlers are not allowed to use the FPU so
-	 * the state is marked (after saving if necessary) and
-	 * checked in the Device Not Available handler.
-	 */
-	if(up->FPU.fpustate == Busy){
-		_fxsave(up->FPU.fpusave);
-		_stts();
-		up->FPU.fpustate = Idle;
-	}
-	up->FPU.fpustate |= Hold;
-}
-
-void
-fpunoted(void)
-{
-	/*
-	 * Called from sysnoted() via the machine-dependent
-	 * noted() routine.
-	 * Clear the flag set above in fpunotify().
-	 */
-	up->FPU.fpustate &= ~Hold;
-}
-
-void
-fpusysrfork(Ureg* u)
-{
-	/*
-	 * Called early in the non-interruptible path of
-	 * sysrfork() via the machine-dependent syscall() routine.
-	 * Save the state so that it can be easily copied
-	 * to the child process later.
-	 */
-	if(up->FPU.fpustate != Busy)
-		return;
-
-	_fxsave(up->FPU.fpusave);
+	_clts();
+	_fnclex();
 	_stts();
-	up->FPU.fpustate = Idle;
 }
 
 void
-fpusysrforkchild(Proc* child, Proc* parent)
+fpssesave(FPsave *fps)
 {
-	/*
-	 * Called later in sysrfork() via the machine-dependent
-	 * sysrforkchild() routine.
-	 * Copy the parent FPU state to the child.
-	 */
-	child->FPU.fpustate = parent->FPU.fpustate;
-	child->FPU.fpusave = (void*)((PTR2UINT(up->FPU.fxsave) + 15) & ~15);
-	if(child->FPU.fpustate == Init)
-		return;
+	Fxsave *fx = (Fxsave*)ROUND(((uintptr_t)fps), FPalign);
 
-	jehanne_memmove(child->FPU.fpusave, parent->FPU.fpusave, sizeof(Fxsave));
-}
-
-void
-fpuprocsave(Proc* p)
-{
-	/*
-	 * Called from sched() and sleep() via the machine-dependent
-	 * procsave() routine.
-	 * About to go in to the scheduler.
-	 * If the process wasn't using the FPU
-	 * there's nothing to do.
-	 */
-	if(p->FPU.fpustate != Busy)
-		return;
-
-	/*
-	 * The process is dead so clear and disable the FPU
-	 * and set the state for whoever gets this proc struct
-	 * next.
-	 */
-	if(p->state == Moribund){
-		_clts();
-		_fnclex();
-		_stts();
-		p->FPU.fpustate = Init;
-		return;
-	}
-
-	/*
-	 * Save the FPU state without handling pending
-	 * unmasked exceptions and disable. Postnote() can't
-	 * be called here as sleep() already has up->rlock,
-	 * so the handling of pending exceptions is delayed
-	 * until the process runs again and generates a
-	 * Device Not Available exception fault to activate
-	 * the FPU.
-	 */
-	_fxsave(p->FPU.fpusave);
+	_fxsave(fx);
 	_stts();
-	p->FPU.fpustate = Idle;
+	if(fx != (Fxsave*)fps)
+		memmove((Fxsave*)fps, fx, sizeof(Fxsave));
+}
+void
+fpsserestore(FPsave *fps)
+{
+	Fxsave *fx = (Fxsave*)ROUND(((uintptr_t)fps), FPalign);
+
+	if(fx != (Fxsave*)fps)
+		memmove(fx, (Fxsave*)fps, sizeof(Fxsave));
+	_clts();
+	_fxrstor(fx);
 }
 
-void
-fpuprocrestore(Proc* p)
+static char* mathmsg[] =
 {
-	/*
-	 * The process has been rescheduled and is about to run.
-	 * Nothing to do here right now. If the process tries to use
-	 * the FPU again it will cause a Device Not Available
-	 * exception and the state will then be restored.
-	 */
-	USED(p);
-}
+	nil,	/* handled below */
+	"denormalized operand",
+	"division by zero",
+	"numeric overflow",
+	"numeric underflow",
+	"precision loss",
+};
 
-void
-fpusysprocsetup(Proc* p)
+static void
+mathnote(unsigned int status, uintptr_t pc)
 {
+	char *msg, note[ERRMAX];
+	int i;
+
 	/*
-	 * Disable the FPU.
-	 * Called from sysexec() via sysprocsetup() to
-	 * set the FPU for the new process.
+	 * Some attention should probably be paid here to the
+	 * exception masks and error summary.
 	 */
-	if(p->FPU.fpustate != Init){
-		_clts();
-		_fnclex();
-		_stts();
-		p->FPU.fpustate = Init;
+	msg = "unknown exception";
+	for(i = 1; i <= 5; i++){
+		if(!((1<<i) & status))
+			continue;
+		msg = mathmsg[i];
+		break;
 	}
-}
-
-void
-acfpusysprocsetup(Proc *p)
-{
-	if(p->FPU.fpustate == Init){
-		/* The FPU is initialized in the TC but we must initialize
-		 * it in the AC.
-		 */
-		p->FPU.fpustate = Idle;
-		fpusysprocsetup(p);
-	}
-}
-
-static char*
-fpunote(void)
-{
-	uint16_t fsw;
-	Fxsave *fpusave;
-	char *cm;
-
-	/*
-	 * The Sff bit is sticky, meaning it should be explicitly
-	 * cleared or there's no way to tell if the exception was an
-	 * invalid operation or a stack fault.
-	 */
-	fpusave = up->FPU.fpusave;
-	fsw = (fpusave->fsw & ~fpusave->fcw) & (Sff|P|U|O|Z|D|I);
-	if(fsw & I){
-		if(fsw & Sff){
-			if(fsw & C1)
-				cm = "Stack Overflow";
+	if(status & 0x01){
+		if(status & 0x40){
+			if(status & 0x200)
+				msg = "stack overflow";
 			else
-				cm = "Stack Underflow";
-		}
-		else
-			cm = "Invalid Operation";
+				msg = "stack underflow";
+		}else
+			msg = "invalid operation";
 	}
-	else if(fsw & D)
-		cm = "Denormal Operand";
-	else if(fsw & Z)
-		cm = "Divide-By-Zero";
-	else if(fsw & O)
-		cm = "Numeric Overflow";
-	else if(fsw & U)
-		cm = "Numeric Underflow";
-	else if(fsw & P)
-		cm = "Precision";
-	else
-		cm =  "Unknown";
-
-	jehanne_snprint(up->genbuf, sizeof(up->genbuf),
-		"sys: fp: %s Exception ipo=%#llux fsw=%#ux",
-		cm, fpusave->rip, fsw);
-	return up->genbuf;
+	snprint(note, sizeof note, "sys: fp: %s fppc=%#p status=0x%lux",
+		msg, pc, status);
+	postnote(up, 1, note, NDebug);
 }
 
-char*
-xfpuxf(Ureg* ureg, void* v)
+/*
+ *  math coprocessor error
+ */
+static void
+matherror(Ureg* _, void* __)
 {
-	uint32_t mxcsr;
-	Fxsave *fpusave;
-	char *cm;
-
-	/*
-	 * #XF - SIMD Floating Point Exception (Vector 18).
-	 */
-
 	/*
 	 * Save FPU state to check out the error.
 	 */
-	fpusave = up->FPU.fpusave;
-	_fxsave(fpusave);
-	_stts();
-	up->FPU.fpustate = Idle;
-
-	if(ureg->ip & KZERO)
-		panic("#MF: ip=%#p", ureg->ip);
-
-	/*
-	 * Notify the user process.
-	 * The path here is similar to the x87 path described
-	 * in fpupostnote above but without the fpupostnote()
-	 * call.
-	 */
-	mxcsr = fpusave->mxcsr;
-	if((mxcsr & (Im|I)) == I)
-		cm = "Invalid Operation";
-	else if((mxcsr & (Dm|D)) == D)
-		cm = "Denormal Operand";
-	else if((mxcsr & (Zm|Z)) == Z)
-		cm = "Divide-By-Zero";
-	else if((mxcsr & (Om|O)) == O)
-		cm = "Numeric Overflow";
-	else if((mxcsr & (Um|U)) == U)
-		cm = "Numeric Underflow";
-	else if((mxcsr & (Pm|P)) == P)
-		cm = "Precision";
-	else
-		cm =  "Unknown";
-
-	jehanne_snprint(up->genbuf, sizeof(up->genbuf),
-		"sys: fp: %s Exception mxcsr=%#ux", cm, mxcsr);
-	return up->genbuf;
+	fpsave(&up->fpsave);
+	up->fpstate = FPinactive;
+	mathnote(up->fpsave.fsw, up->fpsave.rip);
 }
 
-void
-fpuxf(Ureg *ureg, void *p)
+/*
+ *  SIMD error
+ */
+static void
+simderror(Ureg *ureg, void* _)
 {
-	char *n;
-
-	n = xfpuxf(ureg, p);
-	if(n != nil)
-		postnote(up, 1, n, NDebug);
+	fpsave(&up->fpsave);
+	up->fpstate = FPinactive;
+	mathnote(up->fpsave.mxcsr & 0x3f, ureg->ip);
 }
 
-char*
-acfpuxf(Ureg *ureg, void *p)
+/*
+ *  math coprocessor emulation fault
+ */
+static void
+mathemu(Ureg *ureg, void* _)
 {
-	return xfpuxf(ureg, p);
-}
+	unsigned int status, control;
 
-static char*
-xfpumf(Ureg* ureg, void* v)
-{
-	Fxsave *fpusave;
-
-	/*
-	 * #MF - x87 Floating Point Exception Pending (Vector 16).
-	 */
-
-	/*
-	 * Save FPU state to check out the error.
-	 */
-	fpusave = up->FPU.fpusave;
-	_fxsave(fpusave);
-	_stts();
-	up->FPU.fpustate = Idle;
-
-	if(ureg->ip & KZERO)
-		panic("#MF: ip=%#p rip=%#p", ureg->ip, fpusave->rip);
-
-	/*
-	 * Notify the user process.
-	 * The path here is
-	 *	call trap->fpumf->fpupostnote->postnote
-	 *	return ->fpupostnote->fpumf->trap
-	 *	call notify->fpunotify
-	 *	return ->notify
-	 * then either
-	 *	call pexit
-	 * or
-	 *	return ->trap
-	 *	return ->user note handler
-	 */
-	return fpunote();
-}
-
-void
-fpumf(Ureg *ureg, void *p)
-{
-	char *n;
-
-	n = xfpumf(ureg, p);
-	if(n != nil)
-		postnote(up, 1, n, NDebug);
-}
-
-char*
-acfpumf(Ureg *ureg, void *p)
-{
-	return xfpumf(ureg, p);
-}
-
-static char*
-xfpunm(Ureg* ureg, void* v)
-{
-	Fxsave *fpusave;
-
-	/*
-	 * #NM - Device Not Available (Vector 7).
-	 */
-	if(up == nil)
-		panic("#NM: fpu in kernel: ip %#p\n", ureg->ip);
-
-	/*
-	 * Someone tried to use the FPU in a note handler.
-	 * That's a no-no.
-	 */
-	if(up->FPU.fpustate & Hold)
-		return "sys: floating point in note handler";
-
-	if(ureg->ip & KZERO)
-		panic("#NM: proc %d %s state %d ip %#p\n",
-			up->pid, up->text, up->FPU.fpustate, ureg->ip);
-
-	switch(up->FPU.fpustate){
-	case Busy:
-	default:
-		panic("#NM: state %d ip %#p\n", up->FPU.fpustate, ureg->ip);
-		break;
-	case Init:
+	if(up->fpstate & FPillegal){
+		/* someone did floating point in a note handler */
+		postnote(up, 1, "sys: floating point in note handler", NDebug);
+		return;
+	}
+	switch(up->fpstate){
+	case FPinit:
 		/*
 		 * A process tries to use the FPU for the
 		 * first time and generates a 'device not available'
@@ -460,87 +209,78 @@ xfpunm(Ureg* ureg, void* v)
 		_clts();
 		_fninit();
 		_fwait();
-		_fldcw(&m->FPU.fcw);
-		_ldmxcsr(&m->FPU.mxcsr);
-		up->FPU.fpusave = (void*)((PTR2UINT(up->FPU.fxsave) + 15) & ~15);
-		up->FPU.fpustate = Busy;
+		up->fpsave.fcw = 0x0232;
+		_fldcw(&up->fpsave.fcw);
+		up->fpsave.mxcsr = 0x1900;
+		_ldmxcsr(&up->fpsave.mxcsr);
+		up->fpstate = FPactive;
 		break;
-	case Idle:
+	case FPinactive:
 		/*
 		 * Before restoring the state, check for any pending
 		 * exceptions, there's no way to restore the state without
 		 * generating an unmasked exception.
+		 * More attention should probably be paid here to the
+		 * exception masks and error summary.
 		 */
-		fpusave = up->FPU.fpusave;
-		if((fpusave->fsw & ~fpusave->fcw) & (Sff|P|U|O|Z|D|I))
-			return fpunote();
-
-		/*
-		 * Sff is sticky.
-		 */
-		fpusave->fcw &= ~Sff;
-		_clts();
-		_fxrstor(fpusave);
-		up->FPU.fpustate = Busy;
+		status = up->fpsave.fsw;
+		control = up->fpsave.fcw;
+		if((status & ~control) & 0x07F){
+			mathnote(status, up->fpsave.rip);
+			break;
+		}
+		fprestore(&up->fpsave);
+		up->fpstate = FPactive;
+		break;
+	case FPactive:
+		panic("math emu pid %ld %s pc %#p",
+			up->pid, up->text, ureg->ip);
 		break;
 	}
-	return nil;
 }
 
 void
-fpunm(Ureg *ureg, void *p)
+fpprocsetup(Proc* p)
 {
-	char *n;
-
-	n = xfpunm(ureg, p);
-	if(n != nil)
-		postnote(up, 1, n, NDebug);
-}
-
-char*
-acfpunm(Ureg *ureg, void *p)
-{
-	return xfpunm(ureg, p);
-}
-
-void
-fpuinit(void)
-{
-	uint64_t r;
-	Fxsave *fxsave;
-	uint8_t buf[sizeof(Fxsave)+15];
-
-	/*
-	 * It's assumed there is an integrated FPU, so Em is cleared;
-	 */
-	r = cr0get();
-	r &= ~(Ts|Em);
-	r |= Ne|Mp;
-	cr0put(r);
-
-	r = cr4get();
-	r |= Osxmmexcpt|Osfxsr;
-	cr4put(r);
-
-	_fninit();
-	fxsave = (Fxsave*)((PTR2UINT(buf) + 15) & ~15);
-	jehanne_memset(fxsave, 0, sizeof(Fxsave));
-	_fxsave(fxsave);
-	m->FPU.fcw = RCn|PCd|P|U|D;
-	if(fxsave->mxcsrmask == 0)
-		m->FPU.mxcsrmask = 0x0000FFBF;
-	else
-		m->FPU.mxcsrmask = fxsave->mxcsrmask;
-	m->FPU.mxcsr = (Rn|Pm|Um|Dm) & m->FPU.mxcsrmask;
+	p->fpstate = FPinit;
 	_stts();
+}
 
-	if(m->machno != 0)
-		return;
+void
+fpprocfork(Proc *p)
+{
+	int s;
 
-	/*
-	 * Set up the exception handlers.
-	 */
-	trapenable(IdtNM, fpunm, 0, "#NM");
-	trapenable(IdtMF, fpumf, 0, "#MF");
-	trapenable(IdtXF, fpuxf, 0, "#XF");
+	/* save floating point state */
+	s = splhi();
+	switch(up->fpstate & ~FPillegal){
+	case FPactive:
+		fpsave(&up->fpsave);
+		up->fpstate = FPinactive;
+	case FPinactive:
+		p->fpsave = up->fpsave;
+		p->fpstate = FPinactive;
+	}
+	splx(s);
+
+}
+
+/*
+ *  math coprocessor segment overrun
+ */
+static void
+mathover(Ureg* _, void* __)
+{
+	pexit("math overrun", 0);
+}
+
+void
+mathinit(void)
+{
+	trapenable(VectorCERR, matherror, 0, "matherror");
+	if(X86FAMILY(m->cpuidax) == 3)
+		intrenable(IrqIRQ13, matherror, 0, BUSUNKNOWN, "matherror");
+	trapenable(VectorCNA, mathemu, 0, "mathemu");
+	trapenable(VectorCSO, mathover, 0, "mathover");
+	trapenable(VectorSIMD, simderror, 0, "simderror");
 }

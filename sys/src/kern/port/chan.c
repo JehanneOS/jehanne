@@ -151,7 +151,6 @@ newchan(void)
 	c->dri = 0;
 	c->aux = 0;
 	c->mchan = 0;
-	c->mc = 0;
 	c->mux = 0;
 	jehanne_memset(&c->mqid, 0, sizeof(c->mqid));
 	c->path = 0;
@@ -1441,9 +1440,6 @@ namec(char *aname, int amode, long omode, long perm)
 
 			/* save registers else error() in open has wrong value of c saved */
 			saveregisters();
-
-			if(omode == OEXEC)
-				c->flag &= ~CCACHE;
 
 			c = c->dev->open(c, omode&~OCEXEC);
 

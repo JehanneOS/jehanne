@@ -16,6 +16,7 @@
  * along with Jehanne.  If not, see <http://www.gnu.org/licenses/>.
  */
 typedef struct Alarms	Alarms;
+typedef struct AwakeAlarm AwakeAlarm;
 typedef struct Block	Block;
 typedef struct Bpool Bpool;
 typedef struct Chan	Chan;
@@ -28,7 +29,6 @@ typedef struct Egrp	Egrp;
 typedef struct Evalue	Evalue;
 typedef struct Fgrp	Fgrp;
 typedef struct Ldseg	Ldseg;
-typedef struct LockEntry	LockEntry;
 typedef struct Log	Log;
 typedef struct Logflag	Logflag;
 typedef struct Mntcache Mntcache;
@@ -52,8 +52,6 @@ typedef struct Queue	Queue;
 typedef struct Ref	Ref;
 typedef struct Rendez	Rendez;
 typedef struct Rgrp	Rgrp;
-typedef struct RMap	RMap;
-typedef struct RMapel RMapel;
 typedef struct RWlock	RWlock;
 typedef struct Schedq	Schedq;
 typedef struct Sema	Sema;
@@ -64,10 +62,10 @@ typedef struct Waitq	Waitq;
 typedef struct Walkqid	Walkqid;
 typedef struct Watchdog	Watchdog;
 typedef int    Devgen(Chan*, char*, Dirtab*, int, int, Dir*);
+typedef struct Pool Pool;
 
 #pragma incomplete Bpool
 #pragma incomplete DevConf
-#pragma incomplete Mntcache
 #pragma incomplete Mntrpc
 #pragma incomplete Queue
 #pragma incomplete Timers
@@ -77,20 +75,6 @@ typedef int    Devgen(Chan*, char*, Dirtab*, int, int, Dir*);
 struct Ref
 {
 	int	ref;
-};
-
-struct LockEntry
-{
-	LockEntry*	next;
-	Lock*		used;
-	int		locked;
-	int		isilock;
-	Mpl		sr;
-
-	/* for debugging */
-	uintptr_t	pc;
-	Proc*		p;
-	Mach*		m;
 };
 
 struct Rendez
@@ -119,23 +103,6 @@ struct RWlock
 	int		writer;		/* number of writers */
 };
 
-struct RMapel
-{
-	uintmem	size;
-	uintmem	addr;
-	RMapel*	next;
-};
-
-struct RMap
-{
-	char*	name;
-
-	RMapel*	(*alloc)(void);
-	RMapel*	map;
-	RMapel*	free;
-	Lock	l;
-};
-
 struct Alarms
 {
 	QLock	ql;
@@ -161,7 +128,6 @@ enum
 	CCEXEC	= 0x0008,		/* close on exec */
 	CFREE	= 0x0010,		/* not in use */
 	CRCLOSE	= 0x0020,		/* remove on close */
-	CCACHE	= 0x0080,		/* client cache */
 };
 
 /* flag values */
@@ -217,7 +183,6 @@ struct Chan
 	int		mrock;
 	QLock		rockqlock;
 	int		ismtpt;
-	Mntcache*	mc;			/* Mount cache pointer */
 	Mnt*		mux;			/* Mnt for clients using me for messages */
 	union {
 		void*		aux;
@@ -323,7 +288,6 @@ struct Mnt
 	Mntrpc*		queue;		/* Queue of pending requests on this channel */
 	uint32_t	id;		/* Multiplexer id for channel check */
 	Mnt*		list;		/* Free list */
-	int		flags;		/* cache */
 	int		msize;		/* data + IOHDRSZ */
 	char*		version;	/* 9P version */
 	Queue*		q;		/* input queue */
@@ -498,7 +462,7 @@ enum
 	SSEG, TSEG, DSEG, BSEG, ESEG, LSEG, SEG1, SEG2, SEG3, SEG4, NSEG
 };
 
-enum
+typedef enum ProcState
 {
 	Dead = 0,		/* Process states */
 	Moribund,
@@ -513,7 +477,10 @@ enum
 	Stopped,
 	Rendezvous,
 	Waitrelease,
+} ProcState;
 
+enum
+{
 	Proc_stopme = 1, 	/* devproc requests */
 	Proc_exitme,
 	Proc_traceme,
@@ -555,11 +522,23 @@ union ScRet {
 	int64_t		vl;
 };
 
+typedef struct ProcWakeup
+{
+	int		count;		/* reduced when moved to ringing or cleared */
+	Syscalls	blockingsc;	/* set to cursyscall on sleep() and sysrendevouz
+					 * reset by syscall
+					 */
+	unsigned long	fell_asleep;	/* debug: last time we went to sleep */
+	unsigned long	awakened;	/* debug: last time we stopped sleeping */
+	AwakeAlarm*	elapsed;
+	unsigned long	last;		/* freed on pexit/noted */
+} ProcWakeup;
+
 struct Proc
 {
 	Label		sched;		/* known to l.s */
 	char*		kstack;		/* known to l.s */
-	void*		dbgreg;		/* known to l.s User registers for devproc */
+	Ureg*		dbgreg;		/* known to l.s User registers for devproc */
 	Mach*		mach;		/* machine running this proc */
 	char*		text;
 	char*		user;
@@ -568,7 +547,7 @@ struct Proc
 	Proc*		rnext;		/* next process in run queue */
 	Proc*		qnext;		/* next process on queue for a QLock */
 	QLock*		qlock;		/* addr of qlock being queued for DEBUG */
-	int		state;
+	ProcState	state;
 	char*		psstate;	/* What /proc/#/status reports */
 	ProcSegment*	seg[NSEG];
 	RWlock		seglock;	/* wlocked whenever seg[] changes */
@@ -609,10 +588,8 @@ struct Proc
 	Profbuf*	prof;
 
 	int		inkernel;	/* either on syscall or fault */
+	int		fpstate;
 	Syscalls	cursyscall;	/* zero on fault */
-	Syscalls	blockingsc;	/* set to cursyscall on sleep() and sysrendevouz
-					 * reset by syscall
-					 */
 
 	int32_t		blockingfd;	/* fd currenly read/written */
 
@@ -630,11 +607,12 @@ struct Proc
 	int		notepending;	/* note issued but not acted on */
 	int		notedeferred;	/* note not to be acted on immediately */
 	int		kp;		/* true if a kernel process */
-	Proc*		palarm;		/* Next alarm time */
 	uint32_t	alarm;		/* Time of call */
-	uint32_t	wakeups;	/* Number of pending wakeups */
-	uint64_t	pendingWakeup;	/* checked on blocking syscall enter */
-	uint64_t	lastWakeup;	/* set on blocking syscall exit */
+	Proc*		palarm;		/* Next alarm time */
+
+	int		nwakeups;	/* number of allocated AwakeAlarms */
+	ProcWakeup	wakeups[2];	/* sysawake support */
+
 	int		newtlb;		/* Pager has changed my pte's, I must flush */
 	int		noswap;		/* process is not swappable */
 
@@ -689,6 +667,7 @@ struct Proc
 	int		trace;		/* process being traced? */
 
 	uintptr_t	qpc;		/* pc calling last blocking qlock */
+	QLock		*eql;		/* interruptable eqlock */
 
 	int		setargs;
 
@@ -696,10 +675,7 @@ struct Proc
 
 	Queue*		syscallq;
 
-	/*
-	 *  machine specific fpu, mmu and notify
-	 */
-	PFPU	FPU;
+	FPsave		fpsave;
 	PMMU;
 	PNOTIFY;
 };
@@ -722,9 +698,10 @@ enum
 	READSTR =	4000,		/* temporary buffer size for device reads */
 };
 
+extern Pool*	secrmem;
+
 extern	char*	conffile;
 extern	int	cpuserver;
-extern	char*	cputype;
 extern  char*	eve;
 extern	char	hostdomain[];
 extern	uint8_t	initcode[];
@@ -733,10 +710,11 @@ extern  Ref	noteidalloc;
 extern	int	nphysseg;
 extern	int	nsyscall;
 extern	Procalloc	procalloc;
-extern	RMap rmapram;
+extern	RMap	rmapram;
 extern	uint32_t	qiomaxatomic;
 extern	char*	statename[];
 extern	char*	sysname;
+extern	Queue*	serialoq;
 
 enum
 {
@@ -809,7 +787,6 @@ struct PhysUart
 	void	(*power)(Uart*, int);
 	int	(*getc)(Uart*);			/* polling version for rdb */
 	void	(*putc)(Uart*, int);		/* polling version for iprint */
-	void	(*poll)(Uart*);			/* polled interrupt routine */
 };
 
 enum {

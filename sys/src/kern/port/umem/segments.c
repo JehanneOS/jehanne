@@ -656,6 +656,22 @@ segment_free_pages(ProcSegment *s, uintptr_t from, uintptr_t to)
 	qunlock(&s->ql);
 }
 
+void
+segment_relocate(ProcSegment *s, uintptr_t newbase, uintptr_t newtop)
+{
+	if(s == 0)
+		panic("segment_relocate: nil segment, pc %#p", getcallerpc());
+	if(s->top - s->base != newtop - newbase)
+		panic("segment_relocate: change in size %ulld (old) != %ulld (new), pc %#p", s->top - s->base, newtop - newbase, getcallerpc());
+	if(s->r.ref > 1)
+		panic("segment_relocate: relocating shared segment, pc %#p", getcallerpc());
+	qlock(&s->ql);
+	s->base = newbase;
+	s->top = newtop;
+	s->table->base = newbase;
+	qunlock(&s->ql);
+}
+
 ProcSegment*
 proc_segment(Proc *p, uintptr_t va)
 {

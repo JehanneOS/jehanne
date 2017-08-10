@@ -44,7 +44,7 @@ struct Consdev
 };
 
 void	(*consdebug)(void) = nil;
-void	(*consputs)(char*, int) = nil;
+void	(*screenputs)(char*, int) = nil;
 
 static void kmesgputs(char *, int);
 static void kprintputs(char*, int);
@@ -64,7 +64,7 @@ static	Queue*	kbdqs[Nconsdevs];
 static	int	kbdprocs[Nconsdevs];
 static	Queue*	kbdq;		/* unprocessed console input */
 static	Queue*	lineq;		/* processed console input */
-//static	Queue*	serialoq;	/* serial console output */ // not used
+	Queue*	serialoq;	/* serial console output */
 static	Queue*	kprintoq;	/* console output, for /dev/kprint */
 static	uint32_t	kprintinuse;	/* test and set whether /dev/kprint is open */
 
@@ -124,8 +124,8 @@ Cmdtab rebootmsg[] =
 static void
 kprintputs(char *s, int n)
 {
-	if(consputs != nil)
-		consputs(s, n);
+	if(screenputs != nil)
+		screenputs(s, n);
 }
 
 int
@@ -352,12 +352,6 @@ putstrn(char *str, int n)
 	putstrn0(str, n, 0);
 }
 
-void
-jehanne__assert(const char *s)
-{
-	panic("assert failed at %#p: %s\n", getcallerpc(), s);
-}
-
 int
 jehanne_print(char *fmt, ...)
 {
@@ -400,7 +394,7 @@ int
 iprint(char *fmt, ...)
 {
 	Mreg s;
-	int i, n, locked, mlocked;
+	int i, n, locked; //, mlocked;
 	va_list arg;
 	char buf[PRINTSIZE];
 
@@ -408,13 +402,13 @@ iprint(char *fmt, ...)
 	va_start(arg, fmt);
 	n = jehanne_vseprint(buf, buf+sizeof(buf), fmt, arg) - buf;
 	va_end(arg);
-	mlocked = malloclocked();
+//	mlocked = malloclocked();
 	locked = iprintcanlock(&iprintlock);
 	for(i = 0; i < nconsdevs; i++){
 		if((consdevs[i].flags&Ciprint) != 0){
-			if(consdevs[i].q != nil && !mlocked)
-				qiwrite(consdevs[i].q, buf, n);
-			else
+//			if(consdevs[i].q != nil && !mlocked)
+//				qiwrite(consdevs[i].q, buf, n);
+//			else
 				consdevs[i].fn(buf, n);
 		}
 	}
@@ -438,8 +432,8 @@ panic(char *fmt, ...)
 
 	panicking = 1;
 
-	if(malloclocked())
-		consdevs[2].q = nil;	/* force direct uart output */
+//	if(malloclocked())
+//		consdevs[2].q = nil;	/* force direct uart output */
 	consdevs[1].q = nil;	/* don't try to write to /dev/kprint */
 
 	splhi();
@@ -464,7 +458,7 @@ panic(char *fmt, ...)
 #pragma profile 1
 /* libmp at least contains a few calls to sysfatal; simulate with panic */
 void
-sysfatal(char *fmt, ...)
+jehanne_sysfatal(char *fmt, ...)
 {
 	char err[256];
 	va_list arg;
@@ -476,7 +470,7 @@ sysfatal(char *fmt, ...)
 }
 
 void
-_assert(char *fmt)
+jehanne__assert(const char *fmt)
 {
 	panic("assert failed at %#p: %s", getcallerpc(), fmt);
 }
@@ -554,7 +548,6 @@ echo(char *buf, int n)
 			dumpstack();
 			return;
 		case 'x':
-			ixsummary();
 			mallocsummary();
 			return;
 		case 'd':

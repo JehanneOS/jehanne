@@ -120,9 +120,6 @@ main(int argc, char **argv)
 	case 'c':
 		mntflags |= MCREATE;
 		break;
-	case 'C':
-		mntflags |= MCACHE;
-		break;
 	case 'd':
 		debug++;
 		break;

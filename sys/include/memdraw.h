@@ -159,7 +159,7 @@ extern void	memarc(Memimage*, Point, int, int, int, Memimage*, Point, int, int, 
 extern Rectangle	memlinebbox(Point, Point, int, int, int);
 extern int	memlineendsize(int);
 extern void	_memmkcmap(void);
-extern void	memimageinit(void);
+extern int	memimageinit(void);
 
 /*
  * Subfont management

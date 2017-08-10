@@ -1,7 +1,7 @@
 {
 	"vga": {
 		"Cflags": [
-			"-I", "/sys/src/kern/386/"
+			"-I", "/sys/src/kern/$ARCH/"
 		],
 		"Include": [
 			"/sys/src/cmd/cmd.json"

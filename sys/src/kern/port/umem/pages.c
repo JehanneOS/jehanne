@@ -1,7 +1,7 @@
 /*
  * This file is part of Jehanne.
  *
- * Copyright (C) 2016 Giacomo Tesio <giacomo@tesio.it>
+ * Copyright (C) 2016-2017 Giacomo Tesio <giacomo@tesio.it>
  *
  * Jehanne is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,6 +21,8 @@
 #include "dat.h"
 #include "fns.h"
 #include "../port/umem/internals.h"
+
+#define INT32_MAX 2147483647
 
 /* Pages can have 3 states:
  * - Blank:	never used (pa == 0 && r.ref == 0) just after umem_init
@@ -48,6 +50,16 @@ typedef struct PagePool
 
 static PagePool pool;
 
+typedef struct MemoryRegion
+{
+	uintptr_t	base;
+	int		npages;
+	int		used;
+} MemoryRegion;
+
+static MemoryRegion regions[16];
+static int nregions;
+
 static void
 plock(void)
 {
@@ -71,12 +83,25 @@ proc_own_pagepool(Proc* p)
 void
 umem_init(void)
 {
-	uintmem avail;
-	uint64_t pkb, kkb, kmkb, mkb;
+	int64_t pkb, kkb, kmkb, mkb;
+	long npages;
+	int i;
 
-	avail = sys->pmpaged;	/* could include a portion of unassigned memory */
-	pool.npages = avail/PGSZ;
-	pool.npages -= (pool.npages*sizeof(UserPage)) / PGSZ;	/* little overestimate of the space occupied by the paging structures */
+	npages = 0;
+	for(i = 0; i < nelem(regions); ++i)
+		npages += regions[i].npages;
+	if(npages > INT32_MAX){
+		/* TODO: maybe we can move this check to umem_region
+		 * so that unused memory can be given back to kernel.
+		 *
+		 * NOTE however that we are talking about
+		 * unrealistic machines in 2017.
+		 */
+		jehanne_print("user memory: cannot use %lld MiB\n", (npages - INT32_MAX)*PGSZ/MiB);
+		pool.npages = INT32_MAX;
+	} else {
+		pool.npages = npages;
+	}
 	pool.pages = jehanne_mallocz(pool.npages*sizeof(UserPage), 1);
 	if(pool.pages == nil)
 		panic("umem_init: out of memory");
@@ -87,29 +112,69 @@ umem_init(void)
 	/* user, kernel, kernel malloc area, memory */
 	pkb = pool.npages*PGSZ/KiB;
 	kkb = ROUNDUP((uintptr_t)end - KTZERO, PGSZ)/KiB;
-	kmkb = ROUNDDN(sys->vmunmapped - (uintptr_t)end, PGSZ)/KiB;
-	mkb = sys->pmoccupied/KiB;
+	kmkb = (sys->npages - pool.npages)*PGSZ/KiB;
+	mkb = sys->npages*PGSZ/KiB;
 
 	rawmem_init();
-	imagepool_init();
+	imagepool_init(sys->nimage);
 
-	jehanne_print("%lldM memory: %lldK+%lldM kernel,"
-		" %lldM user, %lldM uncommitted\n",
-		mkb/KiB, kkb, kmkb/KiB, pkb/KiB, (mkb-kkb-kmkb-pkb)/KiB
+	jehanne_print("%lldM memory: %lldK+%lldM kernel, %lldM user\n",
+		mkb/KiB, kkb, kmkb/KiB, pkb/KiB
 	);
 
+}
+
+static int
+allocate_region(uintptr_t base, int32_t npages)
+{
+	int n;
+	n = nregions + 1;
+	if(n > sizeof(regions))
+		return 0;
+	regions[nregions].base = base;
+	regions[nregions].npages = npages;
+	regions[nregions].used = 0;
+	nregions = n;
+	return 1;
+}
+
+/* called with plock hold */
+static uintptr_t
+new_physical_page(void)
+{
+	uintptr_t addr;
+	MemoryRegion *r;
+	if(nregions == 0)
+		return 0;
+	r = &regions[nregions-1];
+	addr = r->base + (r->used * PGSZ);
+	++r->used;
+	if(r->used == r->npages)
+		--nregions;
+	return addr;
+}
+
+int
+umem_region(uintptr_t base, uint32_t npages)
+{
+	int r = 0;
+	int32_t np = (int32_t)npages;
+	if(np < 0){
+		r += allocate_region(base, INT32_MAX);
+		npages -= INT32_MAX;
+		base += INT32_MAX*PGSZ;
+	}
+	r += allocate_region(base, npages);
+	return r;
 }
 
 void
 memory_stats(MemoryStats *stats)
 {
-	uintptr_t km;
 	if(stats == nil)
 		panic("memory_stats: nil pointer, pc %#p", getcallerpc());
-	km = ROUNDUP((uintptr_t)end - KTZERO, PGSZ);
-	km += ROUNDDN(sys->vmunmapped - (uintptr_t)end, PGSZ);
-	stats->memory = sys->pmoccupied;
-	stats->kernel = km;
+	stats->memory = sys->npages*PGSZ;
+	stats->kernel = (sys->npages-pool.npages)*PGSZ;
 	stats->user_available = pool.npages*PGSZ;
 	stats->user = (pool.npages - pool.blankpages - pool.freepages)*PGSZ;
 }
@@ -120,7 +185,7 @@ kmap2(UserPage* page)	/* TODO: turn this into kmap */
 	DBG("kmap(%#llux) @ %#p: %#p %#p\n",
 		page->pa, getcallerpc(),
 		page->pa, KADDR(page->pa));
-	return KADDR(page->pa);
+	return kmap(page->pa);
 }
 
 int
@@ -158,7 +223,7 @@ page_new(PagePointer *slot, int clear)
 		pool.firstfree = p->next;
 		adec(&pool.freepages);
 	} else if (pool.blankpages > 0) {
-		pa = physalloc(PGSZ);
+		pa = new_physical_page();
 		if(pa == 0)
 			panic("page_new: out of memory with %d blanks available, pc %#p", pool.blankpages, getcallerpc());
 		pindex = pool.npages - pool.blankpages;

@@ -92,7 +92,7 @@ void*
 validaddr(void* addr, long len, int write)
 {
 	if(!okaddr(PTR2UINT(addr), len, write)){
-		pprint("trap: invalid address %#p/%ld in sys call pc=%#P\n", addr, len, userpc(nil));
+		pprint("trap: invalid address %#p/%ld in sys call pc=%#p\n", addr, len, userpc(nil));
 		postnote(up, 1, "sys: bad address in syscall", NDebug);
 		error(Ebadarg);
 	}

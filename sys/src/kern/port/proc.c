@@ -100,6 +100,8 @@ schedinit(void)		/* never returns */
 			psrelease(up);
 			unlock(&procalloc.l);
 			break;
+		default:
+			break;
 		}
 		up->mach = nil;
 		coherence();
@@ -159,9 +161,11 @@ sched(void)
 		m->schedticks = m->ticks + HZ/10;
 	m->readied = 0;
 	up = p;
+	lock(&up->rlock);
 	up->state = Running;
 	up->mach = m;
 	m->proc = up;
+	unlock(&up->rlock);
 	mmuswitch(up);
 	gotolabel(&up->sched);
 }
@@ -286,7 +290,7 @@ updatecpu(Proc *p)
 
 /*
  * On average, p has used p->cpu of a cpu recently.
- * Its fair share is sys.nonline/m->load of a cpu.  If it has been getting
+ * Its fair share is sys->nmach/m->load of a cpu.  If it has been getting
  * too much, penalize it.  If it has been getting not enough, reward it.
  * I don't think you can get much more than your fair share that
  * often, so most of the queues are for using less.  Having a priority
@@ -307,7 +311,7 @@ reprioritize(Proc *p)
 	 * except the decimal point is moved three places
 	 * on both load and fairshare.
 	 */
-	fairshare = (sys->nonline*1000*1000)/load;
+	fairshare = (sys->nmach*1000*1000)/load;
 	n = p->cpu;
 	if(n == 0)
 		n = 1;
@@ -712,10 +716,10 @@ sleep(Rendez *r, int (*f)(void*), void *arg)
 	 */
 	r->p = up;
 
-	up->blockingsc = up->cursyscall;
+	awake_fell_asleep(up);
 	if((*f)(arg)
 	|| (up->notepending && !up->notedeferred)
-	|| (up->inkernel && awakeOnBlock(up) && canwakeup(up->cursyscall))){
+	|| (up->inkernel && awake_should_wake_up(up))){
 		/*
 		 *  if condition happened or a note is pending
 		 *  never mind
@@ -758,14 +762,21 @@ sleep(Rendez *r, int (*f)(void*), void *arg)
 		up->notepending = 0;
 SleepAwakened:
 		splx(s);
-		if(up->procctl == Proc_exitme && up->closingfgrp)
-			forceclosefgrp();
-		error(Eintr);
+		interrupted();
 	}
-	if(up->inkernel && awakeOnBlock(up) && canwakeup(up->cursyscall))
+	if(up->inkernel && awake_should_wake_up(up)){
 		goto SleepAwakened;
+	}
 
 	splx(s);
+}
+
+void
+interrupted(void)
+{
+	if(up->procctl == Proc_exitme && up->closingfgrp != nil)
+		forceclosefgrp();
+	error(Eintr);
 }
 
 static int
@@ -870,7 +881,6 @@ postnote(Proc *p, int dolock, char *n, int flag)
 	Mreg s;
 	int ret;
 	Rendez *r;
-	Proc *d, **l;
 
 	if(dolock)
 		qlock(&p->debug);
@@ -924,25 +934,77 @@ postnote(Proc *p, int dolock, char *n, int flag)
 	unlock(&p->rlock);
 	splx(s);
 
-	if(p->state != Rendezvous)
-		return ret;
-
-	/* Try and pull out of a rendezvous */
-	lock(&p->rgrp->l);
-	if(p->state == Rendezvous) {
-		p->rendval = ~0;
-		l = &REND(p->rgrp, p->rendtag);
-		for(d = *l; d; d = d->rendhash) {
-			if(d == p) {
-				*l = p->rendhash;
-				break;
-			}
-			l = &d->rendhash;
-		}
-		ready(p);
-	}
-	unlock(&p->rgrp->l);
+	proc_interrupt_finalize(p);
 	return ret;
+}
+
+int
+proc_interrupt_finalize(Proc *p)
+{
+	QLock *q;
+	int done = 0;
+	switch(p->state){
+	default:
+		return 1;
+	case Queueing:
+		/* Try and pull out of a eqlock */
+		if((q = p->eql) != nil){
+			lock(&q->use);
+			if(p->state == Queueing && p->eql == q){
+				Proc *d, *l;
+				for(l = nil, d = q->head; d != nil; l = d, d = d->qnext){
+					if(d == p){
+						if(l != nil)
+							l->qnext = p->qnext;
+						else
+							q->head = p->qnext;
+						if(p->qnext == nil)
+							q->tail = l;
+						p->qnext = nil;
+						p->eql = nil;	/* not taken */
+						ready(p);
+						done = 1;
+						break;
+					}
+				}
+			}
+			unlock(&q->use);
+			return done;
+		}
+		/* not an eqlock */
+		return 0;
+	case Rendezvous:
+		/* Try and pull out of a rendezvous */
+		lock(&p->rgrp->l);
+		if(p->state == Rendezvous) {
+			p->rendval = ~0;
+			if(p->rendtag == ~0){
+				/* In Jehanne the rendezvous point ~0
+				 * is "private" to each process so
+				 * it is not added to the rgrp (see sysrendezvous)
+				 */
+				ready(p);
+				done = 1;
+				goto RendezvousCompleted;
+			}
+			Proc *d, **l;
+
+			l = &REND(p->rgrp, p->rendtag);
+			for(d = *l; d != nil; d = d->rendhash) {
+				if(d == p) {
+					*l = p->rendhash;
+					p->rendval = ~0;
+					ready(p);
+					done = 1;
+					break;
+				}
+				l = &d->rendhash;
+			}
+		}
+RendezvousCompleted:
+		unlock(&p->rgrp->l);
+		return done;
+	}
 }
 
 /*
@@ -1049,7 +1111,7 @@ pexit(char *exitstr, int freemem)
 
 	up->alarm = 0;
 	up->blockingfd = -1;
-	clearwakeups(up);
+	awake_gc_proc(up);
 	if (up->tt)
 		timerdel(up);
 	pt = proctrace;
@@ -1205,15 +1267,15 @@ pwait(Waitmsg *w)
 	}
 
 	lock(&up->exl);
-	if(up->nchild == 0 && up->waitq == 0) {
+	while(up->waitq == nil) {
+		if(up->nchild == 0) {
+			unlock(&up->exl);
+			error(Enochild);
+		}
 		unlock(&up->exl);
-		error(Enochild);
+		sleep(&up->waitr, haswaitq, up);
+		lock(&up->exl);
 	}
-	unlock(&up->exl);
-
-	sleep(&up->waitr, haswaitq, up);
-
-	lock(&up->exl);
 	wq = up->waitq;
 	up->waitq = wq->next;
 	up->nwait--;
@@ -1222,7 +1284,7 @@ pwait(Waitmsg *w)
 	qunlock(&up->qwaitr);
 	poperror();
 
-	if(w)
+	if(w != nil)
 		jehanne_memmove(w, &wq->w, sizeof(Waitmsg));
 	cpid = wq->w.pid;
 	jehanne_free(wq);
@@ -1248,10 +1310,12 @@ dumpaproc(Proc *p)
 	s = p->psstate;
 	if(s == 0)
 		s = statename[p->state];
-	jehanne_print("%3d:%10s pc %#p dbgpc %#p  %8s (%s) ut %ld st %ld bss %#p qpc %#p nl %d nd %lud lpc %#p pri %lud\n",
-		p->pid, p->text, p->pc, dbgpc(p), s, statename[p->state],
+	jehanne_print("%3d:%10s %#p pc %#p dbgpc %#p  %8s (%s) ut %ld st %ld bss %#p qpc %#p nl %d nd %lud lpc %#p pri %lud wkps %d/%d[%#p,%#p]\n",
+		p->pid, p->text, p, p->pc, dbgpc(p), s, statename[p->state],
 		p->time[0], p->time[1], bss, p->qpc, p->nlocks,
-		p->delaysched, p->lastlock ? lockgetpc(p->lastlock) : 0, p->priority);
+		p->delaysched, p->lastlock ? lockgetpc(p->lastlock) : 0, p->priority,
+		p->wakeups[0].count, p->wakeups[1].count, p->wakeups[0].elapsed, p->wakeups[1].elapsed
+	);
 }
 
 void

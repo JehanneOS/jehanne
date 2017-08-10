@@ -11,7 +11,7 @@
 #include "io.h"
 #include "../port/error.h"
 #include "../port/sd.h"
-#include "../386/fis.h"
+#include "fis.h"
 #include "../port/sdfis.h"
 #include "ahci.h"
 #include "../port/led.h"

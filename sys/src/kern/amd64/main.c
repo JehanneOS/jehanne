@@ -1,7 +1,7 @@
 /*
  * This file is part of Jehanne.
  *
- * Copyright (C) 2015-2016 Giacomo Tesio <giacomo@tesio.it>
+ * Copyright (C) 2015-2017 Giacomo Tesio <giacomo@tesio.it>
  *
  * Jehanne is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,19 +20,16 @@
 #include "mem.h"
 #include "dat.h"
 #include "fns.h"
+#include "ureg.h"
+#include "pool.h"
 
 #include "io.h"
 #include "apic.h"
 
-extern void confoptions(void);	/* XXX - must go */
-extern void confsetenv(void);	/* XXX - must go */
-
 static uintptr_t sp;		/* XXX - must go - user stack of init proc */
 
-Sys* sys = (Sys*)0x1;		/* dummy value to put it in data section
-				 * - entry.S set it correctly
-				 * - main memset to zero the bss section
-				 */
+Sys system;
+Sys* sys;
 usize sizeofSys = sizeof(Sys);
 
 /*
@@ -42,7 +39,7 @@ usize sizeofSys = sizeof(Sys);
  * set it all up.
  */
 static int64_t oargc;
-static char* oargv[20];
+static char* oargv[64];
 static char oargb[1024];
 static int oargblen;
 
@@ -51,7 +48,6 @@ static int numtcs = 32;		/* initial # of TCs */
 IOConf	ioconf;
 int	procmax;
 
-char *cputype = "amd64";
 char dbgflg[256];
 static int vflag = 1;
 
@@ -62,6 +58,30 @@ optionsinit(char* s)
 	oargc = jehanne_tokenize(oargb, oargv, nelem(oargv)-1);
 	oargv[oargc] = nil;
 }
+
+char*
+getconf(char *name)
+{
+	int i;
+	char *a;
+
+	for(i = 0; i < oargc; i++){
+		a = strstr(oargv[i], name);
+		if(a == oargv[i]){
+			a += strlen(name);
+			if(a[0] == '=')
+				return ++a;
+		}
+	}
+	return nil;
+}
+
+int
+isaconfig(char *class, int ctlrno, ISAConf *isa)
+{
+	return 0;
+}
+
 
 static void
 options(int argc, char* argv[])
@@ -129,251 +149,204 @@ loadenv(int argc, char* argv[])
 }
 
 void
-squidboy(int apicno)
+initialize_processor(void)
 {
-	int64_t hz;
+	int machno;
+	Segdesc *gdt;
+	uintptr_t *pml4;
 
-	sys->machptr[m->machno] = m;
-
-	/*
-	 * Need something for initial delays
-	 * until a timebase is worked out.
-	 */
-	m->cpuhz = sys->machptr[0]->cpuhz;
-	m->cyclefreq = m->cpuhz;
-	m->cpumhz = sys->machptr[0]->cpumhz;
+	machno = m->machno;
+	pml4 = m->pml4;
+	gdt = m->gdt;
+	memset(m, 0, sizeof(Mach));
+	m->machno = machno;
+	m->pml4 = pml4;
+	m->gdt = gdt;
 	m->perf.period = 1;
 
-	DBG("Hello Squidboy %d %d\n", apicno, m->machno);
-
-	vsvminit(MACHSTKSZ);
-
 	/*
-	 * Beware the Curse of The Non-Interruptable Were-Temporary.
+	 * For polled uart output at boot, need
+	 * a default delay constant. 100000 should
+	 * be enough for a while. Cpuidentify will
+	 * calculate the real value later.
 	 */
-	hz = archhz();
-	if(hz == 0)
-		ndnr();
-	m->cpuhz = hz;
-	m->cpumhz = hz/1000000ll;
-
-	archenable();
-
-	mmuinit();
-	if(!lapiconline())
-		ndnr();
-
-	fpuinit();
-
-	/*
-	 * Handshake with sipi to let it
-	 * know the Startup IPI succeeded.
-	 */
-	m->splpc = 0;
-
-	/*
-	 * Handshake with main to proceed with initialisation.
-	 */
-	while(sys->epoch == 0)
-		;
-	wrmsr(0x10, sys->epoch);
-	m->rdtsc = rdtsc();
-
-	DBG("mach %d is go %#p %#p %3p\n", m->machno, m, m->pml4->pte, &apicno);
-
-	timersinit();
-
-	/*
-	 * Cannot allow interrupts while waiting for online.
-	 * However, by taking the lowering of the APIC task priority
-	 * out of apiconline something could be done here with
-	 * MONITOR/MWAIT perhaps to drop the energy used by the
-	 * idle core.
-	 */
-	while(!m->online)
-		pause();
-	lapictimerenable();
-	lapicpri(0);
-
-	jehanne_print("mach%d: online color %d\n", m->machno, m->color);
-	schedinit();
-
-	panic("squidboy returns (type %d)", m->mode);
+	m->loopconst = 100000;
 }
 
-#define	D(c)	if(0)outb(0x3f8, (c))
-
-void
-main(uint32_t ax, uint32_t bx)
+static void
+initialize_boot_processor(void)
 {
-	int i;
-	int64_t hz;
-	char *p;
+	system.nmach = 1;
 
-	jehanne_memset(edata, 0, end - edata);
+	system.machptr[0] = m;	/* m was set by entry.S */
 
-	/*
-	 * ilock via i8250enable via i8250console
-	 * needs m->machno, sys->machptr[] set, and
-	 * also 'up' set to nil.
-	 */
-	cgapost(sizeof(uintptr_t)*8);
-	jehanne_memset(m, 0, sizeof(Mach));
 	m->machno = 0;
+	m->pml4 = (uint64_t*)CPU0PML4;
+	m->gdt = (Segdesc*)CPU0GDT;
+
+	initialize_processor();
+
+	active.machs[0] = 1;
 	m->online = 1;
-	sys->machptr[m->machno] = &sys->mach;
-	m->stack = PTR2UINT(sys->machstk);
-	m->vsvm = sys->vsvmpage;
-	sys->nmach = 1;
-	sys->nonline = 1;
-	sys->copymode = 0;	/* copy on write */
-	up = nil;
-
-	confoptions();
-	asminit();
-	multiboot(ax, bx, 0);
-	options(oargc, oargv);
-	p = getconf("*dbflags");
-	if(p != nil){
-		for(; *p != 0; p++)
-			if(*p >= 'a' && *p <= 'z' || *p >= 'A' && *p <= 'Z')
-				dbgflg[(uint8_t)*p] = 1;
-	}
-
-	/*
-	 * Need something for initial delays
-	 * until a timebase is worked out.
-	 */
-	m->cpuhz = 2000000000ll;
-	m->cpumhz = 2000;
-
-	cgainit();
-	i8250console("0");
-	consputs = cgaconsputs;
-
-	vsvminit(MACHSTKSZ);
-
 	active.exiting = 0;
+}
 
-	fmtinit();
-	jehanne_print("\nJehanne Operating System\n");
+static void
+intialize_system(void)
+{
+	extern Ureg _boot_registers;
+	uintptr_t p;
 
-	if(vflag){
-		jehanne_print("&ax = %#p, ax = %#ux, bx = %#ux\n", &ax, ax, bx);
-		multiboot(ax, bx, vflag);
+	p = (uintptr_t)&_boot_registers;
+	p += KZERO;
+	sys = &system;
+	sys->boot_regs = (void*)p;
+	sys->architecture = "amd64";
+}
+
+static void
+configure_kernel(void)
+{
+	char *p;
+	int i, userpcnt;
+	unsigned int kpages;
+
+	if(p = getconf("service")){
+		if(strcmp(p, "cpu") == 0)
+			cpuserver = 1;
+		else if(strcmp(p,"terminal") == 0)
+			cpuserver = 0;
 	}
-	e820();
 
-	m->perf.period = 1;
-	if((hz = archhz()) != 0ll){
-		m->cpuhz = hz;
-		m->cpumhz = hz/1000000ll;
-	}
+	/* memory */
+	if(p = getconf("*kernelpercent"))
+		userpcnt = 100 - strtol(p, 0, 0);
+	else
+		userpcnt = 0;
 
-	archenable();
+	sys->npages = 0;
+	for(i=0; i<nelem(sys->mem); i++)
+		sys->npages += sys->mem[i].npage;
 
-	/*
-	 * Mmuinit before meminit because it
-	 * makes mappings and
-	 * flushes the TLB via m->pml4->pa.
-	 */
-	mmuinit();
-
-	ioinit();
-	keybinit();
-
-	meminit();
-	archinit();
-	physallocinit();
-D('a');
-	mallocinit();
-D('b');
-	memdebug();
-	trapinit();
-D('c');
-
-	/*
-	 * Printinit will cause the first malloc
-	 * call to happen (printinit->qopen->malloc).
-	 * If the system dies here it's probably due
-	 * to malloc not being initialised
-	 * correctly, or the data segment is misaligned
-	 * (it's amazing how far you can get with
-	 * things like that completely broken).
-	 */
-	printinit();
-D('d');
-	/*
-	 * This is necessary with GRUB and QEMU.
-	 * Without it an interrupt can occur at a weird vector,
-	 * because the vector base is likely different, causing
-	 * havoc. Do it before any APIC initialisation.
-	 */
-	i8259init(IdtPIC);
-D('e');
-
-	acpiinit(MACHMAX);
-D('f');
-//	mpsinit();
-D('g');
-	lapiconline();
-	ioapiconline();
-D('h');
-	intrenable(IdtTIMER, timerintr, 0, -1, "APIC timer");
-	lapictimerenable();
-	lapicpri(0);
-D('i');
-
-	timersinit();
-D('j');
-	keybenable();
-	mouseenable();
-D('k');
-	fpuinit();
-D('l');
+	/* processes */
 	p = getconf("*procmax");
 	if(p != nil)
-		procmax = jehanne_strtoull(p, nil, 0);
-	if(procmax == 0)
-		procmax = 2000;
-	psinit(procmax);
-D('m');
-//	imagepool_init();
-D('n');
-	links();
-D('o');
-	devtabreset();
-D('p');
-	umem_init();
-D('r');
-
-	userinit();
-D('s');
-	if(!dbgflg['S'])
-		sipi();
-D('t');
-
-	sys->epoch = rdtsc();
-	wrmsr(0x10, sys->epoch);
-	m->rdtsc = rdtsc();
-
-D('u');
-	/*
-	 * Release the hounds.
-	 */
-	for(i = 1; i < MACHMAX; i++){
-		if(sys->machptr[i] == nil)
-			continue;
-
-		ainc(&sys->nonline);
-
-		sys->machptr[i]->color = corecolor(i);
-		if(sys->machptr[i]->color < 0)
-			sys->machptr[i]->color = 0;
-		sys->machptr[i]->online = 1;
+		sys->nproc = jehanne_strtoull(p, nil, 0);
+	if(sys->nproc == 0){
+		sys->nproc = 100 + ((sys->npages*PGSZ)/MiB)*5;
+		if(cpuserver)
+			sys->nproc *= 3;
 	}
-D('v');
-prflush();
+	if(sys->nproc > 2046){
+		/* devproc supports at most (2^11)-2 processes */
+		sys->nproc = 2046;
+	}
+	sys->nimage = 256;
+
+	if(cpuserver) {
+		if(userpcnt < 10)
+			userpcnt = 70;
+		kpages = sys->npages - (sys->npages*userpcnt)/100;
+		sys->nimage = sys->nproc;
+	} else {
+		if(userpcnt < 10) {
+			if(sys->npages*PGSZ < 16*MiB)
+				userpcnt = 50;
+			else
+				userpcnt = 60;
+		}
+		kpages = sys->npages - (sys->npages*userpcnt)/100;
+
+		/*
+		 * Make sure terminals with low memory get at least
+		 * 4MB on the first Image chunk allocation.
+		 */
+		if(sys->npages*PGSZ < 16*MiB)
+			imagmem->minarena = 4*MiB;
+	}
+
+	/*
+	 * can't go past the end of virtual memory.
+	 */
+	if(kpages > ((uintptr_t)-KZERO)/PGSZ)
+		kpages = ((uintptr_t)-KZERO)/PGSZ;
+
+	sys->upages = sys->npages - kpages;
+	sys->ialloc = (kpages/2)*PGSZ;
+
+	/*
+	 * Guess how much is taken by the large permanent
+	 * datastructures. Mntcache and Mntrpc are not accounted for.
+	 */
+	kpages *= PGSZ;
+	kpages -= sys->nproc*sizeof(Proc);
+	mainmem->maxsize = kpages;
+
+	/*
+	 * the dynamic allocation will balance the load properly,
+	 * hopefully. be careful with 32-bit overflow.
+	 */
+	imagmem->maxsize = kpages - (kpages/10);
+	if(p = getconf("*imagemaxmb")){
+		imagmem->maxsize = strtol(p, nil, 0)*MiB;
+		if(imagmem->maxsize > mainmem->maxsize)
+			imagmem->maxsize = mainmem->maxsize;
+	}
+
+
+}
+
+void
+main(void)
+{
+	intialize_system();
+	initialize_boot_processor();
+
+	multiboot(0);
+	options(oargc, oargv);
+
+	ioinit();
+	i8250console();
+	fmtinit();
+	screen_init();
+
+	jehanne_print("\nJehanne Operating System\n");
+
+	trapinit0();
+//	i8259init();
+
+	i8253init();
+	cpuidentify();
+	meminit();
+
+	configure_kernel();
+
+	xinit();
+	archinit();
+//	bootscreeninit();
+//	if(i8237alloc != nil)
+//		i8237alloc();
+	trapinit();
+	printinit();
+	cpuidprint();
+	mmuinit();
+	if(arch->intrinit)
+		arch->intrinit();
+	timersinit();
+//	keybinit();
+//	keybenable();
+//	mouseenable();
+	mathinit();
+	if(arch->clockenable)
+		arch->clockenable();
+
+	psinit(sys->nproc);
+
+	links();
+
+	devtabreset();
+	umem_init();
+	userinit();
 	schedinit();
 }
 
@@ -384,8 +357,6 @@ init0(void)
 
 	up->nerrlab = 0;
 
-//	if(consuart == nil)
-//		i8250console("0");
 	spllo();
 
 	/*
@@ -408,11 +379,11 @@ init0(void)
 			ksetenv("service", "cpu", 0);
 		else
 			ksetenv("service", "terminal", 0);
-		confsetenv();
 		poperror();
 	}
 	kproc("alarm", alarmkproc, 0);
-	kproc("awake", awakekproc, 0);
+	kproc("atimer", awake_timer, 0);
+	kproc("aringer", awake_ringer, 0);
 	touser(sp);
 }
 
@@ -461,17 +432,23 @@ userinit(void)
 	char *k;
 	uintptr_t va, mmuphys;
 
-	p = newproc();
-	p->pgrp = newpgrp();
-	p->egrp = smalloc(sizeof(Egrp));
-	p->egrp->r.ref = 1;
-	p->fgrp = dupfgrp(nil);
-	p->rgrp = newrgrp();
-	p->procmode = 0640;
+	/* NOTE: we use the global pointer up so that the kaddr()
+	 * (called by segment_fault) can find it
+	 */
+	up = newproc();
+	up->pgrp = newpgrp();
+	up->egrp = smalloc(sizeof(Egrp));
+	up->egrp->r.ref = 1;
+	up->fgrp = dupfgrp(nil);
+	up->rgrp = newrgrp();
+	up->procmode = 0640;
 
 	kstrdup(&eve, "");
-	kstrdup(&p->text, "*init*");
-	kstrdup(&p->user, eve);
+	kstrdup(&up->text, "*init*");
+	kstrdup(&up->user, eve);
+
+	sysprocsetup(up);
+
 	/*
 	 * Kernel Stack
 	 *
@@ -480,23 +457,23 @@ userinit(void)
 	 *	space for gotolabel's return PC
 	 * AMD64 stack must be quad-aligned.
 	 */
-	p->sched.pc = PTR2UINT(init0);
-	p->sched.sp = PTR2UINT(p->kstack+KSTACK-sizeof(up->arg)-sizeof(uintptr_t));
-	p->sched.sp = STACKALIGN(p->sched.sp);
-D('0');
+	up->sched.pc = PTR2UINT(init0);
+	up->sched.sp = PTR2UINT(up->kstack+KSTACK-sizeof(up->arg)-sizeof(uintptr_t));
+	up->sched.sp = STACKALIGN(up->sched.sp);
+
 	/*
 	 * User Stack
 	 */
 	s = nil;
 	if(!segment_virtual(&s, SgStack, SgRead|SgWrite, 0, USTKTOP-USTKSIZE, USTKTOP))
 		panic("userinit: cannot create stack segment");
-D('1');
-	p->seg[SSEG] = s;
+
+	up->seg[SSEG] = s;
 	va = USTKTOP-USTKSIZE;
 	mmuphys = 0;
 	if(!segment_fault(&mmuphys, &va, s, FaultWrite))
 		panic("userinit: cannot allocate first stack page");
-D('2');
+
 	page = segment_page(s, va);
 	if(page == 0)
 		panic("userinit: cannot find first stack page (previously faulted)");
@@ -510,7 +487,7 @@ D('2');
 	s = nil;
 	if(!segment_userinit(&s, 0))
 		panic("userinit: cannot create text segment");
-	p->seg[TSEG] = s;
+	up->seg[TSEG] = s;
 
 	/*
 	 * Data
@@ -518,8 +495,11 @@ D('2');
 	s = nil;
 	if(!segment_userinit(&s, 1))
 		panic("userinit: cannot create data segment");
-	p->seg[DSEG] = s;
+	up->seg[DSEG] = s;
 
+	/* reset global pointer up */
+	p = up;
+	up = nil;
 	ready(p);
 }
 
@@ -527,7 +507,7 @@ static void
 fullstop(void)
 {
 	splhi();
-	lapicpri(0xff);
+//	lapicpri(0xff);
 	/* i8259 was initialised as disabled */
 	for(;;)
 		_halt();
@@ -544,7 +524,7 @@ shutdown(int ispanic)
 	active.ispanic = ispanic;
 	m->online = 0;
 	active.exiting = 1;
-	adec(&sys->nonline);
+	adec((int*)&sys->nmach);
 
 	iprint("cpu%d: exiting\n", m->machno);
 	/* wait for any other processors to shutdown */
@@ -552,7 +532,7 @@ shutdown(int ispanic)
 	prflush();
 	for(ms = 10*1000; ms > 0; ms -= 2){
 		delay(2);
-		if(sys->nonline == 0 && consactive() == 0)
+		if(sys->nmach == 0 && consactive() == 0)
 			break;
 	}
 

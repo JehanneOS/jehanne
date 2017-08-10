@@ -203,7 +203,7 @@ rmapgaps(RMap *r2, RMap *r1)
 }
 
 void
-rmapprint(RMap *r)
+mapprint(RMap *r)
 {
 	RMapel *e;
 

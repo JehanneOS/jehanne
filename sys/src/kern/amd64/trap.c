@@ -30,6 +30,8 @@
 
 #include	"amd64.h"
 
+static int trapinited;
+
 extern int notify(Ureg*);
 
 static void debugbpt(Ureg*, void*);
@@ -54,12 +56,19 @@ intrenable(int irq, void (*f)(Ureg*, void*), void* a, int tbdf, char *name)
 	Vctl *v;
 
 	if(f == nil){
-		jehanne_print("intrenable: nil handler for %d, tbdf %#ux for %s\n",
+		print("intrenable: nil handler for %d, tbdf 0x%uX for %s\n",
 			irq, tbdf, name);
 		return nil;
 	}
 
-	v = jehanne_malloc(sizeof(Vctl));
+	if(tbdf != BUSUNKNOWN && (irq == 0xff || irq == 0)){
+		print("intrenable: got unassigned irq %d, tbdf 0x%uX for %s\n",
+			irq, tbdf, name);
+		irq = -1;
+	}
+
+	if((v = xalloc(sizeof(Vctl))) == nil)
+		panic("intrenable: out of memory");
 	v->isintr = 1;
 	v->irq = irq;
 	v->tbdf = tbdf;
@@ -69,27 +78,23 @@ intrenable(int irq, void (*f)(Ureg*, void*), void* a, int tbdf, char *name)
 	v->name[KNAMELEN-1] = 0;
 
 	ilock(&vctllock);
-	vno = ioapicintrenable(v);
+	vno = arch->intrenable(v);
 	if(vno == -1){
 		iunlock(&vctllock);
-		jehanne_print("intrenable: couldn't enable irq %d, tbdf %#ux for %s\n",
+		print("intrenable: couldn't enable irq %d, tbdf 0x%uX for %s\n",
 			irq, tbdf, v->name);
-		jehanne_free(v);
+		xfree(v);
 		return nil;
 	}
 	if(vctl[vno]){
-		if(vctl[v->vno]->isr != v->isr || vctl[v->vno]->eoi != v->eoi)
+		if(vctl[vno]->isr != v->isr || vctl[vno]->eoi != v->eoi)
 			panic("intrenable: handler: %s %s %#p %#p %#p %#p",
-				vctl[v->vno]->name, v->name,
-				vctl[v->vno]->isr, v->isr, vctl[v->vno]->eoi, v->eoi);
+				vctl[vno]->name, v->name,
+				vctl[vno]->isr, v->isr, vctl[vno]->eoi, v->eoi);
+		v->next = vctl[vno];
 	}
-	v->vno = vno;
-	v->next = vctl[vno];
 	vctl[vno] = v;
 	iunlock(&vctllock);
-
-	if(v->mask != nil)
-		v->mask(v, 0);
 
 	/*
 	 * Return the assigned vector so intrdisable can find
@@ -100,26 +105,42 @@ intrenable(int irq, void (*f)(Ureg*, void*), void* a, int tbdf, char *name)
 }
 
 int
-intrdisable(void* vector)
+intrdisable(int irq, void (*f)(Ureg *, void *), void *a, int tbdf, char *name)
 {
-	Vctl *v, **vl;
+	Vctl **pv, *v;
+	int vno;
 
+	if(arch->intrvecno == nil || (tbdf != BUSUNKNOWN && (irq == 0xff || irq == 0))){
+		/*
+		 * on APIC machine, irq is pretty meaningless
+		 * and disabling a the vector is not implemented.
+		 * however, we still want to remove the matching
+		 * Vctl entry to prevent calling Vctl.f() with a
+		 * stale Vctl.a pointer.
+		 */
+		irq = -1;
+		vno = VectorPIC;
+	} else {
+		vno = arch->intrvecno(irq);
+	}
 	ilock(&vctllock);
-	v = vector;
-	for(vl = &vctl[v->vno]; *vl != nil; vl = &(*vl)->next)
-		if(*vl == v)
+	do {
+		for(pv = &vctl[vno]; (v = *pv) != nil; pv = &v->next){
+			if(v->isintr && (v->irq == irq || irq == -1)
+			&& v->tbdf == tbdf && v->f == f && v->a == a
+			&& strcmp(v->name, name) == 0)
+				break;
+		}
+		if(v != nil){
+			*pv = v->next;
+			xfree(v);
+
+			if(irq != -1 && vctl[vno] == nil && arch->intrdisable != nil)
+				arch->intrdisable(irq);
 			break;
-	if(*vl == nil)
-		panic("intrdisable: v %#p", v);
-	if(v->mask != nil)
-		v->mask(v, 1);
-	v->f(nil, v->a);
-	*vl = v->next;
-	ioapicintrdisable(v->vno);
+		}
+	} while(irq == -1 && ++vno <= MaxVectorAPIC);
 	iunlock(&vctllock);
-
-	jehanne_free(v);
-
 	return 0;
 }
 
@@ -167,9 +188,10 @@ trapenable(int vno, void (*f)(Ureg*, void*), void* a, char *name)
 {
 	Vctl *v;
 
-	if(vno < 0 || vno >= 256)
-		panic("trapenable: vno %d\n", vno);
-	v = jehanne_malloc(sizeof(Vctl));
+	if(vno < 0 || vno >= VectorPIC)
+		panic("trapenable: vno %d", vno);
+	if((v = xalloc(sizeof(Vctl))) == nil)
+		panic("trapenable: out of memory");
 	v->tbdf = BUSUNKNOWN;
 	v->f = f;
 	v->a = a;
@@ -177,7 +199,8 @@ trapenable(int vno, void (*f)(Ureg*, void*), void* a, char *name)
 	v->name[KNAMELEN-1] = 0;
 
 	ilock(&vctllock);
-	v->next = vctl[vno];
+	if(vctl[vno])
+		v->next = vctl[vno]->next;
 	vctl[vno] = v;
 	iunlock(&vctllock);
 }
@@ -194,8 +217,46 @@ nmienable(void)
 	outb(0x70, 0);
 
 	x = inb(0x61) & 0x07;		/* Enable NMI */
-	outb(0x61, 0x08|x);
+	outb(0x61, 0x0C|x);
 	outb(0x61, x);
+}
+
+void
+trapinit0(void)
+{
+	uint32_t d1, v;
+	uintptr_t vaddr;
+	Segdesc *idt;
+
+	idt = (Segdesc*)IDTADDR;
+	vaddr = (uintptr_t)idthandlers;
+	for(v = 0; v < 256; v++){
+		d1 = (vaddr & 0xFFFF0000)|SEGP;
+		switch(v){
+
+		case VectorBPT:
+			d1 |= SEGPL(3)|SEGIG;
+			break;
+
+		case VectorSYSCALL:
+			d1 |= SEGPL(3)|SEGIG;
+			break;
+
+		default:
+			d1 |= SEGPL(0)|SEGIG;
+			break;
+		}
+
+		idt->d0 = (vaddr & 0xFFFF)|(KESEL<<16);
+		idt->d1 = d1;
+		idt++;
+
+		idt->d0 = (vaddr >> 32);
+		idt->d1 = 0;
+		idt++;
+
+		vaddr += 6;
+	}
 }
 
 void
@@ -208,48 +269,50 @@ trapinit(void)
 	 * Special traps.
 	 * Syscall() is called directly without going through trap().
 	 */
-	trapenable(IdtBP, debugbpt, 0, "#BP");
-	trapenable(IdtPF, faultamd64, 0, "#PF");
-	trapenable(IdtDF, doublefault, 0, "#DF");
-	trapenable(Idt0F, unexpected, 0, "#15");
+//	trapenable(VectorDE, debugexc, 0, "debugexc");
+	trapenable(VectorBPT, debugbpt, 0, "debugpt");
+	trapenable(VectorPF, faultamd64, 0, "faultamd64");
+	trapenable(Vector2F, doublefault, 0, "doublefault");
+	trapenable(Vector15, unexpected, 0, "unexpected");
 	nmienable();
 
 	addarchfile("irqalloc", 0444, irqallocread, nil);
+	trapinited = 1;
 }
 
 static char* excname[32] = {
-	"#DE",					/* Divide-by-Zero Error */
-	"#DB",					/* Debug */
-	"#NMI",					/* Non-Maskable-Interrupt */
-	"#BP",					/* Breakpoint */
-	"#OF",					/* Overflow */
-	"#BR",					/* Bound-Range */
-	"#UD",					/* Invalid-Opcode */
-	"#NM",					/* Device-Not-Available */
-	"#DF",					/* Double-Fault */
-	"#9 (reserved)",
-	"#TS",					/* Invalid-TSS */
-	"#NP",					/* Segment-Not-Present */
-	"#SS",					/* Stack */
-	"#GP",					/* General-Protection */
-	"#PF",					/* Page-Fault */
-	"#15 (reserved)",
-	"#MF",					/* x87 FPE-Pending */
-	"#AC",					/* Alignment-Check */
-	"#MC",					/* Machine-Check */
-	"#XF",					/* SIMD Floating-Point */
-	"#20 (reserved)",
-	"#21 (reserved)",
-	"#22 (reserved)",
-	"#23 (reserved)",
-	"#24 (reserved)",
-	"#25 (reserved)",
-	"#26 (reserved)",
-	"#27 (reserved)",
-	"#28 (reserved)",
-	"#29 (reserved)",
-	"#30 (reserved)",
-	"#31 (reserved)",
+	"divide error",
+	"debug exception",
+	"nonmaskable interrupt",
+	"breakpoint",
+	"overflow",
+	"bounds check",
+	"invalid opcode",
+	"coprocessor not available",
+	"double fault",
+	"coprocessor segment overrun",
+	"invalid TSS",
+	"segment not present",
+	"stack exception",
+	"general protection violation",
+	"page fault",
+	"15 (reserved)",
+	"coprocessor error",
+	"alignment check",
+	"machine check",
+	"simd error",
+	"20 (reserved)",
+	"21 (reserved)",
+	"22 (reserved)",
+	"23 (reserved)",
+	"24 (reserved)",
+	"25 (reserved)",
+	"26 (reserved)",
+	"27 (reserved)",
+	"28 (reserved)",
+	"29 (reserved)",
+	"30 (reserved)",
+	"31 (reserved)",
 };
 
 /*
@@ -295,6 +358,13 @@ trap(Ureg* ureg)
 	char buf[ERRMAX];
 	Vctl *ctl, *v;
 
+	if(!trapinited){
+		/* faultamd64 can give a better error message */
+		if(ureg->type == VectorPF)
+			faultamd64(ureg, nil);
+		panic("trap %llud: not ready", ureg->type);
+	}
+
 	m->perf.intrts = perfticks();
 	user = userureg(ureg);
 	if(user){
@@ -305,10 +375,11 @@ trap(Ureg* ureg)
 	clockintr = 0;
 
 	vno = ureg->type;
+
 	if(ctl = vctl[vno]){
 		if(ctl->isintr){
 			m->intr++;
-			if(vno >= IdtPIC && vno != IdtSYSCALL)
+			if(vno >= VectorPIC)
 				m->lastintr = ctl->irq;
 		}
 		if(ctl->isr)
@@ -323,10 +394,8 @@ trap(Ureg* ureg)
 		if(ctl->isintr){
 			intrtime(m, vno);
 
-			if(ctl->irq == IdtPIC+IrqCLOCK || ctl->irq == IdtTIMER){
-				checkflushmmu();
+			if(ctl->irq == IrqCLOCK || ctl->irq == IrqTIMER)
 				clockintr = 1;
-			}
 
 			if(up && !clockintr)
 				preempted();
@@ -373,33 +442,37 @@ trap(Ureg* ureg)
 		return;
 	}
 	else{
-		if(vno == IdtNMI){
-			if(active.ispanic){
-				/*
-				 * Use of m->dbgsp avoids stack confusion
-				 * caused by writing the address of the SP to
-				 * the top of the stack.
-				 */
-				m->dbgreg = ureg;
-				m->dbgsp = &ureg->sp;
-				for(;;)
-					_halt();
-			}
-			if(m->perfintr != nil){
-				m->perfintr(ureg, nil);
-				nmienable();
-				return;
-			}
+		if(vno == VectorNMI){
+			/*
+			 * Don't re-enable, it confuses the crash dumps.
 			nmienable();
+			 */
+			iprint("cpu%d: nmi PC %#p, status %ux\n",
+				m->machno, ureg->ip, inb(0x61));
+			while(m->machno != 0)
+				;
 		}
-		if(vno == 39){
-			/* We get this one and didn't track it down yet: it's ok */
-			iprint("vno %d: buggeration @ %#p...\n", vno, ureg->ip);
-		}else if(vno < nelem(excname)){
-			dumpregs(ureg);
-			panic("%s pc %#p", excname[vno], ureg->ip);
-		}else
-			panic("unknown trap/intr: %d pc %#p\n", vno, ureg->ip);
+
+		if(!user){
+			void (*pc)(void);
+
+			extern void _rdmsrinst(void);
+			extern void _wrmsrinst(void);
+
+			pc = (void*)ureg->ip;
+			if(pc == _rdmsrinst || pc == _wrmsrinst){
+				if(vno == VectorGPF){
+					ureg->bp = -1;
+					ureg->ip += 2;
+					return;
+				}
+			}
+		}
+
+		dumpregs(ureg);
+		if(vno < nelem(excname))
+			panic("%s", excname[vno]);
+		panic("unknown trap/intr: %d", vno);
 	}
 	splhi();
 
@@ -581,23 +654,21 @@ faultamd64(Ureg* ureg, void* _1)
 	void (*pt)(Proc*, int, int64_t, int64_t);
 
 	addr = cr2get();
-	user = userureg(ureg);
-
-	/*
-	 * There must be a user context.
-	 * If not, the usual problem is causing a fault during
-	 * initialisation before the system is fully up.
-	 */
-	if(up == nil){
-		panic("fault with up == nil; pc %#llux addr %#llux\n",
-			ureg->ip, addr);
-	}
 	if(ureg->error&2)
 		ftype = FaultWrite;
 	else if(ureg->error&16)
 		ftype = FaultExecute;
 	else
 		ftype = FaultRead;
+	user = userureg(ureg);
+	if(!user){
+		if(addr >= USTKTOP)
+			panic("kernel fault: bad address pc=%#p addr=%#p", ureg->ip, addr);
+		if(up == nil)
+			panic("kernel fault: no user process pc=%#p addr=%#p", ureg->ip, addr);
+	}
+	if(up == nil)
+		panic("user fault: up=0 pc=%#p addr=%#p", ureg->ip, addr);
 
 	if(up->trace && (pt = proctrace) != nil){
 		if(ftype == FaultWrite)
@@ -617,7 +688,6 @@ if(iskaddr(addr)){
 	dumpregs(ureg);
 }
 	if(fault(addr, ureg->ip, ftype) < 0){
-		splhi();
 		if(!user){
 			dumpregs(ureg);
 			panic("fault: %#llux pc %#p\n", addr, ureg->ip);

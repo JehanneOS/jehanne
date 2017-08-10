@@ -103,11 +103,6 @@ main(int argc, char *argv[])
 		domount = 1;
 		reallymount = 1;
 		break;
-	case 'C':
-		mountflag |= MCACHE;
-		domount = 1;
-		reallymount = 1;
-		break;
 	case 'e':
 		doexec = 1;
 		break;

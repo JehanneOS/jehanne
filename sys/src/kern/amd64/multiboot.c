@@ -1,155 +1,126 @@
+/*
+ * This file is part of Jehanne.
+ *
+ * Copyright (C) 2017 Giacomo Tesio <giacomo@tesio.it>
+ *
+ * Jehanne is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 2 of the License.
+ *
+ * Jehanne is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Jehanne.  If not, see <http://www.gnu.org/licenses/>.
+ */
 #include "u.h"
 #include "../port/lib.h"
 #include "mem.h"
 #include "dat.h"
 #include "fns.h"
+#include "ureg.h"
+#include "multiboot.h"
 
-typedef struct Mbi Mbi;
-struct Mbi {
-	uint32_t	flags;
-	uint32_t	memlower;
-	uint32_t	memupper;
-	uint32_t	bootdevice;
-	uint32_t	cmdline;
-	uint32_t	modscount;
-	uint32_t	modsaddr;
-	uint32_t	syms[4];
-	uint32_t	mmaplength;
-	uint32_t	mmapaddr;
-	uint32_t	driveslength;
-	uint32_t	drivesaddr;
-	uint32_t	configtable;
-	uint32_t	bootloadername;
-	uint32_t	apmtable;
-	uint32_t	vbe[6];
-};
+#define AT_KERNEL(p) ((void*)(p+KZERO))
 
-enum {						/* flags */
-	Fmem		= 0x00000001,		/* mem* valid */
-	Fbootdevice	= 0x00000002,		/* bootdevice valid */
-	Fcmdline	= 0x00000004,		/* cmdline valid */
-	Fmods		= 0x00000008,		/* mod* valid */
-	Fsyms		= 0x00000010,		/* syms[] has a.out info */
-	Felf		= 0x00000020,		/* syms[] has ELF info */
-	Fmmap		= 0x00000040,		/* mmap* valid */
-	Fdrives		= 0x00000080,		/* drives* valid */
-	Fconfigtable	= 0x00000100,		/* configtable* valid */
-	Fbootloadername	= 0x00000200,		/* bootloadername* valid */
-	Fapmtable	= 0x00000400,		/* apmtable* valid */
-	Fvbe		= 0x00000800,		/* vbe[] valid */
-};
-
-typedef struct Mod Mod;
-struct Mod {
-	uint32_t	modstart;
-	uint32_t	modend;
-	uint32_t	string;
-	uint32_t	reserved;
-};
-
-typedef struct MMap MMap;
-struct MMap {
-	uint32_t	size;
-	uint32_t	base[2];
-	uint32_t	length[2];
-	uint32_t	type;
-};
+extern int e820map(int type, uintptr_t base, uintptr_t top);
 
 int
-multiboot(uint32_t magic, uint32_t pmbi, int vflag)
+multiboot(int just_log)
 {
+	uint32_t magic;
 	char *p, *modname;
 	int i, n;
-	Mbi *mbi;
-	Mod *mod;
-	MMap *mmap;
+	multiboot_info_t *mbi;
+	multiboot_module_t *mod;
+	multiboot_memory_map_t *mmap;
 	uint64_t addr, len;
 
-	if(vflag)
-		jehanne_print("magic %#ux pmbi %#ux\n", magic, pmbi);
-	if(magic != 0x2badb002){
-		//return -1;
-		jehanne_print("wrong magic in multiboot\n");
-	}
+	magic = (uint32_t)sys->boot_regs->ax;
+	mbi = (multiboot_info_t*)sys->boot_regs->bx;
 
-	mbi = KADDR(pmbi);
-	if(vflag)
+	if(just_log)
+		jehanne_print("magic %#ux infos at %#p\n", magic, mbi);
+	if(magic != 0x2badb002)
+		return -1;
+
+	if(just_log)
 		jehanne_print("flags %#ux\n", mbi->flags);
-	if(mbi->flags & Fcmdline){
-		p = KADDR(mbi->cmdline);
-		if(vflag)
-			jehanne_print("cmdline <%s>\n", p);
+	if(mbi->flags & MULTIBOOT_INFO_CMDLINE){
+		p = AT_KERNEL(mbi->cmdline);
+		if(just_log)
+			jehanne_print("Multiboot Command Line:\n\t%s\n", p);
 		else
 			optionsinit(p);
 	}
-	if(mbi->flags & Fmods){
-		for(i = 0; i < mbi->modscount; i++){
-			mod = KADDR(mbi->modsaddr + i*16);
-			if(mod->string != 0)
-				p = KADDR(mod->string);
+	if(mbi->flags & MULTIBOOT_INFO_MODS){
+		if(just_log)
+			jehanne_print("Multiboot Modules:\n");
+		for(i = 0; i < mbi->mods_count; i++){
+			mod = AT_KERNEL(mbi->mods_addr);
+			if(mod->cmdline != 0)
+				p = AT_KERNEL(mod->cmdline);
 			else
 				p = "";
-			if(vflag)
-				jehanne_print("mod %#ux %#ux <%s>\n",
-					mod->modstart, mod->modend, p);
+			if(just_log)
+				jehanne_print("\tModule <%s> %#ux %#ux\n",
+					mod->mod_start, mod->mod_end, p);
 			else {
-				asmmodinit(mod->modstart, mod->modend, p);
+				asmmodinit(mod->mod_start, mod->mod_end, p);
 				modname = jehanne_strrchr(p, '/');
 				if(modname == nil)
 					modname = p;
 				if(*modname == '/')
 					++modname;
-				addbootfile(modname, KADDR(mod->modstart), mod->modend - mod->modstart);
+				addbootfile(modname, AT_KERNEL(mod->mod_start), mod->mod_end - mod->mod_start);
 			}
 		}
 	}
-	if(mbi->flags & Fmmap){
-		mmap = KADDR(mbi->mmapaddr);
+	if(mbi->flags & MULTIBOOT_INFO_MEM_MAP){
+		if(just_log)
+			jehanne_print("Multiboot Memory Map:\n");
+		mmap = AT_KERNEL(mbi->mmap_addr);
 		n = 0;
-		while(n < mbi->mmaplength){
-			addr = (((uint64_t)mmap->base[1])<<32)|mmap->base[0];
-			len = (((uint64_t)mmap->length[1])<<32)|mmap->length[0];
+		while(n < mbi->mmap_length){
+			addr = mmap->addr;
+			len = mmap->len;
 			switch(mmap->type){
 			default:
-				if(vflag)
-					jehanne_print("type %ud", mmap->type);
+				if(just_log)
+					jehanne_print("\ttype %ud ", mmap->type);
 				break;
-			case 1:
-				if(vflag)
-					jehanne_print("Memory");
-				else
-					asmmapinit(addr, len, mmap->type);
+			case MULTIBOOT_MEMORY_AVAILABLE:
+				if(just_log)
+					jehanne_print("\tMemory");
 				break;
-			case 2:
-				if(vflag)
-					jehanne_print("reserved");
-				else
-					asmmapinit(addr, len, mmap->type);
+			case MULTIBOOT_MEMORY_RESERVED:
+				if(just_log)
+					jehanne_print("\tReserved");
 				break;
 			case 3:
-				if(vflag)
-					jehanne_print("ACPI Reclaim Memory");
-				else
-					asmmapinit(addr, len, mmap->type);
+				if(just_log)
+					jehanne_print("\tACPI Reclaim Memory");
 				break;
 			case 4:
-				if(vflag)
-					jehanne_print("ACPI NVS Memory");
-				else
-					asmmapinit(addr, len, mmap->type);
+				if(just_log)
+					jehanne_print("\tACPI NVS Memory");
 				break;
 			}
-			if(vflag)
-				jehanne_print("\n\t%#16.16llux %#16.16llux (%llud)\n",
+			if(just_log)
+				jehanne_print("\n\t  %#16.16llux %#16.16llux (%llud)\n",
 					addr, addr+len, len);
+			else
+				e820map(mmap->type, addr, addr+len);
 
 			n += mmap->size+sizeof(mmap->size);
-			mmap = KADDR(mbi->mmapaddr+n);
+			mmap = AT_KERNEL(mbi->mmap_addr+n);
 		}
 	}
-	if(vflag && (mbi->flags & Fbootloadername)){
-		p = KADDR(mbi->bootloadername);
-		jehanne_print("bootloadername <%s>\n", p);
+	if(just_log && (mbi->flags & MULTIBOOT_INFO_BOOT_LOADER_NAME)){
+		p = AT_KERNEL(mbi->boot_loader_name);
+		jehanne_print("Multiboot: Boot Loader Name <%s>\n", p);
 	}
 
 	return 0;

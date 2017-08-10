@@ -1,4 +1,4 @@
-/* 
+/*
  * This file is part of the UCB release of Plan 9. It is subject to the license
  * terms in the LICENSE file found in the top-level directory of this
  * distribution and at http://akaros.cs.berkeley.edu/files/Plan9License. No
@@ -78,7 +78,6 @@ vbecall(VGAreg *u)
 	pa = PADDR(RMBUF);
 	cmem->dev->write(cmem, modebuf, sizeof modebuf, pa);
 	u->trap = 0x10;
-	jehanne_print("vbecall: sizeof u is %d\n", sizeof *u);
 	creg->dev->write(creg, u, sizeof *u, 0);
 
 	creg->dev->read(creg, u, sizeof *u, 0);

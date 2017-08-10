@@ -1,8 +1,5 @@
 {
 	"port": {
-		"#SourceFiles": [
-			"../port/devcec.c"
-		],
 		"Cflags": [
 			"-fasm"
 		],
@@ -16,10 +13,9 @@
 			"../port/umem/images.c",
 
 			"../port/alarm.c",
+			"../port/alloc.c",
 			"../port/allocb.c",
 			"../port/awake.c",
-			"../port/bud.c",
-			"../port/cache.c",
 			"../port/chan.c",
 			"../port/debug.c",
 			"../port/dev.c",
@@ -48,34 +44,30 @@
 			"../port/elf64.c",
 			"../port/fault.c",
 			"../port/getput.c",
-			"../port/imagmem.c",
 			"../port/log.c",
-			"../port/mcslock.c",
+			"../port/taslock.c",
 			"../port/mul64fract.c",
 			"../port/net.c",
 			"../port/netif.c",
-			"../port/nooptions.c",
 			"../port/parse.c",
 			"../port/pgrp.c",
-			"../port/physalloc.c",
 			"../port/portclock.c",
 			"../port/print.c",
 			"../port/proc.c",
 			"../port/ps.c",
 			"../port/qio.c",
 			"../port/qlock.c",
-			"../port/qmalloc.c",
 			"../port/random.c",
 			"../port/rebootcmd.c",
 			"../port/ref.c",
-			"../port/rmap.c",
 			"../port/sysauth.c",
 			"../port/syscallfmt.c",
 			"../port/sysfile.c",
 			"../port/sysproc.c",
 			"../port/tod.c",
 			"../port/uidgid.c",
-			"../port/usbehci.c"
+			"../port/usbehci.c",
+			"../port/xalloc.c"
 		]
 	}
 }

@@ -131,4 +131,3 @@ long	netifwrite(Netif*, Chan*, void*, long);
 long	netifwstat(Netif*, Chan*, uint8_t*, long);
 long	netifstat(Netif*, Chan*, uint8_t*, long);
 int	activemulti(Netif*, uint8_t*, int);
-void	netifbypass(Netif*, Chan*, void (*)(void*, Block*), void*);

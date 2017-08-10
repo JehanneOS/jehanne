@@ -390,7 +390,7 @@ atapirwfis(Sfis *f, uint8_t *c, uint8_t *cdb, int cdblen, int ndata)
 		c[Ffeat] = 1;	/* dma */
 	else
 		c[Ffeat] = 0;	/* features (exp); */
-	c[Flba0] = 0;	
+	c[Flba0] = 0;
 	c[Flba8] = ndata;
 	c[Flba16] = ndata >> 8;
 	c[Fdev] = Ataobs;

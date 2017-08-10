@@ -20,6 +20,9 @@
 
 typedef unsigned int PagePointer;
 
+/* regusterb a memory region available */
+extern int umem_region(uintptr_t base, uint32_t npages);
+
 /* Initialize the user memory system */
 extern void umem_init(void);
 
@@ -203,6 +206,8 @@ extern int image_fill(PagePointer* page, ElfSegPointer segment, uintptr_t va);
 extern void image_release(ImagePointer ptr);
 
 extern char* segment_name(ProcSegment *s);
+
+extern void segment_relocate(ProcSegment *s, uintptr_t newbase, uintptr_t newtop);
 
 extern int segment_userinit(ProcSegment** slot, int text);
 

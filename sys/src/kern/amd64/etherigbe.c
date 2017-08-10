@@ -1958,7 +1958,7 @@ igbepci(void)
 		case 0x08:
 		case 0x10:
 			break;
- 		}
+		}
 		ctlr = jehanne_malloc(sizeof(Ctlr));
 		if(ctlr == nil){
 			jehanne_print("igbe: can't allocate memory\n");
@@ -2038,4 +2038,3 @@ etherigbelink(void)
 	addethercard("i82543", igbepnp);
 	addethercard("igbe", igbepnp);
 }
-

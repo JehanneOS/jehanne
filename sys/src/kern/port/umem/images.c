@@ -1,7 +1,7 @@
 /*
  * This file is part of Jehanne.
  *
- * Copyright (C) 2016 Giacomo Tesio <giacomo@tesio.it>
+ * Copyright (C) 2016-2017 Giacomo Tesio <giacomo@tesio.it>
  *
  * Jehanne is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -81,6 +81,7 @@ typedef struct ImagePool
 	int		sleeping;	/* number of images that can be reclaimed */
 	unsigned short	first_sleeper;	/* index of first sleeping image */
 	int		blanks;		/* number of blank images */
+	int		max_images;	/* max number of images */
 } ImagePool;
 
 static RWlock pool_lock;	/* to grow chunks or modify free list */
@@ -90,7 +91,7 @@ static ImagePool pool;
 #define img_get(ptr)	(&(pool.chunks[(uint8_t)(ptr-1)>>8]->images[(uint8_t)(ptr-1)&(PSTEP-1)]))
 
 void
-imagepool_init(void)
+imagepool_init(short max_images)
 {
 	pool.chunks = jehanne_malloc(sizeof(ImgPoolChunk*));
 	if(pool.chunks == nil)
@@ -102,6 +103,11 @@ imagepool_init(void)
 	pool.sleeping = 0;
 	pool.blanks = PSTEP;
 	pool.first_sleeper = PSTEP;
+	if(max_images > PSTEP)
+		max_images = ROUNDUP(max_images, PSTEP);
+	if(max_images <= 0)
+		max_images = MAXIMAGES;
+	pool.max_images = max_images;
 }
 
 /* will wlock/wunlock pool_lock */
@@ -115,7 +121,7 @@ imagepool_grow(void)
 
 	wlock(&pool_lock);
 	while(pool.blanks <= 0){
-		if(pool.allocated + PSTEP > MAXIMAGES)
+		if(pool.allocated + PSTEP > pool.max_images)
 			goto Fail;
 		initially_allocated = pool.allocated;
 

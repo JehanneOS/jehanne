@@ -11,6 +11,10 @@
 touser:
 	cli
 	swapgs
+
+	movq	$0, %r15
+	movq	$0, %r14
+
 	movq	$SSEL(SiUDS, SsRPL3), %rax
 	movw	%ax, %ds
 	movw	%ax, %es
@@ -39,10 +43,10 @@ syscallentry:
 	addq	$KSTACK, %rsp
 
 	/* build Ureg */
-	pushq	$SSEL(SiUDS, SsRPL3)		/* old stack segment */
+	pushq	$UDSEL				/* old stack segment */
 	pushq	%r13				/* old sp */
 	pushq	%r11				/* old flags */
-	pushq	$SSEL(SiUCS, SsRPL3)		/* old code segment */
+	pushq	$UESEL				/* old code segment */
 	pushq	%rcx				/* old ip */
 
 	movq	%r14, 24(%r15)			/* restore %r14 from m->tmp0 */
@@ -116,6 +120,6 @@ syscallreturn:
 .globl sysrforkret
 sysrforkret:
 	movq	$0, 0(%rsp)
-	movq	%r14, (13*8)(%rsp)		/* preserve up-> */
-	movq	%r15, (14*8)(%rsp)		/* preserve m-> */
+//	movq	%r14, (13*8)(%rsp)		/* preserve up-> */
+//	movq	%r15, (14*8)(%rsp)		/* preserve m-> */
 	jmp	syscallreturn

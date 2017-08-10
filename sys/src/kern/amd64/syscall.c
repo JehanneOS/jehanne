@@ -46,7 +46,6 @@ static void
 noted(Ureg* cur, uintptr_t arg0)
 {
 	NFrame *nf;
-	Note note;
 	Ureg *nur;
 
 	qlock(&up->debug);
@@ -55,10 +54,12 @@ noted(Ureg* cur, uintptr_t arg0)
 		pprint("suicide: call to noted when not notified\n");
 		pexit("Suicide", 0);
 	}
+	awake_gc_note(up);
 	up->notified = 0;
-	fpunoted();
 
 	nf = up->ureg;
+
+	up->fpstate &= ~FPillegal;
 
 	/* sanity clause */
 	if(!okaddr(PTR2UINT(nf), sizeof(NFrame), 0)){
@@ -115,17 +116,13 @@ noted(Ureg* cur, uintptr_t arg0)
 		cur->sp = PTR2UINT(nf);
 		break;
 	default:
-		jehanne_memmove(&note, &up->lastnote, sizeof(Note));
-		qunlock(&up->debug);
-		pprint("suicide: bad arg %#p in noted: %s\n", arg0, note.msg);
-		pexit(note.msg, 0);
-		break;
+		up->lastnote.flag = NDebug;
+		/* fall through */
 	case NDFLT:
-		jehanne_memmove(&note, &up->lastnote, sizeof(Note));
 		qunlock(&up->debug);
-		if(note.flag == NDebug)
-			pprint("suicide: %s\n", note.msg);
-		pexit(note.msg, note.flag != NDebug);
+		if(up->lastnote.flag == NDebug)
+			pprint("suicide: %s\n", up->lastnote.msg);
+		pexit(up->lastnote.msg, up->lastnote.flag != NDebug);
 		break;
 	}
 }
@@ -148,7 +145,11 @@ notify(Ureg* ureg)
 	if(up->nnote == 0)
 		return 0;
 
-	fpunotify(ureg);
+	if(up->fpstate == FPactive){
+		fpsave(&up->fpsave);
+		up->fpstate = FPinactive;
+	}
+	up->fpstate |= FPillegal;
 
 	s = spllo();
 	qlock(&up->debug);
@@ -238,7 +239,6 @@ syscall(Syscalls scallnr, Ureg* ureg)
 	m->syscall++;
 	up->inkernel = 1;
 	up->cursyscall = (Syscalls)scallnr;
-	up->blockingsc = 0;
 	up->pc = ureg->ip;
 	up->dbgreg = ureg;
 	if(up->trace && (pt = proctrace) != nil)
@@ -250,8 +250,6 @@ syscall(Syscalls scallnr, Ureg* ureg)
 	}
 
 	up->scallnr = scallnr;
-	if(scallnr == SysRfork)
-		fpusysrfork(ureg);
 	spllo();
 
 	startns = 0;
@@ -355,13 +353,8 @@ syscall(Syscalls scallnr, Ureg* ureg)
 	splhi();
 	if(scallnr != SysRfork && (up->procctl || up->nnote))
 		notify(ureg);
-	else if(up->blockingsc){
-		if(up->blockingsc != scallnr)
-			panic("syscall: up->blockingsc dirty");
-		if(canwakeup(scallnr))
-			awokeproc(up);
-		up->blockingsc = 0;
-	}
+	else
+		awake_awakened(up);	// we are not sleeping after all!
 
 	/* if we delayed sched because we held a lock, sched now */
 	if(up->delaysched){
@@ -412,7 +405,9 @@ sysexecregs(uintptr_t entry, uint32_t ssize)
 	ureg = up->dbgreg;
 	ureg->sp = PTR2UINT(sp);
 	ureg->ip = entry;
-	ureg->type = 64;			/* fiction for acid */
+	ureg->cs = UESEL;
+	ureg->ss = UDSEL;
+	ureg->r14 = ureg->r15 = 0;	/* extern user registers */
 	ureg->r12 = up->pid;
 
 	/*
@@ -425,7 +420,9 @@ sysexecregs(uintptr_t entry, uint32_t ssize)
 void
 sysprocsetup(Proc* p)
 {
-	fpusysprocsetup(p);
+	fpprocsetup(p);
+	cycles(&p->kentry);
+	p->pcycles = -p->kentry;
 }
 
 void
@@ -448,9 +445,9 @@ sysrforkchild(Proc* child, Proc* parent)
 	cureg = (Ureg*)(child->sched.sp+STACKPAD*BY2SE);
 	jehanne_memmove(cureg, parent->dbgreg, sizeof(Ureg));
 
+	cureg->ax = 0;
+
 	/* Things from bottom of syscall which were never executed */
 	child->psstate = 0;
 	child->inkernel = 0;
-
-	fpusysrforkchild(child, parent);
 }

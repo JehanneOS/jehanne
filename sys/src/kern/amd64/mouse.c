@@ -6,7 +6,6 @@
  * modified, propagated, or distributed except according to the terms contained
  * in the LICENSE file.
  */
-
 #include "u.h"
 #include "../port/lib.h"
 #include "mem.h"
@@ -31,8 +30,6 @@ enum
 	MousePS2=	2,
 };
 
-extern int mouseshifted;
-
 static QLock mousectlqlock;
 static int mousetype;
 static int intellimouse;
@@ -40,6 +37,7 @@ static int packetsize;
 static int resolution;
 static int accelerated;
 static int mousehwaccel;
+static char mouseport[5];
 
 enum
 {
@@ -80,7 +78,7 @@ static Cmdtab mousectlmsg[] =
  *	byte 3 -	00 or 01 or FF according to extra button state.
  * extra buttons are mapped in this code to buttons 4 and 5.
  * AccuPoint generates repeated events for these buttons;
-*  it and Intellimouse generate 'down' events only, so
+ * it and Intellimouse generate 'down' events only, so
  * user-level code is required to generate button 'up' events
  * if they are needed by the application.
  * Also on laptops with AccuPoint AND external mouse, the
@@ -93,6 +91,76 @@ static Cmdtab mousectlmsg[] =
  * To resynchronize, if we get a byte more than two seconds
  * after the previous byte, we assume it's the first in a packet.
  */
+static void
+ps2mouseputc(int c, int shift)
+{
+	static short msg[4];
+	static int nb;
+	static uint8_t b[] = {0, 1, 4, 5, 2, 3, 6, 7, 0, 1, 2, 3, 2, 3, 6, 7 };
+	static uint32_t lasttick;
+	uint32_t m;
+	int buttons, dx, dy;
+
+	/*
+	 * Resynchronize in stream with timing; see comment above.
+	 */
+	m = MACHP(0)->ticks;
+	if(TK2SEC(m - lasttick) > 2)
+		nb = 0;
+	lasttick = m;
+
+	/*
+	 *  check byte 0 for consistency
+	 */
+	if(nb==0 && (c&0xc8)!=0x08){
+		if(intellimouse && (c==0x00 || c==0x01 || c==0xFF)){
+			/* last byte of 4-byte packet */
+			packetsize = 4;
+		}
+		return;
+	}
+
+	msg[nb] = c;
+	if(++nb >= packetsize){
+		nb = 0;
+		if(msg[0] & 0x10)
+			msg[1] |= 0xFF00;
+		if(msg[0] & 0x20)
+			msg[2] |= 0xFF00;
+
+		buttons = b[(msg[0]&7) | (shift ? 8 : 0)];
+		if(intellimouse && packetsize==4){
+			if((msg[3]&0xc8) == 0x08){
+				/* first byte of 3-byte packet */
+				packetsize = 3;
+				msg[0] = msg[3];
+				nb = 1;
+				/* fall through to emit previous packet */
+			}else{
+				/* The AccuPoint on the Toshiba 34[48]0CT
+				 * encodes extra buttons as 4 and 5. They repeat
+				 * and don't release, however, so user-level
+				 * timing code is required. Furthermore,
+				 * intellimice with 3buttons + scroll give a
+				 * two's complement number in the lower 4 bits
+				 * (bit 4 is sign extension) that describes
+				 * the amount the scroll wheel has moved during
+				 * the last sample. Here we use only the sign to
+				 * decide whether the wheel is moving up or down
+				 * and generate a single button 4 or 5 click
+				 * accordingly.
+				 */
+				if((msg[3] >> 3) & 1)
+					buttons |= 1<<3;
+				else if(msg[3] & 0x7)
+					buttons |= 1<<4;
+			}
+		}
+		dx = msg[1];
+		dy = -msg[2];
+		mousetrack(dx, dy, buttons, TK2MS(MACHP(0)->ticks));
+	}
+}
 
 /*
  *  set up a ps2 mouse
@@ -103,14 +171,12 @@ ps2mouse(void)
 	if(mousetype == MousePS2)
 		return;
 
-	mouseenable();
-	/* make mouse streaming, enabled */
-	mousecmd(0xEA);
-	mousecmd(0xF4);
-
 	mousetype = MousePS2;
 	packetsize = 3;
-	mousehwaccel = 1;
+	mousehwaccel = 0;
+
+	i8042auxenable(ps2mouseputc);
+	i8042auxcmd(0xEA);	/* set stream mode */
 }
 
 /*
@@ -131,7 +197,7 @@ setaccelerated(int x)
 	if(mousehwaccel){
 		switch(mousetype){
 		case MousePS2:
-			mousecmd(0xE7);
+			i8042auxcmd(0xE7);
 			return;
 		}
 	}
@@ -145,7 +211,7 @@ setlinear(void)
 	if(mousehwaccel){
 		switch(mousetype){
 		case MousePS2:
-			mousecmd(0xE6);
+			i8042auxcmd(0xE6);
 			return;
 		}
 	}
@@ -158,8 +224,8 @@ setres(int n)
 	resolution = n;
 	switch(mousetype){
 	case MousePS2:
-		mousecmd(0xE8);
-		mousecmd(n);
+		i8042auxcmd(0xE8);
+		i8042auxcmd(n);
 		break;
 	}
 }
@@ -171,12 +237,15 @@ setintellimouse(void)
 	packetsize = 4;
 	switch(mousetype){
 	case MousePS2:
-		mousecmd(0xF3);	/* set sample */
-		mousecmd(0xC8);
-		mousecmd(0xF3);	/* set sample */
-		mousecmd(0x64);
-		mousecmd(0xF3);	/* set sample */
-		mousecmd(0x50);
+		i8042auxcmd(0xF3);	/* set sample */
+		i8042auxcmd(0xC8);
+		i8042auxcmd(0xF3);	/* set sample */
+		i8042auxcmd(0x64);
+		i8042auxcmd(0xF3);	/* set sample */
+		i8042auxcmd(0x50);
+		break;
+	case Mouseserial:
+		uartsetmouseputc(mouseport, m5mouseputc);
 		break;
 	}
 }
@@ -187,11 +256,30 @@ resetmouse(void)
 	packetsize = 3;
 	switch(mousetype){
 	case MousePS2:
-		mousecmd(0xF6);
-		mousecmd(0xEA);	/* streaming */
-		mousecmd(0xE8);	/* set resolution */
-		mousecmd(3);
-		mousecmd(0xF4);	/* enabled */
+		i8042auxcmd(0xF6);
+		i8042auxcmd(0xEA);	/* streaming */
+		i8042auxcmd(0xE8);	/* set resolution */
+		i8042auxcmd(3);
+		break;
+	}
+}
+
+static void
+setstream(int on)
+{
+	int i;
+
+	switch(mousetype){
+	case MousePS2:
+		/*
+		 * disabling streaming can fail when
+		 * a packet is currently transmitted.
+		 */
+		for(i=0; i<4; i++){
+			if(i8042auxcmd(on ? 0xF4 : 0xF5) != -1)
+				break;
+			delay(50);
+		}
 		break;
 	}
 }
@@ -210,27 +298,37 @@ mousectl(Cmdbuf *cb)
 	ct = lookupcmd(cb, mousectlmsg, nelem(mousectlmsg));
 	switch(ct->index){
 	case CMaccelerated:
-		setaccelerated(cb->nf == 1 ? 1 : jehanne_atoi(cb->f[1]));
+		setstream(0);
+		setaccelerated(cb->nf == 1 ? 1 : atoi(cb->f[1]));
+		setstream(1);
 		break;
 	case CMintellimouse:
+		setstream(0);
 		setintellimouse();
+		setstream(1);
 		break;
 	case CMlinear:
+		setstream(0);
 		setlinear();
+		setstream(1);
 		break;
 	case CMps2:
 		intellimouse = 0;
 		ps2mouse();
+		setstream(1);
 		break;
 	case CMps2intellimouse:
 		ps2mouse();
 		setintellimouse();
+		setstream(1);
 		break;
 	case CMres:
+		setstream(0);
 		if(cb->nf >= 2)
-			setres(jehanne_atoi(cb->f[1]));
+			setres(atoi(cb->f[1]));
 		else
 			setres(1);
+		setstream(1);
 		break;
 	case CMreset:
 		resetmouse();
@@ -240,11 +338,31 @@ mousectl(Cmdbuf *cb)
 			setres(resolution);
 		if(intellimouse)
 			setintellimouse();
+		setstream(1);
+		break;
+	case CMserial:
+		if(mousetype == Mouseserial)
+			error(Emouseset);
+
+		if(cb->nf > 2){
+			if(strcmp(cb->f[2], "M") == 0)
+				uartmouse(cb->f[1], m3mouseputc, 0);
+			else if(strcmp(cb->f[2], "MI") == 0)
+				uartmouse(cb->f[1], m5mouseputc, 0);
+			else
+				uartmouse(cb->f[1], mouseputc, cb->nf == 1);
+		} else
+			uartmouse(cb->f[1], mouseputc, cb->nf == 1);
+
+		mousetype = Mouseserial;
+		strncpy(mouseport, cb->f[1], sizeof(mouseport)-1);
+		mouseport[sizeof(mouseport)-1] = 0;
+		packetsize = 3;
 		break;
 	case CMhwaccel:
-		if(jehanne_strcmp(cb->f[1], "on")==0)
+		if(strcmp(cb->f[1], "on")==0)
 			mousehwaccel = 1;
-		else if(jehanne_strcmp(cb->f[1], "off")==0)
+		else if(strcmp(cb->f[1], "off")==0)
 			mousehwaccel = 0;
 		else
 			cmderror(cb, "bad mouse control message");

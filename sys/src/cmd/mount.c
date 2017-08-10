@@ -71,9 +71,6 @@ main(int argc, char *argv[])
 	case 'd':
 		setmntdevice(EARGF(usage()));
 		break;
-	case 'C':
-		flag |= MCACHE;
-		break;
 	case 'k':
 		keyspec = EARGF(usage());
 		break;

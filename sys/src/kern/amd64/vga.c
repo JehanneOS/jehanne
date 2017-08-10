@@ -225,7 +225,7 @@ vgascreenwin(VGAscr* scr)
 	window.max.y = window.min.y+((window.max.y-window.min.y)/h)*h;
 	curpos = window.min;
 
-	consputs = vgascreenputs;
+	screenputs = vgascreenputs;
 }
 
 /*
@@ -275,7 +275,7 @@ cornerstring(char *s)
 	Point p;
 
 	scr = &vgascreen[0];
-	if(scr->vaddr == nil || consputs != vgascreenputs)
+	if(scr->vaddr == nil || screenputs != vgascreenputs)
 		return;
 	p = memsubfontwidth(scr->memdefont, s);
 	w = p.x;

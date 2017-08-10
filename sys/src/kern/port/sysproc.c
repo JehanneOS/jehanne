@@ -221,8 +221,16 @@ sysrfork(uint32_t flag)
 	jehanne_memset(p->time, 0, sizeof(p->time));
 	p->time[TReal] = sys->ticks;
 
+	jehanne_memset(p->wakeups, 0, sizeof(p->wakeups));
+	p->nwakeups = 0;
+
 	kstrdup(&p->text, up->text);
 	kstrdup(&p->user, up->user);
+	p->kentry = up->kentry;
+	p->pcycles = -p->kentry;
+
+	fpprocfork(p);
+
 	/*
 	 *  since the bss/data segments are now shareable,
 	 *  any mmu info about this process is now stale
@@ -254,13 +262,12 @@ sysexec(char* p, char **argv)
 	Chan *chan;
 	ImagePointer img;
 	ElfSegPointer load_segments[NLOAD];
-	ProcSegment *s, *ts, *ds, *bs, *es;
-	PagePointer page, argvpage;
-	int argc, progargc, i, j, n, nldseg;
-	char *a, **argvcopy, *elem, *file;
+	ProcSegment *s, *ts, *ds, *bs;
+	int argc, progargc, i, n, nldseg;
+	char *a, *ac, **argvcopy, *elem, *file, *e;
 	char line[64], *progarg[sizeof(line)/2+1];
 	long hdrsz;
-	uintptr_t entry, stack, sbottom, argsize, tmp;
+	uintptr_t entry, argsize, tmp;
 	void (*pt)(Proc*, int, int64_t, int64_t);
 	uint64_t ptarg;
 
@@ -329,7 +336,7 @@ sysexec(char* p, char **argv)
 	/*
 	 * #! has had its chance, now we need a real binary.
 	 */
-	nldseg = elf64ldseg(chan, &entry, &ldseg, cputype, PGSZ);
+	nldseg = elf64ldseg(chan, &entry, &ldseg, sys->architecture, PGSZ);
 	if(nldseg != 2){
 //		jehanne_print("exec: elf64ldseg returned %d segs!\n", nldseg);
 		error(Ebadexec);
@@ -345,16 +352,15 @@ sysexec(char* p, char **argv)
 	 * - array of pointers to the argument strings with a
 	 *   terminating nil (argv).
 	 * - argc
-	 * When the exec is committed, this temporary stack in es will
+	 * When the exec is committed, this temporary stack in up->seg[ESEG] will
 	 * become SSEG.
 	 * The architecture-dependent code which jumps to the new image
 	 * will also push a count of the argument array onto the stack (argc).
 	 */
-	es = nil;	/* exec new stack */
-	if(!segment_virtual(&es, SgStack, SgRead|SgWrite, 0, USTKTOP-USTKSIZE, USTKTOP))
+	if(!segment_virtual(&up->seg[ESEG], SgStack, SgRead|SgWrite, 0, up->seg[SSEG]->base-USTKSIZE, up->seg[SSEG]->base))
 		error(Enovmem);
 	if(waserror()){
-		segment_release(&es);
+		segment_release(&up->seg[ESEG]);
 		nexterror();
 	}
 
@@ -362,7 +368,7 @@ sysexec(char* p, char **argv)
 	argsize = 0;
 
 	/* 	start with arguments found from a #! header. */
-	for(i = 0; i < argc; i++)
+	for(i = 0; i < progargc; i++)
 		argsize += jehanne_strlen(progarg[i]) + 1 + sizeof(char*);
 
 	/* 	then size strings pointed to by the syscall argument
@@ -393,7 +399,7 @@ sysexec(char* p, char **argv)
 	argsize += sizeof(char*);	/* place for argv[argc] = nil */
 	argsize += sizeof(uintptr_t);	/* place for argc = nil */
 
-	tmp = es->top - argsize;
+	tmp = up->seg[ESEG]->top - argsize;
 	if(tmp&~(PGSZ-1) != (tmp+sizeof(uintptr_t)+sizeof(char*)*(argc+1))&~(PGSZ-1)){
 		/* the argument pointers cross a page boundary, keep
 		 * them all in the same page
@@ -402,138 +408,42 @@ sysexec(char* p, char **argv)
 	}
 	tmp = sysexecstack(tmp, argc);
 
-	argsize += es->top - argsize - tmp;
+	argsize = up->seg[ESEG]->top - tmp;
 
-	/* Step 1: Fault enough pages in the new stack */
-	stack = es->top;
-	while(stack > es->top - argsize){
-		stack -= PGSZ;
-		if(!segment_fault(&tmp, &stack, es, FaultWrite))
-			error(Enovmem);
-	}
+	/*
+	 * Step 1: assemble args; the pages will be faulted in
+	 */
+	argvcopy = (char**)tmp;
 
-//jehanne_print("argsize %d, first stack page %d\n", argsize, stack);
-
-	/* Step 2: Copy arguments into pages in descending order */
-
-	/*	prepare argvcopy to point to the right location */
-	tmp = es->top - argsize;
-	argvpage = segment_page(es, tmp);
-	char *apmem;
-	if(argvpage == 0)
-		panic("sysexec: segment_fault did not allocate enough pages");
-	apmem = page_kmap(argvpage);
-	argvcopy = (char**)((uintptr_t)(apmem + (tmp&(PGSZ-1))));
-
-	/*	add argc */
-	*((uintptr_t*)argvcopy) = argc;
+	/*      set argc (see crt0.s in libc) */
+	*((uintptr_t*)argvcopy) = argc;	/* will page fault here */
 	++argvcopy;
 
-	/*	prepare pmem to to point to the last stack page */
-	char *pmem;
-	stack = es->top;
-	sbottom = es->top;
-	sbottom -= PGSZ;
-	page = segment_page(es, sbottom);
-	if(page == 0)
-		panic("sysexec: segment_fault did not allocate enough pages");
-	pmem = page_kmap(page);
+	tmp = PTR2UINT(argvcopy);
+	ac = (char*)(tmp + ((argc+1)*sizeof(char*)));
 
-	/* 	start filling pmem (from the end) and argvcopy
-	 * 	(from the begin) with arguments found
-	 * 	from a #! header.
-	 */
 	for(i = 0; i < progargc; i++){
-		n = jehanne_strlen(progarg[i])+1;
-CopyProgArgument:
-		if(sbottom <= stack-n){
-			a = pmem+((stack-n)&(PGSZ-1));
-			jehanne_memmove(a, progarg[i], n);
-			stack -= n;
-		} else {
-			/* the current argument cross multiple pages */
-			if(stack&(PGSZ-1)){
-				/* fill the rest of the current page */
-				jehanne_memmove(pmem, progarg[i]+n-1-(stack&(PGSZ-1)), (stack&(PGSZ-1))-1);
-				*(pmem+(stack&(PGSZ-1))-1) = 0;
-				n -= (stack&(PGSZ-1));
-				stack -= (stack&(PGSZ-1));
-			}
-			while(sbottom > stack - n){
-				page_kunmap(page, &pmem);
-				sbottom -= PGSZ;
-				page = segment_page(es, sbottom);
-				if(page == 0)
-					panic("sysexec: segment_fault did not allocate enough pages");
-				pmem = page_kmap(page);
-				if(n > PGSZ){
-					/* fill one full page */
-					jehanne_memmove(pmem, progarg[i]+n-PGSZ, PGSZ);
-					n -= PGSZ;
-					stack -= PGSZ;
-				}
-			}
-			goto CopyProgArgument;
-		}
-		argvcopy[i] = (char*)stack;
+		a = progarg[i];
+		e = strchr(a, 0);
+		n = (e - a) + 1;
+		memmove(ac, a, n);	/* can page fault here */
+		argvcopy[i] = ac + USTKSIZE;
+		ac += n;
 	}
-
-	if(progargc > 0){
-		/* we are in a script: argv[0] has been replaced in
-		 * progarg and already copied, so we need to skip
-		 * it and add any further elements from argv.
-		 */
-		--progargc;
-	}
-
-	/* 	continue filling pmem (descending) and argvcopy
-	 * 	(from the current point) with exec arguments
-	 */
+	if(argc > progargc && progargc > 0)
+		--progargc;	/* to skip original argv0 that was replaced with full path */
 	for(; i < argc; i++){
-		j = i - progargc;
-		n = jehanne_strlen(argv[j])+1;
-
-CopyExecArgument:
-		if(sbottom <= stack-n){
-			a = pmem+((stack-n)&(PGSZ-1));
-			jehanne_memmove(a, argv[j], n);
-			stack -= n;
-		} else {
-			/* the current argument cross multiple pages */
-			if(stack&(PGSZ-1)){
-				/* fill the rest of the current page */
-				jehanne_memmove(pmem, argv[j]+n-1-(stack&(PGSZ-1)), (stack&(PGSZ-1))-1);
-				*(pmem+(stack&(PGSZ-1))-1) = 0;
-				n -= (stack&(PGSZ-1));
-				stack -= (stack&(PGSZ-1));
-			}
-			while(sbottom > stack - n){
-				page_kunmap(page, &pmem);
-				sbottom -= PGSZ;
-				page = segment_page(es, sbottom);
-				if(page == 0)
-					panic("sysexec: segment_fault did not allocate enough pages");
-				pmem = page_kmap(page);
-				if(n > PGSZ){
-					/* fill one full page */
-					jehanne_memmove(pmem, argv[j]+n-PGSZ, PGSZ);
-					n -= PGSZ;
-					stack -= PGSZ;
-				}
-			}
-			goto CopyExecArgument;
-		}
-
-		argvcopy[i] = (char*)stack;
-		INSPECT(stack);
-		INSPECT(pmem);
+		a = argv[i-progargc];
+		validaddr(a, 1, 0);
+		e = vmemchr(a, 0, (char*)up->seg[ESEG]->top - ac);
+		if(e == nil)
+			error(Ebadarg);
+		n = (e - a) + 1;
+		memmove(ac, a, n);	/* can page fault here */
+		argvcopy[i] = ac + USTKSIZE;
+		ac += n;
 	}
-
-	argvcopy[i] = nil;	/* terminating nil */
-	page_kunmap(page, &pmem);
-	page_kunmap(argvpage, &apmem);
-
-	INSPECT(argvcopy);
+	argvcopy[i] = nil;
 
 	/*
 	 * All the argument processing is now done, ready for the image.
@@ -597,7 +507,7 @@ CopyExecArgument:
 		if(up->seg[i])
 			segment_release(&up->seg[i]);
 	}
-	for(i = BSEG+1; i< NSEG; i++) {
+	for(i = ESEG+1; i< NSEG; i++) {
 		s = up->seg[i];
 		if(s && (s->flags&SgCExec))
 			segment_release(&up->seg[i]);
@@ -608,19 +518,15 @@ CopyExecArgument:
 		pt(up, SName, 0, ptarg);
 	}
 
-	/*
-	 *  At this point, the mmu contains info about the old address
-	 *  space and needs to be flushed
-	 */
-	mmuflush();
-
-	up->seg[SSEG] = es;
+	segment_relocate(up->seg[ESEG], USTKTOP-USTKSIZE, USTKTOP);
+	up->seg[SSEG] = up->seg[ESEG];
 	up->seg[TSEG] = ts;
 	up->seg[DSEG] = ds;
 	up->seg[BSEG] = bs;
+	up->seg[ESEG] = nil;
 	poperror();	/* ds */
 	poperror();	/* ts */
-	poperror();	/* es */
+	poperror();	/* up->seg[ESEG] */
 	poperror();	/* img */
 	image_release(img);
 
@@ -629,7 +535,7 @@ CopyExecArgument:
 	elem = nil;
 	if(up->setargs)	/* setargs == 0 => args in stack from sysexec */
 		jehanne_free(up->args);
-	up->args = argvcopy;
+	up->args = (char**)(((uintptr_t)argvcopy)+USTKSIZE);
 	up->nargs = argc;
 	up->setargs = 0;
 
@@ -663,10 +569,16 @@ CopyExecArgument:
 	up->notify = 0;
 	up->notified = 0;
 	up->privatemem = 0;
-	up->lastWakeup = 0;
-	up->pendingWakeup = 0;
+	awake_gc_proc(up);
 	sysprocsetup(up);
 	qunlock(&up->debug);
+
+	/*
+	 *  At this point, the mmu contains info about the old address
+	 *  space and needs to be flushed
+	 */
+	mmuflush();
+
 	if(up->hang)
 		up->procctl = Proc_stopme;
 
@@ -683,12 +595,6 @@ long
 sysalarm(unsigned long millisecs)
 {
 	return procalarm(millisecs);
-}
-
-long
-sysawake(long millisecs)
-{
-	return procawake(millisecs);
 }
 
 int
@@ -837,8 +743,6 @@ sysrendezvous(void* tagp, void* rendvalp)
 			p->rendval = rendval;
 			unlock(&up->rgrp->l);
 
-			while(p->mach != 0)
-				;
 			ready(p);
 
 			result = UINT2PTR(val);
@@ -849,8 +753,8 @@ sysrendezvous(void* tagp, void* rendvalp)
 	}
 
 rendezvousBlocks:
-	up->blockingsc = up->cursyscall;
-	if(awakeOnBlock(up)){
+	awake_fell_asleep(up);
+	if(awake_should_wake_up(up)){
 		unlock(&up->rgrp->l);
 		result = UINT2PTR(up->rendval);
 		goto rendezvousDone;
@@ -858,8 +762,10 @@ rendezvousBlocks:
 	/* Going to sleep here */
 	up->rendtag = tag;
 	up->rendval = rendval;
-	up->rendhash = *l;
-	*l = up;
+	if(tag != (uintptr_t)~0){
+		up->rendhash = *l;
+		*l = up;
+	}
 	up->state = Rendezvous;
 	if(up->trace && (pt = proctrace) != nil){
 		pc = (uintptr_t)sysrendezvous;

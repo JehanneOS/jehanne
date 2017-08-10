@@ -251,7 +251,6 @@ netifread(Netif *nif, Chan *c, void *a, long n, int64_t off)
 		for(i = 0; i < nif->alen; i++)
 			p = jehanne_seprint(p, e, "%2.2ux", nif->addr[i]);
 		p = jehanne_seprint(p, e, "\n");
-		jehanne_seprint(p, e, "oq len: %d\n", qblen(nif->oq));
 		n = readstr(offset, a, n, op);
 		jehanne_free(op);
 		return n;
@@ -261,8 +260,8 @@ netifread(Netif *nif, Chan *c, void *a, long n, int64_t off)
 		if(p == nil)
 			return 0;
 		e = p + READSTR;
-		p = jehanne_seprint(p, e, "in qlen: %ud\n", qblen(f->iq));
-		jehanne_seprint(p, e, "input overflows: %ud\n", f->inoverflows);
+		//p = jehanne_seprint(p, e, "in qlen: %ud\n", qblen(f->iq));
+		p = jehanne_seprint(p, e, "input overflows: %ud\n", f->inoverflows);
 		n = readstr(offset, a, n, op);
 		jehanne_free(op);
 		return n;
@@ -295,32 +294,10 @@ netifread(Netif *nif, Chan *c, void *a, long n, int64_t off)
 Block*
 netifbread(Netif *nif, Chan *c, long n, int64_t offset)
 {
-	Netfile *f;
-	Block *bp;
-
 	if((c->qid.type & QTDIR) || NETTYPE(c->qid.path) != Ndataqid)
 		return devbread(c, n, offset);
 
-	f = nif->f[NETID(c->qid.path)];
-	if(f->fat){
-		/*
-		 * Frame at a time (fat) allows us to provide
-		 * non-blocking performance with blocking semantics
-		 * for consumers that know ahead of time data is
-		 * contained within a single frame.  Once empty, we
-		 * get in line with other blocking reads and wait our
-		 * turn.
-		 */
-		for(;;){
-			if(bp = qget(f->iq))
-				return bp;
-			if(waserror())
-				return nil;
-			qsleep(f->iq);
-			poperror();
-		}
-	}
-	return qbread(f->iq, n);
+	return qbread(nif->f[NETID(c->qid.path)]->iq, n);
 }
 
 /*
@@ -748,13 +725,4 @@ netmulti(Netif *nif, Netfile *f, uint8_t *addr, int add)
 		}
 	}
 	return 0;
-}
-
-void
-netifbypass(Netif *nif, Chan *c, void (*bypass)(void*, Block*), void *arg)
-{
-	Netfile *f;
-
-	f = nif->f[NETID(c->qid.path)];
-	qsetbypass(f->iq, bypass, arg);
 }

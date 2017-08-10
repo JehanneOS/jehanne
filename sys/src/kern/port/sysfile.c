@@ -902,14 +902,12 @@ static int checkdc(int dc)
 static int
 bindmount(int dc, int fd, int afd, char* arg0, char* arg1, int flag, char* spec)
 {
-	int i, flags;
+	int i;
 	Dev *dev;
 	Chan *c0, *c1, *ac, *bc;
 
 	if((flag&~MMASK) || (flag&MORDER)==(MBEFORE|MAFTER))
 		error(Ebadarg);
-
-	flags = flag & MCACHE;
 
 	if(dc){
 		validaddr(spec, 1, 0);
@@ -937,7 +935,7 @@ bindmount(int dc, int fd, int afd, char* arg0, char* arg1, int flag, char* spec)
 			ac = fdtochan(afd, ORDWR, 0, 1);
 
 		dev = devtabget(dc, 0);
-		c0 = dev->attach(bc, ac, spec, flags);
+		c0 = dev->attach(bc, ac, spec, 0);
 
 		poperror();	/* ac bc */
 		if(ac != nil)

@@ -3,426 +3,588 @@
 #include "mem.h"
 #include "dat.h"
 #include "fns.h"
-
 #include "io.h"
-#include "apic.h"
+#include "ureg.h"
 
-#undef DBG
-#define	DBG	jehanne_print
-/*
- * MultiProcessor Specification Version 1.[14].
- */
-typedef struct {				/* MP Floating Pointer */
-	uint8_t	signature[4];			/* "_MP_" */
-	uint8_t	addr[4];			/* PCMP */
-	uint8_t	length;				/* 1 */
-	uint8_t	revision;			/* [14] */
-	uint8_t	checksum;
-	uint8_t	feature[5];
-} _MP_;
+#include "mp.h"
+#include "sipi.h"
 
-typedef struct {				/* MP Configuration Table */
-	uint8_t	signature[4];			/* "PCMP" */
-	uint8_t	length[2];
-	uint8_t	revision;			/* [14] */
-	uint8_t	checksum;
-	uint8_t	string[20];			/* OEM + Product ID */
-	uint8_t	oaddr[4];			/* OEM table pointer */
-	uint8_t	olength[2];			/* OEM table length */
-	uint8_t	entry[2];			/* entry count */
-	uint8_t	apicpa[4];			/* local APIC address */
-	uint8_t	xlength[2];			/* extended table length */
-	uint8_t	xchecksum;			/* extended table checksum */
-	uint8_t	reserved;
+/* filled in by pcmpinit or acpiinit */
+Bus* mpbus;
+Bus* mpbuslast;
+int mpisabus = -1;
+int mpeisabus = -1;
+Apic *mpioapic[MaxAPICNO+1];
+Apic *mpapic[MaxAPICNO+1];
 
-	uint8_t	entries[];
-} PCMP;
-
-typedef struct {
-	char	type[6];
-	int	polarity;			/* default for this bus */
-	int	trigger;			/* default for this bus */
-} Mpbus;
-
-static Mpbus mpbusdef[] = {
-	{ "PCI   ", IPlow, TMlevel, },
-	{ "ISA   ", IPhigh, TMedge, },
-};
-static Mpbus* mpbus[Nbus];
-int mpisabusno = -1;
-
-static void
-mpintrprint(char* s, uint8_t* p)
+int
+mpintrinit(Bus* bus, PCMPintr* intr, int vno, int irq)
 {
-	char buf[128], *b, *e;
-	char format[] = " type %d flags %#ux bus %d IRQ %d APIC %d INTIN %d\n";
-
-	b = buf;
-	e = b + sizeof(buf);
-	b = jehanne_seprint(b, e, "mpparse: intr:");
-	if(s != nil)
-		b = jehanne_seprint(b, e, " %s:", s);
-	jehanne_seprint(b, e, format, p[1], l16get(p+2), p[4], p[5], p[6], p[7]);
-	jehanne_print(buf);
-}
-
-static uint32_t
-mpmkintr(uint8_t* p)
-{
-	uint32_t v;
-	Lapic *apic;
-	IOapic *ioapic;
-	int n, polarity, trigger;
+	int el, po, v;
 
 	/*
-	 * Check valid bus, interrupt input pin polarity
-	 * and trigger mode. If the APIC ID is 0xff it means
-	 * all APICs of this type so those checks for useable
-	 * APIC and valid INTIN must also be done later in
-	 * the appropriate init routine in that case. It's hard
-	 * to imagine routing a signal to all IOAPICs, the
-	 * usual case is routing NMI and ExtINT to all LAPICs.
+	 * Parse an I/O or Local APIC interrupt table entry and
+	 * return the encoded vector.
 	 */
-	if(mpbus[p[4]] == nil){
-		mpintrprint("no source bus", p);
-		return 0;
-	}
-	if(p[6] != 0xff){
-		if(Napic < 256 && p[6] >= Napic){
-			mpintrprint("APIC ID out of range", p);
-			return 0;
-		}
-		switch(p[0]){
-		default:
-			mpintrprint("INTIN botch", p);
-			return 0;
-		case 3:				/* IOINTR */
-			ioapic = ioapiclookup(p[6]);
-			if(ioapic == nil){
-				mpintrprint("unuseable IO APIC", p);
-				return 0;
-			}
-			if(p[7] >= ioapic->nrdt){
-				mpintrprint("IO INTIN out of range", p);
-				return 0;
-			}
-			break;
-		case 4:				/* LINTR */
-			apic = lapiclookup(p[6]);
-			if(apic == nil){
-				mpintrprint("unuseable local APIC", p);
-				return 0;
-			}
-			if(p[7] >= nelem(apic->lvt)){
-				mpintrprint("LOCAL INTIN out of range", p);
-				return 0;
-			}
-			break;
-		}
-	}
-	n = l16get(p+2);
-	if((polarity = (n & 0x03)) == 2 || (trigger = ((n>>2) & 0x03)) == 2){
-		mpintrprint("invalid polarity/trigger", p);
-		return 0;
+	v = vno;
+
+	po = intr->flags & PcmpPOMASK;
+	el = intr->flags & PcmpELMASK;
+
+	switch(intr->intr){
+	default:				/* PcmpINT */
+		v |= ApicFIXED;			/* no-op */
+		break;
+
+	case PcmpNMI:
+		v |= ApicNMI;
+		po = PcmpHIGH;
+		el = PcmpEDGE;
+		break;
+
+	case PcmpSMI:
+		v |= ApicSMI;
+		break;
+
+	case PcmpExtINT:
+		v |= ApicExtINT;
+		/*
+		 * The AMI Goliath doesn't boot successfully with it's LINTR0
+		 * entry which decodes to low+level. The PPro manual says ExtINT
+		 * should be level, whereas the Pentium is edge. Setting the
+		 * Goliath to edge+high seems to cure the problem. Other PPro
+		 * MP tables (e.g. ASUS P/I-P65UP5 have a entry which decodes
+		 * to edge+high, so who knows.
+		 * Perhaps it would be best just to not set an ExtINT entry at
+		 * all, it shouldn't be needed for SMP mode.
+		 */
+		po = PcmpHIGH;
+		el = PcmpEDGE;
+		break;
 	}
 
 	/*
-	 * Create the low half of the vector table entry (LVT or RDT).
-	 * For the NMI, SMI and ExtINT cases, the polarity and trigger
-	 * are fixed (but are not always consistent over IA-32 generations).
-	 * For the INT case, either the polarity/trigger are given or
-	 * it defaults to that of the source bus;
-	 * whether INT is Fixed or Lowest Priority is left until later.
 	 */
-	v = Im;
-	switch(p[1]){
-	default:
-		mpintrprint("invalid type", p);
-		return 0;
-	case 0:					/* INT */
-		switch(polarity){
-		case 0:
-			v |= mpbus[p[4]]->polarity;
-			break;
-		case 1:
-			v |= IPhigh;
-			break;
-		case 3:
-			v |= IPlow;
-			break;
-		}
-		switch(trigger){
-		case 0:
-			v |= mpbus[p[4]]->trigger;
-			break;
-		case 1:
-			v |= TMedge;
-			break;
-		case 3:
-			v |= TMlevel;
-			break;
-		}
-		break;
-	case 1:					/* NMI */
-		v |= TMedge|IPhigh|MTnmi;
-		break;
-	case 2:					/* SMI */
-		v |= TMedge|IPhigh|MTsmi;
-		break;
-	case 3:					/* ExtINT */
-		v |= TMedge|IPhigh|MTei;
-		break;
+	if(bus->type == BusEISA && !po && !el /*&& !(i8259elcr & (1<<irq))*/){
+		po = PcmpHIGH;
+		el = PcmpEDGE;
+	}
+	if(!po)
+		po = bus->po;
+	if(po == PcmpLOW)
+		v |= ApicLOW;
+	else if(po != PcmpHIGH){
+		print("mpintrinit: bad polarity 0x%uX\n", po);
+		return ApicIMASK;
+	}
+
+	if(!el)
+		el = bus->el;
+	if(el == PcmpLEVEL)
+		v |= ApicLEVEL;
+	else if(el != PcmpEDGE){
+		print("mpintrinit: bad trigger 0x%uX\n", el);
+		return ApicIMASK;
 	}
 
 	return v;
 }
 
-static void
-mpparse(PCMP* pcmp)
+uint64_t
+tscticks(uint64_t *hz)
 {
-	uint32_t lo;
-	uint8_t *e, *p;
-	int i, n, bustype;
-	Lapic *apic;
+	if(hz != nil)
+		*hz = m->cpuhz;
 
-	p = pcmp->entries;
-	e = ((uint8_t*)pcmp)+l16get(pcmp->length);
-	while(p < e) switch(*p){
-	default:
-		jehanne_print("mpparse: unknown PCMP type %d (e-p %#ld)\n", *p, e-p);
-		for(i = 0; p < e; i++){
-			if(i && ((i & 0x0f) == 0))
-				jehanne_print("\n");
-			jehanne_print(" %#2.2ux", *p);
-			p++;
-		}
-		jehanne_print("\n");
-		break;
-	case 0:					/* processor */
-		/*
-		 * Initialise the APIC if it is enabled (p[3] & 0x01).
-		 * p[1] is the APIC ID, the memory mapped address comes
-		 * from the PCMP structure as the addess is local to the
-		 * CPU and identical for all. Indicate whether this is
-		 * the bootstrap processor (p[3] & 0x02).
-		 */
-		DBG("mpparse: APIC %d pa %#ux useable %d\n",
-			p[1], l32get(pcmp->apicpa), p[3] & 0x01);
-		if(p[3] & 0x01)
-			lapicinit(p[1], l32get(pcmp->apicpa), p[3] & 0x02);
-		p += 20;
-		break;
-	case 1:					/* bus */
-		DBG("mpparse: bus: %d type %6.6s\n", p[1], (char*)p+2);
-		if(mpbus[p[1]] != nil){
-			jehanne_print("mpparse: bus %d already allocated\n", p[1]);
-			p += 8;
-			break;
-		}
-		for(i = 0; i < nelem(mpbusdef); i++){
-			if(jehanne_memcmp(p+2, mpbusdef[i].type, 6) != 0)
-				continue;
-			if(jehanne_memcmp(p+2, "ISA   ", 6) == 0){
-				if(mpisabusno != -1){
-					jehanne_print("mpparse: bus %d already have ISA bus %d\n",
-						p[1], mpisabusno);
-					continue;
-				}
-				mpisabusno = p[1];
-			}
-			mpbus[p[1]] = &mpbusdef[i];
-			break;
-		}
-		if(mpbus[p[1]] == nil)
-			jehanne_print("mpparse: bus %d type %6.6s unknown\n",
-				p[1], (char*)p+2);
+	cycles(&m->tscticks);	/* Uses the rdtsc instruction */
+	return m->tscticks;
+}
 
-		p += 8;
-		break;
-	case 2:					/* IOAPIC */
-		/*
-		 * Initialise the IOAPIC if it is enabled (p[3] & 0x01).
-		 * p[1] is the APIC ID, p[4-7] is the memory mapped address.
-		 */
-		DBG("mpparse: IOAPIC %d pa %#ux useable %d\n",
-			p[1], l32get(p+4), p[3] & 0x01);
-		if(p[3] & 0x01)
-			ioapicinit(p[1], -1, l32get(p+4));
+void
+syncclock(void)
+{
+	uint64_t x;
 
-		p += 8;
-		break;
-	case 3:					/* IOINTR */
-		/*
-		 * p[1] is the interrupt type;
-		 * p[2-3] contains the polarity and trigger mode;
-		 * p[4] is the source bus;
-		 * p[5] is the IRQ on the source bus;
-		 * p[6] is the destination APIC;
-		 * p[7] is the INITIN pin on the destination APIC.
-		 */
-		if(p[6] == 0xff){
-			mpintrprint("routed to all IOAPICs", p);
-			p += 8;
-			break;
-		}
-		if((lo = mpmkintr(p)) == 0){
-			p += 8;
-			break;
-		}
-		if(DBGFLG)
-			mpintrprint(nil, p);
+	if(arch->fastclock != tscticks)
+		return;
 
-		/*
-		 * Always present the device number in the style
-		 * of a PCI Interrupt Assignment Entry. For the ISA
-		 * bus the IRQ is the device number but unencoded.
-		 * May need to handle other buses here in the future
-		 * (but unlikely).
-		 */
-		bustype = -1;
-		if(jehanne_memcmp(mpbus[p[4]]->type, "PCI   ", 6) == 0)
-			bustype = BusPCI;	/* had devno = p[5]<<2 */
-		else if(jehanne_memcmp(mpbus[p[4]]->type, "ISA   ", 6) == 0)
-			bustype = BusISA;
-		if(bustype != -1)
-			ioapicintrinit(bustype, p[4], p[6], p[7], p[5], lo);
-
-		p += 8;
-		break;
-	case 4:					/* LINTR */
-		/*
-		 * Format is the same as IOINTR above.
-		 */
-		if((lo = mpmkintr(p)) == 0){
-			p += 8;
-			break;
-		}
-		if(DBGFLG)
-			mpintrprint(nil, p);
-
-		/*
-		 * Everything was checked in mpmkintr above.
-		 */
-		if(p[6] == 0xff){
-			for(i = 0; i < Napic; i++){
-				apic = lapiclookup(i);
-				if(apic != nil)
-					apic->lvt[p[7]] = lo;
-			}
-		}
-		else{
-			apic = lapiclookup(p[6]);
-			if(apic != nil)
-				apic->lvt[p[7]] = lo;
-		}
-		p += 8;
-		break;
-	}
-
-	/*
-	 * There's nothing of real interest in the extended table,
-	 * should just move along, but check it for consistency.
-	 */
-	p = e;
-	e = p + l16get(pcmp->xlength);
-	while(p < e) switch(*p){
-	default:
-		n = p[1];
-		jehanne_print("mpparse: unknown extended entry %d length %d\n", *p, n);
-		for(i = 0; i < n; i++){
-			if(i && ((i & 0x0f) == 0))
-				jehanne_print("\n");
-			jehanne_print(" %#2.2ux", *p);
-			p++;
-		}
-		jehanne_print("\n");
-		break;
-	case 128:
-		DBG("address space mapping\n");
-		DBG(" bus %d type %d base %#llux length %#llux\n",
-			p[2], p[3], l64get(p+4), l64get(p+12));
-		p += p[1];
-		break;
-	case 129:
-		DBG("bus hierarchy descriptor\n");
-		DBG(" bus %d sd %d parent bus %d\n",
-			p[2], p[3], p[4]);
-		p += p[1];
-		break;
-	case 130:
-		DBG("compatibility bus address space modifier\n");
-		DBG(" bus %d pr %d range list %d\n",
-			p[2], p[3], l32get(p+4));
-		p += p[1];
-		break;
+	if(m->machno == 0){
+		wrmsr(0x10, 0);
+		m->tscticks = 0;
+	} else {
+		x = MACHP(0)->tscticks;
+		while(x == MACHP(0)->tscticks)
+			;
+		wrmsr(0x10, MACHP(0)->tscticks);
+		cycles(&m->tscticks);
 	}
 }
 
 void
-mpsinit(void)
+mpinit(void)
 {
-	uint8_t *p;
-	int i, n;
-	_MP_ *mp;
-	PCMP *pcmp;
+	int ncpu, i;
+	Apic *apic;
+	char *cp;
 
-	if((mp = sigsearch("_MP_")) == nil)
-		return;
-	if(DBGFLG){
-		DBG("_MP_ @ %#p, addr %#ux length %ud rev %d",
-			mp, l32get(mp->addr), mp->length, mp->revision);
-		for(i = 0; i < sizeof(mp->feature); i++)
-			DBG(" %2.2#ux", mp->feature[i]);
-		DBG("\n");
-	}
-	if(mp->revision != 1 && mp->revision != 4)
-		return;
-	if(checksum(mp, mp->length*16) != 0)
-		return;
+	i8259init();
+	syncclock();
 
-	if((pcmp = vmap(l32get(mp->addr), sizeof(PCMP))) == nil)
-		return;
-	if(pcmp->revision != 1 && pcmp->revision != 4){
-		vunmap(pcmp, sizeof(PCMP));
-		return;
-	}
-	n = l16get(pcmp->length) + l16get(pcmp->xlength);
-	vunmap(pcmp, sizeof(PCMP));
-	if((pcmp = vmap(l32get(mp->addr), n)) == nil)
-		return;
-	if(checksum(pcmp, l16get(pcmp->length)) != 0){
-		vunmap(pcmp, n);
-		return;
-	}
-	if(DBGFLG){
-		DBG("PCMP @ %#p length %#ux revision %d\n",
-			pcmp, l16get(pcmp->length), pcmp->revision);
-		DBG(" %20.20s oaddr %#ux olength %#ux\n",
-			(char*)pcmp->string, l32get(pcmp->oaddr),
-			l16get(pcmp->olength));
-		DBG(" entry %d apicpa %#ux\n",
-			l16get(pcmp->entry), l32get(pcmp->apicpa));
+	if(getconf("*apicdebug")){
+		Bus *b;
+		Aintr *ai;
+		PCMPintr *pi;
 
-		DBG(" xlength %#ux xchecksum %#ux\n",
-			l16get(pcmp->xlength), pcmp->xchecksum);
+		for(i=0; i<=MaxAPICNO; i++){
+			if(apic = mpapic[i])
+				print("LAPIC%d: pa=%lux va=%#p flags=%x\n",
+					i, apic->paddr, apic->addr, apic->flags);
+			if(apic = mpioapic[i])
+				print("IOAPIC%d: pa=%lux va=%#p flags=%x gsibase=%d mre=%d\n",
+					i, apic->paddr, apic->addr, apic->flags, apic->gsibase, apic->mre);
+		}
+		for(b = mpbus; b; b = b->next){
+			print("BUS%d type=%d flags=%x\n", b->busno, b->type, b->po|b->el);
+			for(ai = b->aintr; ai; ai = ai->next){
+				if(pi = ai->intr)
+					print("\ttype=%d irq=%d (%d [%c]) apic=%d intin=%d flags=%x\n",
+						pi->type, pi->irq, pi->irq>>2, "ABCD"[pi->irq&3],
+						pi->apicno, pi->intin, pi->flags);
+			}
+		}
 	}
-	if(pcmp->xchecksum != 0){
-		p = ((uint8_t*)pcmp) + l16get(pcmp->length);
-		i = checksum(p, l16get(pcmp->xlength));
-		if(((i+pcmp->xchecksum) & 0xff) != 0){
-			jehanne_print("extended table checksums to %#ux\n", i);
-			vunmap(pcmp, n);
-			return;
+
+	apic = nil;
+	for(i=0; i<=MaxAPICNO; i++){
+		if(mpapic[i] == nil)
+			continue;
+		if(mpapic[i]->flags & PcmpBP){
+			apic = mpapic[i];
+			break;
+		}
+	}
+
+	if(apic == nil){
+		panic("mpinit: no bootstrap processor");
+		return;
+	}
+	apic->online = 1;
+
+	lapicinit(apic);
+
+	/*
+	 * These interrupts are local to the processor
+	 * and do not appear in the I/O APIC so it is OK
+	 * to set them now.
+	 */
+	intrenable(IrqTIMER, lapicclock, 0, BUSUNKNOWN, "clock");
+	intrenable(IrqERROR, lapicerror, 0, BUSUNKNOWN, "lapicerror");
+	intrenable(IrqSPURIOUS, lapicspurious, 0, BUSUNKNOWN, "lapicspurious");
+	lapiconline();
+
+	/*
+	 * Initialise the application processors.
+	 */
+	if(cp = getconf("*ncpu")){
+		ncpu = strtol(cp, 0, 0);
+		if(ncpu < 1)
+			ncpu = 1;
+		else if(ncpu > MACHMAX)
+			ncpu = MACHMAX;
+	}
+	else
+		ncpu = MACHMAX;
+	memmove((void*)APBOOTSTRAP, sipihandler, sizeof(sipihandler));
+	for(i=0; i<nelem(mpapic); i++){
+		if((apic = mpapic[i]) == nil)
+			continue;
+		if(apic->machno >= MACHMAX)
+			continue;
+		if(ncpu <= 1)
+			break;
+		if((apic->flags & (PcmpBP|PcmpEN)) == PcmpEN){
+			mpstartap(apic);
+			sys->nmach++;
+			ncpu--;
 		}
 	}
 
 	/*
-	 * Parse the PCMP table and set up the datastructures
-	 * for later interrupt enabling and application processor
-	 * startup.
+	 *  we don't really know the number of processors till
+	 *  here.
+	 *
+	 *  set sys->copymode here if nmach > 1.
+	 *  Should look for an ExtINT line and enable it.
 	 */
-	mpparse(pcmp);
+	if(X86FAMILY(m->cpuidax) == 3 || sys->nmach > 1)
+		sys->copymode = 1;
+}
 
-	lapicdump();
-	iordtdump();
+static int
+mpintrcpu(void)
+{
+	static Lock physidlock;
+	static int physid;
+	int i;
+
+	/*
+	 * The bulk of this code was written ~1995, when there was
+	 * one architecture and one generation of hardware, the number
+	 * of CPUs was up to 4(8) and the choices for interrupt routing
+	 * were physical, or flat logical (optionally with lowest
+	 * priority interrupt). Logical mode hasn't scaled well with
+	 * the increasing number of packages/cores/threads, so the
+	 * fall-back is to physical mode, which works across all processor
+	 * generations, both AMD and Intel, using the APIC and xAPIC.
+	 *
+	 * Interrupt routing policy can be set here.
+	 * Currently, just assign each interrupt to a different CPU on
+	 * a round-robin basis. Some idea of the packages/cores/thread
+	 * topology would be useful here, e.g. to not assign interrupts
+	 * to more than one thread in a core, or to use a "noise" core.
+	 * But, as usual, Intel make that an onerous task.
+	 */
+	lock(&physidlock);
+	for(;;){
+		i = physid++;
+		if(physid >= nelem(mpapic))
+			physid = 0;
+		if(mpapic[i] == nil)
+			continue;
+		if(mpapic[i]->online)
+			break;
+	}
+	unlock(&physidlock);
+
+	return mpapic[i]->apicno;
+}
+
+/*
+ * With the APIC a unique vector can be assigned to each
+ * request to enable an interrupt. There are two reasons this
+ * is a good idea:
+ * 1) to prevent lost interrupts, no more than 2 interrupts
+ *    should be assigned per block of 16 vectors (there is an
+ *    in-service entry and a holding entry for each priority
+ *    level and there is one priority level per block of 16
+ *    interrupts).
+ * 2) each input pin on the IOAPIC will receive a different
+ *    vector regardless of whether the devices on that pin use
+ *    the same IRQ as devices on another pin.
+ */
+static int
+allocvector(void)
+{
+	static int round = 0, num = 0;
+	static Lock l;
+	int vno;
+
+	lock(&l);
+	vno = VectorAPIC + num;
+	if(vno < MaxVectorAPIC-7)
+		num += 8;
+	else
+		num = ++round % 8;
+	unlock(&l);
+	return vno;
+}
+
+static int
+mpintrenablex(Vctl* v, int tbdf)
+{
+	Bus *bus;
+	Aintr *aintr;
+	Apic *apic;
+	Pcidev *pcidev;
+	int bno, dno, pin, hi, irq, lo, n, type, vno;
+
+	type = BUSTYPE(tbdf);
+	bno = BUSBNO(tbdf);
+	dno = BUSDNO(tbdf);
+
+	pin = 0;
+	pcidev = nil;
+	if(type == BusPCI){
+		if(pcidev = pcimatchtbdf(tbdf))
+			pin = pcicfgr8(pcidev, PciINTP);
+	} else if(type == BusISA)
+		bno = mpisabus;
+
+Findbus:
+	for(bus = mpbus; bus != nil; bus = bus->next){
+		if(bus->type != type)
+			continue;
+		if(bus->busno == bno)
+			break;
+	}
+
+	if(bus == nil){
+		/*
+		 * if the PCI device is behind a PCI-PCI bridge thats not described
+		 * by the MP or ACPI tables then walk up the bus translating interrupt
+		 * pin to parent bus.
+		 */
+		if(pcidev && pcidev->parent && pin > 0){
+			pin = ((dno+(pin-1))%4)+1;
+			pcidev = pcidev->parent;
+			bno = BUSBNO(pcidev->tbdf);
+			dno = BUSDNO(pcidev->tbdf);
+			goto Findbus;
+		}
+		print("mpintrenable: can't find bus type %d, number %d\n", type, bno);
+		return -1;
+	}
+
+	/*
+	 * For PCI devices the interrupt pin (INT[ABCD]) and device
+	 * number are encoded into the entry irq field, so create something
+	 * to match on.
+	 */
+	if(bus->type == BusPCI){
+		if(pin > 0)
+			irq = (dno<<2)|(pin-1);
+		else
+			irq = -1;
+	}
+	else
+		irq = v->irq;
+
+	/*
+	 * Find a matching interrupt entry from the list of interrupts
+	 * attached to this bus.
+	 */
+	for(aintr = bus->aintr; aintr; aintr = aintr->next){
+		if(aintr->intr->irq != irq)
+			continue;
+		if(0){
+			PCMPintr* p = aintr->intr;
+			print("mpintrenablex: bus %d intin %d irq %d\n",
+				p->busno, p->intin, p->irq);
+		}
+		/*
+		 * Check if already enabled. Multifunction devices may share
+		 * INT[A-D]# so, if already enabled, check the polarity matches
+		 * and the trigger is level.
+		 *
+		 * Should check the devices differ only in the function number,
+		 * but that can wait for the planned enable/disable rewrite.
+		 * The RDT read here is safe for now as currently interrupts
+		 * are never disabled once enabled.
+		 */
+		apic = aintr->apic;
+		ioapicrdtr(apic, aintr->intr->intin, 0, &lo);
+		if(!(lo & ApicIMASK)){
+			vno = lo & 0xFF;
+			if(0) print("%s vector %d (!imask)\n", v->name, vno);
+			n = mpintrinit(bus, aintr->intr, vno, v->irq);
+			n |= ApicPHYSICAL;		/* no-op */
+			lo &= ~(ApicRemoteIRR|ApicDELIVS);
+			if(n != lo){
+				print("mpintrenable: multiple botch irq %d, tbdf %uX, lo %8.8uX, n %8.8uX\n",
+					v->irq, tbdf, lo, n);
+				return -1;
+			}
+			v->isr = lapicisr;
+			v->eoi = lapiceoi;
+			return vno;
+		}
+
+		vno = allocvector();
+		hi = mpintrcpu()<<24;
+		lo = mpintrinit(bus, aintr->intr, vno, v->irq);
+		lo |= ApicPHYSICAL;			/* no-op */
+		if(lo & ApicIMASK){
+			print("mpintrenable: disabled irq %d, tbdf %uX, lo %8.8uX, hi %8.8uX\n",
+				v->irq, tbdf, lo, hi);
+			return -1;
+		}
+		if((apic->flags & PcmpEN) && apic->type == PcmpIOAPIC)
+			ioapicrdtw(apic, aintr->intr->intin, hi, lo);
+
+		v->isr = lapicisr;
+		v->eoi = lapiceoi;
+		return vno;
+	}
+
+	return -1;
+}
+
+enum {
+	MSICtrl = 0x02, /* message control register (16 bit) */
+	MSIAddr = 0x04, /* message address register (64 bit) */
+	MSIData32 = 0x08, /* message data register for 32 bit MSI (16 bit) */
+	MSIData64 = 0x0C, /* message data register for 64 bit MSI (16 bit) */
+};
+
+enum {
+	HTMSIMapping	= 0xA8,
+	HTMSIFlags	= 0x02,
+	HTMSIFlagsEn	= 0x01,
+};
+
+static int
+htmsicapenable(Pcidev *p)
+{
+	return -1;
+#if 0
+	int cap, flags;
+
+	if((cap = pcihtcap(p, HTMSIMapping)) <= 0)
+		return -1;
+	flags = pcicfgr8(p, cap + HTMSIFlags);
+	if((flags & HTMSIFlagsEn) == 0)
+		pcicfgw8(p, cap + HTMSIFlags, flags | HTMSIFlagsEn);
+	return 0;
+#endif
+}
+
+static int
+htmsienable(Pcidev *pdev)
+{
+	Pcidev *p;
+
+	p = nil;
+	while((p = pcimatch(p, 0x1022, 0)) != nil)
+		if(p->did == 0x1103 || p->did == 0x1203)
+			break;
+
+	if(p == nil)
+		return 0;	/* not hypertransport platform */
+
+	p = nil;
+	while((p = pcimatch(p, 0x10de, 0)) != nil){
+		switch(p->did){
+		case 0x02f0:	/* NVIDIA NFORCE C51 MEMC0 */
+		case 0x02f1:	/* NVIDIA NFORCE C51 MEMC1 */
+		case 0x02f2:	/* NVIDIA NFORCE C51 MEMC2 */
+		case 0x02f3:	/* NVIDIA NFORCE C51 MEMC3 */
+		case 0x02f4:	/* NVIDIA NFORCE C51 MEMC4 */
+		case 0x02f5:	/* NVIDIA NFORCE C51 MEMC5 */
+		case 0x02f6:	/* NVIDIA NFORCE C51 MEMC6 */
+		case 0x02f7:	/* NVIDIA NFORCE C51 MEMC7 */
+		case 0x0369:	/* NVIDIA NFORCE MCP55 MEMC */
+			htmsicapenable(p);
+			break;
+		}
+	}
+
+	if(htmsicapenable(pdev) == 0)
+		return 0;
+
+	for(p = pdev->parent; p != nil; p = p->parent)
+		if(htmsicapenable(p) == 0)
+			return 0;
+
+	return -1;
+}
+
+static int
+msiintrenable(Vctl *v)
+{
+	int tbdf, vno, cap, cpu, ok64;
+	Pcidev *pci;
+
+	if(getconf("*nomsi") != nil)
+		return -1;
+	tbdf = v->tbdf;
+	if(tbdf == BUSUNKNOWN || BUSTYPE(tbdf) != BusPCI)
+		return -1;
+	pci = pcimatchtbdf(tbdf);
+	if(pci == nil) {
+		print("msiintrenable: could not find Pcidev for tbdf %uX\n", tbdf);
+		return -1;
+	}
+	if(htmsienable(pci) < 0)
+		return -1;
+	cap = pcicap(pci, PciCapMSI);
+	if(cap < 0)
+		return -1;
+	vno = allocvector();
+	cpu = mpintrcpu();
+	ok64 = (pcicfgr16(pci, cap + MSICtrl) & (1<<7)) != 0;
+	pcicfgw32(pci, cap + MSIAddr, (0xFEE << 20) | (cpu << 12));
+	if(ok64) pcicfgw32(pci, cap + MSIAddr + 4, 0);
+	pcicfgw16(pci, cap + (ok64 ? MSIData64 : MSIData32), vno | (1<<14));
+	pcicfgw16(pci, cap + MSICtrl, 1);
+	v->isr = lapicisr;
+	v->eoi = lapiceoi;
+	return vno;
+}
+
+int
+mpintrenable(Vctl* v)
+{
+	int irq, tbdf, vno;
+
+	vno = msiintrenable(v);
+	if(vno != -1)
+		return vno;
+
+	/*
+	 * If the bus is known, try it.
+	 * BUSUNKNOWN is given both by [E]ISA devices and by
+	 * interrupts local to the processor (local APIC, coprocessor
+	 * breakpoint and page-fault).
+	 */
+	tbdf = v->tbdf;
+	if(tbdf != BUSUNKNOWN && (vno = mpintrenablex(v, tbdf)) != -1)
+		return vno;
+
+	irq = v->irq;
+	if(irq >= IrqLINT0 && irq <= MaxIrqLAPIC){
+		if(irq != IrqSPURIOUS)
+			v->isr = lapiceoi;
+		return VectorPIC+irq;
+	}
+	if(irq < 0 || irq > MaxIrqPIC){
+		print("mpintrenable: irq %d out of range\n", irq);
+		return -1;
+	}
+
+	/*
+	 * Either didn't find it or have to try the default buses
+	 * (ISA and EISA). This hack is due to either over-zealousness
+	 * or laziness on the part of some manufacturers.
+	 *
+	 * The MP configuration table on some older systems
+	 * (e.g. ASUS PCI/E-P54NP4) has an entry for the EISA bus
+	 * but none for ISA. It also has the interrupt type and
+	 * polarity set to 'default for this bus' which wouldn't
+	 * be compatible with ISA.
+	 */
+	if(mpeisabus != -1){
+		vno = mpintrenablex(v, MKBUS(BusEISA, 0, 0, 0));
+		if(vno != -1)
+			return vno;
+	}
+	if(mpisabus != -1){
+		vno = mpintrenablex(v, MKBUS(BusISA, 0, 0, 0));
+		if(vno != -1)
+			return vno;
+	}
+	print("mpintrenable: out of choices eisa %d isa %d tbdf %uX irq %d\n",
+		mpeisabus, mpisabus, v->tbdf, v->irq);
+	return -1;
+}
+
+void
+mpshutdown(void)
+{
+	/*
+	 * Park application processors.
+	 */
+	if(m->machno != 0){
+		splhi();
+		arch->introff();
+		for(;;) idle();
+	}
+	delay(1000);
+	splhi();
+
+	/*
+	 * INIT all excluding self.
+	 */
+	lapicicrw(0, 0x000C0000|ApicINIT);
+
+	pcireset();
 }

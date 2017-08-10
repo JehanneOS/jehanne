@@ -31,7 +31,6 @@ void	mouseenable(void);
 int	mousecmd(int);
 
 void	aamloop(int);
-void		acpiinit(int);
 Dirtab*	addarchfile(char*, int,
 		    long(*)(Chan*,void*,long,int64_t),
 		    long(*)(Chan*,void*,long,int64_t));
@@ -47,36 +46,49 @@ uint64_t	asmalloc(uint64_t, uint64_t, int, int);
 void	asminit(void);
 void	asmmapinit(uint64_t, uint64_t, int);
 void 	asmmodinit(uint32_t, uint32_t, char*);
-void	cgaconsputs(char*, int);
-void	cgainit(void);
-void	cgapost(int);
+void	screen_init(void);
+uintptr_t cankaddr(uintptr_t pa);
 void	(*coherence)(void);
+void	cpuid(int, uint32_t regs[]);
+int	cpuidentify(void);
+void	cpuidprint(void);
 int		corecolor(int);
-uint32_t	cpuid(uint32_t, uint32_t, uint32_t[4]);
+void	(*cycles)(uint64_t*);
 int	dbgprint(char*, ...);
 void	delay(int);
+int	ecinit(int cmdport, int dataport);
+int	ecread(uint8_t addr);
+int	ecwrite(uint8_t addr, uint8_t val);
 #define	evenaddr(x)				/* x86 doesn't care */
 int	e820(void);
-int	fpudevprocio(Proc*, void*, int32_t, uintptr_t, int);
-void	fpuinit(void);
-void	fpunoted(void);
-void	fpunotify(Ureg*);
-void	fpuprocrestore(Proc*);
-void	fpuprocsave(Proc*);
-void	fpusysprocsetup(Proc*);
-void	fpusysrfork(Ureg*);
-void	fpusysrforkchild(Proc*, Proc*);
+void	fpclear(void);
+void	fpinit(void);
+void	fpoff(void);
+void	(*fprestore)(FPsave*);
+void	(*fpsave)(FPsave*);
+void	fpsserestore(FPsave*);
+void	fpssesave(FPsave*);
+void	fpprocfork(Proc *p);
+void	fpprocsetup(Proc* p);
 char*	getconf(char*);
+void	guesscpuhz(int);
 void	_halt(void);
 void	halt(void);
 void	hpetinit(uint32_t, uint32_t, uintmem, int);
-/*int	i8042auxcmd(int);
-int	i8042auxcmds(uint8_t*, int);
-void	i8042auxenable(void (*)(int, int));*/
-void	i8042systemreset(void);
-Uart*	i8250console(char*);
+int	i8042auxcmd(int);
+void	i8042auxenable(void (*)(int, int));
+void	i8042reset(void);
+void	i8250console(void);
 void*	i8250alloc(int, int, int);
 int64_t	i8254hz(uint32_t[2][4]);
+
+void	i8253enable(void);
+void	i8253init(void);
+void	i8253reset(void);
+uint64_t	i8253read(uint64_t*);
+void	i8253timerset(uint64_t);
+
+void	idle(void);
 void	idlehands(void);
 void	idthandlers(void);
 int	inb(int);
@@ -85,7 +97,7 @@ uint16_t	ins(int);
 void	inss(int, void*, int);
 uint32_t	inl(int);
 void	insl(int, void*, int);
-int	intrdisable(void*);
+int	intrdisable(int irq, void (*f)(Ureg *, void *), void *a, int tbdf, char *name);
 void*	intrenable(int, void (*)(Ureg*, void*), void*, int, char*);
 void	invlpg(uintptr_t va);
 void	iofree(int);
@@ -96,16 +108,20 @@ int	ioreserve(int, int, int, char*);
 int	iprint(char*, ...);
 int	isaconfig(char*, int, ISAConf*);
 int	isdmaok(void*, usize, int);
-void	keybenable(void);		// 386/i8042.c
-void	keybinit(void);			// 386/i8042.c
+void	keybenable(void);		// i8042.c
+void	keybinit(void);			// i8042.c
 void	kexit(Ureg*);
+KMap*	kmap(uintptr_t pa);
+void	kunmap(KMap*);
 #define	kmapinval()
 void	lfence(void);
 void	links(void);
+#define	lockgetpc(l) (l->pc)
 int	machdom(Mach*);
 void	machinit(void);
 void	mach0init(void);
 void	mapraminit(uint64_t, uint64_t);
+void	mathinit(void);
 void	memdebug(void);
 void	meminit(void);
 int		memcolor(uintmem addr, uintmem *sizep);
@@ -113,14 +129,18 @@ void	memmaprange(uintptr_t, uintmem, uintmem, PTE (*alloc)(usize), PTE);
 void	memreserve(uintmem, uintmem);
 void	mfence(void);
 void	mmudump(Proc*);
-void	mmuflushtlb(uint64_t);
+#define mmuflushtlb() cr3put(cr3get())
 void	mmuinit(void);
 #define	mmucachectl(pg, why)	USED(pg, why)	/* x86 doesn't need it */
 uint64_t	mmuphysaddr(uintptr_t);
-int	mmuwalk(uintptr_t, int, PTE**, uint64_t (*)(usize));
-int	multiboot(uint32_t, uint32_t, int);
+uintptr_t*	mmuwalk(uintptr_t* table, uintptr_t va, int level, int create);
+char*	mtrr(unsigned long, unsigned long, char *);
+void	mtrrclock(void);
+int	mtrrprint(char *, long);
+void	mtrrsync(void);
+int	multiboot(int);
+void	mwait(void*);
 uint32_t	mwait32(void*, uint32_t);
-uint64_t	mwait64(void*, uint64_t);
 void	ndnr(void);
 uint8_t	nvramread(int);
 void	nvramwrite(int, uint8_t);
@@ -131,6 +151,7 @@ void	outs(int, uint16_t);
 void	outss(int, void*, int);
 void	outl(int, uint32_t);
 void	outsl(int, void*, int);
+void	patwc(void *a, int n);
 void	pause(void);
 int	pciscan(int, Pcidev**);
 uint32_t	pcibarsize(Pcidev*, int);
@@ -156,7 +177,9 @@ void	pcisetmwi(Pcidev*);
 int	pcisetpms(Pcidev*, int);
 uintmem	pcixcfgspace(int);
 void*	pcixcfgaddr(Pcidev*, int);
+void	pmap(uintptr_t *pml4, uintptr_t pa, uintptr_t va, long size);
 void	printcpufreq(void);
+void*	rampage(void);
 int	screenprint(char*, ...);			/* debugging */
 void	sfence(void);
 void	spldone(void);
@@ -170,11 +193,15 @@ void*	sysexecregs(uintptr_t, uint32_t);
 uintptr_t	sysexecstack(uintptr_t, int);
 void	sysprocsetup(Proc*);
 void	tssrsp0(uint64_t);
+uint64_t	tscticks(uint64_t *hz);
 void	trapenable(int, void (*)(Ureg*, void*), void*, char*);
 void	trapinit(void);
+void	trapinit0(void);
 int	userureg(Ureg*);
-void*	vmap(uintmem, usize);
-void	vsvminit(int);
+uintptr_t	upaalloc(int size, int align);
+void		upafree(uintptr_t pa, int size);
+void		upareserve(uintptr_t pa, int size);
+void*	vmap(uintptr_t, usize);
 void	vunmap(void*, usize);
 
 extern Mreg cr0get(void);
@@ -186,12 +213,17 @@ extern Mreg cr4get(void);
 extern void cr4put(Mreg);
 extern void gdtget(void*);
 extern void gdtput(int, uint64_t, uint16_t);
+extern void lgdt(void*);
 extern void idtput(int, uint64_t);
-extern uint64_t rdmsr(uint32_t);
+extern void lidt(void*);
+extern int rdmsr(uint32_t reg, long* value);
 extern uint64_t rdtsc(void);
 extern void trput(uint64_t);
-extern void wrmsr(uint32_t, uint64_t);
+extern void wbinvd(void);
+extern int wrmsr(uint32_t, uint64_t);
 int	xaddb(void*);
+
+#define	userureg(ur)	(((ur)->cs & 3) == 3)
 
 extern int islo(void);
 extern void spldone(void);
@@ -222,8 +254,10 @@ void	sysrforkret(void);
 #define PTR2UINT(p)	((uintptr_t)(p))
 #define UINT2PTR(i)	((void*)(i))
 
-void*	KADDR(uintmem);
-uintptr_t	PADDR(void*);
+uintptr_t	mmu_physical_address(void*);
+void*		mmu_kernel_address(uintptr_t);
+#define	KADDR(a)	mmu_kernel_address(a)
+#define PADDR(a)	mmu_physical_address((void*)(a))
 
 #define BIOSSEG(a)	KADDR(((uint32_t)(a))<<4)
 
@@ -235,10 +269,13 @@ extern void millidelay(int);
 /*
  * i8259.c
  */
-extern int i8259init(int);
-extern int i8259irqdisable(int);
-extern int i8259irqenable(int);
+extern void i8259init(void);
+extern int i8259disable(int);
+extern int i8259enable(Vctl* v);
 extern int i8259isr(int);
+extern void i8259on(void);
+extern void i8259off(void);
+extern int i8259vecno(int irq);
 
 /*
  * sipi.c
@@ -249,6 +286,9 @@ void*	basealloc(usize, uint32_t, usize*);
 void	basefree(void*, usize);
 void	physallocinit(void);
 void	uartpush(void);
+
+void	rdrandbuf(void*, uint32_t);
+
 
 /* horror */
 static inline void __clobber_callee_regs(void)

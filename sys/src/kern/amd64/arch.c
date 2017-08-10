@@ -20,8 +20,6 @@ procrestore(Proc *p)
 		return;
 	cycles(&t);
 	p->pcycles -= t;
-
-	fpuprocrestore(p);
 }
 
 /*
@@ -35,11 +33,35 @@ procsave(Proc *p)
 	cycles(&t);
 	p->pcycles += t;
 
-	fpuprocsave(p);
+	if(p->fpstate == FPactive){
+		if(p->state == Moribund)
+			fpclear();
+		else{
+			/*
+			 * Fpsave() stores without handling pending
+			 * unmasked exeptions. Postnote() can't be called
+			 * here as sleep() already has up->rlock, so
+			 * the handling of pending exceptions is delayed
+			 * until the process runs again and generates an
+			 * emulation fault to activate the FPU.
+			 */
+			fpsave(&p->fpsave);
+		}
+		p->fpstate = FPinactive;
+	}
 
 	/*
+	 * While this processor is in the scheduler, the process could run
+	 * on another processor and exit, returning the page tables to
+	 * the free list where they could be reallocated and overwritten.
+	 * When this processor eventually has to get an entry from the
+	 * trashed page tables it will crash.
+	 *
+	 * If there's only one processor, this can't happen.
+	 * You might think it would be a win not to do this in that case,
+	 * especially on VMware, but it turns out not to matter.
 	 */
-	mmuflushtlb(m->pml4->pa);
+	mmuflushtlb();
 }
 
 static void
@@ -76,12 +98,21 @@ onIdleSpin(void)
 /*
  *  put the processor in the halt state if we've no processes to run.
  *  an interrupt will get us going again.
+ *
+ *  halting in an smp system can result in a startup latency for
+ *  processes that become ready.
+ *  if idle_spin is zero, we care more about saving energy
+ *  than reducing this latency.
+ *
+ *  the performance loss with idle_spin == 0 seems to be slight
+ *  and it reduces lock contention (thus system time and real time)
+ *  on many-core systems with large values of NPROC.
  */
 void
 idlehands(void)
 {
 	extern int nrdy;
-	if(sys->nonline == 1)
+	if(sys->nmach == 1)
 		halt();
 	else if (SUPPORT_MWAIT)
 		mwait32(&nrdy, 0);

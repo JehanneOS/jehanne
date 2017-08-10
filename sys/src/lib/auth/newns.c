@@ -167,9 +167,6 @@ nsop(char *fn, int argc, char *argv[], AuthRpc *rpc)
 	case 'c':
 		flags |= MCREATE;
 		break;
-	case 'C':
-		flags |= MCACHE;
-		break;
 	}ARGEND
 
 	if(!(flags & (MAFTER|MBEFORE)))

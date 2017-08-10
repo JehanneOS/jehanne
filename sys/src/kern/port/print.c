@@ -39,5 +39,5 @@ void
 fmtinit(void)
 {
 	jehanne_quotefmtinstall();
-	archfmtinstall();
+//	archfmtinstall();
 }

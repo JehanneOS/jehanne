@@ -21,333 +21,611 @@
 #include	"dat.h"
 #include	"fns.h"
 
-typedef struct PendingWakeup PendingWakeup;
-struct PendingWakeup
+/* Requirements:
+ * - each process can register several wakeups
+ *   - wakeups registered outside a note handler will not happen
+ *     in a note handler
+ *   - wakeups registered by a note handler will be deleted on noted()
+ *   - all pending wakeups of a process will be deleted on pexit()
+ * - future wakeups can be deleted
+ * - each wakeup will interrupt a blocking syscall
+ */
+struct AwakeAlarm	/* 24 byte */
 {
-	short notified;
-	uint64_t time;
-	Proc *p;
-	PendingWakeup *next;
+	Proc*		p;
+	AwakeAlarm*	next;
+	unsigned char	notified;
+	unsigned char	done;
+	unsigned long	time	: 48;
+};
+typedef struct AlarmPool
+{
+	AwakeAlarm*	alarms;
+	AwakeAlarm*	end;
+	int		size;
+	int		first;
+	int		nfree;
+	Lock		l;
+} AlarmPool;
+static AlarmPool awkpool;
+#define alarm2wkp(a) ~((a)->time << 16 | (a) - awkpool.alarms)
+#define wkp2alarm(a) (awkpool.alarms + (~(a) & 0xffff))
+
+static AwakeAlarm *registry;
+static Lock rl;
+
+
+typedef enum ElapsedAlarmFate
+{
+	TryAgain,
+	Forget,
+	FreeAndForget
+} ElapsedAlarmFate;
+static AwakeAlarm *elapsed, **eEnd = &elapsed;
+static Lock el;
+
+static Rendez	producer;
+static Rendez	consumer;
+
+static unsigned long next_wakeup;
+
+static const int awakeable_syscalls[] = {
+	[SysAwait]	= 1,
+	[SysAwake]	= 0,
+	[SysBind]	= 0,
+	[SysClose]	= 0,
+	[SysCreate]	= 0,
+	[SysErrstr]	= 0,
+	[SysExec]	= 0,
+	[Sys_exits]	= 0,
+	[SysFauth]	= 0,
+	[SysFd2path]	= 0,
+	[SysFstat]	= 1,
+	[SysFversion]	= 0,
+	[SysFwstat]	= 1,
+	[SysMount]	= 0,
+	[SysNoted]	= 0,
+	[SysNotify]	= 0,
+	[SysOpen]	= 1,
+	[SysPread]	= 1,
+	[SysPwrite]	= 1,
+	[SysRemove]	= 0,
+	[SysRendezvous]	= 1,
+	[SysRfork]	= 0,
+	[SysSeek]	= 0,
+	[SysSemacquire]	= 1,
+	[SysSemrelease]	= 0,
+	[SysUnmount]	= 0,
+	[SysAlarm]	= 0,
 };
 
-/* alarms: linked list, sorted by wakeup time, protected by qlock(&l)
- * wakeupafter inserts new items, forgivewakeup remove them,
- * awakekproc consume the expired ones and clearwakeups remove those
- * survived to their process.
- */
-static PendingWakeup *alarms;
-static QLock l;
+#define DEBUG
 
-static Rendez	awaker;
+#ifdef DEBUG
 
-int
-canwakeup(Syscalls scall)
+void
+awake_detect_loop(AwakeAlarm *head)
+{
+	AwakeAlarm *tail;
+	while(head != nil){
+		if(!head->p)
+			panic("awake: free alarm head: %#p, pc %#p", head, getcallerpc());
+		if(head < awkpool.alarms || head > awkpool.end)
+			panic("awake: not an alarm head: %#p, pc %#p", head, getcallerpc());
+		tail = head->next;
+		while(tail != nil){
+			if(!tail->p)
+				panic("awake: free alarm tail: %#p, pc %#p", tail, getcallerpc());
+			if(tail < awkpool.alarms || tail > awkpool.end)
+				panic("awake: not an alarm tail: %#p, pc %#p", tail, getcallerpc());
+			if(head == tail)
+				panic("awake: loop detected");
+			else
+				tail = tail->next;
+		}
+		head = head->next;
+	}
+}
+
+AwakeAlarm*
+awake_find_first_of(Proc* p, AwakeAlarm* head)
+{
+	AwakeAlarm* a = head;
+	if(head == nil)
+		return nil;
+	while(a < awkpool.end){
+		if(a->p == p)
+			return a;
+		++a;
+	}
+	return nil;
+}
+
+static int
+awake_can_interrupt(Syscalls scall)
 {
 	if(scall == 0)
-		panic("canwakeup on page fault");
-
-	switch(scall){
-	default:
-		panic("canwakeup: unknown scall %d\n", scall);
-	case SysFstat:
-	case SysFwstat:
-	case SysOpen:
-	case SysPread:
-	case SysPwrite:
-	case SysRendezvous:
-	case SysSemacquire:
-	case SysSemrelease:
-	case SysAwait:
-		return 1;
-	case SysAwake:
-	case SysBind:
-	case SysClose:
-	case SysCreate:
-	case SysErrstr:
-	case SysExec:
-	case Sys_exits:
-	case SysFauth:
-	case SysFd2path:
-	case SysFversion:
-	case SysMount:
-	case SysNoted:
-	case SysNotify:
-	case SysRemove:
-	case SysRfork:
-	case SysSeek:
-	case SysUnmount:
-	case SysAlarm:
-		return 0;
-	}
+		panic("awake_can_interrupts on page fault");
+	if(scall >= sizeof(awakeable_syscalls) - 1)
+		panic("awake_can_interrupts: unknown syscall %d", scall);
+	return awakeable_syscalls[scall];
 }
 
-/*
- * Actually wakeup a process
- */
+#else
+# define awake_detect_loop(h)
+# define awake_can_interrupt(scall)	(awakeable_syscalls[scall])
+//# undef assert
+//# define assert(a)
+#endif
+
 static void
-wakeupProc(Proc *p, unsigned long t)
+pool_init(void)
 {
-	Mpl pl;
-	Rendez *r;
-	Proc *d, **l;
+	awkpool.size = sys->nproc * (sys->nmach + 1);
+	if(awkpool.size >= 1<<16)
+		awkpool.size = 1<<16;	/* we have 16 bit in the wakeup token for the index */
+	awkpool.alarms = malloc(sizeof(AwakeAlarm) * awkpool.size);
+	awkpool.end = awkpool.alarms + awkpool.size;
+	awkpool.nfree = awkpool.size;
+	awkpool.first = 0;
+}
 
-	/* this loop is to avoid lock ordering problems. */
-	for(;;){
-		pl = splhi();
-		lock(&p->rlock);
-		r = p->r;
+static AwakeAlarm*
+alarm_new(Proc *p)
+{
+	AwakeAlarm *a;
 
-		/* waiting for a wakeup? */
-		if(r == nil)
-			break;	/* no */
-
-		/* try for the second lock */
-		if(canlock(&r->l)){
-			if(p->state != Wakeme || r->p != p)
-				panic("wakeupProc: state %d %d %d", r->p != p, p->r != r, p->state);
-			p->r = nil;
-			r->p = nil;
-			ready(p);
-			unlock(&r->l);
-			break;
-		}
-
-		/* give other process time to get out of critical section and try again */
-		unlock(&p->rlock);
-		splx(pl);
-		sched();
+	lock(&awkpool.l);
+	while(awkpool.nfree <= 2*p->nwakeups){
+		unlock(&awkpool.l);
+		resrcwait("wait-wkp", nil);
+		lock(&awkpool.l);
 	}
-	unlock(&p->rlock);
-	splx(pl);
-
-	p->pendingWakeup = t;
-	if(p->state != Rendezvous)
-		return;
-
-	/* Try and pull out of a rendezvous */
-	lock(&p->rgrp->l);
-	if(p->state == Rendezvous) {
-		p->rendval = ~0;
-		l = &REND(p->rgrp, p->rendtag);
-		for(d = *l; d; d = d->rendhash) {
-			if(d == p) {
-				*l = p->rendhash;
-				break;
-			}
-			l = &d->rendhash;
-		}
-		ready(p);
+	/* here we know that nfree > 0... */
+	if(awkpool.first == awkpool.size){
+		/* but we don't now where the first free is */
+		awkpool.first = -1;
+		while(++awkpool.first < awkpool.size && awkpool.alarms[awkpool.first].p)
+			;
 	}
-	unlock(&p->rgrp->l);
+	assert(awkpool.first < awkpool.size);
+
+	a = awkpool.alarms + awkpool.first;
+	a->p = p;
+
+	if(adec(&awkpool.nfree) > 0){
+UpdateFirst:
+		while(++awkpool.first < awkpool.size && awkpool.alarms[awkpool.first].p)
+			;
+		if(awkpool.first == awkpool.size){
+			awkpool.first = -1;
+			goto UpdateFirst;
+		}
+	} else {
+		awkpool.first = awkpool.size;
+	}
+	unlock(&awkpool.l);
+
+	ainc(&p->nwakeups);
+	a->done = 0;
+	a->notified = p->notified ? 1 : 0;
+	a->time = 0;
+	a->next = nil;
+
+	return a;
+}
+static void
+alarm_free(AwakeAlarm* a)
+{
+	Proc *p = a->p;
+#ifdef DEBUG
+	a->next = (void*)getcallerpc();
+#endif
+	a->p = nil;
+	ainc(&awkpool.nfree);
+	adec(&p->nwakeups);
 }
 
 void
-awakekproc(void* v)
+awake_fell_asleep(Proc *p)
 {
-	Proc *p;
-	PendingWakeup *tail, *toAwake, **toAwakeEnd, *toDefer, **toDeferEnd;
-	uint64_t now;
-
-	for(;;){
-		now = sys->ticks;
-		toAwake = nil;
-		toAwakeEnd = &toAwake;
-		toDefer = nil;
-		toDeferEnd = &toDefer;
-
-		/* search for processes to wakeup */
-		qlock(&l);
-		tail = alarms;
-		while(tail && tail->time <= now){
-			if(tail->p->pendingWakeup > tail->p->lastWakeup
-			&& tail->p->state >= Ready){
-				*toDeferEnd = tail;
-				toDeferEnd = &tail->next;
-			} else if (!tail->notified && tail->p->notified){
-				/* If an awake was requested outside of
-				 * a note handler, it cannot expire
-				 * while executing a note handler.
-				 * On the other hand if an awake was
-				 * requeted while executing a note handler,
-				 * it's up to the note handler to
-				 * forgive it if it's not needed anymore.
-				 */
-				*toDeferEnd = tail;
-				toDeferEnd = &tail->next;
-			} else {
-				*toAwakeEnd = tail;
-				toAwakeEnd = &tail->next;
-				--tail->p->wakeups;
-			}
-			tail = tail->next;
-		}
-		if(toAwake != nil){
-			*toAwakeEnd = nil;
-			if(toDefer != nil){
-				*toDeferEnd = tail;
-				alarms = toDefer;
-			} else {
-				alarms = tail;
-			}
-		}
-		qunlock(&l);
-
-		/* wakeup sleeping processes */
-		while(toAwake != nil){
-			p = toAwake->p;
-			if(p->lastWakeup < toAwake->time && p->state > Ready) {
-				/* debugged processes will miss wakeups,
-				 * but the alternatives seem even worse
-				 */
-				if(canqlock(&p->debug)){
-					if(!waserror()){
-						wakeupProc(p, toAwake->time);
-						poperror();
-					}
-					qunlock(&p->debug);
-				}
-			}
-			tail = toAwake->next;
-			jehanne_free(toAwake);
-			toAwake = tail;
-		}
-
-		sleep(&awaker, return0, 0);
+	Syscalls cs = p->cursyscall;
+	if(cs != 0 && cs != SysAwake){
+		/* awake_register might sleep() on alarm_new and we
+		 * don't want this sleep to be interrupted.
+		 */
+		p->wakeups[p->notified].blockingsc = cs;
+		p->wakeups[p->notified].fell_asleep = sys->ticks;
 	}
+}
+
+int
+awake_should_wake_up(Proc *p)
+{
+	AwakeAlarm *a = p->wakeups[p->notified].elapsed;
+	Syscalls blockingsc = p->wakeups[p->notified].blockingsc;
+	return a != nil
+	    && blockingsc
+	    && awake_can_interrupt(blockingsc)
+	    ;
+}
+
+void
+awake_awakened(Proc *p)
+{
+	AwakeAlarm *a;
+	Syscalls blockingsc = p->wakeups[p->notified].blockingsc;
+	if(blockingsc && awake_can_interrupt(blockingsc))
+	if(a = xchgm(&p->wakeups[p->notified].elapsed, nil)){
+		p->wakeups[p->notified].awakened = sys->ticks;
+		p->wakeups[p->notified].last = alarm2wkp(a);
+		p->wakeups[p->notified].blockingsc = 0;
+	}
+}
+
+/* called from noted() to remove all pending alarms */
+void
+awake_gc_note(Proc *p)
+{
+	AwakeAlarm *a, **last;
+
+	assert(p->notified != 0);
+
+	lock(&rl);
+	awake_detect_loop(registry);
+
+	/* first pending alarm */
+	a = xchgm(&p->wakeups[1].elapsed, nil);
+	p->wakeups[1].blockingsc = 0;
+
+	/* then clear the registry */
+	last = &registry;
+	for(a = *last; a != nil && p->wakeups[1].count > 0; a = *last) {
+		if(!a->p)
+			panic("awake_reset: free alarm in registry");
+		if(a->p == p && a->notified){
+			adec(&p->wakeups[a->notified].count);
+			*last = a->next;
+			alarm_free(a);
+		} else {
+			last = &a->next;
+		}
+	}
+	awake_detect_loop(registry);
+	if(registry)
+		next_wakeup = registry->time;
+	unlock(&rl);
 }
 
 /*
- * called on pexit
+ * called from pexit() and sysexec() to clear all pending
  */
 void
-clearwakeups(Proc *p)
+awake_gc_proc(Proc *p)
 {
-	PendingWakeup *w, **next, *freelist, **fend;
+	AwakeAlarm *a, **last;
 
-	freelist = nil;
+	/* clear all wakeups (process is exiting) */
+	lock(&rl);
+	awake_detect_loop(registry);
 
-	/* find all PendingWakeup* to free and remove them from alarms */
-	qlock(&l);
-	if(p->wakeups){
-		/* note: qlock(&l) && p->wakeups > 0 => alarms != nil */
-		next = &alarms;
-		fend = &freelist;
-clearnext:
-		w = *next;
-		while (w != nil && w->p == p) {
-			/* found one to remove */
-			*fend = w;			/* append to freelist */
-			*next = w->next;	/* remove from alarms */
-			fend = &w->next;	/* move fend to end of freelist */
-			*fend = nil;		/* clean the end of freelist */
-			--p->wakeups;
-			w = *next;			/* next to analyze */
-		}
-		/* while exited => w == nil || w->p != p */
-		if(p->wakeups){
-			/* note: p->wakeups > 0 => w != nil
-			 *       p->wakeups > 0 && w->p != p => w->next != nil
-			 */
-			next = &w->next;
-			goto clearnext;
+	/* first pending alarm */
+	p->wakeups[0].elapsed = nil;
+	p->wakeups[0].blockingsc = 0;
+	p->wakeups[1].elapsed = nil;
+	p->wakeups[1].blockingsc = 0;
+
+	/* then clear the registry */
+	last = &registry;
+	for(a = *last; a != nil && (p->wakeups[0].count > 0 || p->wakeups[1].count > 0); a = *last) {
+		if(!a->p)
+			panic("awake_reset: free alarm in registry");
+		if(a->p == p){
+			adec(&p->wakeups[a->notified].count);
+			*last = a->next;
+			alarm_free(a);
+		} else {
+			last = &a->next;
 		}
 	}
-	qunlock(&l);
+	awake_detect_loop(registry);
+	if(registry)
+		next_wakeup = registry->time;
+	unlock(&rl);
 
-	/* free the found PendingWakeup* (out of the lock) */
-	w = freelist;
-	while(w != nil) {
-		freelist = w->next;
-		jehanne_free(w);
-		w = freelist;
+	assert(p->wakeups[0].count == 0);
+	assert(p->wakeups[1].count == 0);
+
+	while(p->nwakeups > 0)
+		resrcwait(nil, nil);
+}
+
+static long
+awake_register(long ms)
+{
+	AwakeAlarm *a, *new, **last;
+
+	new = alarm_new(up);
+
+	ilock(&rl);
+	last = &registry;
+	awake_detect_loop(registry);
+
+	new->time = (sys->ticks + ms2tk(ms) + sys->nmach) & 0xffffffffffff;
+	for(a = *last; a != nil && a->time <= new->time; a = *last) {
+		if(!a->p)
+			panic("awake_register: free alarm in registry");
+		if(a->done){
+			adec(&a->p->wakeups[a->notified].count);
+			*last = a->next;
+			alarm_free(a);
+			continue;
+		}
+		if(a->time == new->time && a->p == up){
+			/* avoid two alarms at the same tick for a process */
+			++new->time;
+		}
+		last = &a->next;
 	}
+	*last = new;
+	new->next = a;
+	awake_detect_loop(registry);
+	ainc(&up->wakeups[new->notified].count);
+	assert(registry != nil);
+	next_wakeup = registry->time;
+	iunlock(&rl);
+
+	return alarm2wkp(new);
+}
+
+static long
+awake_remove(long request)
+{
+	AwakeAlarm *a;
+
+	if(request >= up->wakeups[up->notified].last)
+		return 0;	/* already free */
+
+	a = wkp2alarm(request);
+	if(a >= awkpool.end)
+		return 0;	/* should we send a note to up? */
+
+	if(a->p != up)
+		return 0;	/* should we send a note to up? */
+
+	if(a->time != (~request)>>16)
+		return 0;	/* should we send a note to up? */
+
+	lock(&rl);		/* sync with awake_timer */
+	if(!CASV(&up->wakeups[up->notified].elapsed, a, nil)){
+		a->done = 1;
+	}
+	unlock(&rl);
+
+	return request;
+}
+
+long
+sysawake(long request)
+{
+	if(request == 0)
+		return up->wakeups[up->notified].last;
+	if(request < 0)
+		return awake_remove(request);
+	return awake_register(request);
 }
 
 /*
  * called every clock tick
  */
 void
-checkwakeups(void)
+awake_tick(unsigned long now)
 {
-	PendingWakeup *p;
-	uint64_t now;
+	if(next_wakeup < now && (now&7) == 0)
+		wakeup(&producer);
+}
 
-	p = alarms;
+static void
+try_wire_process(void)
+{
+	int i;
+	/* wire to an online processor to reduce context switches
+	 * but try to avoid boot processor as it runs awake_tick
+	 */
+	if(up->mach->machno > 0)
+		procwired(up, up->mach->machno);
+	else if(sys->nmach > 1){
+		i = sys->nmach;
+		while(up->wired != nil && i > 1)
+			if(sys->machptr[--i]->online)
+				procwired(up, i);
+	}
+}
+
+void
+awake_timer(void* v)
+{
+	long now;
+	AwakeAlarm **next, *tmp, *toAwake, **toAwakeEnd;
+
+	try_wire_process();
+
+	/* initialize wakeups wkppool */
+	pool_init();
+
+CheckWakeups:
+	next_wakeup = ~0;
+
+	/* we fix time to preserve wakeup order */
 	now = sys->ticks;
 
-	if(p && p->time <= now)
-		wakeup(&awaker);
+	toAwake = nil;
+	toAwakeEnd = &toAwake;
+
+	/* search for processes to wakeup */
+	ilock(&rl);
+	next = &registry;
+	while((tmp = *next) != nil && tmp->time <= now){
+		if(tmp->p == nil)
+			panic("awake_timer: free alarm in registry");
+		if(tmp->done){
+			*next = tmp->next;
+			adec(&tmp->p->wakeups[tmp->notified].count);
+			alarm_free(tmp);
+		} else {
+			if(!CASV(&tmp->p->wakeups[tmp->notified].elapsed, nil, tmp)){
+				/* each wakeup must have a chance */
+				next = &tmp->next;
+			} else {
+				adec(&tmp->p->wakeups[tmp->notified].count);
+				*toAwakeEnd = tmp;
+				toAwakeEnd = &tmp->next;
+				*next = tmp->next;
+			}
+		}
+	}
+	if(toAwake != nil)
+		*toAwakeEnd = nil;
+
+	awake_detect_loop(registry);
+	iunlock(&rl);
+
+	if(toAwake != nil){
+		/* pass the elapsed wakeups to awake_ringer preserving order */
+		lock(&el);
+		*eEnd = toAwake;
+		eEnd = toAwakeEnd;
+		unlock(&el);
+		wakeup(&consumer);
+	}
+
+	if(registry)
+		next_wakeup = registry->time;
+
+	sleep(&producer, return0, 0);
+	goto CheckWakeups;
 }
 
-static int64_t
-wakeupafter(int64_t ms)
+/* Try to wake up a process
+ * Returns:
+ * - 0 if the alarm must be preserved in the elapsed list
+ * - 1 if the alarm must be removed from the elapsed list and freed
+ */
+static int
+awake_dispatch(AwakeAlarm *a)
 {
-	PendingWakeup *w, *new, **last;
-	int64_t when;
+	int canfree;
+	Rendez *r;
+	Proc *p;
+	Syscalls bs;
 
-	when = ms2tk(ms) + sys->ticks + 2; /* +2 against round errors and cpu's clocks misalignment */
-	new = jehanne_mallocz(sizeof(PendingWakeup), 1);
-	if(new == nil)
+	p = a->p;
+	if(p == nil)
+		panic("awake_dispatch: free alarm in elapsed list");
+
+	if(p < procalloc.arena || p > procalloc.arena + procalloc.nproc)
+		panic("awake_dispatch: dirty alarm");
+	if(!canlock(&p->rlock))
 		return 0;
-	new->p = up;
-	new->notified = up->notified;
-	new->time = when;
 
-	qlock(&l);
-	last = &alarms;
-	for(w = *last; w != nil && w->time <= when; w = w->next) {
-		last = &w->next;
+	/* sched() locks p->rlock before setting p->mach and p->state
+	 */
+	if(p->mach != nil && p->state <= Running){
+		canfree = p->state < Ready;
+		goto Done;
 	}
-	new->next = w;
-	*last = new;
-	++up->wakeups;
-	qunlock(&l);
 
-	return -when;
+	if(p->wakeups[a->notified].elapsed != a){
+		/* cleared by awake_awakened */
+		canfree = 1;
+		goto Done;
+	}
+
+	canfree = 0;
+
+	if(a->done){
+		/* already signaled, we have to wait for awake_awakened */
+		goto Done;
+	}
+
+	if(a->notified && !p->notified){
+		/* this should never happen because p is not Running:
+		 * either noted as been called previously (and thus awake_reset)
+		 * or it has not
+		 *
+		 * so if this happens it's probably a but in awake_reset
+		 */
+		unlock(&p->rlock);
+		panic("awake_dispatch: notified alarm for not notified process");
+	}
+
+	if(p->notepending && !p->notedeferred){
+		/* notes take precedence */
+		goto Done;
+	}
+
+	bs = p->wakeups[a->notified].blockingsc;
+	if(bs == 0 || !awake_can_interrupt(bs)){
+		/* wait for a chance */
+		goto Done;
+	}
+
+	r = p->r;
+	if(r != nil){
+		if(canlock(&r->l)){
+			if(p->state != Wakeme || r->p != p)
+				panic("awake_dispatch: state %d %d %d", r->p != p, p->r != r, p->state);
+			a->done = 1;
+			p->r = nil;
+			r->p = nil;
+			ready(p);
+			unlock(&r->l);
+		}
+	} else {
+		if(p->state == Rendezvous || p->state == Queueing)
+		if(proc_interrupt_finalize(p))
+			a->done = 1;
+	}
+
+Done:
+	unlock(&p->rlock);
+	return canfree;
 }
 
-static int64_t
-forgivewakeup(int64_t time)
+void
+awake_ringer(void* v)
 {
-	PendingWakeup *w, **last;
+	AwakeAlarm *pending, **pLast, **next, *a;
 
-	if(up->lastWakeup >= time || up->pendingWakeup >= time)
-		return 0;
-	qlock(&l);
-	if(alarms == nil || up->wakeups == 0){
-		qunlock(&l);
-		return 0;	// nothing to do
+	pending = nil;
+	pLast = &pending;
+
+CheckElapsed:
+	lock(&el);
+	*pLast = elapsed;
+	elapsed = nil;
+	eEnd = &elapsed;
+	unlock(&el);
+
+	pLast = &pending;
+	next = pLast;
+	while(*next != nil){
+		a = *next;
+		if(awake_dispatch(a)){
+			*next = a->next;
+			alarm_free(a);
+		} else {
+			*pLast = a;
+			next = &a->next;
+			pLast = next;
+		}
 	}
 
-	last = &alarms;
-	for(w = *last; w != nil && w->time < time; w = w->next) {
-		last = &w->next;
+	if(pending == nil){
+		assert(pLast == &pending);
+		sleep(&consumer, return0, 0);
+	} else if(elapsed == nil){
+		tsleep(&up->sleep, return0, 0, 30);
 	}
-	while(w != nil && w->time == time && w->p != up){
-		last = &w->next;
-		w = w->next;
-	}
-	if(w == nil || w->time > time || w->p != up){
-		/* wakeup not found */
-		qunlock(&l);
-		return 0;
-	}
-
-	*last = w->next;
-	--up->wakeups;
-	qunlock(&l);
-
-	jehanne_free(w);
-
-	return -time;
-}
-
-int64_t
-procawake(int64_t ms)
-{
-	if(ms == 0)
-		return -up->lastWakeup; // nothing to do
-	if(ms < 0)
-		return forgivewakeup(-ms);
-	return wakeupafter(ms);
+	goto CheckElapsed;
 }

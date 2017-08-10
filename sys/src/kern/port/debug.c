@@ -53,28 +53,3 @@ peekAtExecFaults(uintptr_t addr)
 	if (brk > 10)
 		brk = 1;
 }
-
-uint64_t
-rdmsr(uint32_t reg)
-{
-	extern uint64_t _rdmsr(uint32_t reg);
-	uint64_t res;
-#ifdef LOGMSR
-	jehanne_print("rdmsr(%#p)", reg);
-#endif
-	res = _rdmsr(reg);
-#ifdef LOGMSR
-	jehanne_print(" = %#P", res);
-#endif
-	return res;
-}
-
-void
-wrmsr(uint32_t reg, uint64_t val)
-{
-	extern void _wrmsr(uint32_t reg, uint64_t val);
-#ifdef LOGMSR
-	jehanne_print("wrmsr(%#p, %#P)", reg, val);
-#endif
-	_wrmsr(reg, val);
-}

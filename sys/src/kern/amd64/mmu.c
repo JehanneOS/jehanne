@@ -1,527 +1,537 @@
-#include "u.h"
-#include "../port/lib.h"
-#include "mem.h"
-#include "dat.h"
-#include "fns.h"
+#include	"u.h"
+#include	"../port/lib.h"
+#include	"mem.h"
+#include	"dat.h"
+#include	"fns.h"
+#include	"io.h"
+#include	"amd64.h"
 
-#include "amd64.h"
-//#define DO_mmuptpcheck
+/*
+ * Simple segment descriptors with no translation.
+ */
+#define	EXECSEGM(p) 	{ 0, SEGL|SEGP|SEGPL(p)|SEGEXEC }
+#define	DATASEGM(p) 	{ 0, SEGB|SEGG|SEGP|SEGPL(p)|SEGDATA|SEGW }
+#define	EXEC32SEGM(p) 	{ 0xFFFF, SEGG|SEGD|(0xF<<16)|SEGP|SEGPL(p)|SEGEXEC|SEGR }
+#define	DATA32SEGM(p) 	{ 0xFFFF, SEGB|SEGG|(0xF<<16)|SEGP|SEGPL(p)|SEGDATA|SEGW }
 
-//#undef DBG
-//#define DBG(...)	jehanne_print(__VA_ARGS__)
+Segdesc gdt[NGDT] =
+{
+[NULLSEG]	{ 0, 0},		/* null descriptor */
+[KESEG]		EXECSEGM(0),		/* kernel code */
+[KDSEG]		DATASEGM(0),		/* kernel data */
+[UE32SEG]	EXEC32SEGM(3),		/* user code 32 bit*/
+[UDSEG]		DATA32SEGM(3),		/* user data/stack */
+[UESEG]		EXECSEGM(3),		/* user code */
+};
 
-#define PDMAP		(0xffffffffff800000ull)
-#define PDPX(v)		PTLX((v), 2)
-#define PDX(v)		PTLX((v), 1)
-#define PTX(v)		PTLX((v), 0)
-
-#define VMAP		(0xffffffffe0000000ull)
-#define VMAPSZ		(256*MiB)
-
-#define KSEG1PML4	(0xffff000000000000ull\
-			|(PTLX(KSEG1, 3)<<(((3)*PTSHFT)+PGSHFT))\
-			|(PTLX(KSEG1, 3)<<(((2)*PTSHFT)+PGSHFT))\
-			|(PTLX(KSEG1, 3)<<(((1)*PTSHFT)+PGSHFT))\
-			|(PTLX(KSEG1, 3)<<(((0)*PTSHFT)+PGSHFT)))
-
-#define KSEG1PTP(va, l)	((0xffff000000000000ull\
-			|(KSEG1PML4<<((3-(l))*PTSHFT))\
-			|(((va) & 0xffffffffffffull)>>(((l)+1)*PTSHFT))\
-			& ~0xfffull))
-
-static Lock vmaplock;
-static Ptpage mach0pml4;
-static struct{
+static struct {
 	Lock;
-	Ptpage*	next;
-} ptpfreelist;
-int	ptpcount;
+	MMU	*free;
 
-#ifdef DO_mmuptpcheck
-static void mmuptpcheck(Proc*);
+	unsigned long	nalloc;
+	unsigned long	nfree;
+} mmupool;
+
+enum {
+	/* level */
+	PML4E	= 2,
+	PDPE	= 1,
+	PDE	= 0,
+
+	MAPBITS	= 8*sizeof(m->mmumap[0]),
+
+	/* PAT entry used for write combining */
+	PATWC	= 7,
+};
+
+#if 0
+static void
+loadptr(uint16_t lim, uintptr_t off, void (*load)(void*))
+{
+	uint64_t b[2], *o;
+	uint16_t *s;
+
+	o = &b[1];
+	s = ((uint16_t*)o)-1;
+
+	*s = lim;
+	*o = off;
+
+	(*load)(s);
+}
 #endif
 
-void
-mmuflushtlb(uint64_t _1)
+static void
+taskswitch(uintptr_t stack)
 {
-	if(m->pml4->ptoff){
-		jehanne_memset(m->pml4->pte, 0, m->pml4->ptoff*sizeof(PTE));
-		m->pml4->ptoff = 0;
+	Tss *tss;
+
+	tss = m->tss;
+	tss->rsp0[0] = (uint32_t)stack;
+	tss->rsp0[1] = stack >> 32;
+	tss->rsp1[0] = (uint32_t)stack;
+	tss->rsp1[1] = stack >> 32;
+	tss->rsp2[0] = (uint32_t)stack;
+	tss->rsp2[1] = stack >> 32;
+	mmuflushtlb();
+}
+
+void
+mmuinit(void)
+{
+	uintptr_t x;
+	long v;
+	int i;
+
+	/* zap double map done by entry.S */
+	m->pml4[512] = 0;
+	m->pml4[0] = 0;
+
+	m->tss = mallocz(sizeof(Tss), 1);
+	if(m->tss == nil)
+		panic("mmuinit: no memory for Tss");
+	m->tss->iomap = 0xDFFF;
+	for(i=0; i<14; i+=2){
+		x = (uintptr_t)m + MACHSIZE;
+		m->tss->ist[i] = x;
+		m->tss->ist[i+1] = x>>32;
 	}
-	cr3put(m->pml4->pa);
+
+	/*
+	 * We used to keep the GDT in the Mach structure, but it
+	 * turns out that that slows down access to the rest of the
+	 * page.  Since the Mach structure is accessed quite often,
+	 * it pays off anywhere from a factor of 1.25 to 2 on real
+	 * hardware to separate them (the AMDs are more sensitive
+	 * than Intels in this regard).  Under VMware it pays off
+	 * a factor of about 10 to 100.
+	 */
+	memmove(m->gdt, gdt, sizeof gdt);
+
+	x = (uintptr_t)m->tss;
+	m->gdt[TSSSEG+0].d0 = (x<<16)|(sizeof(Tss)-1);
+	m->gdt[TSSSEG+0].d1 = (x&0xFF000000)|((x>>16)&0xFF)|SEGTSS|SEGPL(0)|SEGP;
+	m->gdt[TSSSEG+1].d0 = x>>32;
+	m->gdt[TSSSEG+1].d1 = 0;
+
+	gdtput(sizeof(gdt)-1, PTR2UINT(m->gdt), SSEL(SiCS, SsTIGDT|SsRPL0));
+	idtput(sizeof(Segdesc)*512-1, (uintptr_t)IDTADDR);
+//	trput(SSEL(SiTSS, SsTIGDT|SsRPL0));
+
+//	loadptr(sizeof(gdt)-1, (uintptr_t)m->gdt, lgdt);
+//	loadptr(sizeof(Segdesc)*512-1, (uintptr_t)IDTADDR, lidt);
+	taskswitch((uintptr_t)m + MACHSIZE);
+	trput(TSSSEL);
+
+	wrmsr(0xc0000100, 0ull);	/* 64 bit fsbase */
+	wrmsr(0xc0000101, (unsigned long)&sys->machptr[m->machno]);	/* 64 bit gsbase */
+	wrmsr(0xc0000102, 0ull);	/* kernel gs base */
+
+	/* enable syscall extension */
+	rdmsr(0xc0000080, &v);
+	v |= 1ull;
+	wrmsr(0xc0000080, v);
+
+	/* enable no execute */
+	rdmsr(0xc0000080, &v);
+	v |= Nxe;
+	wrmsr(0xc0000080, v);
+
+	/* IA32_STAR */
+	wrmsr(0xc0000081, ((unsigned long)UE32SEL << 48) | ((unsigned long)KESEL << 32));
+
+	/* IA32_LSTAR */
+	wrmsr(0xc0000082, (unsigned long)syscallentry);
+
+	/* SYSCALL flags mask */
+	wrmsr(0xc0000084, 0x200);
+
+	/* IA32_PAT write combining */
+	if((MACHP(0)->cpuiddx & Pat) != 0
+	&& rdmsr(0x277, &v) != -1){
+		v &= ~(255LL<<(PATWC*8));
+		v |= 1LL<<(PATWC*8);	/* WC */
+		wrmsr(0x277, v);
+	}
+}
+
+/*
+ * These could go back to being macros once the kernel is debugged,
+ * but the extra checking is nice to have.
+ */
+void*
+mmu_kernel_address(uintptr_t pa)
+{
+	if(pa >= (uintptr_t)-KZERO)
+		panic("mmu_kernel_address: pa=%#p pc=%#p", pa, getcallerpc());
+	return (void*)(pa+KZERO);
+}
+
+uintptr_t
+mmu_physical_address(void *v)
+{
+	uintptr_t va;
+
+	va = (uintptr_t)v;
+	if(va >= KZERO)
+		return va-KZERO;
+	if(va >= VMAP)
+		return va-VMAP;
+	panic("mmu_physical_address: va=%#p pc=%#p", va, getcallerpc());
+	return 0;
+}
+
+static MMU*
+mmualloc(void)
+{
+	MMU *p;
+	int i, n;
+
+	p = m->mmufree;
+	if(p != nil){
+		m->mmufree = p->next;
+		m->mmucount--;
+	} else {
+		lock(&mmupool);
+		p = mmupool.free;
+		if(p != nil){
+			mmupool.free = p->next;
+			mmupool.nfree--;
+		} else {
+			unlock(&mmupool);
+
+			n = 256;
+			p = malloc(n * sizeof(MMU));
+			if(p == nil)
+				panic("mmualloc: out of memory for MMU");
+			p->page = mallocalign(n * PTSZ, PGSZ, 0, 0);
+			if(p->page == nil)
+				panic("mmualloc: out of memory for MMU pages");
+			for(i=1; i<n; i++){
+				p[i].page = p[i-1].page + (1<<PTSHFT);
+				p[i-1].next = &p[i];
+			}
+
+			lock(&mmupool);
+			p[n-1].next = mmupool.free;
+			mmupool.free = p->next;
+			mmupool.nalloc += n;
+			mmupool.nfree += n-1;
+		}
+		unlock(&mmupool);
+	}
+	p->next = nil;
+	return p;
+}
+
+static uintptr_t*
+mmucreate(uintptr_t *table, uintptr_t va, int level, int index)
+{
+	uintptr_t *page, flags;
+	MMU *p;
+
+	flags = PTEWRITE|PTEVALID;
+	if(va < VMAP){
+		assert(up != nil);
+		assert((va < TSTKTOP) || (va >= KMAP && va < KMAP+KMAPSIZE));
+
+		p = mmualloc();
+		p->index = index;
+		p->level = level;
+		if(va < TSTKTOP){
+			flags |= PTEUSER;
+			if(level == PML4E){
+				if((p->next = up->mmuhead) == nil)
+					up->mmutail = p;
+				up->mmuhead = p;
+				m->mmumap[index/MAPBITS] |= 1ull<<(index%MAPBITS);
+			} else {
+				up->mmutail->next = p;
+				up->mmutail = p;
+			}
+			up->mmucount++;
+		} else {
+			if(level == PML4E){
+				up->kmaptail = p;
+				up->kmaphead = p;
+			} else {
+				up->kmaptail->next = p;
+				up->kmaptail = p;
+			}
+			up->kmapcount++;
+		}
+		page = p->page;
+	} else if(sys->mem[0].npage != 0) {
+		page = mallocalign(PTSZ, PGSZ, 0, 0);
+	} else {
+		page = rampage();
+	}
+	memset(page, 0, PTSZ);
+	table[index] = PADDR(page) | flags;
+	return page;
+}
+
+uintptr_t*
+mmuwalk(uintptr_t* table, uintptr_t va, int level, int create)
+{
+	uintptr_t pte;
+	int i, x;
+
+	x = PTLX(va, 3);
+	for(i = 2; i >= level; i--){
+		pte = table[x];
+		if(pte & PTEVALID){
+			if(pte & PTESIZE)
+				return 0;
+			table = KADDR(PPN(pte));
+		} else {
+			if(!create)
+				return 0;
+			table = mmucreate(table, va, i, x);
+		}
+		x = PTLX(va, i);
+	}
+	return &table[x];
+}
+
+static int
+ptecount(uintptr_t va, int level)
+{
+	return (1<<PTSHFT) - (va & PGLSZ(level+1)-1) / PGLSZ(level);
+}
+
+void
+pmap(uintptr_t *pml4, uintptr_t pa, uintptr_t va, long size)
+{
+	uintptr_t *pte, *ptee, flags;
+	int z, l;
+
+	if(size <= 0 || va < VMAP)
+		panic("pmap: pa=%#p va=%#p size=%lld", pa, va, size);
+	flags = pa;
+	pa = PPN(pa);
+	flags -= pa;
+	if(va >= KZERO)
+		flags |= PTEGLOBAL;
+	while(size > 0){
+		if(size >= PGLSZ(1) && (va % PGLSZ(1)) == 0)
+			flags |= PTESIZE;
+		l = (flags & PTESIZE) != 0;
+		z = PGLSZ(l);
+		pte = mmuwalk(pml4, va, l, 1);
+		if(pte == 0){
+			pte = mmuwalk(pml4, va, ++l, 0);
+			if(pte && (*pte & PTESIZE)){
+				flags |= PTESIZE;
+				z = va & (PGLSZ(l)-1);
+				va -= z;
+				pa -= z;
+				size += z;
+				continue;
+			}
+			panic("pmap: pa=%#p va=%#p size=%lld", pa, va, size);
+		}
+		ptee = pte + ptecount(va, l);
+		while(size > 0 && pte < ptee){
+			*pte++ = pa | flags;
+			pa += z;
+			va += z;
+			size -= z;
+		}
+	}
+}
+
+static void
+mmuzap(void)
+{
+	uintptr_t *pte;
+	uint64_t w;
+	int i, x;
+
+	pte = m->pml4;
+	pte[PTLX(KMAP, 3)] = 0;
+
+	/* common case */
+	pte[PTLX(UTZERO, 3)] = 0;
+	pte[PTLX(TSTKTOP, 3)] = 0;
+	m->mmumap[PTLX(UTZERO, 3)/MAPBITS] &= ~(1ull<<(PTLX(UTZERO, 3)%MAPBITS));
+	m->mmumap[PTLX(TSTKTOP, 3)/MAPBITS] &= ~(1ull<<(PTLX(TSTKTOP, 3)%MAPBITS));
+
+	for(i = 0; i < nelem(m->mmumap); pte += MAPBITS, i++){
+		if((w = m->mmumap[i]) == 0)
+			continue;
+		m->mmumap[i] = 0;
+		for(x = 0; w != 0; w >>= 1, x++){
+			if(w & 1)
+				pte[x] = 0;
+		}
+	}
+}
+
+static void
+mmufree(Proc *proc)
+{
+	MMU *p;
+
+	p = proc->mmutail;
+	if(p == nil)
+		return;
+	if(m->mmucount+proc->mmucount < 256){
+		p->next = m->mmufree;
+		m->mmufree = proc->mmuhead;
+		m->mmucount += proc->mmucount;
+	} else {
+		lock(&mmupool);
+		p->next = mmupool.free;
+		mmupool.free = proc->mmuhead;
+		mmupool.nfree += proc->mmucount;
+		unlock(&mmupool);
+	}
+	proc->mmuhead = proc->mmutail = nil;
+	proc->mmucount = 0;
 }
 
 void
 mmuflush(void)
 {
-	int s;
+	int x;
 
-	s = splhi();
+	x = splhi();
 	up->newtlb = 1;
 	mmuswitch(up);
-	splx(s);
-}
-
-static void
-mmuptpfree(Proc* proc, int clear)
-{
-	int l;
-	PTE *pte;
-	Ptpage **last, *page;
-
-	for(l = 0; l < 4; l++){
-		last = &proc->mmuptp[l];
-		if(*last == nil)
-			continue;
-		for(; (page = *last) != nil; last = &page->next){
-			if(l <= 2 && clear)
-				jehanne_memset(page->pte, 0, PTSZ);
-			pte = page->parent->pte;
-			pte[page->ptoff] = 0;
-			proc->nptpbusy--;
-		}
-		*last = proc->ptpfree;
-		proc->ptpfree = proc->mmuptp[l];
-		proc->mmuptp[l] = nil;
-	}
-
-	m->pml4->ptoff = 0;
-}
-
-static Ptpage*
-mmuptpalloc(void)
-{
-	Ptpage *page;
-	uintmem pa;
-
-	page = m->ptpfree;
-	if(page != nil){
-		m->ptpfree = page->next;
-		m->nptpfree--;
-	}else{
-		lock(&ptpfreelist);
-		page = ptpfreelist.next;
-		if(page != nil)
-			ptpfreelist.next = page->next;
-		unlock(&ptpfreelist);
-	}
-	if(page != nil){
-		page->next = nil;
-		jehanne_memset(page->pte, 0, PTSZ);
-		return page;
-	}
-	pa = physalloc(PTSZ);
-	if(pa == 0){
-		physdump();
-		panic("mmuptpalloc");
-	}
-	DBG("ptp %#P\n", pa);
-	page = jehanne_mallocz(sizeof(*page), 0);
-	if(page == nil)
-		panic("mmuptpalloc 2");
-	page->pte = KADDR(pa);
-	page->pa = pa;
-	page->next = nil;
-	page->parent = nil;
-	page->ptoff = 0;
-	jehanne_memset(page->pte, 0, PTSZ);
-	return page;
+	splx(x);
 }
 
 void
-mmuswitch(Proc* proc)
+mmuswitch(Proc *proc)
 {
-	PTE *pte;
-	Ptpage *page;
+	MMU *p;
 
+	mmuzap();
 	if(proc->newtlb){
-		mmuptpfree(proc, 1);
+		mmufree(proc);
 		proc->newtlb = 0;
 	}
-
-	if(m->pml4->ptoff){
-		jehanne_memset(m->pml4->pte, 0, m->pml4->ptoff*sizeof(PTE));
-		m->pml4->ptoff = 0;
+	if((p = proc->kmaphead) != nil)
+		m->pml4[PTLX(KMAP, 3)] = PADDR(p->page) | PTEWRITE|PTEVALID;
+	for(p = proc->mmuhead; p != nil && p->level == PML4E; p = p->next){
+		m->mmumap[p->index/MAPBITS] |= 1ull<<(p->index%MAPBITS);
+		m->pml4[p->index] = PADDR(p->page) | PTEUSER|PTEWRITE|PTEVALID;
 	}
-
-	/* install new page directory pointers in pml4 */
-	pte = m->pml4->pte;
-	for(page = proc->mmuptp[3]; page != nil; page = page->next){
-		pte[page->ptoff] = PPN(page->pa)|PteU|PteRW|PteP;
-		if(page->ptoff >= m->pml4->ptoff)
-			m->pml4->ptoff = page->ptoff+1;
-		page->parent = m->pml4;
-	}
-
-	tssrsp0(STACKALIGN(PTR2UINT(proc->kstack+KSTACK)));
-	cr3put(m->pml4->pa);
+	taskswitch((uintptr_t)proc->kstack+KSTACK);
 }
 
 void
-mmurelease(Proc* proc)
+mmurelease(Proc *proc)
 {
-	Ptpage *page, **last;
+	MMU *p;
 
-	mmuptpfree(proc, 0);
+	mmuzap();
+	if((p = proc->kmaptail) != nil){
+		if((p->next = proc->mmuhead) == nil)
+			proc->mmutail = p;
+		proc->mmuhead = proc->kmaphead;
+		proc->mmucount += proc->kmapcount;
 
-	/* keep a few page tree pages per cpu */
-	while((page = proc->ptpfree) != nil){
-		page->parent = nil;
-		if(sys->nmach != 1 && m->nptpfree > 20)
-			break;
-		proc->ptpfree = page->next;
-		page->next = m->ptpfree;
-		m->ptpfree = page;
-		m->nptpfree++;
+		proc->kmaphead = proc->kmaptail = nil;
+		proc->kmapcount = proc->kmapindex = 0;
 	}
-
-	if(proc->ptpfree != nil){
-		/* add the rest to the global pool */
-		for(last = &proc->ptpfree; (page = *last) != nil; last = &page->next)
-			page->parent = nil;
-		lock(&ptpfreelist);
-		*last = ptpfreelist.next;
-		ptpfreelist.next = proc->ptpfree;
-		proc->ptpfree = nil;
-		unlock(&ptpfreelist);
-	}
-
-	if(proc->nptpbusy)
-		jehanne_print("%ud: ptpbusy %s %d\n", proc->pid, proc->text, proc->nptpbusy);
-	proc->nptpbusy = 0;
-
-	tssrsp0(STACKALIGN(m->stack+MACHSTKSZ));
-	cr3put(m->pml4->pa);
-}
-
-static PTE*
-mmuptpget(uintptr_t va, int level)
-{
-	return (PTE*)KSEG1PTP(va, level);
-}
-
-static Ptpage*
-makeptp(Ptpage *parent, int l, PTE *ptp, int x)
-{
-	Ptpage *page;
-	PTE *pte;
-
-	for(page = up->mmuptp[l]; page != nil; page = page->next)
-		if(page->parent == parent && page->ptoff == x)
-			return page;
-	pte = &ptp[x];
-	if(up->ptpfree == nil){
-		page = mmuptpalloc();
-	}
-	else {
-		page = up->ptpfree;
-		up->ptpfree = page->next;
-	}
-	page->ptoff = x;
-	page->next = up->mmuptp[l];
-	up->mmuptp[l] = page;
-	page->parent = parent;
-	*pte = page->pa|PteU|PteRW|PteP;
-	if(l == 3 && x >= m->pml4->ptoff)
-		m->pml4->ptoff = x+1;
-	up->nptpbusy++;
-	DBG("%d: pte put l%d %#p[%d] -> %#P pte %#p\n", up->pid, l, ptp, x, *pte, pte);
-	return page;
+	mmufree(proc);
+	taskswitch((uintptr_t)m+MACHSIZE);
 }
 
 void
 mmuput(uintptr_t va, uintptr_t pa)
 {
-	Mpl pl;
-	int l, x;
-	PTE *pte, *ptp, opte;
-	Ptpage *prev;
+	uintptr_t *pte, old;
+	int x;
 
-	pl = splhi();
-	for(l = 3; l > 0; l--){
-		ptp = mmuptpget(va, l);
-		pte = &ptp[PTLX(va,l)];
-		if(l == 0 || (*pte & PteP) == 0 || (*pte & PtePS))
-			break;
-	}
-	if(l != 0){
-		/* add missing intermediate level */
-		prev = m->pml4;
-		for(l = 3; l > 0; l--){
-			ptp = mmuptpget(va, l);
-			x = PTLX(va, l);
-			prev = makeptp(prev, l, ptp, x);
-		}
-	}
-	ptp = mmuptpget(va, 0);
-	pte = &ptp[PTLX(va, 0)];
-	opte = *pte;
-	*pte = pa | PteU;
-	DBG("%d mach%d: put pte %#p: %#p -> %#P\n", up->pid, m->machno, pte, va, *pte);
-
-	/* Simple and safe: programs can either write memory or execute it.
-	 * TODO: verify that this is not too restrictive
-	 */
+	x = splhi();
+	pte = mmuwalk(m->pml4, va, 0, 1);
+	if(pte == 0)
+		panic("mmuput: bug: va=%#p pa=%#p", va, pa);
+	old = *pte;
 	if(pa & PteRW)
-		*pte |= PteNX;
-
-#ifdef DO_mmuptpcheck
-	mmuptpcheck(up);
-#endif
-	splx(pl);
-	if(opte & PTEVALID)
+		pa |= PteNX;
+	*pte = pa | PTEVALID|PTEUSER;
+	splx(x);
+	if(old & PTEVALID)
 		invlpg(va);
 }
 
-static PTE
-pdeget(uintptr_t va)
-{
-	PTE *pdp;
-
-	if(va < 0xffffffffc0000000ull)
-		panic("pdeget(%#p)", va);
-
-	pdp = (PTE*)(PDMAP+PDX(PDMAP)*4096);
-
-	return pdp[PDX(va)];
-}
-
 /*
- * Add kernel mappings for va -> pa for a section of size bytes.
- * Called only after the va range is known to be unoccupied.
+ * Double-check the user MMU.
+ * Error checking only.
  */
-static int
-pdmap(uintmem pa, int attr, uintptr_t va, usize size)
+void
+checkmmu(uintptr_t va, uintptr_t pa)
 {
-	uintmem pae;
-	PTE *pd, *pde, *pt, *pte;
-	uintmem pdpa;
-	int pdx, pgsz;
+	uintptr_t *pte;
 
-	pd = (PTE*)(PDMAP+PDX(PDMAP)*4096);
-
-	for(pae = pa + size; pa < pae; pa += pgsz){
-		pdx = PDX(va);
-		pde = &pd[pdx];
-
-		/*
-		 * Check if it can be mapped using a big page,
-		 * i.e. is big enough and starts on a suitable boundary.
-		 * Assume processor can do it.
-		 */
-		if(ALIGNED(pa, PGLSZ(1)) && ALIGNED(va, PGLSZ(1)) && (pae-pa) >= PGLSZ(1)){
-			assert(*pde == 0);
-			*pde = pa|attr|PtePS|PteP;
-			pgsz = PGLSZ(1);
-		}
-		else{
-			pt = (PTE*)(PDMAP+pdx*PTSZ);
-			if(*pde == 0){
-				pdpa = physalloc(PTSZ);
-				if(pdpa == 0)
-					panic("pdmap");
-				*pde = pdpa|PteRW|PteP;
-//jehanne_print("*pde %#llux va %#p\n", *pde, va);
-				jehanne_memset(pt, 0, PTSZ);
-			}
-
-			pte = &pt[PTX(va)];
-			assert(!(*pte & PteP));
-			*pte = pa|attr|PteP;
-			pgsz = PGLSZ(0);
-		}
-		va += pgsz;
-	}
-
-	return 0;
+	pte = mmuwalk(m->pml4, va, 0, 0);
+	if(pte != 0 && (*pte & PTEVALID) != 0 && PPN((*pte & (PteNX-1))) != pa)
+		print("%ld %s: va=%#p pa=%#p pte=%#p\n",
+			up->pid, up->text, va, pa, *pte);
 }
 
-static int
-findhole(PTE* a, int n, int count)
+uintptr_t
+cankaddr(uintptr_t pa)
 {
-	int have, i;
-
-	have = 0;
-	for(i = 0; i < n; i++){
-		if(a[i] == 0)
-			have++;
-		else
-			have = 0;
-		if(have >= count)
-			return i+1 - have;
-	}
-
-	return -1;
-}
-
-/*
- * Look for free space in the vmap.
- */
-static uintptr_t
-vmapalloc(usize size)
-{
-	int i, n, o;
-	PTE *pd, *pt;
-	int pdsz, ptsz;
-
-	pd = (PTE*)(PDMAP+PDX(PDMAP)*4096);
-	pd += PDX(VMAP);
-	pdsz = VMAPSZ/PGLSZ(1);
-
-	/*
-	 * Look directly in the PD entries if the size is
-	 * larger than the range mapped by a single entry.
-	 */
-	if(size >= PGLSZ(1)){
-		n = HOWMANY(size, PGLSZ(1));
-		if((o = findhole(pd, pdsz, n)) != -1)
-			return VMAP + o*PGLSZ(1);
+	if(pa >= -KZERO)
 		return 0;
-	}
-
-	/*
-	 * Size is smaller than that mapped by a single PD entry.
-	 * Look for an already mapped PT page that has room.
-	 */
-	n = HOWMANY(size, PGLSZ(0));
-	ptsz = PGLSZ(0)/sizeof(PTE);
-	for(i = 0; i < pdsz; i++){
-		if(!(pd[i] & PteP) || (pd[i] & PtePS))
-			continue;
-
-		pt = (PTE*)(PDMAP+(PDX(VMAP)+i)*4096);
-		if((o = findhole(pt, ptsz, n)) != -1)
-			return VMAP + i*PGLSZ(1) + o*PGLSZ(0);
-	}
-
-	/*
-	 * Nothing suitable, start using a new PD entry.
-	 */
-	if((o = findhole(pd, pdsz, 1)) != -1)
-		return VMAP + o*PGLSZ(1);
-
-	return 0;
-}
-
-void*
-vmap(uintptr_t pa, usize size)
-{
-	uintptr_t va;
-	usize o, sz;
-
-	DBG("vmap(%#p, %lud)\n", pa, size);
-
-	if(m->machno != 0)
-		panic("vmap(%#p, %lud) pc %#p mach%d", pa, size, getcallerpc(), m->machno);
-
-	/*
-	 * This is incomplete; the checks are not comprehensive
-	 * enough.
-	 * Sometimes the request is for an already-mapped piece
-	 * of low memory, in which case just return a good value
-	 * and hope that a corresponding vunmap of the address
-	 * will have the same address.
-	 * To do this properly will require keeping track of the
-	 * mappings; perhaps something like kmap, but kmap probably
-	 * can't be used early enough for some of the uses.
-	 */
-	if(pa+size <= 1ull*MiB)
-		return KADDR(pa);
-	if(pa < 1ull*MiB)
-		return nil;
-
-	/*
-	 * Might be asking for less than a page.
-	 * This should have a smaller granularity if
-	 * the page size is large.
-	 */
-	o = pa & ((1<<PGSHFT)-1);
-	pa -= o;
-	sz = ROUNDUP(size+o, PGSZ);
-
-	if(pa == 0){
-		jehanne_print("vmap(0, %lud) pc=%#p\n", size, getcallerpc());
-		return nil;
-	}
-	ilock(&vmaplock);
-	if((va = vmapalloc(sz)) == 0 || pdmap(pa, PtePCD|PteRW, va, sz) < 0){
-		iunlock(&vmaplock);
-		return nil;
-	}
-	iunlock(&vmaplock);
-
-	DBG("vmap(%#p, %lud) => %#p\n", pa+o, size, va+o);
-
-	return UINT2PTR(va + o);
+	return -KZERO - pa;
 }
 
 void
-vunmap(void* v, usize size)
+countpagerefs(unsigned long *ref, int print)
 {
-	uintptr_t va;
-
-	DBG("vunmap(%#p, %lud)\n", v, size);
-
-	if(m->machno != 0)
-		panic("vunmap");
-
-	/*
-	 * See the comments above in vmap.
-	 */
-	va = PTR2UINT(v);
-	if(va >= KZERO && va+size < KZERO+1ull*MiB)
-		return;
-
-	/*
-	 * Here will have to deal with releasing any
-	 * resources used for the allocation (e.g. page table
-	 * pages).
-	 */
-	DBG("vunmap(%#p, %lud)\n", v, size);
+	USED(ref, print);
 }
 
-int
-mmuwalk(uintptr_t va, int level, PTE** ret, uint64_t (*alloc)(usize))
+KMap*
+kmap(uintptr_t pa)
 {
-	int l;
-	Mpl pl;
-	uintmem pa;
-	PTE *pte, *ptp;
+	uintptr_t *pte, va;
+	int x;
 
-	DBG("mmuwalk%d: va %#p level %d\n", m->machno, va, level);
-	pte = nil;
-	pl = splhi();
-	for(l = 3; l >= 0; l--){
-		ptp = mmuptpget(va, l);
-		pte = &ptp[PTLX(va, l)];
-		if(l == level)
-			break;
-		if(!(*pte & PteP)){
-			if(alloc == nil)
-				return -1;
-			pa = alloc(PTSZ);
-			if(pa == ~(uintmem)0 || pa == 0)
-				return -1;
-if(pa & 0xfffull) jehanne_print("mmuwalk pa %#llux\n", pa);
-			*pte = pa|PteRW|PteP;
-			if((ptp = mmuptpget(va, l-1)) == nil)
-				panic("mmuwalk: mmuptpget(%#p, %d)", va, l-1);
-			jehanne_memset(ptp, 0, PTSZ);
-		}
-		else if(*pte & PtePS)
-			break;
-	}
-	*ret = pte;
-	splx(pl);
+	if(cankaddr(pa) != 0)
+		return (KMap*)KADDR(pa);
 
-	return l;
+	x = splhi();
+	va = KMAP + ((uintptr_t)up->kmapindex << PGSHFT);
+	pte = mmuwalk(m->pml4, va, 0, 1);
+	if(pte == 0 || *pte & PTEVALID)
+		panic("kmap: pa=%#p va=%#p", pa, va);
+	*pte = pa | PTEWRITE|PTEVALID;
+	up->kmapindex = (up->kmapindex + 1) % (1<<PTSHFT);
+	if(up->kmapindex == 0)
+		mmuflushtlb();
+	splx(x);
+	return (KMap*)va;
+}
+
+void
+kunmap(KMap *k)
+{
+	uintptr_t *pte, va;
+	int x;
+
+	va = (uintptr_t)k;
+	if(va >= KZERO)
+		return;
+
+	x = splhi();
+	pte = mmuwalk(m->pml4, va, 0, 0);
+	if(pte == 0 || (*pte & PTEVALID) == 0)
+		panic("kunmap: va=%#p", va);
+	*pte = 0;
+	splx(x);
 }
 
 uint64_t
 mmuphysaddr(uintptr_t va)
 {
-	int l;
-	PTE *pte;
+	uintptr_t *pte;
 	uint64_t mask, pa;
 
 	/*
@@ -530,280 +540,79 @@ mmuphysaddr(uintptr_t va)
 	 * but will do as an experiment. Usual
 	 * question, should va be void* or uintptr_t?
 	 */
-	l = mmuwalk(va, 0, &pte, nil);
-	DBG("physaddr: va %#p l %d\n", va, l);
-	if(l < 0 || (*pte & PteP) == 0)
+	pte = mmuwalk(m->pml4, va, 0, 0);
+	DBG("physaddr: va %#p pte %#p\n", va, pte);
+	if(pte == 0 || (*pte & PteP) == 0)
 		return ~(uintmem)0;
 
-	mask = (1ull<<(((l)*PTSHFT)+PGSHFT))-1;
+	mask = (1ull<<PGSHFT)-1;
 	pa = (*pte & ~mask) + (va & mask);
 
-	DBG("physaddr: l %d va %#p pa %#llux\n", l, va, pa);
+	DBG("physaddr: pte %#p va %#p pa %#llux\n", pte, va, pa);
 
 	return pa;
 }
 
-void
-mmuinit(void)
+/*
+ * Add a device mapping to the vmap range.
+ * note that the VMAP and KZERO PDPs are shared
+ * between processors (see mpstartap) so no
+ * synchronization is being done.
+ */
+void*
+vmap(uintptr_t pa, usize size)
 {
-	int l;
-	uint8_t *p;
-	PTE *pte;
-	Ptpage *page;
-	uintptr_t pml4;
-	uint64_t o, pa, r, sz;
+	uintptr_t va;
+	int o;
 
-	archmmu();
-	DBG("mach%d: %#p npgsz %d\n", m->machno, m, m->npgsz);
-	if(m->machno != 0){
-		/*
-		 * GAK: Has to go when each mach is using
-		 * its own page table
-		 */
-		p = UINT2PTR(m->stack);
-		p += MACHSTKSZ;
-		jehanne_memmove(p, mach0pml4.pte, PTSZ);
-		m->pml4 = &m->pml4kludge;
-		m->pml4->pte = (PTE*)p;
-		m->pml4->pa = PADDR(p);
-		m->pml4->ptoff = mach0pml4.ptoff;	/* # of user mappings in pml4 */
-		if(m->pml4->ptoff){
-			jehanne_memset(p, 0, m->pml4->ptoff*sizeof(PTE));
-			m->pml4->ptoff = 0;
-		}
-pte = (PTE*)p;
-pte[PTLX(KSEG1PML4, 3)] = m->pml4->pa|PteRW|PteP;
-
-		r = rdmsr(Efer);
-		r |= Nxe;
-		wrmsr(Efer, r);
-		cr3put(m->pml4->pa);
-		DBG("mach%d: %#p pml4 %#p\n", m->machno, m, m->pml4);
-		return;
-	}
-
-	page = &mach0pml4;
-	page->pa = cr3get();
-	page->pte = sys->pml4;
-
-	m->pml4 = page;
-
-	r = rdmsr(Efer);
-	r |= Nxe;
-	wrmsr(Efer, r);
-
+	if(pa+size > VMAPSIZE)
+		return 0;
+	va = pa+VMAP;
 	/*
-	 * Set up the various kernel memory allocator limits:
-	 * pmstart/pmend bound the unused physical memory;
-	 * vmstart/vmunmapped bound the total possible virtual memory
-	 * used by the kernel in KSEG0;
-	 * vmunused is the highest virtual address currently mapped
-	 * and used by the kernel;
-	 * vmunmapped is the highest virtual address currently
-	 * mapped by the kernel.
-	 * Vmunused can be bumped up to vmunmapped before more
-	 * physical memory needs to be allocated and mapped.
-	 *
-	 * This is set up here so meminit can map appropriately.
+	 * might be asking for less than a page.
 	 */
-	o = sys->pmstart;
-	sz = ROUNDUP(o+128*KiB, 4*MiB) - o;	/* add extra 128k for initial pt/pd allocations */
-jehanne_print("mmuinit: rmapalloc: %#P pmstart=%#llux\n", o, sys->pmstart);
-	pa = rmapalloc(&rmapram, o, sz, 0);
-	if(pa != o)
-		panic("mmuinit: pa %#llux memstart %#llux\n", pa, o);
-	sys->pmstart += sz;
-
-	sys->vmstart = KSEG0;
-	sys->vmunused = sys->vmstart + ROUNDUP(o, 4*KiB);
-	sys->vmunmapped = sys->vmstart + o + sz;
-
-	jehanne_print("mmuinit: vmstart %#p vmunused %#p vmunmapped %#p\n",
-		sys->vmstart, sys->vmunused, sys->vmunmapped);
-
-	/*
-	 * Set up the map for PD entry access by inserting
-	 * the relevant PDP entry into the PD. It's equivalent
-	 * to PADDR(sys->pd)|PteRW|PteP.
-	 *
-	 * Change code that uses this to use the KSEG1PML4
-	 * map below.
-	 */
-	sys->pd[PDX(PDMAP)] = sys->pdp[PDPX(PDMAP)] & ~(PteD|PteA);
-	jehanne_print("sys->pd %#p %#p\n", sys->pd[PDX(PDMAP)], sys->pdp[PDPX(PDMAP)]);
-
-	assert((pdeget(PDMAP) & ~(PteD|PteA)) == (PADDR(sys->pd)|PteRW|PteP));
-
-	/*
-	 * Set up the map for PTE access by inserting
-	 * the relevant PML4 into itself.
-	 * Note: outwith level 0, PteG is MBZ on AMD processors,
-	 * is 'Reserved' on Intel processors, and the behaviour
-	 * can be different.
-	 */
-	pml4 = cr3get();
-	sys->pml4[PTLX(KSEG1PML4, 3)] = pml4|PteRW|PteP;
-	cr3put(m->pml4->pa);
-
-	if((l = mmuwalk(KZERO, 3, &pte, nil)) >= 0)
-		jehanne_print("l %d %#p %llux\n", l, pte, *pte);
-	if((l = mmuwalk(KZERO, 2, &pte, nil)) >= 0)
-		jehanne_print("l %d %#p %llux\n", l, pte, *pte);
-	if((l = mmuwalk(KZERO, 1, &pte, nil)) >= 0)
-		jehanne_print("l %d %#p %llux\n", l, pte, *pte);
-	if((l = mmuwalk(KZERO, 0, &pte, nil)) >= 0)
-		jehanne_print("l %d %#p %llux\n", l, pte, *pte);
-
-	mmuphysaddr(PTR2UINT(end));
+	o = pa & (PGSZ-1);
+	pa -= o;
+	va -= o;
+	size += o;
+	pmap(m->pml4, pa | PTEUNCACHED|PTEWRITE|PTEVALID, va, size);
+	return (void*)(va+o);
 }
 
 void
-mmudump(Proc *p)
+vunmap(void* v, usize _)
 {
-	Ptpage *ptp;
-	int i, l;
-
-	for(l = 3; l >= 0; l--){
-		for(ptp = p->mmuptp[l]; ptp != nil; ptp = ptp->next){
-			jehanne_print("pid %d level %d ptp %#p\n", p->pid, l, ptp);
-			for(i = 0; i < PTSZ/sizeof(PTE); i++)
-				if(ptp->pte[i])
-					jehanne_print("%.4d %#P\n", i, ptp->pte[i]);
-		}
-	}
+	PADDR(v);	/* will panic on error */
 }
 
 /*
- * Double-check the user MMU.
- * Error checking only.
+ * mark pages as write combining (used for framebuffer)
  */
 void
-checkmmu(uintptr_t va, uintmem pa)
+patwc(void *a, int n)
 {
-	uintmem mpa;
+	uintptr_t *pte, mask, attr, va;
+	int z, l;
+	long v;
 
-	mpa = mmuphysaddr(va);
-	if(mpa != ~(uintmem)0 && (mpa & (PteNX-1)) != pa)
-		jehanne_print("***%d %s: mmu mismatch va=%#p pa=%#P mmupa=%#P\n",
-			up->pid, up->text, va, pa, mpa);
-}
-
-static void
-tabs(int n)
-{
-	int i;
-
-	for(i = 0; i < n; i++)
-		jehanne_print("  ");
-}
-
-void
-dumpptepg(int lvl, uintmem pa)
-{
-	PTE *pte;
-	int tab, i;
-
-	tab = 4 - lvl;
-	pte = UINT2PTR(KADDR(pa));
-	for(i = 0; i < PTSZ/sizeof(PTE); i++)
-		if(pte[i] & PteP){
-			tabs(tab);
-			jehanne_print("l%d %#p[%#05x]: %#llux\n", lvl, pa, i, pte[i]);
-
-			/* skip kernel mappings */
-			if((pte[i]&PteU) == 0){
-				tabs(tab+1);
-				jehanne_print("...kern...\n");
-				continue;
-			}
-			if(lvl > 2)
-				dumpptepg(lvl-1, PPN(pte[i]));
-		}
-}
-
-void
-dumpmmu(Proc *p)
-{
-	int i;
-	Ptpage *pt;
-
-	jehanne_print("proc %#p\n", p);
-	for(i = 3; i >= 0; i--){
-		jehanne_print("mmuptp[%d]:\n", i);
-		for(pt = p->mmuptp[i]; pt != nil; pt = pt->next)
-			jehanne_print("\tpt %#p = va %#p pa %#P"
-				" ptoff %#ux next %#p parent %#p\n",
-				pt, pt->pte, pt->pa, pt->ptoff, pt->next, pt->parent);
-	}
-	jehanne_print("pml4 %#P\n", m->pml4->pa);
-	if(0)dumpptepg(4, m->pml4->pa);
-}
-
-void
-dumpmmuwalk(uintmem addr)
-{
-	int l;
-	PTE *pte;
-
-	if((l = mmuwalk(addr, 3, &pte, nil)) >= 0)
-		jehanne_print("cpu%d: mmu l%d pte %#p = %llux\n", m->machno, l, pte, *pte);
-	if((l = mmuwalk(addr, 2, &pte, nil)) >= 0)
-		jehanne_print("cpu%d: mmu l%d pte %#p = %llux\n", m->machno, l, pte, *pte);
-	if((l = mmuwalk(addr, 1, &pte, nil)) >= 0)
-		jehanne_print("cpu%d: mmu l%d pte %#p = %llux\n", m->machno, l, pte, *pte);
-	if((l = mmuwalk(addr, 0, &pte, nil)) >= 0)
-		jehanne_print("cpu%d: mmu l%d pte %#p = %llux\n", m->machno, l, pte, *pte);
-}
-#ifdef DO_mmuptpcheck
-static void
-mmuptpcheck(Proc *proc)
-{
-	enum{Tsize = 512};
-	int lvl, npgs, i;
-	Mpl pl;
-	Ptpage *lp, *p, *pgs[Tsize], *fp;
-	uint32_t idx[Tsize];
-
-	if(proc == nil)
+	/* check if pat is usable */
+	if((MACHP(0)->cpuiddx & Pat) == 0
+	|| rdmsr(0x277, &v) == -1
+	|| ((v >> PATWC*8) & 7) != 1)
 		return;
-	pl = splhi();
-	lp = m->pml4;
-	for(lvl = 3; lvl >= 1; lvl--){
-		npgs = 0;
-		for(p = proc->mmuptp[lvl]; p != nil; p = p->next){
-			for(fp = proc->ptpfree; fp != nil; fp = fp->next)
-				if(fp == p){
-					dumpmmu(proc);
-					panic("ptpcheck: using free page");
-				}
-			for(i = 0; i < npgs; i++){
-				if(pgs[i] == p){
-					dumpmmu(proc);
-					panic("ptpcheck: dup page");
-				}
-				if(idx[i] == p->ptoff){
-					dumpmmu(proc);
-					panic("ptcheck: dup ptoff %d (%#p == %#p)", p->ptoff, pgs[i], p);
-				}
-			}
-			if(npgs >= Tsize)
-				panic("ptpcheck: pgs is too small");
-			idx[npgs] = p->ptoff;
-			pgs[npgs++] = p;
-			if(lvl == 3 && p->parent != lp){
-				dumpmmu(proc);
-				panic("ptpcheck: wrong parent");
-			}
-		}
-		
+
+	/* set the bits for all pages in range */
+	for(va = (uintptr_t)a; n > 0; n -= z, va += z){
+		l = 0;
+		pte = mmuwalk(m->pml4, va, l, 0);
+		if(pte == 0)
+			pte = mmuwalk(m->pml4, va, ++l, 0);
+		if(pte == 0 || (*pte & PTEVALID) == 0)
+			panic("patwc: va=%#p", va);
+		z = PGLSZ(l);
+		z -= va & (z-1);
+		mask = l == 0 ? 3<<3 | 1<<7 : 3<<3 | 1<<12;
+		attr = (((PATWC&3)<<3) | ((PATWC&4)<<5) | ((PATWC&4)<<10));
+		*pte = (*pte & ~mask) | (attr & mask);
 	}
-	npgs = 0;
-	for(fp = proc->ptpfree; fp != nil; fp = fp->next){
-		for(i = 0; i < npgs; i++)
-			if(pgs[i] == fp)
-				panic("ptpcheck: dup free page");
-		pgs[npgs++] = fp;
-	}
-	splx(pl);
 }
-#endif

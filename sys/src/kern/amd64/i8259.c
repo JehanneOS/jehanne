@@ -3,131 +3,102 @@
 #include "mem.h"
 #include "dat.h"
 #include "fns.h"
-
 #include "io.h"
 
 /*
- * 8259 Interrupt Controller and compatibles.
+ *  8259 interrupt controllers
  */
-enum {					/* I/O ports */
-	Cntrl1		= 0x20,
-	Cntrl2		= 0xa0,
+enum
+{
+	Int0ctl=	0x20,		/* control port (ICW1, OCW2, OCW3) */
+	Int0aux=	0x21,		/* everything else (ICW2, ICW3, ICW4, OCW1) */
+	Int1ctl=	0xA0,		/* control port */
+	Int1aux=	0xA1,		/* everything else (ICW2, ICW3, ICW4, OCW1) */
 
-	Icw1		= 0,		/* Initialisation Command Word 1 */
-	Icw2		= 1,
-	Icw3		= 1,
-	Icw4		= 1,
+	Icw1=		0x10,		/* select bit in ctl register */
+	Ocw2=		0x00,
+	Ocw3=		0x08,
 
-	Ocw1		= 1,		/* Operational Control Word 1 */
-	Ocw2		= 0,
-	Ocw3		= 0,
+	EOI=		0x20,		/* non-specific end of interrupt */
 
-	Imr		= Ocw1,		/* Interrupt Mask Register */
-	Isr		= Ocw3,		/* In-Service Register */
-	Irr		= Ocw3,		/* Interrupt Request Register */
-
-	Elcr1		= 0x4d0,	/* Edge/Level Control Register */
-	Elcr2		= 0x4d1,
-};
-
-enum {					/* Icw1 */
-	Ic4		= 0x01,		/* there will be an Icw4 */
-	Icw1sel		= 0x10,		/* Icw/Ocw select */
-};
-
-enum {					/* Icw3 */
-	Cascaded	= 0x04,		/* Cntrl1 - Cascaded Mode Enable */
-	SlaveIRQ2	= 0x02,		/* Cntrl2 - Slave Identification Code */
-};
-
-enum {					/* Icw4 */
-	Microprocessor	= 0x01,		/* 80x86-based system */
-};
-
-enum {					/* Ocw2 */
-	Ocw2sel		= 0x00,		/* Ocw2 select */
-	Eoi		= 0x20,		/* Non-spcific EOI command */
-};
-
-enum {					/* Ocw3 */
-	Irrread		= 0x02,		/* Read IRQ register */
-	Isrread		= 0x03,		/* Read IS register */
-	Ocw3sel		= 0x08,		/* Ocw3 select */
+	Elcr1=		0x4D0,		/* Edge/Level Triggered Register */
+	Elcr2=		0x4D1,
 };
 
 static Lock i8259lock;
-static int i8259mask = ~0;		/* mask of disabled interrupts */
-static int i8259elcr;			/* mask of level interrupts */
+static int i8259mask = 0xFFFF;		/* disabled interrupts */
+int i8259elcr;				/* mask of level-triggered interrupts */
 
-int
-i8259init(int vectorbase)
+void
+i8259init(void)
 {
-	int elcr;
+	int x;
 
-	vectorbase &= ~0x07;
-
+	ioalloc(Int0ctl, 2, 0, "i8259.0");
+	ioalloc(Int1ctl, 2, 0, "i8259.1");
 	ilock(&i8259lock);
 
 	/*
-	 * Boilerplate to initialise the pair of 8259 controllers,
-	 * see one of the Intel bridge datasheets for details,
-	 * e.g. 82371AB (PIIX4). The default settings are 80x86 mode,
-	 * edge-sensitive detection, normal EOI, non-buffered and
-	 * cascade mode. Cntrl1 is connected as the master and Cntrl2
-	 * as the slave; IRQ2 is used to cascade the two controllers.
+	 *  Set up the first 8259 interrupt processor.
+	 *  Make 8259 interrupts start at CPU vector VectorPIC.
+	 *  Set the 8259 as master with edge triggered
+	 *  input with fully nested interrupts.
 	 */
-	outb(Cntrl1+Icw1, Icw1sel|Ic4);
-	outb(Cntrl1+Icw2, vectorbase);
-	outb(Cntrl1+Icw3, Cascaded);
-	outb(Cntrl1+Icw4, Microprocessor);
-
-	outb(Cntrl2+Icw1, Icw1sel|Ic4);
-	outb(Cntrl2+Icw2, vectorbase+8);
-	outb(Cntrl2+Icw3, SlaveIRQ2);
-	outb(Cntrl2+Icw4, Microprocessor);
+	outb(Int0ctl, (1<<4)|(0<<3)|(1<<0));	/* ICW1 - master, edge triggered,
+						   ICW4 will be sent */
+	outb(Int0aux, VectorPIC);		/* ICW2 - interrupt vector offset */
+	outb(Int0aux, 0x04);			/* ICW3 - have slave on level 2 */
+	outb(Int0aux, 0x01);			/* ICW4 - 8086 mode, not buffered */
 
 	/*
-	 * Set the interrupt masks, allowing interrupts
-	 * to pass from Cntrl2 to Cntrl1 on IRQ2.
+	 *  Set up the second 8259 interrupt processor.
+	 *  Make 8259 interrupts start at CPU vector VectorPIC+8.
+	 *  Set the 8259 as slave with edge triggered
+	 *  input with fully nested interrupts.
 	 */
-	i8259mask &= ~(1<<2);
-	outb(Cntrl2+Imr, (i8259mask>>8) & 0xff);
-	outb(Cntrl1+Imr, i8259mask & 0xff);
-
-	outb(Cntrl1+Ocw2, Ocw2sel|Eoi);
-	outb(Cntrl2+Ocw2, Ocw2sel|Eoi);
+	outb(Int1ctl, (1<<4)|(0<<3)|(1<<0));	/* ICW1 - master, edge triggered,
+						   ICW4 will be sent */
+	outb(Int1aux, VectorPIC+8);		/* ICW2 - interrupt vector offset */
+	outb(Int1aux, 0x02);			/* ICW3 - I am a slave on level 2 */
+	outb(Int1aux, 0x01);			/* ICW4 - 8086 mode, not buffered */
+	outb(Int1aux, (i8259mask>>8) & 0xFF);
 
 	/*
-	 * Set Ocw3 to return the ISR when read for i8259isr()
-	 * (after initialisation status read is set to return the IRR).
+	 *  pass #2 8259 interrupts to #1
+	 */
+	i8259mask &= ~0x04;
+	outb(Int0aux, i8259mask & 0xFF);
+
+	/*
+	 * Set Ocw3 to return the ISR when ctl read.
+	 * After initialisation status read is set to IRR.
 	 * Read IRR first to possibly deassert an outstanding
 	 * interrupt.
 	 */
-	inb(Cntrl1+Irr);
-	outb(Cntrl1+Ocw3, Ocw3sel|Isrread);
-	inb(Cntrl2+Irr);
-	outb(Cntrl2+Ocw3, Ocw3sel|Isrread);
+	inb(Int0ctl);
+	outb(Int0ctl, Ocw3|0x03);
+	inb(Int1ctl);
+	outb(Int1ctl, Ocw3|0x03);
 
 	/*
-	 * Check for Edge/Level Control register.
+	 * Check for Edge/Level register.
 	 * This check may not work for all chipsets.
 	 * First try a non-intrusive test - the bits for
 	 * IRQs 13, 8, 2, 1 and 0 must be edge (0). If
 	 * that's OK try a R/W test.
 	 */
-	elcr = (inb(Elcr2)<<8)|inb(Elcr1);
-	if(!(elcr & 0x2107)){
+	x = (inb(Elcr2)<<8)|inb(Elcr1);
+	if(!(x & 0x2107)){
 		outb(Elcr1, 0);
 		if(inb(Elcr1) == 0){
 			outb(Elcr1, 0x20);
 			if(inb(Elcr1) == 0x20)
-				i8259elcr = elcr;
-			outb(Elcr1, elcr & 0xff);
+				i8259elcr = x;
+			outb(Elcr1, x & 0xFF);
+			print("ELCR: %4.4uX\n", i8259elcr);
 		}
 	}
 	iunlock(&i8259lock);
-
-	return vectorbase;
 }
 
 int
@@ -135,25 +106,108 @@ i8259isr(int vno)
 {
 	int irq, isr;
 
-	if(vno < IdtPIC || vno > IdtPIC+15)
+	if(vno < VectorPIC || vno > VectorPIC+MaxIrqPIC)
 		return 0;
-	irq = vno-IdtPIC;
+	irq = vno-VectorPIC;
 
 	/*
-	 * Collect the interrupt status,
-	 * acknowledge the interrupt and return whether
-	 * the acknowledged interrupt was the correct
-	 * one (this could be better but it's not really
-	 * used).
+	 *  tell the 8259 that we're done with the
+	 *  highest level interrupt (interrupts are still
+	 *  off at this point)
 	 */
 	ilock(&i8259lock);
-	isr = inb(Cntrl1+Isr);
-	outb(Cntrl1+Ocw2, Ocw2sel|Eoi);
+	isr = inb(Int0ctl);
+	outb(Int0ctl, EOI);
 	if(irq >= 8){
-		isr |= inb(Cntrl2+Isr)<<8;
-		outb(Cntrl2+Ocw2, Ocw2sel|Eoi);
+		isr |= inb(Int1ctl)<<8;
+		outb(Int1ctl, EOI);
 	}
 	iunlock(&i8259lock);
 
 	return isr & (1<<irq);
+}
+
+int
+i8259enable(Vctl* v)
+{
+	int irq, irqbit;
+
+	/*
+	 * Given an IRQ, enable the corresponding interrupt in the i8259
+	 * and return the vector to be used. The i8259 is set to use a fixed
+	 * range of vectors starting at VectorPIC.
+	 */
+	irq = v->irq;
+	if(irq < 0 || irq > MaxIrqPIC){
+		print("i8259enable: irq %d out of range\n", irq);
+		return -1;
+	}
+	irqbit = 1<<irq;
+
+	ilock(&i8259lock);
+	if(!(i8259mask & irqbit) && !(i8259elcr & irqbit)){
+		print("i8259enable: irq %d shared but not level\n", irq);
+		iunlock(&i8259lock);
+		return -1;
+	}
+	i8259mask &= ~irqbit;
+	if(irq < 8)
+		outb(Int0aux, i8259mask & 0xFF);
+	else
+		outb(Int1aux, (i8259mask>>8) & 0xFF);
+
+	if(i8259elcr & irqbit)
+		v->eoi = i8259isr;
+	else
+		v->isr = i8259isr;
+	iunlock(&i8259lock);
+
+	return VectorPIC+irq;
+}
+
+int
+i8259vecno(int irq)
+{
+	return VectorPIC+irq;
+}
+
+int
+i8259disable(int irq)
+{
+	int irqbit;
+
+	/*
+	 * Given an IRQ, disable the corresponding interrupt
+	 * in the 8259.
+	 */
+	if(irq < 0 || irq > MaxIrqPIC){
+		print("i8259disable: irq %d out of range\n", irq);
+		return -1;
+	}
+	irqbit = 1<<irq;
+
+	ilock(&i8259lock);
+	if(!(i8259mask & irqbit)){
+		i8259mask |= irqbit;
+		if(irq < 8)
+			outb(Int0aux, i8259mask & 0xFF);
+		else
+			outb(Int1aux, (i8259mask>>8) & 0xFF);
+	}
+	iunlock(&i8259lock);
+	return 0;
+}
+
+void
+i8259on(void)
+{
+	outb(Int0aux, i8259mask&0xFF);
+	outb(Int1aux, (i8259mask>>8)&0xFF);
+}
+
+void
+i8259off(void)
+{
+	outb(Int0aux, 0xFF);
+	outb(Int1aux, 0xFF);
 }

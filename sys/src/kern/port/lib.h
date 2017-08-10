@@ -3,7 +3,8 @@
  */
 #define nelem(x)	(sizeof(x)/sizeof((x)[0]))
 #define offsetof(s, m)	(uintptr_t)(&(((s*)0)->m))
-#define assert(x)	if(x){}else _assert(#x)
+#define assert(x)	if(x){}else jehanne__assert(#x)
+extern	void	jehanne__assert(const char*) __attribute__ ((noreturn));
 
 /*
  * mem routines
@@ -62,8 +63,10 @@ extern	void	jehanne_free(void*);
 extern	uint32_t	jehanne_msize(void*);
 extern	void*	jehanne_mallocalign(usize, uint32_t, long, uint32_t);
 extern	void*	jehanne_realloc(void*, usize);
-extern	void	jehanne_setmalloctag(void*, uint32_t);
-extern	uint32_t	jehanne_getmalloctag(void*);
+void	jehanne_setmalloctag(void*, uintptr_t);
+void	jehanne_setrealloctag(void*, uintptr_t);
+uintptr_t	jehanne_getmalloctag(void*);
+uintptr_t	jehanne_getrealloctag(void*);
 
 /*
  * print routines
@@ -108,6 +111,8 @@ extern	char*	jehanne_vseprint(char*, char*, char*, va_list);
 extern	int	jehanne_snprint(char*, int, char*, ...);
 extern	int	jehanne_vsnprint(char*, int, char*, va_list);
 extern	int	jehanne_sprint(char*, char*, ...);
+
+
 
 #pragma	varargck	argpos	fmtprint	2
 #pragma	varargck	argpos	print		1
@@ -155,11 +160,6 @@ extern	int	jehanne_fmtstrinit(Fmt*);
 extern	void	jehanne_quotefmtinstall(void);
 
 /*
- * Time-of-day
- */
-extern	void	cycles(uint64_t*);	/* 64-bit value of the cycle counter if there is one, 0 if there isn't */
-
-/*
  * one-of-a-kind
  */
 extern	int	jehanne_abs(int);
@@ -186,8 +186,7 @@ extern	uint64_t	jehanne_strtoull(char*, char**, int);
 #define MBEFORE	0x0001	/* mount goes before others in union directory */
 #define MAFTER	0x0002	/* mount goes after others in union directory */
 #define MCREATE	0x0004	/* permit creation in mounted directory */
-#define MCACHE	0x0010	/* cache some data */
-#define MMASK	0x0017	/* all bits on */
+#define MMASK	0x0007	/* all bits on */
 
 /* OPEN MODES: Kernel reserved flags */
 #define OSTAT	0x00		/* open for stat/wstat */
@@ -290,3 +289,177 @@ extern unsigned int	jehanne_sizeD2M(Dir*);
 extern int		dirfmt(Fmt*);
 extern int		jehanne_dirmodefmt(Fmt*);
 #pragma	varargck	type	"D"	Dir*
+
+#define memccpy jehanne_memccpy
+#define memset jehanne_memset
+#define memcmp jehanne_memcmp
+#define memcpy jehanne_memcpy
+#define memmove jehanne_memmove
+#define memchr jehanne_memchr
+#define strcat jehanne_strcat
+#define strchr jehanne_strchr
+#define strcmp jehanne_strcmp
+#define strcpy jehanne_strcpy
+#define strecpy jehanne_strecpy
+#define strdup jehanne_strdup
+#define strncat jehanne_strncat
+#define strncpy jehanne_strncpy
+#define strncmp jehanne_strncmp
+#define strpbrk jehanne_strpbrk
+#define strrchr jehanne_strrchr
+#define strtok jehanne_strtok
+#define strlen jehanne_strlen
+#define strspn jehanne_strspn
+#define strcspn jehanne_strcspn
+#define strstr jehanne_strstr
+#define cistrncmp jehanne_cistrncmp
+#define cistrcmp jehanne_cistrcmp
+#define cistrstr jehanne_cistrstr
+#define tokenize jehanne_tokenize
+#define runetochar jehanne_runetochar
+#define chartorune jehanne_chartorune
+#define runelen jehanne_runelen
+#define runenlen jehanne_runenlen
+#define fullrune jehanne_fullrune
+#define utflen jehanne_utflen
+#define utfnlen jehanne_utfnlen
+#define utfrune jehanne_utfrune
+#define utfrrune jehanne_utfrrune
+#define utfutf jehanne_utfutf
+#define utfecpy jehanne_utfecpy
+#define runestrcat jehanne_runestrcat
+#define runestrchr jehanne_runestrchr
+#define runestrcmp jehanne_runestrcmp
+#define runestrcpy jehanne_runestrcpy
+#define runestrncpy jehanne_runestrncpy
+#define runestrecpy jehanne_runestrecpy
+#define runestrdup jehanne_runestrdup
+#define runestrncat jehanne_runestrncat
+#define runestrncmp jehanne_runestrncmp
+#define runestrrchr jehanne_runestrrchr
+#define runestrlen jehanne_runestrlen
+#define runestrstr jehanne_runestrstr
+#define tolowerrune jehanne_tolowerrune
+#define totitlerune jehanne_totitlerune
+#define toupperrune jehanne_toupperrune
+#define tobaserune jehanne_tobaserune
+#define isalpharune jehanne_isalpharune
+#define isbaserune jehanne_isbaserune
+#define isdigitrune jehanne_isdigitrune
+#define islowerrune jehanne_islowerrune
+#define isspacerune jehanne_isspacerune
+#define istitlerune jehanne_istitlerune
+#define isupperrune jehanne_isupperrune
+#define malloc jehanne_malloc
+#define malloc jehanne_malloc
+#define mallocz jehanne_mallocz
+#define free jehanne_free
+#define msize jehanne_msize
+#define mallocalign jehanne_mallocalign
+#define calloc jehanne_calloc
+#define realloc jehanne_realloc
+#define setmalloctag jehanne_setmalloctag
+#define setrealloctag jehanne_setrealloctag
+#define getmalloctag jehanne_getmalloctag
+#define getrealloctag jehanne_getrealloctag
+#define malloctopoolblock jehanne_malloctopoolblock
+#define print jehanne_print
+#define seprint jehanne_seprint
+#define vseprint jehanne_vseprint
+#define snprint jehanne_snprint
+#define vsnprint jehanne_vsnprint
+#define smprint jehanne_smprint
+#define vsmprint jehanne_vsmprint
+#define sprint jehanne_sprint
+#define fprint jehanne_fprint
+#define vfprint jehanne_vfprint
+#define runesprint jehanne_runesprint
+#define runesnprint jehanne_runesnprint
+#define runevsnprint jehanne_runevsnprint
+#define runeseprint jehanne_runeseprint
+#define runevseprint jehanne_runevseprint
+#define runesmprint jehanne_runesmprint
+#define runevsmprint jehanne_runevsmprint
+#define fmtfdinit jehanne_fmtfdinit
+#define fmtfdflush jehanne_fmtfdflush
+#define fmtstrinit jehanne_fmtstrinit
+#define fmtstrflush jehanne_fmtstrflush
+#define runefmtstrinit jehanne_runefmtstrinit
+#define runefmtstrflush jehanne_runefmtstrflush
+#define fmtinstall jehanne_fmtinstall
+#define dofmt jehanne_dofmt
+#define dorfmt jehanne_dorfmt
+#define fmtprint jehanne_fmtprint
+#define fmtvprint jehanne_fmtvprint
+#define fmtrune jehanne_fmtrune
+#define fmtstrcpy jehanne_fmtstrcpy
+#define fmtrunestrcpy jehanne_fmtrunestrcpy
+#define errfmt jehanne_errfmt
+#define unquotestrdup jehanne_unquotestrdup
+#define unquoterunestrdup jehanne_unquoterunestrdup
+#define quotestrdup jehanne_quotestrdup
+#define quoterunestrdup jehanne_quoterunestrdup
+#define quotestrfmt jehanne_quotestrfmt
+#define quoterunestrfmt jehanne_quoterunestrfmt
+#define quotefmtinstall jehanne_quotefmtinstall
+#define needsrcquote jehanne_needsrcquote
+#define srand jehanne_srand
+#define rand jehanne_rand
+#define nrand jehanne_nrand
+#define lrand jehanne_lrand
+#define lnrand jehanne_lnrand
+#define frand jehanne_frand
+#define truerand jehanne_truerand
+#define ntruerand jehanne_ntruerand
+#define getfcr jehanne_getfcr
+#define setfsr jehanne_setfsr
+#define setfcr jehanne_setfcr
+#define NaN jehanne_NaN
+#define Inf jehanne_Inf
+#define isNaN jehanne_isNaN
+#define isInf jehanne_isInf
+#define umuldiv jehanne_umuldiv
+#define muldiv jehanne_muldiv
+#define pow jehanne_pow
+#define atan2 jehanne_atan2
+#define fabs jehanne_fabs
+#define atan jehanne_atan
+#define log jehanne_log
+#define log10 jehanne_log10
+#define exp jehanne_exp
+#define floor jehanne_floor
+#define ceil jehanne_ceil
+#define hypot jehanne_hypot
+#define sin jehanne_sin
+#define cos jehanne_cos
+#define tan jehanne_tan
+#define asin jehanne_asin
+#define acos jehanne_acos
+#define sinh jehanne_sinh
+#define cosh jehanne_cosh
+#define tanh jehanne_tanh
+#define sqrt jehanne_sqrt
+#define atof jehanne_atof
+#define atoi jehanne_atoi
+#define atol jehanne_atol
+#define atoll jehanne_atoll
+#define dec64 jehanne_dec64
+#define enc64 jehanne_enc64
+#define dec32 jehanne_dec32
+#define enc32 jehanne_enc32
+#define dec16 jehanne_dec16
+#define enc16 jehanne_enc16
+#define encodefmt jehanne_encodefmt
+#define getfields jehanne_getfields
+#define gettokens jehanne_gettokens
+#define qsort jehanne_qsort
+#define strtod jehanne_strtod
+#define strtol jehanne_strtol
+#define strtoul jehanne_strtoul
+#define strtoll jehanne_strtoll
+#define strtoull jehanne_strtoull
+#define access jehanne_access
+#define convM2D jehanne_convM2D
+#define convD2M jehanne_convD2M
+#define sizeD2M jehanne_sizeD2M
+#define chartorune jehanne_chartorune

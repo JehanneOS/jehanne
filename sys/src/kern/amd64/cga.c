@@ -179,7 +179,7 @@ cgaprinthex(uintptr_t x)
 	cgaputc('\n');
 }
 
-void
+static void
 cgaconsputs(char* s, int n)
 {
 	ilock(&cgalock);
@@ -235,7 +235,7 @@ cgawrite(Chan* c, void *vbuf, long len, int64_t off)
 }
 
 void
-cgainit(void)
+screen_init(void)
 {
 	ilock(&cgalock);
 
@@ -245,5 +245,6 @@ cgainit(void)
 	cgablinkoff();
 	cgainitdone = 1;
 	iunlock(&cgalock);
+	screenputs = cgaconsputs;
 	addarchfile("cgamem", 0666, cgaread, cgawrite);
 }

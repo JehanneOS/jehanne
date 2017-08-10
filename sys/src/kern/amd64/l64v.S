@@ -116,6 +116,16 @@ gdtget:
 	sgdt	(%rdi)		/* Note: 10 bytes returned */
 	ret
 
+.global lgdt
+lgdt:
+	lgdt	(%rdi)
+	ret
+
+.global lidt
+lidt:
+	lgdt	(%rdi)
+	ret
+
 // Called with the address of gdt in rdi.
 // Load the gdt, then do a ret which will use the argument on the stack as
 // a segment #. This stuff is just crazy.
@@ -159,8 +169,6 @@ idtput:
 
 .global trput
 trput:
-	// panic
-	//mov 0, %rax
 	ltr	%di
 	ret
 
@@ -219,36 +227,45 @@ rdtsc:
 	ORQ	%rdx, %rax				/* (hi<<32)|lo */
 	ret
 
-.global _rdmsr
-_rdmsr:
+/* int rdmsr(uint32_t reg, uint64_t* value); */
+.global rdmsr
+rdmsr:
 	pushq	%rcx
 	pushq	%rdx
+	pushq	%rbp
+	xorq	%rbp, %rbp
 	movl	%edi, %ecx
-
+.global _rdmsrinst
+_rdmsrinst:
 	rdmsr
-						/* u64int rdmsr(u32int); */
-	xchgl	%edx, %eax				/* swap lo/hi, zero-extend */
-	SHLQ	$32, %rax				/* hi<<32 */
-	ORQ	%rdx, %rax				/* (hi<<32)|lo */
+	xchgl	%edx, %eax			/* swap lo/hi, zero-extend */
+	shlq	$32, %rax			/* hi<<32 */
+	orq	%rdx, %rax			/* (hi<<32)|lo */
+	movq	%rax, (%rsi)			/* set value */
+	movq	%rbp, %rax			/* %rbp set to -1 if traped */
+	popq	%rbp
 	popq	%rdx
 	popq	%rcx
 	ret
 
-.global _wrmsr
-_wrmsr:
-	pushq	%rax	// do we need to do this?
+/*int wrmsr(uint32_t reg, uint64_t value) */
+.global wrmsr
+wrmsr:
 	pushq	%rcx
 	pushq	%rdx
+	pushq	%rbp
 	movl	%edi, %ecx
 	movl	%esi, %eax
 	movq	%rsi, %rdx
 	shrq	$32, %rdx
-
+	xorq	%rbp, %rbp
+.global _wrmsrinst
+_wrmsrinst:
 	wrmsr
-
+	movq	%rbp, %rax
+	popq	%rbp
 	popq	%rdx
 	popq	%rcx
-	popq	%rax
 	ret
 
 .global invlpg
@@ -379,6 +396,24 @@ adec:
 	lock; xaddl %eax, (%rdi)
 	subl	$1, %eax
 	ret
+
+/*
+ * Synchronisation
+ */
+.global ainc16
+ainc16:
+	mov	$1, %ax
+	lock; xadd %ax, (%rdi)
+	add	$1, %ax
+	ret
+
+.global adec16
+adec16:
+	mov	$-1, %ax
+	lock; xadd %ax, (%rdi)
+	sub	$1, %ax
+	ret
+
 
 /*
  * Semaphores rely on negative values for the counter,
@@ -564,38 +599,86 @@ _mm32done:
 	movl	(%rdi), %eax
 	ret
 
+/* void	mwait(void*); */
+.globl mwait
+mwait:
+	movq	%rdi, %rax
+	movl	(%eax), %ecx
+	orl	%ecx, %ecx
+	jnz	_mwaitdone
+	xorq	%rdx, %rdx
+	monitor
+	movl	(%eax), %ecx
+	orl	%ecx, %ecx
+	jnz	_mwaitdone
+	xorq	%rax, %rax
+	mwait
+_mwaitdone:
+	RET
 
-.global _monitor
-_monitor:
-	movq	%rdi, %rax			/* linear address to monitor */
-	xorq	%rcx, %rcx				/* no optional extensions yet */
-	xorq	%rdx, %rdx				/* no optional hints yet */
-	.byte 0x0f; .byte 0x01; .byte 0xc8	/* monitor */
+rdrand32:
+loop32:
+	rdrand	%eax
+	jc	loop32
 	ret
 
-.global _mwait
-_mwait:
-	movq	%rdi, %rcx			/* optional extensions */
-	.byte 0x0f; .byte 0x01; .byte 0xc9	/* mwait */
+rdrand64:
+loop64:
+	rdrand	%rax
+	jc	loop64
 	ret
 
-.global k10mwait
-k10mwait:
-k10mwloop:
-	movq	%rdi,%rcx
-	movq	(%rcx), %rax
-	cmpq	$0, %rax
-	jne		k10mwdone
-	movq	%rdi, %rax			/* linear address to monitor */
-	xorq	%rcx, %rcx				/* no optional extensions yet */
-	xorq	%rdx, %rdx				/* no optional hints yet */
-	.byte 0x0f; .byte 0x01; .byte 0xc8	/* monitor */
-	movq	%rdi, %rcx
-	movq	0(%rcx), %rax
-	cmpq	$0, %rax
-	jne		k10mwdone
-	xorq %rcx, %rcx			/* optional extensions */
-	.byte 0x0f; .byte 0x01; .byte 0xc9	/* mwait */
-	jmp		k10mwloop
-k10mwdone:
-	ret
+.globl rdrandbuf
+rdrandbuf:
+	movq	%rdi, %rdx
+
+	movl	%esi, %ecx
+	shrq	$3, %rcx
+eights:
+	cmpl	$0, %ecx
+	jg	f1
+	call	rdrand64
+	movq	%rax, 0(%rdx)
+	addq	$8, %rdx
+	subl	$1, %ecx
+	jmp	eights
+
+f1:
+	movl	%esi, %ecx
+	andl	$7, %ecx
+	shrq	$2, %rcx
+fours:
+	cmpl	$0, %ecx
+	jg	f2
+	call	rdrand32
+	movl	%eax, 0(%rdx)
+	addq	$4, %rdx
+	subl	$1, %ecx
+	jmp	fours
+
+f2:
+	movl	%esi, %ecx
+	andl	$3, %ecx
+ones:
+	cmpl	$0, %ecx
+	jg	f3
+	call	rdrand32
+	movb	%al, 0(%rdx)
+	addq	$1, %rdx
+	subl	$1, %ecx
+	jmp	ones
+
+f3:
+	RET
+
+
+/*
+ * Park a processor. Should never fall through a return from main to here,
+ * should only be called by application processors when shutting down.
+ */
+.global idle
+idle:
+_idle:
+	STI
+	HLT
+	JMP	_idle

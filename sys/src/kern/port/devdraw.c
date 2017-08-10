@@ -59,8 +59,6 @@ typedef struct Refresh Refresh;
 typedef struct Refx Refx;
 typedef struct DName DName;
 
-uint32_t blanktime = 30;	/* in minutes; a half hour */
-
 struct Draw
 {
 	int		clientid;
@@ -70,9 +68,6 @@ struct Draw
 	DName*		name;
 	int		vers;
 	int		softscreen;
-	int		blanked;	/* screen turned off */
-	uint64_t	blanktime;	/* time of last operation */
-	uint32_t	savemap[3*256];
 };
 
 struct Client
@@ -82,7 +77,8 @@ struct Client
 	CScreen*	cscreen;
 	Refresh*	refresh;
 	Rendez		refrend;
-	unsigned char*		readdata;
+	QLock		refq;
+	uint8_t*		readdata;
 	int		nreaddata;
 	int		busy;
 	int		clientid;
@@ -117,10 +113,10 @@ struct FChar
 {
 	int		minx;	/* left edge of bits */
 	int		maxx;	/* right edge of bits */
-	unsigned char		miny;	/* first non-zero scan-line */
-	unsigned char		maxy;	/* last non-zero scan-line + 1 */
-	char		left;	/* offset of baseline */
-	unsigned char		width;	/* width of baseline */
+	uint8_t		miny;	/* first non-zero scan-line */
+	uint8_t		maxy;	/* last non-zero scan-line + 1 */
+	int8_t		left;	/* offset of baseline */
+	uint8_t		width;	/* width of baseline */
 };
 
 /*
@@ -192,10 +188,9 @@ static	char Ewriteoutside[] =	"writeimage outside image";
 static	char Enotfont[] =	"image not a font";
 static	char Eindex[] =		"character index out of range";
 static	char Enoclient[] =	"no such draw client";
-//static	char Edepth[] =		"image has bad depth";
 static	char Enameused[] =	"image name in use";
 static	char Enoname[] =	"no image with that name";
-static	char Eoldname[] =	"named image no int32_ter valid";
+static	char Eoldname[] =	"named image no longer valid";
 static	char Enamed[] = 	"image already has name";
 static	char Ewrongname[] = 	"wrong name for image";
 
@@ -205,11 +200,13 @@ dlock(void)
 	qlock(&drawlock);
 }
 
+#if 0
 static int
 candlock(void)
 {
 	return canqlock(&drawlock);
 }
+#endif
 
 static void
 dunlock(void)
@@ -218,7 +215,7 @@ dunlock(void)
 }
 
 static int
-drawgen(Chan *c, char *cc, Dirtab *dt, int i, int s, Dir *dp)
+drawgen(Chan *c, char* _, Dirtab* __, int ___, int s, Dir *dp)
 {
 	int t;
 	Qid q;
@@ -237,10 +234,9 @@ drawgen(Chan *c, char *cc, Dirtab *dt, int i, int s, Dir *dp)
 		case Q3rd:
 			cl = drawclientofpath(c->qid.path);
 			if(cl == nil)
-				jehanne_strncpy(up->genbuf, "??", sizeof up->genbuf);
+				strcpy(up->genbuf, "??");
 			else
-				jehanne_snprint(up->genbuf, sizeof up->genbuf,
-					"%d", cl->clientid);
+				sprint(up->genbuf, "%d", cl->clientid);
 			mkqid(&q, Q2nd, 0, QTDIR);
 			devdir(c, q, up->genbuf, 0, eve, 0500, dp);
 			break;
@@ -254,25 +250,17 @@ drawgen(Chan *c, char *cc, Dirtab *dt, int i, int s, Dir *dp)
 	 * Top level directory contains the name of the device.
 	 */
 	t = QID(c->qid);
-	if(t == Qtopdir){
-		switch(s){
-		case 0:
-			mkqid(&q, Q2nd, 0, QTDIR);
-			devdir(c, q, "draw", 0, eve, 0555, dp);
-			break;
-		case 1:
+	if(t == Qtopdir || t == Qwinname){
+		if(s == 1 || t == Qwinname){
 			mkqid(&q, Qwinname, 0, QTFILE);
 			devdir(c, q, "winname", 0, eve, 0444, dp);
-			break;
-		default:
-			return -1;
 		}
-		return 1;
-	}
-
-	if(t == Qwinname){
-		mkqid(&q, Qwinname, 0, QTFILE);
-		devdir(c, q, "winname", 0, eve, 0444, dp);
+		else if(s == 0){
+			mkqid(&q, Q2nd, 0, QTDIR);
+			devdir(c, q, "draw", 0, eve, 0555, dp);
+		}
+		else
+			return -1;
 		return 1;
 	}
 
@@ -288,8 +276,7 @@ drawgen(Chan *c, char *cc, Dirtab *dt, int i, int s, Dir *dp)
 			cl = sdraw.client[s-1];
 			if(cl == 0)
 				return 0;
-			jehanne_snprint(up->genbuf, sizeof up->genbuf, "%d",
-				cl->clientid);
+			sprint(up->genbuf, "%d", cl->clientid);
 			mkqid(&q, (s<<QSHIFT)|Q3rd, 0, QTDIR);
 			devdir(c, q, up->genbuf, 0, eve, 0555, dp);
 			return 1;
@@ -350,7 +337,7 @@ drawrefreshscreen(DImage *l, Client *client)
 
 static
 void
-drawrefresh(Memimage *m, Rectangle r, void *v)
+drawrefresh(Memimage* _, Rectangle r, void *v)
 {
 	Refx *x;
 	DImage *d;
@@ -367,7 +354,7 @@ drawrefresh(Memimage *m, Rectangle r, void *v)
 			combinerect(&ref->r, r);
 			return;
 		}
-	ref = jehanne_malloc(sizeof(Refresh));
+	ref = malloc(sizeof(Refresh));
 	if(ref){
 		ref->dimage = d;
 		ref->r = r;
@@ -382,9 +369,8 @@ addflush(Rectangle r)
 	int abb, ar, anbb;
 	Rectangle nbb;
 
-	if(sdraw.softscreen==0 || !rectclip(&r, screenimage->r))
+	if(sdraw.softscreen==0 || screenimage == nil || !rectclip(&r, screenimage->r))
 		return;
-
 	if(flushrect.min.x >= flushrect.max.x){
 		flushrect = r;
 		waste = 0;
@@ -430,13 +416,7 @@ dstflush(int dstid, Memimage *dst, Rectangle r)
 		combinerect(&flushrect, r);
 		return;
 	}
-	/* how can this happen? -rsc, dec 12 2002 */
-	if(dst == 0){
-		jehanne_print("nil dstflush\n");
-		return;
-	}
-	l = dst->layer;
-	if(l == nil)
+	if(screenimage == nil || dst == nil || (l = dst->layer) == nil)
 		return;
 	do{
 		if(l->screen->image->data != screenimage->data)
@@ -450,7 +430,7 @@ dstflush(int dstid, Memimage *dst, Rectangle r)
 void
 drawflush(void)
 {
-	if(flushrect.min.x < flushrect.max.x)
+	if(screenimage && flushrect.min.x < flushrect.max.x)
 		flushmemscreen(flushrect);
 	flushrect = Rect(10000, 10000, -10000, -10000);
 }
@@ -459,9 +439,9 @@ static
 int
 drawcmp(char *a, char *b, int n)
 {
-	if(jehanne_strlen(a) != n)
+	if(strlen(a) != n)
 		return 1;
-	return jehanne_memcmp(a, b, n);
+	return memcmp(a, b, n);
 }
 
 DName*
@@ -489,7 +469,7 @@ drawgoodname(DImage *d)
 			return 0;
 	if(d->name == nil)
 		return 1;
-	n = drawlookupname(jehanne_strlen(d->name), d->name);
+	n = drawlookupname(strlen(d->name), d->name);
 	if(n==nil || n->vers!=d->vers)
 		return 0;
 	return 1;
@@ -548,7 +528,7 @@ allocdimage(Memimage *i)
 {
 	DImage *d;
 
-	d = jehanne_malloc(sizeof(DImage));
+	d = malloc(sizeof(DImage));
 	if(d == 0)
 		return 0;
 	d->ref = 1;
@@ -582,22 +562,22 @@ drawinstallscreen(Client *client, DScreen *d, int id, DImage *dimage, DImage *df
 	Memscreen *s;
 	CScreen *c;
 
-	c = jehanne_malloc(sizeof(CScreen));
+	c = malloc(sizeof(CScreen));
 	if(dimage && dimage->image && dimage->image->chan == 0)
 		panic("bad image %p in drawinstallscreen", dimage->image);
 
 	if(c == 0)
 		return 0;
 	if(d == 0){
-		d = jehanne_malloc(sizeof(DScreen));
+		d = malloc(sizeof(DScreen));
 		if(d == 0){
-			jehanne_free(c);
+			free(c);
 			return 0;
 		}
-		s = jehanne_malloc(sizeof(Memscreen));
+		s = malloc(sizeof(Memscreen));
 		if(s == 0){
-			jehanne_free(c);
-			jehanne_free(d);
+			free(c);
+			free(d);
 			return 0;
 		}
 		s->frontmost = 0;
@@ -632,8 +612,9 @@ drawdelname(DName *name)
 {
 	int i;
 
+	free(name->name);
 	i = name-sdraw.name;
-	jehanne_memmove(name, name+1, (sdraw.nname-(i+1))*sizeof(DName));
+	memmove(name, name+1, (sdraw.nname-(i+1))*sizeof(DName));
 	sdraw.nname--;
 }
 
@@ -644,7 +625,7 @@ drawfreedscreen(DScreen *this)
 
 	this->ref--;
 	if(this->ref < 0)
-		jehanne_print("negative ref in drawfreedscreen\n");
+		print("negative ref in drawfreedscreen\n");
 	if(this->ref > 0)
 		return;
 	ds = dscreen;
@@ -666,8 +647,8 @@ drawfreedscreen(DScreen *this)
 		drawfreedimage(this->dimage);
 	if(this->dfill)
 		drawfreedimage(this->dfill);
-	jehanne_free(this->screen);
-	jehanne_free(this);
+	free(this->screen);
+	free(this);
 }
 
 void
@@ -679,7 +660,7 @@ drawfreedimage(DImage *dimage)
 
 	dimage->ref--;
 	if(dimage->ref < 0)
-		jehanne_print("negative ref in drawfreedimage\n");
+		print("negative ref in drawfreedimage\n");
 	if(dimage->ref > 0)
 		return;
 
@@ -693,15 +674,13 @@ drawfreedimage(DImage *dimage)
 		drawfreedimage(dimage->fromname);
 		goto Return;
 	}
-//	if(dimage->image == screenimage)	/* don't free the display */
-//		goto Return;
 	ds = dimage->dscreen;
 	if(ds){
 		l = dimage->image;
-		if(l->data == screenimage->data)
+		if(screenimage && l->data == screenimage->data)
 			addflush(l->layer->screenr);
 		if(l->layer->refreshfn == drawrefresh)	/* else true owner will clean up */
-			jehanne_free(l->layer->refreshptr);
+			free(l->layer->refreshptr);
 		l->layer->refreshptr = nil;
 		if(drawgoodname(dimage))
 			memldelete(l);
@@ -711,8 +690,8 @@ drawfreedimage(DImage *dimage)
 	}else
 		freememimage(dimage->image);
     Return:
-	jehanne_free(dimage->fchar);
-	jehanne_free(dimage);
+	free(dimage->fchar);
+	free(dimage);
 }
 
 void
@@ -724,14 +703,14 @@ drawuninstallscreen(Client *client, CScreen *this)
 	if(cs == this){
 		client->cscreen = this->next;
 		drawfreedscreen(this->dscreen);
-		jehanne_free(this);
+		free(this);
 		return;
 	}
 	while(next = cs->next){	/* assign = */
 		if(next == this){
 			cs->next = this->next;
 			drawfreedscreen(this->dscreen);
-			jehanne_free(this);
+			free(this);
 			return;
 		}
 		cs = next;
@@ -772,14 +751,13 @@ drawaddname(Client *client, DImage *di, int n, char *str)
 	for(; name<ename; name++)
 		if(drawcmp(name->name, str, n) == 0)
 			error(Enameused);
-	t = sqmalloc((sdraw.nname+1)*sizeof(DName));
-	jehanne_memmove(t, sdraw.name, sdraw.nname*sizeof(DName));
-	jehanne_free(sdraw.name);
+	t = smalloc((sdraw.nname+1)*sizeof(DName));
+	memmove(t, sdraw.name, sdraw.nname*sizeof(DName));
+	free(sdraw.name);
 	sdraw.name = t;
 	new = &sdraw.name[sdraw.nname++];
-	jehanne_memset(new, 0, sizeof(DName));	// clear the new element.
-	new->name = sqmalloc(n+1);
-	jehanne_memmove(new->name, str, n);
+	new->name = smalloc(n+1);
+	memmove(new->name, str, n);
 	new->name[n] = 0;
 	new->dimage = di;
 	new->client = client;
@@ -798,19 +776,19 @@ drawnewclient(void)
 			break;
 	}
 	if(i == sdraw.nclient){
-		cp = jehanne_malloc((sdraw.nclient+1)*sizeof(Client*));
+		cp = malloc((sdraw.nclient+1)*sizeof(Client*));
 		if(cp == 0)
 			return 0;
-		jehanne_memmove(cp, sdraw.client, sdraw.nclient*sizeof(Client*));
-		jehanne_free(sdraw.client);
+		memmove(cp, sdraw.client, sdraw.nclient*sizeof(Client*));
+		free(sdraw.client);
 		sdraw.client = cp;
 		sdraw.nclient++;
 		cp[i] = 0;
 	}
-	cl = jehanne_malloc(sizeof(Client));
+	cl = malloc(sizeof(Client));
 	if(cl == 0)
 		return 0;
-	jehanne_memset(cl, 0, sizeof(Client));
+	memset(cl, 0, sizeof(Client));
 	cl->slot = i;
 	cl->clientid = ++sdraw.clientid;
 	cl->op = SoverD;
@@ -867,7 +845,7 @@ drawclient(Chan *c)
 }
 
 Memimage*
-drawimage(Client *client, unsigned char *a)
+drawimage(Client *client, uint8_t *a)
 {
 	DImage *d;
 
@@ -878,7 +856,7 @@ drawimage(Client *client, unsigned char *a)
 }
 
 void
-drawrectangle(Rectangle *r, unsigned char *a)
+drawrectangle(Rectangle *r, uint8_t *a)
 {
 	r->min.x = BGLONG(a+0*4);
 	r->min.y = BGLONG(a+1*4);
@@ -887,7 +865,7 @@ drawrectangle(Rectangle *r, unsigned char *a)
 }
 
 void
-drawpoint(Point *p, unsigned char *a)
+drawpoint(Point *p, uint8_t *a)
 {
 	p->x = BGLONG(a+0*4);
 	p->y = BGLONG(a+1*4);
@@ -947,34 +925,44 @@ makescreenimage(void)
 	Memdata *md;
 	Memimage *i;
 	Rectangle r;
+	uint8_t *data;
 
-	md = jehanne_malloc(sizeof *md);
-	if(md == nil)
+	if((data = attachscreen(&r, &chan, &depth, &width, &sdraw.softscreen)) == nil)
 		return nil;
-	md->allocd = 1;
-	md->base = nil;
-	md->bdata = attachscreen(&r, &chan, &depth, &width, &sdraw.softscreen);
-	if(md->bdata == nil){
-		jehanne_free(md);
-		return nil;
-	}
-	md->ref = 1;
-	i = allocmemimaged(r, chan, md);
-	if(i == nil){
-		jehanne_free(md);
-		return nil;
+	if(sdraw.softscreen == 0xa110c){
+		/* hack: softscreen is memimage. */
+		md = *((Memdata**)(data - sizeof(uint32_t) - sizeof(Memdata*)));
+
+		assert(md->bdata == data);
+		assert(md->ref > 1);
+		assert(md->allocd);
+
+		if((i = allocmemimaged(r, chan, md)) == nil){
+			md->ref--;
+			return nil;
+		}
+	}else{
+		if((md = malloc(sizeof *md)) == nil)
+			return nil;
+		md->allocd = 1;
+		md->base = nil;
+		md->bdata = data;
+		md->ref = 1;
+		if((i = allocmemimaged(r, chan, md)) == nil){
+			free(md);
+			return nil;
+		}
 	}
 	i->width = width;
 	i->clipr = r;
-
 	di = allocdimage(i);
 	if(di == nil){
 		freememimage(i);	/* frees md */
 		return nil;
 	}
 	if(!waserror()){
-		jehanne_snprint(screenname, sizeof screenname, "noborder.screen.%d", ++screennameid);
-		drawaddname(nil, di, jehanne_strlen(screenname), screenname);
+		snprint(screenname, sizeof screenname, "noborder.screen.%d", ++screennameid);
+		drawaddname(nil, di, strlen(screenname), screenname);
 		poperror();
 	}
 	return di;
@@ -1083,7 +1071,7 @@ drawopen(Chan *c, unsigned long omode)
 			error(Einuse);
 		cl->busy = 1;
 		flushrect = Rect(10000, 10000, -10000, -10000);
-		dn = drawlookupname(jehanne_strlen(screenname), screenname);
+		dn = drawlookupname(strlen(screenname), screenname);
 		if(dn == 0)
 			error("draw: cannot happen 2");
 		if(drawinstall(cl, 0, dn->dimage->image, 0) == 0)
@@ -1092,8 +1080,8 @@ drawopen(Chan *c, unsigned long omode)
 		if(di == 0)
 			error("draw: cannot happen 1");
 		di->vers = dn->vers;
-		di->name = sqmalloc(jehanne_strlen(screenname)+1);
-		jehanne_strcpy(di->name, screenname);
+		di->name = smalloc(strlen(screenname)+1);
+		strcpy(di->name, screenname);
 		di->fromname = dn->dimage;
 		di->fromname->ref++;
 		incref(&cl->r);
@@ -1137,7 +1125,7 @@ drawclose(Chan *c)
 	if((c->flag&COPEN) && (decref(&cl->r)==0)){
 		while(r = cl->refresh){	/* assign = */
 			cl->refresh = r->next;
-			jehanne_free(r);
+			free(r);
 		}
 		/* free names */
 		for(i=0; i<sdraw.nname; )
@@ -1158,7 +1146,7 @@ drawclose(Chan *c)
 		}
 		sdraw.client[cl->slot] = 0;
 		drawflush();	/* to erase visible, now dead windows */
-		jehanne_free(cl);
+		free(cl);
 	}
 	dunlock();
 	poperror();
@@ -1170,7 +1158,7 @@ drawread(Chan *c, void *a, long n, int64_t off)
 	int index, m;
 	uint32_t red, green, blue;
 	Client *cl;
-	unsigned char *p;
+	uint8_t *p;
 	Refresh *r;
 	DImage *di;
 	Memimage *i;
@@ -1204,30 +1192,25 @@ drawread(Chan *c, void *a, long n, int64_t off)
 				error(Enodrawimage);
 			i = di->image;
 		}
-		n = jehanne_snprint(a, n,
-			"%11d %11d %11s %11d %11d %11d %11d %11d %11d %11d %11d %11d ",
-			cl->clientid, cl->infoid, chantostr(buf, i->chan),
-			(i->flags&Frepl)==Frepl,
+		n = sprint(a, "%11d %11d %11s %11d %11d %11d %11d %11d %11d %11d %11d %11d",
+			cl->clientid, cl->infoid, chantostr(buf, i->chan), (i->flags&Frepl)==Frepl,
 			i->r.min.x, i->r.min.y, i->r.max.x, i->r.max.y,
-			i->clipr.min.x, i->clipr.min.y, i->clipr.max.x,
-			i->clipr.max.y);
+			i->clipr.min.x, i->clipr.min.y, i->clipr.max.x, i->clipr.max.y);
+		((char*)a)[n++] = ' ';
 		cl->infoid = -1;
 		break;
 
 	case Qcolormap:
-		drawactive(1);	/* to restore map from backup */
-		p = jehanne_malloc(4*12*256+1);
+		p = malloc(4*12*256+1);
 		if(p == 0)
 			error(Enomem);
 		m = 0;
 		for(index = 0; index < 256; index++){
 			getcolor(index, &red, &green, &blue);
-			m += jehanne_snprint((char*)p+m, 4*12*256+1 - m,
-				"%11d %11lud %11lud %11lud\n", index,
-				red>>24, green>>24, blue>>24);
+			m += sprint((char*)p+m, "%11d %11lud %11lud %11lud\n", index, red>>24, green>>24, blue>>24);
 		}
 		n = readstr(offset, a, n, (char*)p);
-		jehanne_free(p);
+		free(p);
 		break;
 
 	case Qdata:
@@ -1236,8 +1219,8 @@ drawread(Chan *c, void *a, long n, int64_t off)
 		if(n < cl->nreaddata)
 			error(Eshortread);
 		n = cl->nreaddata;
-		jehanne_memmove(a, cl->readdata, cl->nreaddata);
-		jehanne_free(cl->readdata);
+		memmove(a, cl->readdata, cl->nreaddata);
+		free(cl->readdata);
 		cl->readdata = nil;
 		break;
 
@@ -1249,10 +1232,17 @@ drawread(Chan *c, void *a, long n, int64_t off)
 				break;
 			dunlock();
 			if(waserror()){
-				dlock();	/* restore lock for waserror() above */
+				dlock();
+				nexterror();
+			}
+			eqlock(&cl->refq);
+			if(waserror()){
+				qunlock(&cl->refq);
 				nexterror();
 			}
 			sleep(&cl->refrend, drawrefactive, cl);
+			poperror();
+			qunlock(&cl->refq);
 			poperror();
 			dlock();
 		}
@@ -1265,12 +1255,12 @@ drawread(Chan *c, void *a, long n, int64_t off)
 			BPLONG(p+3*4, r->r.max.x);
 			BPLONG(p+4*4, r->r.max.y);
 			cl->refresh = r->next;
-			jehanne_free(r);
+			free(r);
 			p += 5*4;
 			n -= 5*4;
 		}
 		cl->refreshme = 0;
-		n = p-(unsigned char*)a;
+		n = p-(uint8_t*)a;
 		break;
 	}
 	dunlock();
@@ -1292,7 +1282,7 @@ drawwakeall(void)
 }
 
 static long
-drawwrite(Chan *c, void *a, long n, int64_t nn)
+drawwrite(Chan *c, void *a, long n, int64_t _)
 {
 	char buf[128], *fields[4], *q;
 	Client *cl;
@@ -1311,18 +1301,17 @@ drawwrite(Chan *c, void *a, long n, int64_t nn)
 	case Qctl:
 		if(n != 4)
 			error("unknown draw control request");
-		cl->infoid = BGLONG((unsigned char*)a);
+		cl->infoid = BGLONG((uint8_t*)a);
 		break;
 
 	case Qcolormap:
-		drawactive(1);	/* to restore map from backup */
 		m = n;
 		n = 0;
 		while(m > 0){
 			x = m;
 			if(x > sizeof(buf)-1)
 				x = sizeof(buf)-1;
-			q = jehanne_memccpy(buf, a, '\n', x);
+			q = memccpy(buf, a, '\n', x);
 			if(q == 0)
 				break;
 			i = q-buf;
@@ -1330,12 +1319,12 @@ drawwrite(Chan *c, void *a, long n, int64_t nn)
 			a = (char*)a + i;
 			m -= i;
 			*q = 0;
-			if(jehanne_tokenize(buf, fields, nelem(fields)) != 4)
+			if(tokenize(buf, fields, nelem(fields)) != 4)
 				error(Ebadarg);
-			i = jehanne_strtoul(fields[0], 0, 0);
-			red = jehanne_strtoul(fields[1], 0, 0);
-			green = jehanne_strtoul(fields[2], 0, 0);
-			blue = jehanne_strtoul(fields[3], &q, 0);
+			i = strtoul(fields[0], 0, 0);
+			red = strtoul(fields[1], 0, 0);
+			green = strtoul(fields[2], 0, 0);
+			blue = strtoul(fields[3], &q, 0);
 			if(fields[3] == q)
 				error(Ebadarg);
 			if(red>255 || green>255 || blue>255 || i<0 || i>255)
@@ -1363,8 +1352,8 @@ drawwrite(Chan *c, void *a, long n, int64_t nn)
 	return n;
 }
 
-unsigned char*
-drawcoord(unsigned char *p, unsigned char *maxp, int oldx, int *newx)
+uint8_t*
+drawcoord(uint8_t *p, uint8_t *maxp, int oldx, int *newx)
 {
 	int b, x;
 
@@ -1389,48 +1378,45 @@ drawcoord(unsigned char *p, unsigned char *maxp, int oldx, int *newx)
 }
 
 static void
-printmesg(char *fmt, unsigned char *a, int plsprnt)
+printmesg(char *fmt, uint8_t *a, int plsprnt)
 {
 	char buf[256];
 	char *p, *q;
-	int left;
 
 	if(1|| plsprnt==0){
-		SET(q); SET(p);
-		USED(fmt); USED(a); USED(buf); USED(p); USED(q);
+		SET(s,q,p);
+		USED(fmt, a, buf, p, q, s);
 		return;
 	}
 	q = buf;
 	*q++ = *a++;
 	for(p=fmt; *p; p++){
-		left = sizeof buf - 2 - (q - buf);	/* 2 for \n\0 */
 		switch(*p){
 		case 'l':
-			q += jehanne_snprint(q, left, " %ld", (int32_t)BGLONG(a));
+			q += sprint(q, " %ld", (long)BGLONG(a));
 			a += 4;
 			break;
 		case 'L':
-			q += jehanne_snprint(q, left, " %.8lux", (uint32_t)BGLONG(a));
+			q += sprint(q, " %.8lux", (uint32_t)BGLONG(a));
 			a += 4;
 			break;
 		case 'R':
-			q += jehanne_snprint(q, left, " [%d %d %d %d]", BGLONG(a),
-				BGLONG(a+4), BGLONG(a+8), BGLONG(a+12));
+			q += sprint(q, " [%d %d %d %d]", BGLONG(a), BGLONG(a+4), BGLONG(a+8), BGLONG(a+12));
 			a += 16;
 			break;
 		case 'P':
-			q += jehanne_snprint(q, left, " [%d %d]", BGLONG(a), BGLONG(a+4));
+			q += sprint(q, " [%d %d]", BGLONG(a), BGLONG(a+4));
 			a += 8;
 			break;
 		case 'b':
-			q += jehanne_snprint(q, left, " %d", *a++);
+			q += sprint(q, " %d", *a++);
 			break;
 		case 's':
-			q += jehanne_snprint(q, left, " %d", BGSHORT(a));
+			q += sprint(q, " %d", BGSHORT(a));
 			a += 2;
 			break;
 		case 'S':
-			q += jehanne_snprint(q, left, " %.4ux", BGSHORT(a));
+			q += sprint(q, " %.4ux", BGSHORT(a));
 			a += 2;
 			break;
 		}
@@ -1444,7 +1430,7 @@ void
 drawmesg(Client *client, void *av, int n)
 {
 	int c, repl, m, y, dstid, scrnid, ni, ci, j, nw, e0, e1, op, ox, oy, oesize, esize, doflush;
-	unsigned char *u, *a, refresh;
+	uint8_t *u, *a, refresh;
 	char *fmt;
 	uint32_t value, chan;
 	Rectangle r, clipr;
@@ -1481,7 +1467,7 @@ drawmesg(Client *client, void *av, int n)
 			if(n < m)
 				error(Eshortdraw);
 			dstid = BGLONG(a+1);
-			scrnid = BGSHORT(a+5);
+			scrnid = BGLONG(a+5);
 			refresh = a[9];
 			chan = BGLONG(a+10);
 			repl = a[14];
@@ -1522,7 +1508,7 @@ drawmesg(Client *client, void *av, int n)
 				if(reffn){
 					refx = nil;
 					if(reffn == drawrefresh){
-						refx = jehanne_malloc(sizeof(Refx));
+						refx = malloc(sizeof(Refx));
 						if(refx == 0){
 							drawuninstall(client, dstid);
 							error(Edrawmem);
@@ -1609,7 +1595,6 @@ drawmesg(Client *client, void *av, int n)
 			m = 1+1;
 			if(n < m)
 				error(Eshortdraw);
-			drawdebug = a[1];
 			continue;
 
 		/* ellipse: 'e' dstid[4] srcid[4] center[2*4] a[4] b[4] thick[4] sp[2*4] alpha[4] phi[4]*/
@@ -1686,11 +1671,11 @@ drawmesg(Client *client, void *av, int n)
 			ni = BGLONG(a+5);
 			if(ni<=0 || ni>4096)
 				error("bad font size (4096 chars max)");
-			jehanne_free(font->fchar);	/* should we complain if non-zero? */
-			font->fchar = jehanne_malloc(ni*sizeof(FChar));
+			free(font->fchar);	/* should we complain if non-zero? */
+			font->fchar = malloc(ni*sizeof(FChar));
 			if(font->fchar == 0)
 				error("no memory for font");
-			jehanne_memset(font->fchar, 0, ni*sizeof(FChar));
+			memset(font->fchar, 0, ni*sizeof(FChar));
 			font->nfchar = ni;
 			font->ascent = a[9];
 			continue;
@@ -1785,10 +1770,10 @@ drawmesg(Client *client, void *av, int n)
 			if(di == 0)
 				error("draw: cannot happen");
 			di->vers = dn->vers;
-			di->name = sqmalloc(j+1);
+			di->name = smalloc(j+1);
 			di->fromname = dn->dimage;
 			di->fromname->ref++;
-			jehanne_memmove(di->name, a+6, j);
+			memmove(di->name, a+6, j);
 			di->name[j] = 0;
 			client->infoid = dstid;
 			continue;
@@ -1880,11 +1865,11 @@ drawmesg(Client *client, void *av, int n)
 			drawpoint(&sp, a+23);
 			drawpoint(&p, a+31);
 			ni++;
-			pp = jehanne_malloc(ni*sizeof(Point));
+			pp = malloc(ni*sizeof(Point));
 			if(pp == nil)
 				error(Enomem);
 			doflush = 0;
-			if(dstid==0 || (dst->layer && dst->layer->screen->image->data == screenimage->data))
+			if(dstid==0 || (screenimage && dst->layer && dst->layer->screen->image->data == screenimage->data))
 				doflush = 1;	/* simplify test in loop */
 			ox = oy = 0;
 			esize = 0;
@@ -1928,7 +1913,7 @@ drawmesg(Client *client, void *av, int n)
 				mempoly(dst, pp, ni, e0, e1, j, src, sp, op);
 			else
 				memfillpoly(dst, pp, ni, e0, src, sp, op);
-			jehanne_free(pp);
+			free(pp);
 			m = u-a;
 			continue;
 
@@ -1944,13 +1929,13 @@ drawmesg(Client *client, void *av, int n)
 				error(Ereadoutside);
 			c = bytesperline(r, i->depth);
 			c *= Dy(r);
-			jehanne_free(client->readdata);
-			client->readdata = jehanne_mallocz(c, 0);
+			free(client->readdata);
+			client->readdata = mallocz(c, 0);
 			if(client->readdata == nil)
 				error("readimage malloc failed");
 			client->nreaddata = memunload(i, r, client->readdata, c);
 			if(client->nreaddata < 0){
-				jehanne_free(client->readdata);
+				free(client->readdata);
 				client->readdata = nil;
 				error("bad readimage call");
 			}
@@ -2055,11 +2040,11 @@ drawmesg(Client *client, void *av, int n)
 			m += nw*4;
 			if(n < m)
 				error(Eshortdraw);
-			lp = jehanne_malloc(nw*sizeof(Memimage*));
+			lp = malloc(nw*sizeof(Memimage*));
 			if(lp == 0)
 				error(Enomem);
 			if(waserror()){
-				jehanne_free(lp);
+				free(lp);
 				nexterror();
 			}
 			for(j=0; j<nw; j++)
@@ -2073,13 +2058,13 @@ drawmesg(Client *client, void *av, int n)
 				memltofrontn(lp, nw);
 			else
 				memltorearn(lp, nw);
-			if(lp[0]->layer->screen->image->data == screenimage->data)
+			if(screenimage && lp[0]->layer->screen->image->data == screenimage->data)
 				for(j=0; j<nw; j++)
 					addflush(lp[j]->layer->screenr);
 			ll = drawlookup(client, BGLONG(a+1+1+2), 1);
 			drawrefreshscreen(ll, client);
 			poperror();
-			jehanne_free(lp);
+			free(lp);
 			continue;
 
 		/* visible: 'v' */
@@ -2145,7 +2130,6 @@ drawcmap(void)
 	int num, den;
 	int i, j;
 
-	drawactive(1);	/* to restore map from backup */
 	for(r=0,i=0; r!=4; r++)
 	    for(v=0; v!=4; v++,i+=16){
 		for(g=0,j=v-r; g!=4; g++)
@@ -2167,62 +2151,4 @@ drawcmap(void)
 				cr*0x01010101, cg*0x01010101, cb*0x01010101);
 		    }
 	}
-}
-
-void
-drawblankscreen(int blank)
-{
-	int i, nc;
-	uint32_t *p;
-
-	if(blank == sdraw.blanked)
-		return;
-	if(!candlock())
-		return;
-	if(screenimage == nil){
-		dunlock();
-		return;
-	}
-	p = sdraw.savemap;
-	nc = screenimage->depth > 8 ? 256 : 1<<screenimage->depth;
-
-	/*
-	 * blankscreen uses the hardware to blank the screen
-	 * when possible.  to help in cases when it is not possible,
-	 * we set the color map to be all black.
-	 */
-	if(blank == 0){	/* turn screen on */
-		for(i=0; i<nc; i++, p+=3)
-			setcolor(i, p[0], p[1], p[2]);
-		blankscreen(0);
-	}else{	/* turn screen off */
-		blankscreen(1);
-		for(i=0; i<nc; i++, p+=3){
-			getcolor(i, &p[0], &p[1], &p[2]);
-			setcolor(i, 0, 0, 0);
-		}
-	}
-	sdraw.blanked = blank;
-	dunlock();
-}
-
-/*
- * record activity on screen, changing blanking as appropriate
- */
-void
-drawactive(int active)
-{
-	if(active){
-		drawblankscreen(0);
-		sdraw.blanktime = sys->ticks;
-	}else{
-		if(blanktime && sdraw.blanktime && TK2SEC(sys->ticks - sdraw.blanktime)/60 >= blanktime)
-			drawblankscreen(1);
-	}
-}
-
-int
-drawidletime(void)
-{
-	return TK2SEC(m->ticks - sdraw.blanktime)/60;
 }

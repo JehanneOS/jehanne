@@ -164,7 +164,6 @@ devclone(Chan *c)
 	nc->umh = nil;
 	nc->aux = c->aux;
 	nc->mqid = c->mqid;
-	nc->mc = c->mc;
 	return nc;
 }
 

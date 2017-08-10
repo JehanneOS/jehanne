@@ -124,13 +124,11 @@ extern PhysUart i8250physuart;
 static Ctlr i8250ctlr[2] = {
 {	.io	= Uart0,
 	.irq	= Uart0IRQ,
-	.tbdf	= -1,
-	.poll	= 0, },
+	.tbdf	= -1, },
 
 {	.io	= Uart1,
 	.irq	= Uart1IRQ,
-	.tbdf	= -1,
-	.poll	= 0, },
+	.tbdf	= -1, },
 };
 
 static Uart i8250uart[2] = {
@@ -161,7 +159,7 @@ i8250status(Uart* uart, void* buf, long n, long offset)
 	uint8_t ier, lcr, mcr, msr;
 
 	ctlr = uart->regs;
-	p = jehanne_malloc(READSTR);
+	p = smalloc(READSTR);
 	mcr = ctlr->sticky[Mcr];
 	msr = csr8r(ctlr, Msr);
 	ier = ctlr->sticky[Ier];
@@ -482,13 +480,13 @@ i8250interrupt(Ureg* _1, void* arg)
 					uart->ctsbackoff = 2;
 				iunlock(&uart->tlock);
 			}
-		 	if(r & Ddsr){
+			if(r & Ddsr){
 				old = r & Dsr;
 				if(uart->hup_dsr && uart->dsr && !old)
 					uart->dohup = 1;
 				uart->dsr = old;
 			}
-		 	if(r & Ddcd){
+			if(r & Ddcd){
 				old = r & Dcd;
 				if(uart->hup_dcd && uart->dcd && !old)
 					uart->dohup = 1;
@@ -545,8 +543,8 @@ i8250disable(Uart* uart)
 	csr8w(ctlr, Ier, ctlr->sticky[Ier]);
 
 	if(ctlr->iena != 0){
-		if(intrdisable(ctlr->vector) == 0)
-			ctlr->iena = 0;
+		ctlr->iena = 0;
+		intrdisable(ctlr->irq, i8250interrupt, uart, ctlr->tbdf, uart->name);
 	}
 }
 
@@ -688,27 +686,6 @@ i8250putc(Uart* uart, int c)
 		delay(1);
 }
 
-static void
-i8250poll(Uart* uart)
-{
-	Ctlr *ctlr;
-
-	/*
-	 * If PhysUart has a non-nil .poll member, this
-	 * routine will be called from the uartclock timer.
-	 * If the Ctlr .poll member is non-zero, when the
-	 * Uart is enabled interrupts will not be enabled
-	 * and the result is polled input and output.
-	 * Not very useful here, but ports to new hardware
-	 * or simulators can use this to get serial I/O
-	 * without setting up the interrupt mechanism.
-	 */
-	ctlr = uart->regs;
-	if(ctlr->iena || !ctlr->poll)
-		return;
-	i8250interrupt(nil, uart);
-}
-
 PhysUart i8250physuart = {
 	.name		= "i8250",
 	.pnp		= i8250pnp,
@@ -727,73 +704,27 @@ PhysUart i8250physuart = {
 	.fifo		= i8250fifo,
 	.getc		= i8250getc,
 	.putc		= i8250putc,
-	.poll		= i8250poll,
 };
 
-Uart*
-i8250console(char* cfg)
+void
+i8250console(void)
 {
-	int i;
 	Uart *uart;
-	Ctlr *ctlr;
+	int n;
 	char *cmd, *p;
-	ISAConf isa;
 
-	/*
-	 * Before i8250pnp() is run can only set the console
-	 * to 0 or 1 because those are the only uart structs which
-	 * will be the same before and after that.
-	 */
-	if((p = getconf("console")) == nil && (p = cfg) == nil)
-		return nil;
-	i = jehanne_strtoul(p, &cmd, 0);
-	if(p == cmd)
-		return nil;
-//WTF? Something to do with the PCIe-only machine?
-	if((uart = uartconsole(i, cmd)) != nil){
-		consuart = uart;
-		return uart;
-	}
-	switch(i){
-	default:
-		return nil;
-	case 0:
-		uart = &i8250uart[0];
-		break;
-	case 1:
-		uart = &i8250uart[1];
-		break;
-	}
-
-//Madness. Something to do with the PCIe-only machine?
-	jehanne_memset(&isa, 0, sizeof(isa));
-	ctlr = uart->regs;
-	if(isaconfig("eia", i, &isa) != 0){
-		if(isa.port != 0)
-			ctlr->io = isa.port;
-		if(isa.irq != 0)
-			ctlr->irq = isa.irq;
-		if(isa.freq != 0)
-			uart->freq = isa.freq;
-	}
-
-	/*
-	 * Does it exist?
-	 * Should be able to write/read
-	 * the Scratch Pad.
-	 */
-//	ctlr = uart->regs;
-//	csr8o(ctlr, Scr, 0x55);
-//	if(csr8r(ctlr, Scr) != 0x55)
-//		return nil;
+	if((p = getconf("console")) == nil)
+		return;
+	n = strtoul(p, &cmd, 0);
+	if(p == cmd || n < 0 || n >= nelem(i8250uart))
+		return;
+	uart = &i8250uart[n];
 
 	(*uart->phys->enable)(uart, 0);
-	uartctl(uart, "b9600 l8 pn s1 i1");
+	uartctl(uart, "b9600 l8 pn s1");
 	if(*cmd != '\0')
 		uartctl(uart, cmd);
 
 	consuart = uart;
 	uart->console = 1;
-
-	return uart;
 }

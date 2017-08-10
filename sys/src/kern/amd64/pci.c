@@ -572,8 +572,8 @@ optiset(Pcidev *router, uint8_t link, uint8_t irq)
 	uint8_t pirq;
 
 	pirq = pcicfgr8(router, 0xb8 + (link >> 5));
-    	pirq &= (link & 0x10)? 0x0f : 0xf0;
-    	pirq |= (link & 0x10)? (irq << 4): (irq & 15);
+	pirq &= (link & 0x10)? 0x0f : 0xf0;
+	pirq |= (link & 0x10)? (irq << 4): (irq & 15);
 	pcicfgw8(router, 0xb8 + (link >> 5), pirq);
 }
 
@@ -1420,7 +1420,7 @@ enumcaps(Pcidev *p, int (*fmatch)(Pcidev*, int, int, int), int arg)
 
 	/* status register bit 4 has capabilities */
 	if((pcicfgr16(p, PciPSR) & 1<<4) == 0)
-		return -1;      
+		return -1;
 	switch(pcicfgr8(p, PciHDT) & 0x7F){
 	default:
 		return -1;
@@ -1554,7 +1554,7 @@ pcinextcap(Pcidev *pci, int offset)
 	if(offset == 0) {
 		if((pcicfgr16(pci, PciPSR) & (1<<4)) == 0)
 			return 0; /* no capabilities */
-		offset = PciCP-1;
+		offset = PciCAP-1;
 	}
 	return pcicfgr8(pci, offset+1) & ~3;
 }

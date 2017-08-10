@@ -434,7 +434,7 @@ enum {
 	i82575,
 	i82576,
 	i82577,
-	i82577m,	
+	i82577m,
 	i82578,
 	i82578m,
 	i82579,
@@ -1974,7 +1974,7 @@ didtype(int d)
 	case 0x150f:		/* fiber */
 	case 0x1510:		/* backplane */
 	case 0x1511:		/* sfp */
-	case 0x1516:		
+	case 0x1516:
 		return i82580;
 	case 0x1506:		/* v */
 		return i82583;

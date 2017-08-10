@@ -7,6 +7,11 @@
  * in the LICENSE file.
  */
 
+#define X86STEPPING(x)	((x) & 0x0F)
+/* incorporates extended-model and -family bits */
+#define X86MODEL(x)	((((x)>>4) & 0x0F) | (((x)>>16) & 0x0F)<<4)
+#define X86FAMILY(x)	((((x)>>8) & 0x0F) | (((x)>>20) & 0xFF)<<4)
+
 enum {
 	VectorNMI	= 2,		/* non-maskable interrupt */
 	VectorBPT	= 3,		/* breakpoint */
@@ -14,9 +19,14 @@ enum {
 	VectorCNA	= 7,		/* coprocessor not available */
 	Vector2F	= 8,		/* double fault */
 	VectorCSO	= 9,		/* coprocessor segment overrun */
+	VectorSNP	= 11,		/* segment not present */
+	VectorGPF	= 13,		/* general protection fault */
 	VectorPF	= 14,		/* page fault */
 	Vector15	= 15,		/* reserved */
 	VectorCERR	= 16,		/* coprocessor error */
+	VectorAC	= 17,		/* alignment check */
+	VectorMC	= 18,		/* machine check */
+	VectorSIMD	= 19,		/* simd error */
 
 	VectorPIC	= 32,		/* external i8259 interrupts */
 	IrqCLOCK	= 0,
@@ -33,13 +43,13 @@ enum {
 	IrqATA1		= 15,
 	MaxIrqPIC	= 15,
 
-	VectorLAPIC	= VectorPIC+16,	/* local APIC interrupts */
-	IrqLINT0	= VectorLAPIC+0,
+	VectorLAPIC	= VectorPIC+16,		/* local APIC interrupts */
+	IrqLINT0	= VectorLAPIC+0,	/* LINT[01] must be offsets 0 and 1 */
 	IrqLINT1	= VectorLAPIC+1,
 	IrqTIMER	= VectorLAPIC+2,
 	IrqERROR	= VectorLAPIC+3,
 	IrqPCINT	= VectorLAPIC+4,
-	IrqSPURIOUS	= VectorLAPIC+15,
+	IrqSPURIOUS	= VectorLAPIC+15,	/* must have bits [3-0] == 0x0F */
 	MaxIrqLAPIC	= VectorLAPIC+15,
 
 	VectorSYSCALL	= 64,
@@ -69,20 +79,15 @@ enum {
 typedef struct Vctl {
 	Vctl*	next;			/* handlers on this vector */
 
-	int	isintr;			/* interrupt or fault/trap */
-	int	affinity;			/* processor affinity (-1 for none) */
-
-	int	irq;
-	void	(*f)(Ureg*, void*);	/* handler to call */
-	void*	a;			/* argument to call it with */
-	int	tbdf;
 	char	name[KNAMELEN];		/* of driver */
-	char	*type;
-
+	int	isintr;			/* interrupt or fault/trap */
+	int	irq;
+	int	tbdf;
 	int	(*isr)(int);		/* get isr bit for this irq */
 	int	(*eoi)(int);		/* eoi */
-	int	(*mask)(Vctl*, int);	/* interrupt enable returns masked vector */
-	int	vno;
+
+	void	(*f)(Ureg*, void*);	/* handler to call */
+	void*	a;			/* argument to call it with */
 } Vctl;
 
 enum {
@@ -139,8 +144,7 @@ enum {					/* type 0 and type 1 pre-defined header */
 	PciBAR0		= 0x10,		/* base address */
 	PciBAR1		= 0x14,
 
-	PciCP		= 0x34,		/* capabilities pointer */
-
+	PciCAP		= 0x34,		/* capabilities pointer */
 	PciINTL		= 0x3C,		/* interrupt line */
 	PciINTP		= 0x3D,		/* interrupt pin */
 };
@@ -197,7 +201,7 @@ enum {
 enum {					/* type 0 pre-defined header */
 	PciCIS		= 0x28,		/* cardbus CIS pointer */
 	PciSVID		= 0x2C,		/* subsystem vendor ID */
-	PciSID		= 0x2E,		/* cardbus CIS pointer */
+	PciSID		= 0x2E,		/* subsystem ID */
 	PciEBAR0	= 0x30,		/* expansion ROM base address */
 	PciMGNT		= 0x3E,		/* burst period length */
 	PciMLT		= 0x3F,		/* maximum latency between bursts */
@@ -274,8 +278,6 @@ struct Pcidev
 	int		tbdf;		/* type+bus+device+function */
 	uint16_t	vid;		/* vendor ID */
 	uint16_t	did;		/* device ID */
-	uint16_t	svid;		/* subsystem vid */
-	uint16_t	sdid;		/* subsystem did */
 
 	uint16_t	pcr;
 
@@ -308,7 +310,12 @@ struct Pcidev
 	} ioa, mema;
 
 	int	pmrb;			/* power management register block */
-	void*	xcfg;			/* PCIe configuration block */
+};
+
+enum {
+	/* vendor ids */
+	Vintel	= 0x8086,
+	Vmyricom= 0x14c1,
 };
 
 #define PCIWINDOW	0
@@ -319,4 +326,110 @@ struct Pcidev
 #define	PCIWADDRL(va)	((uint32_t)PCIWADDR64(va))
 #define	PCIWADDRH(va)	((uint32_t)(PCIWADDR64(va)>>32))
 
-#pragma	varargck	type	"T"	int
+/* SMBus transactions */
+enum
+{
+	SMBquick,		/* sends address only */
+
+	/* write */
+	SMBsend,		/* sends address and cmd */
+	SMBbytewrite,		/* sends address and cmd and 1 byte */
+	SMBwordwrite,		/* sends address and cmd and 2 bytes */
+
+	/* read */
+	SMBrecv,		/* sends address, recvs 1 byte */
+	SMBbyteread,		/* sends address and cmd, recv's byte */
+	SMBwordread,		/* sends address and cmd, recv's 2 bytes */
+};
+
+typedef struct SMBus SMBus;
+struct SMBus {
+	QLock;		/* mutex */
+	Rendez	r;	/* rendezvous point for completion interrupts */
+	void	*arg;	/* implementation dependent */
+	uint32_t	base;	/* port or memory base of smbus */
+	int	busy;
+	void	(*transact)(SMBus*, int, int, int, uint8_t*);
+};
+
+/*
+ * PCMCIA support code.
+ */
+
+typedef struct PCMslot		PCMslot;
+typedef struct PCMconftab	PCMconftab;
+
+/*
+ * Map between ISA memory space and PCMCIA card memory space.
+ */
+struct PCMmap {
+	uint32_t	ca;			/* card address */
+	uint32_t	cea;			/* card end address */
+	uint32_t	isa;			/* ISA address */
+	int	len;			/* length of the ISA area */
+	int	attr;			/* attribute memory */
+	int	ref;
+};
+
+/* configuration table entry */
+struct PCMconftab
+{
+	int	index;
+	uint16_t	irqs;		/* legal irqs */
+	uint8_t	irqtype;
+	uint8_t	bit16;		/* true for 16 bit access */
+	struct {
+		uint32_t	start;
+		uint32_t	len;
+	} io[16];
+	int	nio;
+	uint8_t	vpp1;
+	uint8_t	vpp2;
+	uint8_t	memwait;
+	uint32_t	maxwait;
+	uint32_t	readywait;
+	uint32_t	otherwait;
+};
+
+/* a card slot */
+struct PCMslot
+{
+	Lock;
+	int	ref;
+
+	void	*cp;		/* controller for this slot */
+	long	memlen;		/* memory length */
+	uint8_t	base;		/* index register base */
+	uint8_t	slotno;		/* slot number */
+
+	/* status */
+	uint8_t	special;	/* in use for a special device */
+	uint8_t	already;	/* already inited */
+	uint8_t	occupied;
+	uint8_t	battery;
+	uint8_t	wrprot;
+	uint8_t	powered;
+	uint8_t	configed;
+	uint8_t	enabled;
+	uint8_t	busy;
+
+	/* cis info */
+	uint32_t	msec;		/* time of last slotinfo call */
+	char	verstr[512];	/* version string */
+	int	ncfg;		/* number of configurations */
+	struct {
+		uint16_t	cpresent;	/* config registers present */
+		uint32_t	caddr;		/* relative address of config registers */
+	} cfg[8];
+	int	nctab;		/* number of config table entries */
+	PCMconftab	ctab[8];
+	PCMconftab	*def;	/* default conftab */
+
+	/* memory maps */
+	Lock	mlock;		/* lock down the maps */
+	int	time;
+	PCMmap	mmap[4];	/* maps, last is always for the kernel */
+};
+
+#pragma varargck	type	"T"	int
+#pragma varargck	type	"T"	uint

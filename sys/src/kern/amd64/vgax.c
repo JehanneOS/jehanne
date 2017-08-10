@@ -24,7 +24,7 @@
 static Lock vgaxlock;			/* access to index registers */
 
 int
-vgaxi(int32_t port, unsigned char index)
+vgaxi(int32_t port, uint8_t index)
 {
 	unsigned char data;
 
@@ -71,7 +71,7 @@ vgaxi(int32_t port, unsigned char index)
 }
 
 int
-vgaxo(int32_t port, unsigned char index, unsigned char data)
+vgaxo(int32_t port, uint8_t index, uint8_t data)
 {
 	ilock(&vgaxlock);
 	switch(port){

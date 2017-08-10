@@ -237,7 +237,7 @@ closefgrp(Fgrp *f)
 }
 
 /*
- * Called from sleep because up is in the middle
+ * Called from interrupted() because up is in the middle
  * of closefgrp and just got a kill ctl message.
  * This usually means that up has wedged because
  * of some kind of deadly embrace with mntclose
@@ -312,21 +312,22 @@ resrcwait(char *reason, char *pstag)
 		panic("resrcwait");
 
 	p = up->psstate;
-	if(waserror()){
-		up->psstate = p;
-		nexterror();
-	}
-	if(reason) {
-		up->psstate = pstag;
+	if(reason != nil) {
+		if(waserror()){
+			up->psstate = p;
+			nexterror();
+		}
+		up->psstate = reason;
 		now = seconds();
 		/* don't tie up the console with complaints */
 		if(now - lastwhine > Whinesecs) {
 			lastwhine = now;
-			jehanne_print("%s\n", reason);
+			print("%s\n", reason);
 		}
 	}
-
-	tsleep(&up->sleep, return0, 0, 300);
-	poperror();
-	up->psstate = p;
+	tsleep(&up->sleep, return0, 0, 100+nrand(200));
+	if(reason != nil) {
+		up->psstate = p;
+		poperror();
+	}
 }

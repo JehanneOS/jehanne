@@ -1,21 +1,13 @@
-/*
- * This file is part of the UCB release of Plan 9. It is subject to the license
- * terms in the LICENSE file found in the top-level directory of this
- * distribution and at http://akaros.cs.berkeley.edu/files/Plan9License. No
- * part of the UCB release of Plan 9, including this file, may be copied,
- * modified, propagated, or distributed except according to the terms contained
- * in the LICENSE file.
- */
-
 typedef struct Cursor Cursor;
 typedef struct Cursorinfo Cursorinfo;
 struct Cursorinfo {
-	Cursor c;
-	Lock l;
+	Cursor;
+	Lock;
 };
 
 /* devmouse.c */
-extern void mousetrack(int, int, int, int);
+extern void mousetrack(int, int, int, uint32_t);
+extern void absmousetrack(int, int, int, uint32_t);
 extern Point mousexy(void);
 
 extern void mouseaccelerate(int);
@@ -61,8 +53,8 @@ enum {
 #define vgai(port)		inb(port)
 #define vgao(port, data)	outb(port, data)
 
-extern int vgaxi(int32_t, unsigned char);
-extern int vgaxo(int32_t, unsigned char, unsigned char);
+extern int vgaxi(int32_t port, uint8_t index);
+extern int vgaxo(int32_t port, uint8_t index, uint8_t data);
 
 /*
  */
@@ -103,16 +95,16 @@ struct VGAscr {
 	Pcidev*	pci;
 
 	VGAcur*	cur;
-	uint32_t	storage;
-	Cursor Cursor;
+	uintptr_t	storage;
+	Cursor;
 
 	int	useflush;
 
-	uint32_t	paddr;		/* frame buffer */
+	uintptr_t	paddr;		/* frame buffer */
 	void*	vaddr;
-	int		apsize;
+	int	apsize;
 
-	uint32_t	io;				/* device specific registers */
+	uint32_t	io;		/* device specific registers */
 	uint32_t	*mmio;
 	
 	uint32_t	colormap[Pcolours][3];
@@ -126,8 +118,8 @@ struct VGAscr {
 	int	(*scroll)(VGAscr*, Rectangle, Rectangle);
 	void	(*blank)(VGAscr*, int);
 	uint32_t	id;	/* internal identifier for driver use */
-	int isblank;
-	int overlayinit;
+	int	overlayinit;
+	int	softscreen;
 };
 
 extern VGAscr vgascreen[];
@@ -137,23 +129,28 @@ enum {
 };
 
 /* mouse.c */
-extern void mousectl(Cmdbuf*);
-extern void mouseresize(void);
+extern void	mousectl(Cmdbuf*);
+extern void	mouseresize(void);
+extern void	mouseredraw(void);
 
 /* screen.c */
-extern int		hwaccel;	/* use hw acceleration; default on */
-extern int		hwblank;	/* use hw blanking; default on */
-extern int		panning;	/* use virtual screen panning; default off */
+extern int		hwaccel;	/* use hw acceleration */
+extern int		hwblank;	/* use hw blanking */
+extern int		panning;	/* use virtual screen panning */
 extern void addvgaseg(char*, uint32_t, uint32_t);
-extern unsigned char* attachscreen(Rectangle*, uint32_t*, int*, int*, int*);
+extern uint8_t* attachscreen(Rectangle*, uint32_t*, int*, int*, int*);
 extern void	flushmemscreen(Rectangle);
-extern int	cursoron(int);
-extern void	cursoroff(int);
+extern void	cursoron(void);
+extern void	cursoroff(void);
 extern void	setcursor(Cursor*);
 extern int	screensize(int, int, int, uint32_t);
 extern int	screenaperture(int, int);
 extern Rectangle physgscreenr;	/* actual monitor size */
 extern void	blankscreen(int);
+extern char*	rgbmask2chan(char *buf, int depth, uint32_t rm, uint32_t gm, uint32_t bm);
+
+extern void	bootscreeninit(void);
+extern void	bootscreenconf(VGAscr*);
 
 extern VGAcur swcursor;
 extern void swcursorinit(void);
@@ -165,22 +162,25 @@ extern void swcursorunhide(void);
 extern void	deletescreenimage(void);
 extern void	resetscreenimage(void);
 extern int		drawhasclients(void);
-extern uint32_t	blanktime;
 extern void	setscreenimageclipr(Rectangle);
 extern void	drawflush(void);
-extern int drawidletime(void);
 extern QLock	drawlock;
 
 /* vga.c */
 extern void	vgascreenwin(VGAscr*);
 extern void	vgaimageinit(uint32_t);
-extern void	vgalinearpciid(VGAscr*, int, int);
 extern void	vgalinearpci(VGAscr*);
 extern void	vgalinearaddr(VGAscr*, uint32_t, int);
 
-extern void	drawblankscreen(int);
 extern void	vgablank(VGAscr*, int);
 
 extern Lock	vgascreenlock;
 
 #define ishwimage(i)	(vgascreen[0].gscreendata && (i)->data->bdata == vgascreen[0].gscreendata->bdata)
+
+/* swcursor.c */
+void		swcursorhide(void);
+void		swcursoravoid(Rectangle);
+void		swcursordraw(Point);
+void		swcursorload(Cursor *);
+void		swcursorinit(void);

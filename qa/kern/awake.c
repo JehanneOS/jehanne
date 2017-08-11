@@ -78,6 +78,7 @@ main(void)
 		print("FAIL: rendezvous\n");
 		exits("FAIL");
 	}
+	forgivewkp(wkup);
 
 	/* verify that sleeps are NOT interrupted */
 	fprint(2, "verify that sleeps are NOT interrupted\n", elapsed);
@@ -91,6 +92,7 @@ main(void)
 		print("FAIL: sleep\n");
 		exits("FAIL");
 	}
+	forgivewkp(wkup);
 
 	/* verify that semacquires are interrupted */
 	fprint(2, "verify that semacquires are interrupted\n", elapsed);
@@ -107,6 +109,7 @@ main(void)
 		print("FAIL: semacquire\n");
 		exits("FAIL");
 	}
+	forgivewkp(wkup);
 
 	/* verify that tsemacquire are NOT interrupted */
 	fprint(2, "verify that tsemacquire are NOT interrupted\n", elapsed);
@@ -120,6 +123,7 @@ main(void)
 		print("FAIL: tsemacquire\n");
 		exits("FAIL");
 	}
+	forgivewkp(wkup);
 
 	/* verify that reads are interrupted */
 	fprint(2, "verify that reads are interrupted\n", elapsed);
@@ -137,6 +141,7 @@ main(void)
 		print("FAIL: read\n");
 		exits("FAIL");
 	}
+	forgivewkp(wkup);
 
 	/* verify that writes are interrupted */
 	fprint(2, "verify that writes are interrupted\n", elapsed);
@@ -154,6 +159,7 @@ main(void)
 		print("FAIL: write\n");
 		exits("FAIL");
 	}
+	forgivewkp(wkup);
 
 	/* do not forgivewkp the awake(100000): the kernel must handle it */
 	print("PASS\n");

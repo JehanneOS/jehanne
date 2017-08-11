@@ -71,7 +71,7 @@ handletimeout(void *v, char *s)
 	if(strcmp(s, "timedout") == 0){
 		if(verbose)
 			print("%d: noted: %s\n", getpid(), s);
-		print("FAIL: timedout\n");
+		print("FAIL: %s timedout\n", argv0);
 		exits("FAIL");
 	}
 	return 0;
@@ -150,10 +150,13 @@ spawnWaiter(int index)
 }
 
 void
-main(void)
+main(int argc, char* argv[])
 {
 	int i;
 	int64_t average;
+
+	ARGBEGIN{
+	}ARGEND;
 
 	rfork(RFNOTEG|RFREND);
 	rStart.l = &rl;
@@ -207,11 +210,11 @@ main(void)
 	}
 	average = average / NPROC / (1000 * 1000);
 
-	if(average < 100) /* we asked for 1ms... we are dumb, after all */
+	if(average < 300) /* we asked for 1ms... we are dumb, after all */
 	{
 		print("PASS\n");
 		exits("PASS");
 	}
-	print("FAIL: average timeout too long %lld ms\n", average);
+	print("FAIL: %s: average timeout too long %lld ms\n", argv0, average);
 	exits("FAIL");
 }

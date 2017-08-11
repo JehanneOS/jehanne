@@ -1,7 +1,7 @@
 /*
  * This file is part of Jehanne.
  *
- * Copyright (C) 2015 Giacomo Tesio <giacomo@tesio.it>
+ * Copyright (C) 2017 Giacomo Tesio <giacomo@tesio.it>
  *
  * Jehanne is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
 #include <u.h>
 #include <lib9.h>
 
-/* verify that rwakeup returns 0 on Rendez that has already been awaken */
+/* verify that rwakeup returns 0 on Rendez that was timedout */
 
 Rendez r;
 QLock l;
@@ -87,14 +87,14 @@ main(int argc, char* argv[])
 	r.l = &l;
 
 	stopAllAfter(30);
-	/* one process to sleep */
+	/* one process to sleep for 100ms */
 	switch((s = rfork(RFMEM|RFPROC|RFNOWAIT)))
 	{
 		case 0:
 			qlock(&l);
-			ready = 1;
-			rsleep(&r);
+			rsleept(&r, 100);
 			qunlock(&l);
+			ready = 1;
 			exits(nil);
 			break;
 		case -1:
@@ -103,25 +103,6 @@ main(int argc, char* argv[])
 			break;
 		default:
 			while(ready == 0)
-				;
-			break;
-	}
-	/* one process to wakeup */
-	switch((w = rfork(RFMEM|RFPROC|RFNOWAIT)))
-	{
-		case 0:
-			qlock(&l);
-			rwakeup(&r);
-			qunlock(&l);
-			ready = 2;
-			exits(nil);
-			break;
-		case -1:
-			print("rfork: %r\n");
-			exits("rfork fails");
-			break;
-		default:
-			while(ready == 1)
 				;
 			break;
 	}

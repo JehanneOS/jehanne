@@ -27,6 +27,7 @@ handler(void *v, char *s)
 	int i;
 	if(strcmp(s, "stop") == 0){
 		done = 1;
+		print("stop note received; done = %d\n", done);
 	}else{
 		print("waiting after %s", s);
 		for(i = 0; i < 1000*1000; ++i)
@@ -62,6 +63,6 @@ main(int argc, char**argv)
 		print("PASS\n");
 		exits("PASS");
 	}
-	print("%d notes received\n");
+	print("%d notes received\n", waited);
 	exits("FAIL");
 }

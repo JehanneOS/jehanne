@@ -71,7 +71,7 @@ handletimeout(void *v, char *s)
 	if(strcmp(s, "timedout") == 0){
 		if(verbose)
 			print("%d: noted: %s\n", getpid(), s);
-		print("FAIL: timedout\n");
+		print("FAIL: %s timedout\n", argv0);
 		exits("FAIL");
 	}
 	return 0;
@@ -126,15 +126,17 @@ waiter(int index)
 	return end != start ? nil : "FAIL";
 }
 
+int lastspawn;
 void
 spawnWaiter(int index)
 {
-	int pid;
+	int pid, ls = lastspawn;
 	char * res;
 
 	switch((pid = rfork(RFMEM|RFPROC|RFNOWAIT)))
 	{
 		case 0:
+			++lastspawn;
 			res = waiter(index);
 			exits(res);
 			break;
@@ -143,6 +145,8 @@ spawnWaiter(int index)
 			exits("rfork fails");
 			break;
 		default:
+			while(ls == lastspawn)
+				;
 			if(verbose)
 				print("spawn reader %d\n", pid);
 			break;
@@ -150,10 +154,13 @@ spawnWaiter(int index)
 }
 
 void
-main(void)
+main(int argc, char* argv[])
 {
 	int i;
 	int64_t average;
+
+	ARGBEGIN{
+	}ARGEND;
 
 	rfork(RFNOTEG|RFREND);
 	rStart.l = &rl;
@@ -207,11 +214,11 @@ main(void)
 	}
 	average = average / NPROC / (1000 * 1000);
 
-	if(average < 100) /* we asked for 1ms... we are dumb, after all */
+	if(average < 300) /* we asked for 1ms... we are dumb, after all */
 	{
 		print("PASS\n");
 		exits("PASS");
 	}
-	print("FAIL: average timeout too long %lld ms\n", average);
+	print("FAIL: %s: average timeout too long %lld ms\n", argv0, average);
 	exits("FAIL");
 }

@@ -2,6 +2,12 @@
 #include <u.h>
 #include <lib9.h>
 
+// from kernel's mem.h
+#define MiB		(1024*1024)
+#define TSTKTOP		(0x00007ffffffff000ull)
+#define USTKSIZE	(16*MiB)			/* size of user stack */
+#define USTKTOP		(TSTKTOP-USTKSIZE)		/* end of new stack in sysexec */
+
 enum {
 	Njmps = 10000
 };
@@ -23,16 +29,26 @@ main(void)
 		fprint(2, "label[%d] = %p\n", i, label[i]);
 	fprint(2, "main: %p foo: %p\n", main, foo);
 
-	if(njmp != Njmps)
+	if(njmp != Njmps){
+		print("error: njmp = %d\n", njmp);
 		fail++;
-	if(label[JMPBUFPC] < (uintptr_t)main)
+	}
+	if(label[JMPBUFPC] < (uintptr_t)main){
+		print("error: label[JMPBUFPC] = %#p\n", label[JMPBUFPC]);
 		fail++;
-	if(label[JMPBUFPC] > (uintptr_t)foo)
+	}
+	if(label[JMPBUFPC] > (uintptr_t)foo){
+		print("error: label[JMPBUFPC] = %#p\n", label[JMPBUFPC]);
 		fail++;
-	if(label[JMPBUFSP] > (uintptr_t)&label[nelem(label)])
+	}
+	if(label[JMPBUFSP] > (uintptr_t)&label[nelem(label)]){
+		print("error: label[JMPBUFSP] (%#p) is greater then &label[nelem(label)] (%#p) \n", label[JMPBUFPC], &label[nelem(label)]);
 		fail++;
-	if(label[JMPBUFSP] < 0x7fffffd00000)
+	}
+	if(label[JMPBUFSP] < USTKTOP-USTKSIZE){
+		print("error: label[JMPBUFSP] (%#p) is lower then USTKTOP-USTKSIZE \n", label[JMPBUFSP]);
 		fail++;
+	}
 
 	if(fail == 0){
 		print("PASS\n");

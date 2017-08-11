@@ -28,6 +28,7 @@ handler(void *v, char *s)
 			print("PASS\n");
 			exits(nil);
 		}
+	forgivewkp(wakeup);
 	print("FAIL in note handler\n");
 	exits("FAIL");
 }

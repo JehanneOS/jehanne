@@ -30,6 +30,7 @@
 			"rsleept1.c",
 			"rsleept2.c",
 			"rwakeup0.c",
+			"rwakeup1.c",
 			"sleep.c",
 			"sqrt.c",
 			"sysfatal.c",

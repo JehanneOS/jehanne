@@ -149,10 +149,13 @@ spawnWaiter(int index)
 }
 
 void
-main(void)
+main(int argc, char* argv[])
 {
 	int i;
 	int64_t average;
+
+	ARGBEGIN{
+	}ARGEND;
 
 	rfork(RFNOTEG|RFREND);
 	rStart.l = &rl;
@@ -212,6 +215,6 @@ main(void)
 		print("PASS\n");
 		exits("PASS");
 	}
-	print("FAIL: average timeout too long %lld ms\n", average);
+	print("FAIL: %s: average timeout too long %lld ms\n", argv0, average);
 	exits("FAIL");
 }

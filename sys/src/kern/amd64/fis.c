@@ -238,7 +238,7 @@ idfeat(Sfis *f, uint16_t *id)
 		f->feat |= Datapi;
 	i = gbit16(id + 49);
 	if((i & Ilbasp) == 0){
-		if(gbit16(id + 53) & 1){
+		if((gbit16(id + 53) & 1) == 0){
 			f->c = gbit16(id + 1);
 			f->h = gbit16(id + 3);
 			f->s = gbit16(id + 6);

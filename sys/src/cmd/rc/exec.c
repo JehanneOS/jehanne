@@ -143,9 +143,11 @@ void
 main(int argc, char *argv[])
 {
 	code bootstrap[17];
-	char num[12], *rcmain;
+	char num[12], *rcmain, **argvcopy;
 	int i;
-	argc = getflags(argc, argv, "SsrdiIlxepvVc:1m:1[command]", 1);
+	argvcopy = mallocz(sizeof(char*)*(argc+1), 1);
+	memmove(argvcopy, argv, argc*sizeof(char*));
+	argc = getflags(argc, argvcopy, "SsrdiIlxepvVc:1m:1[command]", 1);
 	if(argc==-1)
 		usage("[file [arg ...]]");
 	if(argv[0][0]=='-')

@@ -135,7 +135,7 @@ again:
 	if(rc < 0)
 		goto err;
 	if(rc == 0){
-		dprint("hjfs: willmodify: block %lld has refcount 0\n", l->blk);
+		dprint("willmodify: block %lld has refcount 0\n", l->blk);
 		werrstr("phase error -- willmodify");
 		goto err;
 	}

@@ -189,7 +189,7 @@ handlesync(Channel *resp)
 }
 
 static void
-bufproc(void* _1)
+bufproc(void* _)
 {
 	BufReq req;
 	Buf *buf;
@@ -273,8 +273,8 @@ getbuf(Dev *d, uint64_t off, int type, int nodata)
 	}
 	if(nodata)
 		b->type = type;
-	if(b->type != type && type != -1){
-		dprint("hjfs: type mismatch, dev %s, block %lld, got %T, want %T, caller %#p\n",
+	if(b->type != type && type != TDONTCARE){
+		dprint("type mismatch, dev %s, block %lld, got %T, want %T, caller %#p\n",
 			d->name, off, b->type, type, getcallerpc());
 		werrstr("phase error -- type mismatch");
 		putbuf(b);

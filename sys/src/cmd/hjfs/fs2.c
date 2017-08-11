@@ -100,7 +100,6 @@ namevalid(char *name)
 	return p - name < NAMELEN;
 }
 
-
 int
 chancreat(Chan *ch, char *name, int perm, int mode)
 {

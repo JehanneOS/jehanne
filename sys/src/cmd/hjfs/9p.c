@@ -114,7 +114,7 @@ tdestroyfid(Fid *fid)
 }
 
 static void
-tend(Srv* _1)
+tend(Srv* _)
 {
 	shutdown();
 }
@@ -175,7 +175,7 @@ twalk(Chan *ch, Fid *fid, Fid *nfid, int n, char **name, Qid *qid)
 }
 
 static void
-workerproc(void* _1)
+workerproc(void* _)
 {
 	Chan *ch;
 	Req *req;

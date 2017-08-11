@@ -35,7 +35,7 @@ devwork(void *v)
 			memset(buf, 0, sizeof(buf));
 			pack(b, buf);
 			if(pwrite(d->fd, buf, BLOCK, b->off*BLOCK) < BLOCK){
-				dprint("hjfs: write: %r\n");
+				dprint("write: %r\n");
 				b->error = Eio;
 			}
 		}else{
@@ -44,7 +44,7 @@ devwork(void *v)
 			for(n = 0; n < BLOCK; n += m){
 				m = pread(d->fd, buf+n, BLOCK-n, b->off*BLOCK+n);
 				if(m < 0)
-					dprint("hjfs: read: %r\n");
+					dprint("read: %r\n");
 				if(m <= 0)
 					break;
 			}

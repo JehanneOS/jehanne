@@ -79,8 +79,15 @@ struct Dentry {
 enum {
 	DENTRYSIZ = NAMELEN + 4 * sizeof(uint16_t) + 13 + (3 + NDIRECT + NINDIRECT) * sizeof(uint64_t),
 	DEPERBLK = RBLOCK / DENTRYSIZ,
+	/* Given any opportunity to make a breaking change to hjfs,
+	 * make this 12 an 8. Indirect offsets to blocks used to
+	 * hold an incrementing  4 byte generation number. That
+	 * design has changed.
+	 */
 	OFFPERBLK = RBLOCK / 12,
-	REFPERBLK = RBLOCK / 3,
+	REFSIZ = 3,
+	REFPERBLK = RBLOCK / REFSIZ,
+	REFSENTINEL = (1 << 8*REFSIZ) - 1,
 };
 
 struct BufReq {
@@ -184,8 +191,8 @@ enum {
 	CHREAD = 1,
 	CHWRITE = 2,
 	CHRCLOSE = 4,
-	CHFDUMP = 1,
 
+	CHFDUMP = 1,
 	CHFNOLOCK = 2,
 	CHFRO = 4,
 	CHFNOPERM = 8,
@@ -232,5 +239,4 @@ enum { /* getblk modes */
 	GBOVERWR = 3,
 };
 
-#define HOWMANY(a, b) (((a)+((b)-1))/(b))
-#define ROUNDUP(a, b) (HOWMANY(a,b)*(b))
+#define HOWMANY(a) (((a)+(RBLOCK-1))/RBLOCK)

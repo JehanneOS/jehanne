@@ -456,7 +456,7 @@ found:
 		}
 		continue;
 	erropt:
-		dprint("hjfs: newuser: ignoring erroneous option %s\n", argv[i]);
+		dprint("newuser: ignoring erroneous option %s\n", argv[i]);
 	}
 	if(resort)
 		qsort(fs->udata, fs->nudata, sizeof(User), usercomp);

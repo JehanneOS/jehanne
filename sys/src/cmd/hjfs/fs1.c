@@ -50,15 +50,15 @@ getdent(FLoc *l, Buf *b)
 
 	d = &b->de[l->deind];
 	if((d->mode & (DGONE | DALLOC)) == 0){
-		dprint("hjfs: getdent: file gone, d=%llux, l=%llud/%d %llux, callerpc %#p\n",
+		dprint("getdent: file gone, d=%llux, l=%llud/%d %llux, callerpc %#p\n",
 			d->path, l->blk, l->deind, l->path, getcallerpc());
-		werrstr("phase error -- getdent");
+		werrstr("phase error -- directory entry for nonexistent file");
 		return nil;
 	}
 	if(qidcmp(d, l) != 0){
-		dprint("hjfs: getdent: wrong qid d=%llux != l=%llud/%d %llux, callerpc %#p\n",
+		dprint("getdent: wrong qid d=%llux != l=%llud/%d %llux, callerpc %#p\n",
 			d->path, l->blk, l->deind, l->path, getcallerpc());
-		werrstr("phase error -- getdent");
+		werrstr("phase error -- qid mismatch");
 		return nil;
 	}
 	return d;
@@ -88,8 +88,10 @@ getfree(Fs *fs, uint64_t *r)
 	}
 
 	b = getbuf(d, SUPERBLK, TSUPERBLOCK, 0);
-	if(b == nil)
+	if(b == nil) {
+		werrstr("could not find superblock");
 		return -1;
+	}
 	e = b->sb.fend;
 	putbuf(b);
 
@@ -106,8 +108,7 @@ getfree(Fs *fs, uint64_t *r)
 					b->refs[j] = 1;
 					*r = l;
 					have = 1;
-				}
-				else if(nbsend(fs->freelist, &l) <= 0)
+				}else if(nbsend(fs->freelist, &l) <= 0)
 					goto found;
 			}
 		if(have)
@@ -237,7 +238,7 @@ readusers(Fs *fs)
 err:
 	if(ch != nil)
 		chanclunk(ch);
-	dprint("hjfs: readusers: %r\nhjfs: using default user db\n");
+	dprint("readusers: %r\nhjfs: using default user db\n");
 }
 
 void
@@ -249,7 +250,7 @@ ream(Fs *fs)
 	int j, je;
 
 	d = fs->d;
-	dprint("hjfs: reaming %s\n", d->name);
+	dprint("reaming %s\n", d->name);
 	b = getbuf(d, SUPERBLK, TSUPERBLOCK, 1);
 	if(b == nil)
 	err:
@@ -259,7 +260,7 @@ ream(Fs *fs)
 	b->sb.size = d->size;
 	b->sb.fstart = SUPERBLK + 1;
 	fs->fstart = b->sb.fstart;
-	b->sb.fend = b->sb.fstart + HOWMANY(b->sb.size * 3, RBLOCK);
+	b->sb.fend = b->sb.fstart + HOWMANY(b->sb.size * REFSIZ);
 	b->sb.qidpath = DUMPROOTQID + 1;
 	firsti = b->sb.fstart + SUPERBLK / REFPERBLK;
 	lasti = b->sb.fstart + b->sb.fend / REFPERBLK;
@@ -267,7 +268,7 @@ ream(Fs *fs)
 		c = getbuf(d, i, TREF, 1);
 		if(c == nil)
 			goto err;
-		memset(c->refs, 0, sizeof(b->data));
+		memset(c->refs, 0, sizeof(c->refs));
 		if(i >= firsti && i <= lasti){
 			j = 0;
 			je = REFPERBLK;
@@ -291,7 +292,7 @@ ream(Fs *fs)
 	putbuf(b);
 	createroot(fs);
 	sync(1);
-	dprint("hjfs: ream successful\n");
+	dprint("ream successful\n");
 }
 
 Fs *
@@ -325,7 +326,7 @@ initfs(Dev *d, int doream, int flags)
 	if(doream)
 		writeusers(fs);
 	readusers(fs);
-	dprint("hjfs: fs is %s\n", d->name);
+	dprint("fs is %s\n", d->name);
 	return fs;
 
 error:
@@ -450,7 +451,7 @@ freeit:
 		if((l->flags & LGONE) != 0){
 			/*
 			 * safe to unlock here, the file is gone and
-			 * we'r the last reference.
+			 * we're the last reference.
 			 */
 			qunlock(&fs->loctree);
 			b = getbuf(fs->d, l->blk, TDENTRY, 0);
@@ -480,7 +481,7 @@ freeit:
 }
 
 static int
-dumpblk(Fs *fs, FLoc * _1, uint64_t *l)
+dumpblk(Fs *fs, FLoc * _, uint64_t *l)
 {
 	uint64_t n;
 	int i;
@@ -568,7 +569,7 @@ getblk(Fs *fs, FLoc *L, Buf *bd, uint64_t blk, uint64_t *r, int mode)
 	b = bd;
 	d = getdent(L, b);
 	if(d == nil){
-		dprint("hjfs: getblk: dirent gone\n");
+		dprint("getblk: dirent gone\n");
 		return -1;
 	}
 	if(blk < NDIRECT){
@@ -653,7 +654,7 @@ found:
 		if(rc < 0)
 			goto end;
 		if(rc == 0){
-			dprint("hjfs: getblk: block %lld has refcount 0\n");
+			dprint("getblk: block %lld has refcount 0\n");
 			werrstr("phase error -- getblk");
 			rc = -1;
 			goto end;
@@ -760,7 +761,7 @@ trunc(Fs *fs, FLoc *ll, Buf *bd, uint64_t size)
 		return -1;
 	if(size >= d->size)
 		goto done;
-	blk = HOWMANY(size, RBLOCK);
+	blk = HOWMANY(size);
 	while(blk < NDIRECT){
 		if(d->db[blk] != 0){
 			putfree(fs, d->db[blk]);

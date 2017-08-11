@@ -65,17 +65,22 @@ Fs *fsmain;
 int
 dprint(char *fmt, ...)
 {
+	static char buf[2048];
+	static QLock lk;
 	va_list va;
 	int rc;
-	
+
+	qlock(&lk);
 	va_start(va, fmt);
-	rc = vfprint(2, fmt, va);
+	snprint(buf, 2048, "hjfs: %s", fmt);
+	rc = vfprint(2, buf, va);
 	va_end(va);
+	qunlock(&lk);
 	return rc;
 }
 
 static void
-syncproc(void * _1)
+syncproc(void * _)
 {
 	for(;;){
 		sync(0);
@@ -149,7 +154,7 @@ shutdown(void)
 {
 	wlock(fsmain);
 	sync(1);
-	dprint("hjfs: ending\n");
+	dprint("ending\n");
 	sleep(1000);
 	sync(1);
 	threadexitsall(nil);

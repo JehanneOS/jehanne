@@ -65,38 +65,38 @@ walkpath(Chan *ch, char *path, char **cr)
 }
 
 int
-cmdsync(int _1, char** _2)
+cmdsync(int _, char** __)
 {
 	sync(1);
-	dprint("hjfs: sync\n");
+	dprint("sync\n");
 	return 0;
 }
 
 int
-cmdhalt(int _1, char** _2)
+cmdhalt(int _, char** __)
 {
 	shutdown();
 	return 0;
 }
 
 int
-cmddump(int _1, char** _2)
+cmddump(int _, char** __)
 {
 	fsdump(fsmain);
-	dprint("hjfs: dumped\n");
+	dprint("dumped\n");
 	return 0;
 }
 
 int
-cmdallow(int _1, char** _2)
+cmdallow(int _, char** __)
 {
 	fsmain->flags |= FSNOPERM | FSCHOWN;
-	dprint("hjfs: allow\n");
+	dprint("allow\n");
 	return 0;
 }
 
 int
-cmdchatty(int _1, char** _2)
+cmdchatty(int _, char** __)
 {
 	extern int chatty9p;
 
@@ -104,22 +104,160 @@ cmdchatty(int _1, char** _2)
 	return 0;
 }
 
+static void
+checkfile(FLoc *l, Buf *b)
+{
+	Buf *c;
+	Dentry *d;
+	char *ftype;
+	int btype, rc;
+	uint64_t i, r, blocks;
+
+	d = getdent(l, b);
+	if(d == nil){
+		dprint("checkfile: bad entry: %r\n");
+		return;
+	}
+	if((d->type & QTDIR) == 0){
+		ftype = "file";
+		btype = TRAW;
+		blocks = HOWMANY(d->size);
+	}else{
+		ftype = "directory";
+		btype = TDENTRY;
+		blocks = d->size;
+	}
+
+	for(i = 0; i < blocks; i++){
+		rc = getblk(fsmain, l, b, i, &r, GBREAD);
+		if(rc < 0){
+			dprint("bad block %ulld of %ulld in %s %s with directory entry index %d in block %ulld: %r\n", i, blocks, ftype, d->name, l->deind, l->blk);
+			continue;
+		}
+		if(rc == 0){
+			dprint("block %ulld of %ulld not found in %s %s with directory index %d in block %ulld\n", i, blocks, ftype, d->name, l->deind, l->blk);
+			continue;
+		}
+		c = getbuf(fsmain->d, r, btype, 0);
+		if(c == nil)
+			dprint("bad block %ulld of %ulld in %s %s with directory entry index %d in block %ulld: %r\n", i, blocks, ftype, d->name, l->deind, l->blk);
+		putbuf(c);
+		if(chref(fsmain, r, 0) == 0)
+			dprint("block %ulld of %ulld in %s %s with directory entry index %d in block %ulld has a reference count of 0", i, blocks, ftype, d->name, l->deind, l->blk);
+	}
+}
+
+static int
+checkblk(uint64_t blk)
+{
+	Dentry *d;
+	Buf *b;
+	FLoc l;
+	int i, type;
+
+	b = getbuf(fsmain->d, blk, TDONTCARE, 0);
+	if(b == nil)
+		return -1;
+	switch(type = b->type){
+	case TSUPERBLOCK:
+		if(blk != SUPERBLK)
+			dprint("checkblk: should not have found superblock at %ulld\n", blk);
+		break;
+	case TDENTRY:
+		l.blk = blk;
+		for(i = 0; i < DEPERBLK; i++){
+			d = &b->de[i];
+			if((d->mode & (DGONE | DALLOC)) == 0)
+				break;
+			l.deind = i;
+			l.Qid = d->Qid;
+			checkfile(&l, b);
+		}
+		break;
+	}
+	putbuf(b);
+	return type;
+}
+
 int
-cmddisallow(int _1, char** _2)
+cmdcheck(int _, char** __)
+{
+	static uint32_t refs[REFPERBLK];
+	uint64_t fblk, fend, blk;
+	uint64_t ndentry, nindir, nraw, nref, nsuperblock;
+	int j;
+	Buf *b, *sb;
+
+	wlock(fsmain);
+	sb = getbuf(fsmain->d, SUPERBLK, TSUPERBLOCK, 0);
+	if(sb == nil){
+		wunlock(fsmain);
+		return -1;
+	}
+	fblk = sb->sb.fstart;
+	fend = sb->sb.fend;
+	putbuf(sb);
+
+	ndentry = 0;
+	nindir = 0;
+	nraw = 0;
+	nref = 0;
+	nsuperblock = 0;
+	for(blk = 0; fblk < fend; fblk++){
+		b = getbuf(fsmain->d, fblk, TREF, 0);
+		if(b == nil){
+			blk += REFPERBLK;
+			continue;
+		}
+		memcpy(refs, b->refs, sizeof(refs));
+		putbuf(b);
+		for(j = 0; j < REFPERBLK; j++, blk++){
+			if(refs[j] > 0 && refs[j] != REFSENTINEL){
+				switch(checkblk(blk)){
+				case TDENTRY:
+					ndentry++;
+					break;
+				case TINDIR:
+					nindir++;
+					break;
+				case TRAW:
+					nraw++;
+					break;
+				case TREF:
+					nref++;
+					break;
+				case TSUPERBLOCK:
+					nsuperblock++;
+					break;
+				}
+			}
+		}
+	}
+	wunlock(fsmain);
+	dprint("%T block count %ulld\n", TDENTRY, ndentry);
+	dprint("%T block count %ulld\n", TINDIR, nindir);
+	dprint("%T block count %ulld\n", TRAW, nraw);
+	dprint("%T block count %ulld\n", TREF, nref);
+	dprint("%T block count %ulld\n", TSUPERBLOCK, nsuperblock);
+	return 1;
+}
+
+int
+cmddisallow(int _, char** __)
 {
 	fsmain->flags &= ~(FSNOPERM | FSCHOWN);
-	dprint("hjfs: disallow\n");
+	dprint("disallow\n");
 	return 0;
 }
 
 int
-cmdnoauth(int _1, char** _2)
+cmdnoauth(int _, char** __)
 {
 	fsmain->flags ^= FSNOAUTH;
 	if((fsmain->flags & FSNOAUTH) == 0)
-		dprint("hjfs: auth enabled\n");
+		dprint("auth enabled\n");
 	else
-		dprint("hjfs: auth disabled\n");
+		dprint("auth disabled\n");
 	return 1;
 }
 
@@ -169,14 +307,14 @@ cmdcreate(int argc, char **argv)
 }
 
 int
-cmdecho(int _1, char **argv)
+cmdecho(int _, char **argv)
 {
 	echo = strcmp(argv[1], "on") == 0;
 	return 1;
 }
 
 int
-cmddf(int _1, char** _2)
+cmddf(int _, char** __)
 {
 	uint64_t n;
 	uint64_t i;
@@ -199,15 +337,15 @@ cmddf(int _1, char** _2)
 				n++;
 		putbuf(b);
 	}
-	dprint("hjfs: (blocks) free %ulld, used %ulld, total %ulld\n", n, sb->sb.size - n, sb->sb.size);
-	dprint("hjfs: (MB) free %ulld, used %ulld, total %ulld\n", n * BLOCK / 1048576, (sb->sb.size - n) * BLOCK / 1048576, sb->sb.size * BLOCK / 1048576);
+	dprint("(blocks) free %ulld, used %ulld, total %ulld\n", n, sb->sb.size - n, sb->sb.size);
+	dprint("(MB) free %ulld, used %ulld, total %ulld\n", n * BLOCK / 1048576, (sb->sb.size - n) * BLOCK / 1048576, sb->sb.size * BLOCK / 1048576);
 	putbuf(sb);
 	wunlock(fsmain);
 	return 1;
 }
 
 int
-cmddebugdeind(int _1, char **argv)
+cmddebugdeind(int _, char **argv)
 {
 	Chan *ch;
 	Buf *b;
@@ -220,18 +358,18 @@ cmddebugdeind(int _1, char **argv)
 	if(walkpath(ch, argv[1], nil) < 0)
 		goto error;
 	rlock(fsmain);
-	dprint("hjfs: loc %ulld / %uld, offset %ulld\n", ch->loc->blk, ch->loc->deind, BLOCK * ch->loc->blk + (RBLOCK - BLOCK) + DENTRYSIZ * ch->loc->deind);
+	dprint("loc %ulld / %uld, offset %ulld\n", ch->loc->blk, ch->loc->deind, BLOCK * ch->loc->blk + (RBLOCK - BLOCK) + DENTRYSIZ * ch->loc->deind);
 	b = getbuf(fsmain->d, ch->loc->blk, TDENTRY, 0);
 	if(b == nil){
 		runlock(fsmain);
 		goto error;
 	}
 	d = &b->de[ch->loc->deind];
-	dprint("hjfs: name %s\n", d->name);
-	dprint("hjfs: uid %d, muid %d, gid %d\n", d->uid, d->muid, d->gid);
-	dprint("hjfs: mode %#o, qid %ulld, type %#x, version %d\n", d->mode, d->path, d->type, d->vers);
-	dprint("hjfs: size %d\n", d->size);
-	dprint("hjfs: atime %ulld, mtime %ulld\n", d->atime, d->mtime);
+	dprint("name %s\n", d->name);
+	dprint("uid %d, muid %d, gid %d\n", d->uid, d->muid, d->gid);
+	dprint("mode %#o, qid %ulld, type %#x, version %d\n", d->mode, d->path, d->type, d->vers);
+	dprint("size %d\n", d->size);
+	dprint("atime %ulld, mtime %ulld\n", d->atime, d->mtime);
 	putbuf(b);
 	runlock(fsmain);
 	chanclunk(ch);
@@ -242,7 +380,7 @@ error:
 }
 
 int
-cmddebugchdeind(int _1, char **argv)
+cmddebugchdeind(int _, char **argv)
 {
 	Chan *ch;
 	uint8_t *c;
@@ -266,7 +404,7 @@ cmddebugchdeind(int _1, char **argv)
 		goto error;
 	}
 	c = (uint8_t *) &b->de[ch->loc->deind];
-	dprint("hjfs: loc %d, old value %#.2x, new value %#.2x\n", loc, c[loc], new);
+	dprint("loc %d, old value %#.2x, new value %#.2x\n", loc, c[loc], new);
 	c[loc] = new;
 	b->op |= BDELWRI;
 	putbuf(b);
@@ -308,11 +446,11 @@ cmddebuggetblk(int argc, char **argv)
 	for(i = start; i <= end; i++){
 		rc = getblk(fsmain, ch->loc, b, i, &r, GBREAD);
 		if(rc > 0)
-			dprint("hjfs: getblk %ulld = %ulld\n", i, r);
+			dprint("getblk %ulld = %ulld\n", i, r);
 		if(rc == 0)
-			dprint("hjfs: getblk %ulld not found\n", i);
+			dprint("getblk %ulld not found\n", i);
 		if(rc < 0)
-			dprint("hjfs: getblk %ulld: %r\n", i);
+			dprint("getblk %ulld: %r\n", i);
 	}
 	putbuf(b);
 	runlock(fsmain);
@@ -324,7 +462,7 @@ error:
 }
 
 int
-cmdusers(int _1, char** _2)
+cmdusers(int _, char** __)
 {
 	readusers(fsmain);
 	return 0;
@@ -336,6 +474,7 @@ Cmd cmds[] = {
 	{"allow", 1, cmdallow},
 	{"noauth", 1, cmdnoauth},
 	{"chatty", 1, cmdchatty},
+//	{"check", 0, cmdcheck},
 	{"create", 0, cmdcreate},
 	{"disallow", 1, cmddisallow},
 	{"dump", 1, cmddump},
@@ -366,7 +505,7 @@ consproc(void *v)
 		if(s == nil)
 			continue;
 		if(echo)
-			dprint("hjfs: >%s\n", s);
+			dprint(">%s\n", s);
 		rc = tokenize(s, args, MAXARGS);
 		if(rc == 0)
 			goto syntax;
@@ -379,12 +518,12 @@ consproc(void *v)
 					if(rc == -9001)
 						goto syntax;
 					if(rc < 0)
-						dprint("hjfs: %r\n");
+						dprint("%r\n");
 					goto done;
 				}
 			}
 	syntax:
-		dprint("hjfs: syntax error\n");
+		dprint("syntax error\n");
 	done:
 		free(s);
 	}

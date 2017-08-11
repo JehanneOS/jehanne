@@ -64,8 +64,7 @@
 			"unmount.c",
 			"wc.c",
 			"xargs.c",
-			"xd.c",
-			"ms.c"
+			"xd.c"
 		]
 	},
 	"FromYacc": {

@@ -363,7 +363,7 @@ int string(void)
 		case 0:
 			SYNTAX( "non-terminated string %.10s...", buf );
 			lineno++;
-			break;
+			RET(0);
 		case '\\':
 			c = input();
 			switch (c) {

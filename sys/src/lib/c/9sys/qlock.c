@@ -119,9 +119,9 @@ static void*	(*_rendezvousp)(void*, void*) = __rendezvous;
 
 #endif
 
-//# define RENDEZVOUS(...) (*_rendezvousp)(__VA_ARGS__)
+# define RENDEZVOUS(...) (*_rendezvousp)(__VA_ARGS__)
 //# define RENDEZVOUS(...) sys_rendezvous(__VA_ARGS__)
-# define RENDEZVOUS(tag, val) __rendezvous(tag, __builtin_return_address(0))
+//# define RENDEZVOUS(tag, val) __rendezvous(tag, __builtin_return_address(0))
 
 /* this gets called by the thread library ONLY to get us to use its rendezvous */
 void

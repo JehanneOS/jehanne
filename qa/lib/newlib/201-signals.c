@@ -28,7 +28,11 @@ main() {
 		printf("\nI am the new child!\n\n");
 		close(p[1]);
 		close(p[0]);
-		for(;;); /* loop for ever */
+		for(;;){
+			/* loop for ever */
+			printf(".");
+			usleep(500);
+		}
 	}
 	else /* parent */
 	{

@@ -27,6 +27,9 @@
 		"Pre": [
 			"rm -f *.tag.*"
 		],
+		"DisabledTests": [
+			"201-signals.c",
+		],
 		"SourceFiles": [
 			"libposix_customization.c"
 		],
@@ -37,7 +40,6 @@
 			"100-files.c",
 			"101-files.c",
 			"200-signals.c",
-			"201-signals.c",
 			"202-signals.c",
 			"203-signals.c",
 			"204-signals.c",

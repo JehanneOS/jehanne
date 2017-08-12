@@ -15,6 +15,7 @@
 			"awake_note0.c",
 			"awake_note1.c",
 			"brk.c",
+			"broken.c",
 			"execl.c",
 			"float.c",
 			"fork.c",

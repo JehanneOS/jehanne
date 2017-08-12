@@ -1057,6 +1057,9 @@ addbroken(Proc *p)
 	broken.p[broken.n++] = p;
 	qunlock(&broken);
 
+	dumpaproc(p);
+	dumpregs(p->dbgreg);
+
 	p->state = Broken;
 	p->psstate = 0;
 	sched();

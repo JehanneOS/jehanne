@@ -96,7 +96,7 @@ static const int awakeable_syscalls[] = {
 	[SysSemacquire]	= 1,
 	[SysSemrelease]	= 0,
 	[SysUnmount]	= 0,
-	[SysAlarm]	= 0,
+	[SysAlarm]	= 0
 };
 
 #define DEBUG
@@ -146,7 +146,7 @@ awake_can_interrupt(Syscalls scall)
 {
 	if(scall == 0)
 		panic("awake_can_interrupts on page fault");
-	if(scall >= sizeof(awakeable_syscalls) - 1)
+	if(scall >= nelem(awakeable_syscalls) - 1)
 		panic("awake_can_interrupts: unknown syscall %d", scall);
 	return awakeable_syscalls[scall];
 }

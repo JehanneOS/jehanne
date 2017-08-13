@@ -55,7 +55,7 @@ boot(int argc, char *argv[])
 	/*
 	 *  start /dev/cons
 	 */
-	if(readfile("#ec/console", buf, sizeof(cputype)) >= 0
+	if(readfile("#ec/bootconsole", buf, sizeof(buf)) >= 0
 	&& jehanne_strcmp("comconsole", buf) == 0){
 		if(startcomconsole() < 0)
 			fatal("no console found");

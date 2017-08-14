@@ -689,16 +689,13 @@ syserrstr(char* err, int nerr)
 int
 sysnotify(void* a0)
 {
-	void (*f)(void*, char*);
+	if(a0 != nil)
+		validaddr(a0, sizeof(void*), 0);
 
 	/*
 	 * int notify(void (*f)(void*, char*));
 	 */
-	f = (void (*)(void*, char*))a0;
-
-	if(f != nil)
-		validaddr(f, sizeof(void (*)(void*, char*)), 0);
-	up->notify = f;
+	up->notify = (void (*)(void*, char*))a0;
 
 	return 0;
 }

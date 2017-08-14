@@ -257,6 +257,7 @@ fpprocfork(Proc *p)
 	case FPactive:
 		fpsave(&up->fpsave);
 		up->fpstate = FPinactive;
+		/* fallthrough */
 	case FPinactive:
 		p->fpsave = up->fpsave;
 		p->fpstate = FPinactive;

@@ -378,20 +378,20 @@ static uint8_t ones = 0xff;
 typedef struct	Buffer	Buffer;
 struct Buffer {
 	/* used by most routines */
-	uint8_t	*red;
-	uint8_t	*grn;
-	uint8_t	*blu;
-	uint8_t	*alpha;
-	uint8_t	*grey;
-	uint32_t	*rgba;
-	int	delta;	/* number of bytes to add to pointer to get next pixel to the right */
+	uint8_t*	red;
+	uint8_t*	grn;
+	uint8_t*	blu;
+	uint8_t*	alpha;
+	uint8_t*	grey;
+	uint32_t*	rgba;
+	int		delta;	/* number of bytes to add to pointer to get next pixel to the right */
 
 	/* used by boolcalc* for mask data */
-	uint8_t	*m;		/* ptr to mask data r.min byte; like p->bytermin */
+	uint8_t*	m;	/* ptr to mask data r.min byte; like p->bytermin */
 	int		mskip;	/* no. of left bits to skip in *m */
-	uint8_t	*bm;		/* ptr to mask data img->r.min byte; like p->bytey0s */
+	uint8_t*	bm;	/* ptr to mask data img->r.min byte; like p->bytey0s */
 	int		bmskip;	/* no. of left bits to skip in *bm */
-	uint8_t	*em;		/* ptr to mask data img->r.max.x byte; like p->bytey0e */
+	uint8_t*	em;	/* ptr to mask data img->r.max.x byte; like p->bytey0e */
 	int		emskip;	/* no. of right bits to skip in *em */
 };
 
@@ -406,36 +406,36 @@ enum {
 
 /* giant rathole to customize functions with */
 struct Param {
-	Readfn	*replcall;
-	Readfn	*greymaskcall;	
-	Readfn	*convreadcall;
-	Writefn	*convwritecall;
+	Readfn*		replcall;
+	Readfn*		greymaskcall;	
+	Readfn*		convreadcall;
+	Writefn*	convwritecall;
 
-	Memimage *img;
+	Memimage*	img;
 	Rectangle	r;
-	int	dx;	/* of r */
-	int	needbuf;
-	int	convgrey;
-	int	alphaonly;
+	int		dx;	/* of r */
+	int		needbuf;
+	int		convgrey;
+	int		alphaonly;
 
-	uint8_t	*bytey0s;		/* byteaddr(Pt(img->r.min.x, img->r.min.y)) */
-	uint8_t	*bytermin;	/* byteaddr(Pt(r.min.x, img->r.min.y)) */
-	uint8_t	*bytey0e;		/* byteaddr(Pt(img->r.max.x, img->r.min.y)) */
+	uint8_t*	bytey0s;		/* byteaddr(Pt(img->r.min.x, img->r.min.y)) */
+	uint8_t*	bytermin;	/* byteaddr(Pt(r.min.x, img->r.min.y)) */
+	uint8_t*	bytey0e;		/* byteaddr(Pt(img->r.max.x, img->r.min.y)) */
 	int		bwidth;
 
-	int	replcache;	/* if set, cache buffers */
-	Buffer	bcache[MAXBCACHE];
+	int		replcache;	/* if set, cache buffers */
+	Buffer		bcache[MAXBCACHE];
 	uint32_t	bfilled;
-	uint8_t	*bufbase;
-	int	bufoff;
-	int	bufdelta;
+	uint8_t*	bufbase;
+	int		bufoff;
+	int		bufdelta;
 
-	int	dir;
+	int		dir;
 
-	int	convbufoff;
-	uint8_t	*convbuf;
-	Param	*convdpar;
-	int	convdx;
+	int		convbufoff;
+	uint8_t*	convbuf;
+	Param*		convdpar;
+	int		convdx;
 };
 
 static Readfn	greymaskread, replread, readptr;
@@ -450,7 +450,7 @@ static Writefn*	writefn(Memimage*);
 static Calcfn*	boolcopyfn(Memimage*, Memimage*);
 static Readfn*	convfn(Memimage*, Param*, Memimage*, Param*, int*);
 
-static Calcfn *alphacalc[Ncomp] = 
+static Calcfn*	alphacalc[Ncomp] = 
 {
 	alphacalc0,		/* Clear */
 	alphacalc14,		/* DoutS */
@@ -488,10 +488,10 @@ static Calcfn *boolcalc[Ncomp] =
 typedef struct Dbuf Dbuf;
 struct Dbuf
 {
-	uint8_t *p;
-	int n;
-	Param spar, mpar, dpar;
-	int inuse;
+	uint8_t*	p;
+	int 		n;
+	Param 		spar, mpar, dpar;
+	int 		inuse;
 };
 static Dbuf dbuf[10];
 
@@ -1672,6 +1672,7 @@ readptr(Param *p, uint8_t *s, int y)
 	uint8_t *q;
 
 	USED(s);
+	memset(&b, 0, sizeof(Buffer);
 	q = p->bytermin + y*p->bwidth;
 	b.red = q;	/* ptr to data */
 	b.grn = b.blu = b.grey = b.alpha = nil;

@@ -45,19 +45,13 @@ fault(uintptr_t addr, uintptr_t pc, int ftype)
 	if(up->procctl == Proc_exitbig)
 		pexit("out of memory", 1);
 
-	if(s != nil){
-		pprint("%s fault fail %s(%c%c%c) pid %d (%s) addr 0x%p pc 0x%p\n",
-			fault_types[ftype],
-			segment_types[s->type],
-			(s->permissions & SgRead) != 0 ? 'r' : '-',
-			(s->permissions & SgWrite) != 0 ? 'w' : '-',
-			(s->permissions & SgExecute) != 0 ? 'x' : '-',
-			up->pid, up->text, faddr, pc);
-	} else {
-		pprint("%s fault fail, no segment, pid %d (%s) addr 0x%p pc 0x%p\n",
-			fault_types[ftype],
-			up->pid, up->text, faddr, pc);
-	}
+	pprint("%s fault fail %s(%c%c%c) pid %d (%s) addr 0x%p pc 0x%p\n",
+		fault_types[ftype],
+		segment_types[s->type],
+		(s->permissions & SgRead) != 0 ? 'r' : '-',
+		(s->permissions & SgWrite) != 0 ? 'w' : '-',
+		(s->permissions & SgExecute) != 0 ? 'x' : '-',
+		up->pid, up->text, faddr, pc);
 	splhi();
 	up->psstate = sps;
 	return -1;

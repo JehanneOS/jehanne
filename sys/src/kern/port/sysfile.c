@@ -1,7 +1,7 @@
 /*
  * This file is part of Jehanne.
  *
- * Copyright (C) 2015-2016 Giacomo Tesio <giacomo@tesio.it>
+ * Copyright (C) 2015-2017 Giacomo Tesio <giacomo@tesio.it>
  *
  * Jehanne is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -611,6 +611,7 @@ syspread(int fd, void *p, long n, int64_t off)
 		 * the target device/server, but with a negative length
 		 * to read the buffer must be nil
 		 */
+InvalidAddress:
 		pprint("trap: invalid address %#p/%ld in pread pc=%#P\n", p, n, userpc(nil));
 		postnote(up, 1, "sys: bad address in pread", NDebug);
 		error(Ebadarg);
@@ -641,6 +642,14 @@ syspread(int fd, void *p, long n, int64_t off)
 		sequential = 0;
 	}
 	if(c->qid.type & QTDIR){
+		if(p == nil){
+			/* With union mount we can't use negative
+			 * offsets on directories as it's impossible
+			 * to predict which fs support them and
+			 * how they interpret them.
+			 */
+			goto InvalidAddress;
+		}
 		/*
 		 * Directory read:
 		 * rewind to the beginning of the file if necessary;

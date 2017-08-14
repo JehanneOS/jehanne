@@ -378,7 +378,7 @@ sysexec(char* p, char **argv)
 	argvcopy = argv;
 	evenaddr(PTR2UINT(argvcopy));
 	for(i = 0;; i++, argvcopy++){
-		a = *(char**)validaddr(argvcopy, sizeof(char**), 0);
+		a = *(char**)validaddr(argvcopy, sizeof(char*), 0);
 		if(a == nil)
 			break;
 		a = validaddr(a, 1, 0);

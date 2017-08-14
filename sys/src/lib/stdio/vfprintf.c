@@ -469,9 +469,11 @@ ocvt_flt(FILE *f, va_list *args, int flags, int width, int precision,
 
 	digits = nil;
 	eptr = nil;
+	edigits = nil;
 	echr = 'e';
 	fmt = afmt;
 	exponent = 0;
+	sign = 0;
 	d = va_arg(*args, double);
 	if(precision < 0) precision = 6;
 	switch(fmt){

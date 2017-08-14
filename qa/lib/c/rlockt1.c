@@ -112,7 +112,7 @@ waiter(int index)
 		if(verbose)
 			print("reader %d: got the rlock in %lld ms\n", getpid(), (end - start) / (1000*1000));
 		runlock(&afterAWhile);
-		if((end - start) / (1000*1000) > 1300)
+		if((end - start) / (1000*1000) > 1500)
 			postnote(PNGROUP, getpid(), smprint("fail: reader %d got the rlock after %lld ms", getpid(),  (end - start) / (1000*1000)));
 	} else {
 		if(verbose)

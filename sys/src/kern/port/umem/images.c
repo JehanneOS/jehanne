@@ -88,7 +88,7 @@ static RWlock pool_lock;	/* to grow chunks or modify free list */
 static ImagePool pool;
 
 #define img_hash(path)	((uint8_t)((path*(PSTEP+1))&(PSTEP-1)))
-#define img_get(ptr)	(&(pool.chunks[(uint8_t)(ptr-1)>>8]->images[(uint8_t)(ptr-1)&(PSTEP-1)]))
+#define img_get(ptr)	(&(pool.chunks[(uint8_t)((ptr)>>8)]->images[(uint8_t)((ptr)&(PSTEP-1))]))
 
 void
 imagepool_init(short max_images)

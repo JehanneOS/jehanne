@@ -49,7 +49,7 @@ enum
 
 static int reprioritize(Proc*);
 static void updatecpu(Proc*);
-static int schedgain = 30;	/* units in seconds */
+static int64_t schedgain = 30;	/* units in seconds */
 
 static void rebalance(void);
 static uint32_t balancetime;

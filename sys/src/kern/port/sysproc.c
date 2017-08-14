@@ -400,7 +400,7 @@ sysexec(char* p, char **argv)
 	argsize += sizeof(uintptr_t);	/* place for argc = nil */
 
 	tmp = up->seg[ESEG]->top - argsize;
-	if(tmp&~(PGSZ-1) != (tmp+sizeof(uintptr_t)+sizeof(char*)*(argc+1))&~(PGSZ-1)){
+	if((tmp&~(PGSZ-1)) != ((tmp+sizeof(uintptr_t)+sizeof(char*)*(argc+1))&~(PGSZ-1))){
 		/* the argument pointers cross a page boundary, keep
 		 * them all in the same page
 		 */

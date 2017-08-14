@@ -9,9 +9,9 @@ if ( test -e $test_output) rm $test_output
 $test > $test_output >[2=1] &
 testpid=$apid
 
-sleep 3
-
 wait $testpid
+
+sleep 5
 
 if ( cat $test_output | grep suicide > /dev/null ) {
 	rm $test_output

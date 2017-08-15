@@ -1672,7 +1672,7 @@ readptr(Param *p, uint8_t *s, int y)
 	uint8_t *q;
 
 	USED(s);
-	memset(&b, 0, sizeof(Buffer);
+	jehanne_memset(&b, 0, sizeof(Buffer));
 	q = p->bytermin + y*p->bwidth;
 	b.red = q;	/* ptr to data */
 	b.grn = b.blu = b.grey = b.alpha = nil;

@@ -609,7 +609,7 @@ extern	void*	jehanne_segbrk(uint32_t);
 extern	void*	jehanne_segattach(int, const char*, void*, unsigned long);
 extern	int	jehanne_segdetach(void*);
 extern	int	jehanne_segfree(void*, unsigned long);
-extern	void	jehanne_sleep(int32_t);
+extern	void	jehanne_sleep(unsigned int millisecs);
 extern	int	jehanne_stat(const char*, uint8_t*, int);
 extern	Waitmsg*	jehanne_wait(void);
 extern	int	jehanne_waitpid(void);

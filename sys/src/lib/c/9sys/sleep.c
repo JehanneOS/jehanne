@@ -1,7 +1,7 @@
 /*
  * This file is part of Jehanne.
  *
- * Copyright (C) 2015 Giacomo Tesio <giacomo@tesio.it>
+ * Copyright (C) 2015-2017 Giacomo Tesio <giacomo@tesio.it>
  *
  * Jehanne is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,9 +20,9 @@
 #include <libc.h>
 
 void
-jehanne_sleep(int32_t millisecs)
+jehanne_sleep(unsigned int millisecs)
 {
-	int64_t wakeup;
+	long wakeup;
 
 	wakeup = awake(millisecs);	// give up the processor, in any case
 	if(millisecs > 0)

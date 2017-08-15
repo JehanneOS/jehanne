@@ -32,6 +32,7 @@
 			"rwakeup0.c",
 			"rwakeup1.c",
 			"sleep.c",
+			"sleep2.c",
 			"sqrt.c",
 			"sysfatal.c",
 			"va_copy.c",

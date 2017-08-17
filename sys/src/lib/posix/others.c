@@ -60,6 +60,13 @@ POSIX_usleep(int *errnop, unsigned int usec)
 	return 0;
 }
 
+int
+POSIX_pause(int *errnop)
+{
+	rendezvous((void*)~0, 1);
+	*errnop = __libposix_get_errno(PosixEINTR);
+	return -1;
+}
 
 clock_t
 POSIX_times(int *errnop, void *buf)

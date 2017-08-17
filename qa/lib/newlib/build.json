@@ -34,6 +34,7 @@
 			"000-hello.c",
 			"010-fork.c",
 			"020-waitpid.c",
+			"030-pause.c",
 			"100-files.c",
 			"101-files.c",
 			"200-signals.c",

@@ -24,11 +24,51 @@
  * POSIX_* functions provide a facade between the Jehanne's libc and
  * the POSIX 1-2008 semantics.
  *
- * libposix_* functions provide the configuration point.
+ * libposix_* functions provide non-standard widely used functions
+ * (eg. libposix_getdents) and configuration points.
  *
  * #include <u.h>
  * #include <posix.h>
+ *
+ * Defining _LIBPOSIX_H before the include allow you to just get dirent
+ * definition.
  */
+
+#ifndef _LIBPOSIX_DIRENT
+#define _LIBPOSIX_DIRENT
+/* dirent alias of stat(5) message.
+ * We (ab)use the fact that both 9P and Jehanne are little endian.
+ * With the new file protocol this might change.
+ */
+struct __attribute__((__packed__)) dirent
+{
+	unsigned short	d_reclen;
+	unsigned short	__pad1__;	/* don't use */
+	unsigned int	__pad2__;	/* don't use */
+	unsigned char	d_type;
+	unsigned int	d_version;
+	unsigned long	d_ino;
+	unsigned int	d_mode;
+	unsigned int	__pad3__;	/* don't use */
+	unsigned int	__pad4__;	/* don't use */
+	unsigned long	d_filesize;
+	unsigned short	d_namlen;
+	char*		d_name;
+};
+
+#define _DIRENT_HAVE_D_RECLEN
+#define _DIRENT_HAVE_D_TYPE
+#define _DIRENT_HAVE_D_VERSION
+#define _DIRENT_HAVE_D_MODE
+#define _DIRENT_HAVE_D_FILESIZE
+#define _DIRENT_HAVE_D_NAMLEN
+#undef _DIRENT_HAVE_D_OFF
+
+#endif /* _LIBPOSIX_DIRENT */
+
+#ifndef _LIBPOSIX_H
+#define _LIBPOSIX_H
+
 typedef unsigned long clock_t;
 
 #define __POSIX_EXIT_PREFIX "posix error "
@@ -70,6 +110,7 @@ extern void POSIX_free(void *ptr);
 extern unsigned int POSIX_sleep(unsigned int seconds);
 extern int POSIX_pipe(int *errnop, int fildes[2]);
 
+extern int libposix_getdents(int *errnop, int fd, struct dirent *buf, int buf_bytes);
 
 /* Library initialization
  */
@@ -245,3 +286,5 @@ extern int libposix_emulate_SIGCHLD(void);
  * and thus defining them cause an error.
  */
 int libposix_set_wait_options(int wcontinued, int wnohang, int wuntraced);
+
+#endif /* _LIBPOSIX_H */

@@ -358,3 +358,9 @@ POSIX_stat(int *errnop, const char *file, void *pstat)
 	*errnop = __libposix_get_errno(e);
 	return -1;
 }
+
+int
+libposix_getdents(int *errnop, int fd, struct dirent *buf, int buf_bytes)
+{
+	return 0;
+}

@@ -21,6 +21,7 @@ typedef uint64_t		uintptr;
 typedef uint64_t		uintptr_t;
 typedef uint32_t		usize;
 typedef __SIZE_TYPE__		size_t;
+typedef long			ssize_t;
 typedef int32_t			pid_t;
 typedef uint32_t		Rune;
 typedef union FPdbleword	FPdbleword;

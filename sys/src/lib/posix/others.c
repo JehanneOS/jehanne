@@ -81,3 +81,108 @@ POSIX_gettimeofday(int *errnop, void *timeval, void *timezone)
 	*errnop = __libposix_get_errno(PosixEINVAL);
 	return -1;
 }
+
+char*
+POSIX_getlogin(int *errnop)
+{
+	return jehanne_getuser();
+}
+
+int
+POSIX_getlogin_r(int *errnop, char *name, int namesize)
+{
+	static char user[64];
+	int fd;
+	int n;
+
+	fd = open("/dev/user", OREAD);
+	if(fd < 0)
+		goto None;
+	n = read(fd, user, (sizeof user)-1);
+	close(fd);
+	if(n <= 0)
+		goto None;
+	if(namesize < n){
+		*errnop = __libposix_get_errno(PosixERANGE);
+		return __libposix_get_errno(PosixERANGE);
+	}
+	user[n] = 0;
+	return 0;
+None:
+	if(namesize < 5){
+		*errnop = __libposix_get_errno(PosixERANGE);
+		return __libposix_get_errno(PosixERANGE);
+	}
+	jehanne_strcpy(name, "none");
+	name[5] = 0;
+	return 0;
+}
+
+char*
+POSIX_getcwd(int *errnop, char *buf, int size)
+{
+	long len;
+	if(buf == nil || size <= 0){
+		*errnop = __libposix_get_errno(PosixEINVAL);
+		return nil;
+	}
+	len = jehanne_getwd(buf, size);
+	if(len == 0){
+		*errnop = __libposix_get_errno(PosixEACCES);
+		return nil;
+	}
+	if(len < 0){
+		*errnop = __libposix_get_errno(PosixERANGE);
+		return nil;
+	}
+	return buf;
+}
+
+char*
+POSIX_getpass(int *errnop, const char *prompt)
+{
+	int r, w, ctl;
+	char *p;
+	static char buf[256];
+
+	if(fd2path(0, buf, sizeof(buf)) == 0 && strcmp("/dev/cons", buf) == 0)
+		r = 0;
+	else if((r = open("/dev/cons", OREAD)) < 0)
+		goto ReturnENXIO;
+
+	if(fd2path(1, buf, sizeof(buf)) == 0 && strcmp("/dev/cons", buf) == 0)
+		w = 1;
+	else if((w = open("/dev/cons", OWRITE)) < 0)
+		goto CloseRAndReturnENXIO;
+
+	if((ctl = open("/dev/consctl", OWRITE)) < 0)
+		goto CloseRWAndReturnENXIO;
+
+	fprint(w, "%s", prompt);
+
+	write(ctl, "rawon", 5);
+	p = buf;
+	while(p < buf+sizeof(buf)-1 && read(r, p, 1) == 1){
+		if(*p == '\n')
+			break;
+		if(*p == ('u' & 037))
+			p = buf;
+		else if(*p == '\b'){
+			if (p > buf)
+				--p;
+		} else
+			++p;
+	}
+	*p = '\0';
+	write(ctl, "rawoff", 6);
+
+	return buf;
+
+CloseRWAndReturnENXIO:
+	close(w);
+CloseRAndReturnENXIO:
+	close(r);
+ReturnENXIO:
+	*errnop = __libposix_get_errno(PosixENXIO);
+	return nil;
+}

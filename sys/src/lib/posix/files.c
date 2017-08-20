@@ -217,7 +217,7 @@ OnIgnoredSignalInterrupt:
 }
 
 long
-POSIX_pwrite(int *errnop, int fd, const void *buf, size_t len, long offset)
+POSIX_pwrite(int *errnop, int fd, const char *buf, size_t len, long offset)
 {
 	long w;
 

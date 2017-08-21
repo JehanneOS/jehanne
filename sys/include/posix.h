@@ -36,6 +36,7 @@
 
 #ifndef _LIBPOSIX_DIRENT
 #define _LIBPOSIX_DIRENT
+
 /* dirent alias of stat(5) message.
  * We (ab)use the fact that both 9P and Jehanne are little endian.
  * With the new file protocol this might change.
@@ -53,7 +54,7 @@ struct __attribute__((__packed__)) dirent
 	unsigned int	__pad4__;	/* don't use */
 	unsigned long	d_filesize;
 	unsigned short	d_namlen;
-	char*		d_name;
+	char		d_name[];
 };
 
 #define _DIRENT_HAVE_D_RECLEN
@@ -63,6 +64,16 @@ struct __attribute__((__packed__)) dirent
 #define _DIRENT_HAVE_D_FILESIZE
 #define _DIRENT_HAVE_D_NAMLEN
 #undef _DIRENT_HAVE_D_OFF
+
+#define	DT_UNKNOWN	 0
+#define	DT_FIFO		 1
+#define	DT_CHR		 2
+#define	DT_DIR		 4
+#define	DT_BLK		 6
+#define	DT_REG		 8
+#define	DT_LNK		10
+#define	DT_SOCK		12
+#define	DT_WHT		14
 
 #endif /* _LIBPOSIX_DIRENT */
 
@@ -110,7 +121,7 @@ extern void POSIX_free(void *ptr);
 extern unsigned int POSIX_sleep(unsigned int seconds);
 extern int POSIX_pipe(int *errnop, int fildes[2]);
 
-extern int libposix_getdents(int *errnop, int fd, struct dirent *buf, int buf_bytes);
+extern int libposix_getdents(int *errnop, int fd, char *buf, int buf_bytes);
 
 /* Library initialization
  */

@@ -17,6 +17,7 @@
  */
 #include <u.h>
 #include <lib9.h>
+#include <9P2000.h>
 #include <posix.h>
 #include "internal.h"
 
@@ -360,7 +361,84 @@ POSIX_stat(int *errnop, const char *file, void *pstat)
 }
 
 int
-libposix_getdents(int *errnop, int fd, struct dirent *buf, int buf_bytes)
+libposix_getdents(int *errnop, int fd, char *buf, int buf_bytes)
 {
-	return 0;
+#define MINSTATLEN	(STATFIXLEN + 4) /* 4 = min (1 char) name, uid, gid, muid */
+
+	int r;
+	Dir *d;
+	struct dirent *dp;
+	char *p;
+
+	if(fd < 0)
+		goto FailWithEBADF;
+	if(buf == nil)
+		goto FailWithEFAULT;
+	if(buf_bytes < MINSTATLEN)
+		goto FailWithEINVAL;
+
+	d = dirfstat(fd);
+	if(d == nil)
+		goto FailWithENOENT;	/* removed? */
+	r = d->mode & DMDIR;
+	free(d);
+
+	if(r == 0)
+		goto FailWithENOTDIR;	/* not a directory */
+
+	r = read(fd, buf, buf_bytes);
+	if(r < 0)
+		goto FailWithENOENT;	/* removed? */
+	if(r < MINSTATLEN)
+		goto FailWithEIO;
+
+	p = buf;
+	while(p - buf < r){
+		/* here we adjust 9P2000 stat info to match
+		 * dirent specification
+		 */
+		dp = (struct dirent *)p;
+
+		/* the count field in stat structure exclude itself */
+		dp->d_reclen += BIT16SZ;
+
+		/* 9P2000 strings are not NUL-terminated */
+		dp->d_name[dp->d_namlen] = '\0';
+
+		/* we have to map types to UNIX */
+		if(dp->d_type & (DMDIR >> 24))
+			dp->d_type = DT_DIR;
+		else if(dp->__pad1__ == '|')	/* kernel device == devpipe */
+			dp->d_type = DT_FIFO;
+		else
+			dp->d_type = DT_REG;	/* UNIX lack fantasy :-) */
+
+		p += dp->d_reclen;
+	}
+
+	return r;
+
+FailWithEBADF:
+	*errnop = __libposix_get_errno(PosixEBADF);
+	return -1;
+
+FailWithEFAULT:
+	*errnop = __libposix_get_errno(PosixEFAULT);
+	return -1;
+
+FailWithEINVAL:
+	*errnop = __libposix_get_errno(PosixEINVAL);
+	return -1;
+
+FailWithENOENT:
+	*errnop = __libposix_get_errno(PosixENOENT);
+	return -1;
+
+FailWithENOTDIR:
+	*errnop = __libposix_get_errno(PosixENOTDIR);
+	return -1;
+
+FailWithEIO:
+	*errnop = __libposix_get_errno(PosixEIO);
+	return -1;
 }

@@ -315,7 +315,7 @@ elf64ldseg(Chan *c, uintptr_t *entryp, Ldseg **rp, char *mach, uint32_t minpgsz)
 	}
 
 	if(c->dev->read(c, &ehdr, sizeof ehdr, 0) != sizeof ehdr){
-		pprint("elf64ldseg: too short for header\n");
+//		pprint("elf64ldseg: too short for header\n");
 		goto done; // too short to be elf but could be something else
 	}
 

@@ -125,9 +125,11 @@ POSIX_open(int *errnop, const char *name, int flags, int mode)
 		goto FailWithError;
 	if(omode & DMDIR){
 		d = dirstat(name);
-		if((d->mode & DMDIR) == 0)
-			e = PosixENOTDIR;
-		free(d);
+		if(d != nil){
+			if((d->mode & DMDIR) == 0)
+				e = PosixENOTDIR;
+			free(d);
+		}
 		if(e != 0)
 			goto FailWithError;
 		omode &= ~DMDIR;
@@ -375,7 +377,7 @@ POSIX_stat(int *errnop, const char *file, void *pstat)
 int
 POSIX_chmod(int *errnop, const char *path, int mode)
 {
-	long cmode = 0;
+	long cperm = 0;
 	PosixError e;
 
 	e = __libposix_open_translation(0, mode, nil, &cperm);

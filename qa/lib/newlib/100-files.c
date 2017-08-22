@@ -21,13 +21,13 @@ main(int argc, char** argv) {
 	i = fprintf(fp, "%s works.\n", "fprintf");
 	if(i <= 0){
 		fclose(fp);
-		printf("Can't write 'fprintf works.' to %s", output);
+		printf("Can't write 'fprintf works.' to %s (fprintf returned %d)", output, i);
 		return 2;
 	}
 	i = fputs("fputs works.\n", fp);
 	if(i == EOF){
 		fclose(fp);
-		printf("Can't write 'fputs works.' to %s", output);
+		printf("Can't write 'fputs works.' to %s (fputs returned EOF)", output);
 		return 3;
 	}
 	fclose(fp);

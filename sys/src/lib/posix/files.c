@@ -332,8 +332,7 @@ POSIX_fstat(int *errnop, int file, void *pstat)
 	}
 OnIgnoredSignalInterrupt:
 	d = dirfstat(file);
-	if(d == nil)
-	{
+	if(d == nil){
 		if(__libposix_restart_syscall())
 			goto OnIgnoredSignalInterrupt;
 		*errnop = __libposix_translate_errstr((uintptr_t)POSIX_fstat);
@@ -361,8 +360,7 @@ POSIX_stat(int *errnop, const char *file, void *pstat)
 		return -1;
 	}
 	d = dirstat(file);
-	if(d == nil)
-	{
+	if(d == nil){
 		*errnop = __libposix_translate_errstr((uintptr_t)POSIX_stat);
 		return -1;
 	}
@@ -377,21 +375,103 @@ POSIX_stat(int *errnop, const char *file, void *pstat)
 int
 POSIX_chmod(int *errnop, const char *path, int mode)
 {
+	Dir *dir, ndir;
 	long cperm = 0;
 	PosixError e;
 
-	e = __libposix_open_translation(0, mode, nil, &cperm);
-	if(e != 0){
-		*errnop = __libposix_get_errno(e);
+	if(path == nil)
+		e = PosixENOENT;
+	else
+		e = __libposix_open_translation(0, mode, nil, &cperm);
+	if(e != 0)
+		goto FailWithError;
+	dir = dirstat(path);
+	if(dir == nil){
+		e = PosixENOENT;
+		goto FailWithError;
+	}
+	nulldir(&ndir);
+	ndir.mode = (dir->mode & ~(0777)) | (cperm & 0777);
+	free(dir);
+
+	if(dirwstat(path, &ndir) < 0){
+		*errnop = __libposix_translate_errstr((uintptr_t)POSIX_chmod);
 		return -1;
 	}
 
+	return 0;
+
+FailWithError:
+	*errnop = __libposix_get_errno(e);
 	return -1;
 }
 
 int
 POSIX_fchmodat(int *errnop, int fd, const char *path, long mode, int flag)
 {
+#define AT_FDCWD -100 /* from NetBSD; TODO: get from configuration */ 
+	Dir *dir, ndir;
+	long cperm = 0;
+	char fullpath[4096], *p;
+	int l;
+	PosixError e;
+
+	if(fd == AT_FDCWD){
+		return POSIX_chmod(errnop, path, mode);
+	} else if(path == nil){
+		e = PosixENOENT;
+	} else if(strlen(path) > sizeof(fullpath)-100){
+		e = PosixENAMETOOLONG;
+	} else if(path[0] == '/'){
+		if(fd < 0)
+			e = PosixEBADF;
+		else {
+			dir = dirfstat(fd);
+			if(dir == nil){
+				e = PosixEBADF;
+			} else {
+				if((dir->mode & DMDIR) == 0)
+					e = PosixENOTDIR;
+				free(dir);
+			}
+		}
+	} else {
+		e = __libposix_open_translation(0, mode, nil, &cperm);
+	}
+	if(e == 0 && fd2path(fd, fullpath, sizeof(fullpath)-2) != 0)
+		e = PosixEBADF;
+	if(e != 0)
+		goto FailWithError;
+
+	l = strlen(fullpath);
+	fullpath[l++] = '/';
+	p = fullpath + l;
+	l = strlen(path);
+	if(l > sizeof(fullpath) - (p - fullpath) - 1){
+		e = PosixENAMETOOLONG;
+		goto FailWithError;
+	}
+	strncpy(p, path, strlen(path)+1);
+	cleanname(fullpath);
+
+	dir = dirstat(path);
+	if(dir == nil){
+		e = PosixENOENT;
+		goto FailWithError;
+	}
+	nulldir(&ndir);
+	ndir.mode = (dir->mode & ~(0777)) | (cperm & 0777);
+	free(dir);
+
+	if(dirwstat(path, &ndir) < 0){
+		*errnop = __libposix_translate_errstr((uintptr_t)POSIX_chmod);
+		return -1;
+	}
+
+	return 0;
+
+FailWithError:
+	*errnop = __libposix_get_errno(e);
 	return -1;
 }
 

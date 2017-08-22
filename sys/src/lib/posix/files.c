@@ -113,6 +113,7 @@ POSIX_open(int *errnop, const char *name, int flags, int mode)
 {
 	long omode = 0, cperm = 0;
 	PosixError e;
+	Dir *d;
 	int f;
 
 	if(name == nil){
@@ -120,9 +121,16 @@ POSIX_open(int *errnop, const char *name, int flags, int mode)
 		return -1;
 	}
 	e = __libposix_open_translation(flags, mode, &omode, &cperm);
-	if(e != 0){
-		*errnop = __libposix_get_errno(e);
-		return -1;
+	if(e != 0)
+		goto FailWithError;
+	if(omode & DMDIR){
+		d = dirstat(name);
+		if((d->mode & DMDIR) == 0)
+			e = PosixENOTDIR;
+		free(d);
+		if(e != 0)
+			goto FailWithError;
+		omode &= ~DMDIR;
 	}
 	if(cperm == 0){
 		f = sys_open(name, omode);
@@ -132,6 +140,10 @@ POSIX_open(int *errnop, const char *name, int flags, int mode)
 	if(f >= 0)
 		return f;
 	*errnop = __libposix_translate_errstr((uintptr_t)POSIX_open);
+	return -1;
+
+FailWithError:
+	*errnop = __libposix_get_errno(e);
 	return -1;
 }
 
@@ -360,6 +372,30 @@ POSIX_stat(int *errnop, const char *file, void *pstat)
 	return -1;
 }
 
+int
+POSIX_chmod(int *errnop, const char *path, int mode)
+{
+	long cmode = 0;
+	PosixError e;
+
+	e = __libposix_open_translation(0, mode, nil, &cperm);
+	if(e != 0){
+		*errnop = __libposix_get_errno(e);
+		return -1;
+	}
+
+	return -1;
+}
+
+int
+POSIX_fchmodat(int *errnop, int fd, const char *path, long mode, int flag)
+{
+	return -1;
+}
+
+/* getdents is not POSIX, but is used in POSIX C library to implement
+ * readdir.
+ */
 int
 libposix_getdents(int *errnop, int fd, char *buf, int buf_bytes)
 {

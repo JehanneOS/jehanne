@@ -245,13 +245,27 @@ typedef PosixError (*PosixTimezoneReader)(void *timezone, const Tm *time);
 extern int libposix_set_timezone_reader(PosixTimezoneReader reader);
 
 /* Map the POSIX_open flag and mode to Jehanne's arguments to open
- * or create.
+ * or create. It's also used in chmod to translate mode.
  *
  * omode is a pointer to the open/create omode argument
  * cperm is a pointer to the create perm argument that must be filled
- * only if O_CREATE has been set in mode.
+ * only if omode is nil or O_CREATE has been set in mode.
  *
  * Must return 0 on success or a PosixError on failure.
+ *
+ * In flag:
+ * - O_CLOEXEC must be mapped to OCEXEC in omode
+ * - O_TRUNC must be mapped to OTRUNC in omode
+ * - O_APPEND|O_CREAT must be mapped to DMAPPEND in cperm
+ * - O_APPEND without O_CREAT must return PosixENOTSUP
+ * - O_EXCL|O_CREAT must be mapped to DMEXCL in cperm
+ * - O_EXCL without O_CREAT it must return PosixENOTSUP
+ * - O_SEARCH must be mapped to OEXEC|DMDIR in omode
+ * - O_DIRECTORY|O_CREAT must return PosixEINVAL
+ * - O_DIRECTORY without O_CREAT must be mapped to DMDIR in omode
+ * - O_DSYNC, O_NOCTTY, O_NOFOLLOW, O_NONBLOCK, O_RSYNC, O_SYNC
+ *   and O_TTY_INIT must be ignored
+ * - S_ISUID, S_ISGID, S_ISVTX must be ignored
  */
 typedef PosixError (*PosixOpenTranslator)(int flag, int mode, long *omode, long *cperm);
 

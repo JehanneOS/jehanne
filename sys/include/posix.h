@@ -87,6 +87,8 @@ typedef unsigned long clock_t;
 #define __POSIX_SIGNAL_PREFIX "posix: "
 
 extern void POSIX_exit(int code) __attribute__((noreturn));
+extern int POSIX_chmod(int *errnop, const char *path, int mode);
+extern int POSIX_fchmodat(int *errnop, int fd, const char *path, long mode, int flag);
 extern int POSIX_close(int *errnop, int file);
 extern int POSIX_execve(int *errnop, const char *name, char * const*argv, char * const*env);
 extern int POSIX_fork(int *errnop);

@@ -1,3 +1,6 @@
 #!/cmd/rc
 
 rm -fr /tmp/qa-files
+
+echo PASS
+exit PASS

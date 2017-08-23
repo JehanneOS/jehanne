@@ -1,0 +1,3 @@
+#!/cmd/rc
+
+rm -fr /tmp/qa-files

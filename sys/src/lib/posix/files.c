@@ -475,6 +475,104 @@ FailWithError:
 	return -1;
 }
 
+int
+POSIX_chdir(int *errnop, const char *path)
+{
+	Dir *d = nil;
+	PosixError e = 0;
+
+	if(path == nil){
+		e = PosixEFAULT;
+	} else {
+		d = dirstat(path);
+		if(d == nil){
+			e = PosixENOENT;
+		} else {
+			if((d->mode & DMDIR) == 0)
+				e = PosixENOTDIR;
+			free(d);
+		}
+	}
+	if(e != 0)
+		goto FailWithError;
+
+	if(chdir(path) == 0)
+		return 0;
+
+	*errnop = __libposix_translate_errstr((uintptr_t)POSIX_chdir);
+	return -1;
+
+FailWithError:
+	*errnop = __libposix_get_errno(e);
+	return -1;
+}
+
+int
+POSIX_fchdir(int *errnop, int fd)
+{
+	Dir *d;
+	PosixError e = 0;
+	char buf[4096];
+
+	if(fd < 0){
+		e = PosixEBADF;
+	} else {
+		d = dirfstat(fd);
+		if(d == nil){
+			e = PosixENOENT;
+		} else {
+			if((d->mode & DMDIR) == 0)
+				e = PosixENOTDIR;
+			free(d);
+			if(fd2path(fd, buf, sizeof(buf)) != 0)
+				e = PosixENOENT;	/* just removed? */
+		}
+	}
+	if(e != 0)
+		goto FailWithError;
+
+	if(chdir(buf) == 0)
+		return 0;
+
+	*errnop = __libposix_translate_errstr((uintptr_t)POSIX_fchdir);
+	return -1;
+
+FailWithError:
+	*errnop = __libposix_get_errno(e);
+	return -1;
+}
+
+int
+POSIX_mkdir(int *errnop, const char *path, int mode)
+{
+	long cperm = 0;
+	PosixError e = 0;
+	int fd;
+
+	if(path == nil)
+		e = PosixEFAULT;
+	else if(access(path, AEXIST) == 0)
+		e = PosixEEXIST;
+	else
+		e = __libposix_open_translation(0, mode, nil, &cperm);
+	if(e != 0)
+		goto FailWithError;
+
+	fd = create(path, OREAD, DMDIR | cperm);
+	if(fd >= 0){
+		close(fd);
+		return 0;
+	}
+
+	*errnop = __libposix_translate_errstr((uintptr_t)POSIX_mkdir);
+	return -1;
+
+FailWithError:
+	*errnop = __libposix_get_errno(e);
+	return -1;
+}
+
+
 /* getdents is not POSIX, but is used in POSIX C library to implement
  * readdir.
  */

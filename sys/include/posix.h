@@ -180,6 +180,7 @@ typedef enum PosixSignals
  *
  *	libposix_define_errno to set the value of each PosixError
  *	libposix_define_signal to set the value of each PosixSignal
+ *	libposix_define_at_fdcwd to set the value of AT_FDCWD (for fchmodat)
  *	libposix_translate_error to translate error strings to PosixError
  * 	libposix_set_signal_trampoline to dispatch signal received as notes
  *	libposix_set_stat_reader
@@ -205,6 +206,9 @@ typedef PosixError (*PosixErrorTranslator)(char* error, uintptr_t caller);
  * for any caller, after the specialized ones.
  */
 extern int libposix_translate_error(PosixErrorTranslator translation, uintptr_t caller);
+
+/* define the value of AT_FDCWD according to the library headers */
+extern int libposix_define_at_fdcwd(int AT_FDCWD);
 
 /* define the value of a specific PosixError according to the library headers */
 extern int libposix_define_errno(PosixError e, int errno);

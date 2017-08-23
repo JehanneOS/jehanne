@@ -23,6 +23,7 @@
 
 static PosixStatReader __libposix_stat_reader;
 static PosixOpenTranslator __libposix_open_translation;
+static int __libposix_AT_FDCWD;
 
 typedef enum SeekTypes
 {
@@ -409,14 +410,13 @@ FailWithError:
 int
 POSIX_fchmodat(int *errnop, int fd, const char *path, long mode, int flag)
 {
-#define AT_FDCWD -100 /* from NetBSD; TODO: get from configuration */ 
 	Dir *dir, ndir;
 	long cperm = 0;
 	char fullpath[4096], *p;
 	int l;
 	PosixError e;
 
-	if(fd == AT_FDCWD){
+	if(fd == __libposix_AT_FDCWD){
 		return POSIX_chmod(errnop, path, mode);
 	} else if(path == nil){
 		e = PosixENOENT;
@@ -559,4 +559,13 @@ FailWithENOTDIR:
 FailWithEIO:
 	*errnop = __libposix_get_errno(PosixEIO);
 	return -1;
+}
+
+int
+libposix_define_at_fdcwd(int AT_FDCWD)
+{
+	if(__libposix_AT_FDCWD != 0)
+		return -1;
+	__libposix_AT_FDCWD = AT_FDCWD;
+	return 0;
 }

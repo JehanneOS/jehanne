@@ -46,7 +46,7 @@ __libposix_free_wait_list(void)
 {
 	WaitList *wl, *c;
 
-	/* free the wait list as the memory is shared */
+	/* free the wait list as the memory is NOT shared */
 	wl = *__libposix_wait_list;
 	if(wl != nil){
 		*__libposix_wait_list = nil;

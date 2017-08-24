@@ -38,7 +38,8 @@
  *
  * Since notes in Jehanne are not reentrant, signals translated to
  * notes will be enqueued in kernel. A special machinery is implemented
- * for timers, so that they can be used in signal handlers.
+ * for timers, so that they can be used in signal handlers to wakeup
+ * the calling process.
  *
  * For all the signals except SIGCONT, the burden of interpreting the
  * signal is on the receiver: the sender just send the signal.
@@ -98,7 +99,7 @@
  *
  * TIMERS
  * ------
- * The functions alarm() and settimer() generate SIGALRM, SIGPROF
+ * The functions alarm() and setitimer() generate SIGALRM, SIGPROF
  * or SIGVTALRM for the current process. We want timers to be able to
  * expire in a signal handler (interrupting a blocking syscall) but
  * without giving up the simplicity of notes.

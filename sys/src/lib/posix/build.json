@@ -18,7 +18,8 @@
 			"others.c",
 			"processes.c",
 			"sigchlds.c",
-			"signals.c"
+			"signals.c",
+			"timers.c"
 		]
 	}
 }

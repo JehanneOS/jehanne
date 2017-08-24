@@ -75,13 +75,6 @@ POSIX_times(int *errnop, void *buf)
 	return -1;
 }
 
-int
-POSIX_gettimeofday(int *errnop, void *timeval, void *timezone)
-{
-	*errnop = __libposix_get_errno(PosixEINVAL);
-	return -1;
-}
-
 char*
 POSIX_getlogin(int *errnop)
 {

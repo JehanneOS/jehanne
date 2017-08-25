@@ -37,11 +37,15 @@ POSIX_gettimeofday(int *errnop, void *timeval, void *timezone)
 	t = localtime(time(nil));
 
 	if(timeval != nil){
+		if(__libposix_timeval_reader == nil)
+			sysfatal("libposix: uninitialzed timeval reader");
 		e = __libposix_timeval_reader(timeval, t);
 		if(e != 0)
 			goto FailWithError;
 	}
 	if(timezone != nil){
+		if(__libposix_timezone_reader == nil)
+			sysfatal("libposix: uninitialzed timezone reader");
 		e = __libposix_timezone_reader(timezone, t);
 		if(e != 0)
 			goto FailWithError;

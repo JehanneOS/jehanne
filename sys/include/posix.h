@@ -86,6 +86,7 @@ typedef unsigned long clock_t;
 #define __POSIX_EXIT_SIGNAL_PREFIX "terminated by posix signal "
 #define __POSIX_SIGNAL_PREFIX "posix: "
 
+extern int POSIX_access(int *errnop, const char *path, int amode);
 extern void POSIX_exit(int code) __attribute__((noreturn));
 extern int POSIX_chmod(int *errnop, const char *path, int mode);
 extern int POSIX_fchmodat(int *errnop, int fd, const char *path, long mode, int flag);
@@ -281,6 +282,8 @@ typedef PosixError (*PosixOpenTranslator)(int flag, int mode, long *omode, long 
 extern int libposix_translate_open(PosixOpenTranslator translation);
 
 extern int libposix_translate_seek_whence(int seek_set, int seek_cur, int seek_end);
+
+extern int libposix_translate_access_mode(int f_ok, int r_ok, int w_ok, int x_ok);
 
 /* Map the main exit status received by POSIX_exit to the exit status
  * string for Jehanne.

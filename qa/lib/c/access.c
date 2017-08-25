@@ -1,7 +1,7 @@
 /*
  * This file is part of Jehanne.
  *
- * Copyright (C) 2016-2017 Giacomo Tesio <giacomo@tesio.it>
+ * Copyright (C) 2017 Giacomo Tesio <giacomo@tesio.it>
  *
  * Jehanne is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,38 +15,26 @@
  * You should have received a copy of the GNU General Public License
  * along with Jehanne.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 #include <u.h>
-#include <libc.h>
+#include <lib9.h>
 
-int
-jehanne_access(const char *name, int mode)
+void
+main(void)
 {
-	int fd;
-	Dir *db;
-
-	static char omode[] = {
-		OSTAT,
-		OEXEC,
-		OWRITE,
-		ORDWR,
-		OREAD,
-		OEXEC,  /* 5=4+1 READ|EXEC, EXEC is enough */
-		ORDWR,
-		ORDWR   /* 7=4+2+1 READ|WRITE|EXEC, ignore EXEC */
-	};
-
-	fd = open(name, omode[mode&AMASK]);
-	if(fd >= 0){
-		close(fd);
-		return 0;
+	char *err = nil;
+	if(access("/tmp", AEXIST) != 0)
+		err = "/tmp does not exists";
+	else if(access("/tmp", AREAD) != 0)
+		err = "/tmp is not readable";
+	else if(access("/tmp", AWRITE) != 0)
+		err = "/tmp is not writeable";
+	else if(access("/tmp", AEXEC) != 0)
+		err = "/tmp is not traversable";
+	if(err == nil){
+		print("PASS\n");
+		exits("PASS");
+	} else {
+		print("FAIL: %s\n", err);
+		exits("FAIL");
 	}
-	db = jehanne_dirstat(name);
-	if(db != nil){
-		fd = db->mode & omode[mode&AMASK];
-		jehanne_free(db);
-		if(fd)
-			return 0;
-	}
-	return -1;
 }

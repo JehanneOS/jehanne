@@ -12,6 +12,7 @@
 			"cp *.rc $JEHANNE/arch/$ARCH/qa/lib/c/"
 		],
 		"SourceFilesCmd": [
+			"access.c",
 			"asmscall.c",
 			"cleanname.c",
 			"conswrite.c",

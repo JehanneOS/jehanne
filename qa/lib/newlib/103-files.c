@@ -39,6 +39,21 @@ main(int argc, char **argv)
 		printf("FAIL: mkdir(qa-files) in /tmp returns %d\n", ret);
 		exit(5);
 	}
+	ret = access("/tmp/qa-files", F_OK);
+	if(ret != 0){
+		printf("FAIL: access(\"/tmp/qa-files\", F_OK) returned %d; errno %d\n", ret, errno);
+		exit(6);
+	}
+	ret = access("/tmp/qa-files", R_OK);
+	if(ret != 0){
+		printf("FAIL: access(\"/tmp/qa-files\", R_OK) returned %d; errno %d\n", ret, errno);
+		exit(7);
+	}
+	ret = access("/tmp/qa-files", X_OK);
+	if(ret != 0){
+		printf("FAIL: access(\"/tmp/qa-files\", X_OK) returned %d; errno %d\n", ret, errno);
+		exit(8);
+	}
 
 	return 0;
 }

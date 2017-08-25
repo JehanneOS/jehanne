@@ -24,6 +24,10 @@
 static PosixStatReader __libposix_stat_reader;
 static PosixOpenTranslator __libposix_open_translation;
 static int __libposix_AT_FDCWD;
+static int __libposix_F_OK;
+static int __libposix_R_OK;
+static int __libposix_W_OK;
+static int __libposix_X_OK;
 
 typedef enum SeekTypes
 {
@@ -87,6 +91,19 @@ libposix_translate_seek_whence(int seek_set, int seek_cur, int seek_end)
 	return 1;
 }
 
+int
+libposix_translate_access_mode(int f_ok, int r_ok, int w_ok, int x_ok)
+{
+	if(__libposix_initialized())
+		return 0;
+
+	__libposix_F_OK = f_ok;
+	__libposix_R_OK = r_ok;
+	__libposix_W_OK = w_ok;
+	__libposix_X_OK = x_ok;
+	return 1;
+}
+
 static SeekTypes
 find_seek_type(int whence)
 {
@@ -96,6 +113,32 @@ find_seek_type(int whence)
 		return SeekCurrent;
 	if(__libposix_seek_types[SeekEnd] == whence)
 		return SeekEnd;
+	return -1;
+}
+
+int
+POSIX_access(int *errnop, const char *path, int amode)
+{
+	PosixError e = 0;
+	
+	if(path == nil || path[0] == '\0'){
+		e = PosixENOENT;
+ 	} else if(amode == __libposix_F_OK){
+		if(access(path, AEXIST) == 0)
+			return 0;
+		e = PosixENOENT;
+	} else if(amode & ~(__libposix_R_OK|__libposix_W_OK|__libposix_X_OK))
+		e = PosixEINVAL;
+	else if((amode & __libposix_R_OK) && access(path, AREAD) != 0)
+		e = PosixEACCES;
+	else if((amode & __libposix_W_OK) && access(path, AWRITE) != 0)
+		e = PosixEACCES;
+	else if((amode & __libposix_X_OK) && access(path, AEXEC) != 0)
+		e = PosixEACCES;
+	else
+		return 0;
+
+	*errnop = __libposix_get_errno(e);
 	return -1;
 }
 

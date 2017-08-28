@@ -53,17 +53,14 @@ jehanne_access(const char *name, int mode)
 				user = jehanne_getuser();
 				if(jehanne_strcmp(user, db->gid) == 0){
 					/* check group */
-					tmp = db->mode & (reqmode << 3);
-					tmp = tmp >> 3;
+					tmp |= (db->mode & (reqmode << 3)) >> 3;
 					if(tmp != reqmode && jehanne_strcmp(user, db->uid)== 0){
 						/* check user */
-						tmp = db->mode & (reqmode << 6);
-						tmp = tmp >> 6;
+						tmp |= (db->mode & (reqmode << 6)) >> 6;
 					}
 				} else if (jehanne_strcmp(user, db->uid)== 0){
 					/* check user */
-					tmp = db->mode & (reqmode << 6);
-					tmp = tmp >> 6;
+					tmp |= (db->mode & (reqmode << 6)) >> 6;
 				}
 			}
 		}

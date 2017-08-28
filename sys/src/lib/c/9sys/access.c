@@ -22,9 +22,7 @@
 int
 jehanne_access(const char *name, int mode)
 {
-	int tmp, reqmode;
-	Dir *db;
-	char *user;
+	int fd, reqmode;
 
 	static char omode[] = {
 		OSTAT,
@@ -38,35 +36,25 @@ jehanne_access(const char *name, int mode)
 	};
 
 	reqmode = omode[mode&AMASK];
-	tmp = open(name, reqmode);
-	if(tmp >= 0){
-		close(tmp);
+	fd = open(name, reqmode);
+	if(fd >= 0){
+		close(fd);
 		return 0;
 	}
-	db = jehanne_dirstat(name);
-	if(db != nil){
-		if(db->mode & DMDIR){
-			/* check other first */
-			tmp = db->mode & reqmode;
-			if(tmp != reqmode){
-				/* TODO: make something better */
-				user = jehanne_getuser();
-				if(jehanne_strcmp(user, db->gid) == 0){
-					/* check group */
-					tmp |= (db->mode & (reqmode << 3)) >> 3;
-					if(tmp != reqmode && jehanne_strcmp(user, db->uid)== 0){
-						/* check user */
-						tmp |= (db->mode & (reqmode << 6)) >> 6;
-					}
-				} else if (jehanne_strcmp(user, db->uid)== 0){
-					/* check user */
-					tmp |= (db->mode & (reqmode << 6)) >> 6;
-				}
-			}
-		}
-		jehanne_free(db);
-		if(tmp == reqmode)
-			return 0;
-	}
+
+	/* WARNING:
+	 *
+	 * In Plan 9 access(AWRITE) and access(AEXEC) in directories
+	 * fail despite the actual permission of the directory.
+	 *
+	 * This is well understood in Plan 9, but it's counter intuitive.
+	 *
+	 * In Plan 9, to create a file in a directory you need write
+	 * permission in the directory. Still you don't need to (and you
+	 * cannot) open the directory for writing before calling create.
+	 *
+	 * To my eyes this is a UNIX inheritance that could be "fixed"
+	 * but there are some trade off.
+	 */
 	return -1;
 }

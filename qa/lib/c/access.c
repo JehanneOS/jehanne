@@ -26,10 +26,15 @@ main(void)
 		err = "/tmp does not exists";
 	else if(access("/tmp", AREAD) != 0)
 		err = "/tmp is not readable";
+/* NOTE:
+ * In Plan 9 access(AWRITE) and access(AEXEC) in directories
+ * fail despite the actual permission of the directory.
+ *
 	else if(access("/tmp", AWRITE) != 0)
 		err = "/tmp is not writeable";
 	else if(access("/tmp", AEXEC) != 0)
 		err = "/tmp is not traversable";
+*/
 	if(err == nil){
 		print("PASS\n");
 		exits("PASS");

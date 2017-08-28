@@ -119,25 +119,36 @@ find_seek_type(int whence)
 int
 POSIX_access(int *errnop, const char *path, int amode)
 {
+	Dir *d;
 	PosixError e = 0;
 	
+	d = dirstat(path);
 	if(path == nil || path[0] == '\0'){
 		e = PosixENOENT;
- 	} else if(amode == __libposix_F_OK){
-		if(access(path, AEXIST) == 0)
-			return 0;
+	} else if(d == nil){
 		e = PosixENOENT;
-	} else if(amode & ~(__libposix_R_OK|__libposix_W_OK|__libposix_X_OK))
+	} else if(amode == __libposix_F_OK){
+		goto AccessDone;
+	} else if(amode & ~(__libposix_R_OK|__libposix_W_OK|__libposix_X_OK)){
 		e = PosixEINVAL;
-	else if((amode & __libposix_R_OK) && access(path, AREAD) != 0)
+	} else if((amode & __libposix_R_OK) && access(path, AREAD) != 0){
 		e = PosixEACCES;
-	else if((amode & __libposix_W_OK) && access(path, AWRITE) != 0)
+	} else if((d->mode & DMDIR) != 0){
+		/* we lie, but on Plan 9 access(AWRITE) and access(AEXEC)
+		 * will always fail on directories.
+		 */
+		goto AccessDone;
+	} else if((amode & __libposix_W_OK) && access(path, AWRITE) != 0){
 		e = PosixEACCES;
-	else if((amode & __libposix_X_OK) && access(path, AEXEC) != 0)
+	} else if((amode & __libposix_X_OK) && access(path, AEXEC) != 0){
 		e = PosixEACCES;
-	else
+	}else{
+AccessDone:
+		free(d);
 		return 0;
+	}
 
+	free(d);
 	*errnop = __libposix_get_errno(e);
 	return -1;
 }

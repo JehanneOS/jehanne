@@ -22,8 +22,9 @@
 int
 jehanne_access(const char *name, int mode)
 {
-	int fd;
+	int tmp, reqmode;
 	Dir *db;
+	char *user;
 
 	static char omode[] = {
 		OSTAT,
@@ -36,16 +37,38 @@ jehanne_access(const char *name, int mode)
 		ORDWR   /* 7=4+2+1 READ|WRITE|EXEC, ignore EXEC */
 	};
 
-	fd = open(name, omode[mode&AMASK]);
-	if(fd >= 0){
-		close(fd);
+	reqmode = omode[mode&AMASK];
+	tmp = open(name, reqmode);
+	if(tmp >= 0){
+		close(tmp);
 		return 0;
 	}
 	db = jehanne_dirstat(name);
 	if(db != nil){
-		fd = db->mode & omode[mode&AMASK];
+		if(db->mode & DMDIR){
+			/* check other first */
+			tmp = db->mode & reqmode;
+			if(tmp != reqmode){
+				/* TODO: make something better */
+				user = jehanne_getuser();
+				if(jehanne_strcmp(user, db->gid) == 0){
+					/* check group */
+					tmp = db->mode & (reqmode << 3);
+					tmp = tmp >> 3;
+					if(tmp != reqmode && jehanne_strcmp(user, db->uid)== 0){
+						/* check user */
+						tmp = db->mode & (reqmode << 6);
+						tmp = tmp >> 6;
+					}
+				} else if (jehanne_strcmp(user, db->uid)== 0){
+					/* check user */
+					tmp = db->mode & (reqmode << 6);
+					tmp = tmp >> 6;
+				}
+			}
+		}
 		jehanne_free(db);
-		if(fd)
+		if(tmp == reqmode)
 			return 0;
 	}
 	return -1;

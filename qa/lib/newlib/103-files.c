@@ -38,21 +38,37 @@ main(int argc, char **argv)
 	if(ret != 0){
 		printf("FAIL: mkdir(qa-files) in /tmp returns %d\n", ret);
 		exit(5);
+	} else {
+		printf("mkdir(\"qa-files\", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == 0\n");
 	}
+
 	ret = access("/tmp/qa-files", F_OK);
 	if(ret != 0){
 		printf("FAIL: access(\"/tmp/qa-files\", F_OK) returned %d; errno %d\n", ret, errno);
 		exit(6);
+	} else {
+		printf("access(\"/tmp/qa-files\", F_OK) == 0\n");
 	}
 	ret = access("/tmp/qa-files", R_OK);
 	if(ret != 0){
 		printf("FAIL: access(\"/tmp/qa-files\", R_OK) returned %d; errno %d\n", ret, errno);
 		exit(7);
+	} else {
+		printf("access(\"/tmp/qa-files\", R_OK) == 0\n");
+	}
+	ret = access("/tmp/qa-files", W_OK);
+	if(ret != 0){
+		printf("FAIL: access(\"/tmp/qa-files\", W_OK) returned %d; errno %d\n", ret, errno);
+		exit(7);
+	} else {
+		printf("access(\"/tmp/qa-files\", W_OK) == 0\n");
 	}
 	ret = access("/tmp/qa-files", X_OK);
 	if(ret != 0){
 		printf("FAIL: access(\"/tmp/qa-files\", X_OK) returned %d; errno %d\n", ret, errno);
 		exit(8);
+	} else {
+		printf("access(\"/tmp/qa-files\", X_OK) == 0\n");
 	}
 
 	return 0;

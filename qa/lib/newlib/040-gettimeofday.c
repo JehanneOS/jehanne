@@ -1,15 +1,13 @@
 #include <stdio.h>
 #include <sys/time.h>
+#include <unistd.h>
 
 int main (int argc, char** argv) {
 	struct timeval tvalBefore, tvalAfter;
 	long delta;
 
 	gettimeofday (&tvalBefore, NULL);
-	int i =0;
-	while (i < 100000000)
-		i++;
-
+	sleep(2);
 	gettimeofday (&tvalAfter, NULL);
 
 	// Changed format to long int (%ld), changed time calculation

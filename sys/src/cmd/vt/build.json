@@ -1,0 +1,14 @@
+{
+	"vt": {
+		"Include": [
+			"../cmd.json"
+		],
+		"Install": "/arch/$ARCH/cmd/",
+		"Program": "vt",
+		"SourceFiles": [
+			"main.c",
+			"vt.c",
+			"fs.c"
+		]
+	}
+}

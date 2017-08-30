@@ -530,6 +530,27 @@ FailWithError:
 }
 
 int
+POSIX_chown(int *errnop, const char *pathname, int owner, int group)
+{
+	/* TODO: implement when actually needed */
+	return 0;
+}
+
+int
+POSIX_fchownat(int *errnop, int fd, const char *path, int owner, int group, int flag)
+{
+	/* TODO: implement when actually needed */
+	return 0;
+}
+
+int
+POSIX_lchown(int *errnop, const char *path, int owner, int group)
+{
+	/* TODO: implement when actually needed */
+	return 0;
+}
+
+int
 POSIX_chdir(int *errnop, const char *path)
 {
 	Dir *d = nil;

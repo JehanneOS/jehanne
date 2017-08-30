@@ -18,10 +18,16 @@ for(t in $l){
 			echo -n $t:
 			$t > /tmp/qa.log >[2=1]
 			st = $status
-			if(~ `{echo $st|field 3} PASS) {
+			switch( `{echo $st|field 3} ){
+			case PASS
 				rm /tmp/qa.log && echo PASS
+			case SKIP
+				echo -n ' SKIP: ' && cat /tmp/qa.log && rm /tmp/qa.log
+			case FAIL
+				echo $st && cat /tmp/qa.log; exit $st
+			case *
+				echo Unexpected test result: $st && cat /tmp/qa.log; exit $st
 			}
-			if not { echo $st && cat /tmp/qa.log; exit $st}
 		}
 	}
 }

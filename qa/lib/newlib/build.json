@@ -35,6 +35,7 @@
 			"010-fork.c",
 			"020-waitpid.c",
 			"030-pause.c",
+			"031-setjmp.c",
 			"040-gettimeofday.c",
 			"100-files.c",
 			"101-files.c",

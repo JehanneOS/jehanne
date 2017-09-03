@@ -82,11 +82,21 @@ struct __attribute__((__packed__)) dirent
 
 typedef unsigned long clock_t;
 
+typedef enum PosixRUsages
+{
+	PosixRUsageSelf = 0,
+	PosixRUsageChildren = 1,
+
+	PosixRUsageUnknown = -1
+} PosixRUsages;
+
 #define __POSIX_EXIT_PREFIX "posix error "
 #define __POSIX_EXIT_SIGNAL_PREFIX "terminated by posix signal "
 #define __POSIX_SIGNAL_PREFIX "posix: "
 
 extern int POSIX_access(int *errnop, const char *path, int amode);
+extern int POSIX_dup(int *errnop, int fildes);
+extern int POSIX_dup2(int *errnop, int fildes, int fildes2);
 extern void POSIX_exit(int code) __attribute__((noreturn));
 extern int POSIX_chmod(int *errnop, const char *path, int mode);
 extern int POSIX_fchmodat(int *errnop, int fd, const char *path, long mode, int flag);
@@ -99,7 +109,7 @@ extern int POSIX_mkdir(int *errnop, const char *path, int mode);
 extern int POSIX_close(int *errnop, int file);
 extern int POSIX_execve(int *errnop, const char *name, char * const*argv, char * const*env);
 extern int POSIX_fork(int *errnop);
-extern int POSIX_fstat(int *errnop, int file, void *stat);
+extern int POSIX_getrusage(int *errnop, PosixRUsages who, void *r_usage);
 extern char* POSIX_getcwd(int *errnop, char *buf, int size);
 extern char* POSIX_getlogin(int *errnop);
 extern int POSIX_getlogin_r(int *errnop, char *name, int namesize);
@@ -115,6 +125,8 @@ extern long POSIX_pread(int *errnop, int fd, char *buf, size_t len, long offset)
 extern long POSIX_pwrite(int *errnop, int fd, const char *buf, size_t len, long offset);
 extern long POSIX_read(int *errnop, int fd, char *buf, size_t len);
 extern int POSIX_stat(int *errnop, const char *file, void *stat);
+extern int POSIX_fstat(int *errnop, int file, void *stat);
+extern int POSIX_lstat(int *errnop, const char *file, void *stat);
 extern clock_t POSIX_times(int *errnop, void *tms);
 extern int POSIX_unlink(int *errnop, const char *name);
 extern int POSIX_wait(int *errnop, int *status);

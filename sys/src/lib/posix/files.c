@@ -154,6 +154,38 @@ AccessDone:
 }
 
 int
+POSIX_dup2(int *errnop, int fildes, int fildes2)
+{
+	int newfd;
+	if(fildes < 0 || fildes2 < 0){
+		*errnop = __libposix_get_errno(PosixEBADF);
+		return -1;
+	}
+	newfd = dup(fildes, fildes2);
+	if(newfd < 0){
+		*errnop = __libposix_get_errno(PosixEINTR);
+		return -1;
+	}
+	return newfd;
+}
+
+int
+POSIX_dup(int *errnop, int fildes)
+{
+	int newfd;
+	if(fildes < 0){
+		*errnop = __libposix_get_errno(PosixEBADF);
+		return -1;
+	}
+	newfd = dup(fildes, -1);
+	if(newfd < 0){
+		*errnop = __libposix_get_errno(PosixEBADF);
+		return -1;
+	}
+	return newfd;
+}
+
+int
 POSIX_pipe(int *errnop, int fildes[2])
 {
 	int res;
@@ -322,31 +354,6 @@ POSIX_close(int *errno, int file)
 		*errno = ret;
 		break;
 	}
-	return -1;
-}
-
-int
-POSIX_link(int *errnop, const char *old, const char *new)
-{
-	int err;
-	/* let choose the most appropriate error */
-	if(old == nil || new == nil || old[0] == 0 || new[0] == 0)
-		err = __libposix_get_errno(PosixENOENT);
-	else if(access(new, AEXIST) == 0)
-		err = __libposix_get_errno(PosixEEXIST);
-	else if(access(old, AEXIST) == 0)
-		err = __libposix_get_errno(PosixENOENT);
-	else {
-		/* Jehanne does not support links.
-		 * A custom overlay filesystem might support them in
-		 * the future but so far it does not exists yet.
-		 *
-		 * We return EXDEV so that a posix compliant caller
-		 * can fallback to a simple copy.
-		 */
-		err = __libposix_get_errno(PosixEXDEV);
-	}
-	*errnop = err;
 	return -1;
 }
 
@@ -538,13 +545,6 @@ POSIX_chown(int *errnop, const char *pathname, int owner, int group)
 
 int
 POSIX_fchownat(int *errnop, int fd, const char *path, int owner, int group, int flag)
-{
-	/* TODO: implement when actually needed */
-	return 0;
-}
-
-int
-POSIX_lchown(int *errnop, const char *path, int owner, int group)
 {
 	/* TODO: implement when actually needed */
 	return 0;

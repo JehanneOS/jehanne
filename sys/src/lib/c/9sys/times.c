@@ -35,7 +35,7 @@ jehanne_times(int32_t *t)
 	char b[200], *p;
 	static int f = -1;
 	int i, retries;
-	uint32_t r;
+	uint32_t r = -1;
 
 	jehanne_memset(b, 0, sizeof(b));
 	for(retries = 0; retries < 100; retries++){

@@ -14,6 +14,7 @@
 			"errors.c",
 			"files.c",
 			"initlib.c",
+			"links.c",
 			"memory.c",
 			"others.c",
 			"processes.c",

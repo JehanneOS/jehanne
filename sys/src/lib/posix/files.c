@@ -358,31 +358,6 @@ POSIX_close(int *errno, int file)
 }
 
 int
-POSIX_link(int *errnop, const char *old, const char *new)
-{
-	int err;
-	/* let choose the most appropriate error */
-	if(old == nil || new == nil || old[0] == 0 || new[0] == 0)
-		err = __libposix_get_errno(PosixENOENT);
-	else if(access(new, AEXIST) == 0)
-		err = __libposix_get_errno(PosixEEXIST);
-	else if(access(old, AEXIST) == 0)
-		err = __libposix_get_errno(PosixENOENT);
-	else {
-		/* Jehanne does not support links.
-		 * A custom overlay filesystem might support them in
-		 * the future but so far it does not exists yet.
-		 *
-		 * We return EXDEV so that a posix compliant caller
-		 * can fallback to a simple copy.
-		 */
-		err = __libposix_get_errno(PosixEXDEV);
-	}
-	*errnop = err;
-	return -1;
-}
-
-int
 POSIX_unlink(int *errnop, const char *name)
 {
 	long ret;
@@ -457,12 +432,6 @@ POSIX_stat(int *errnop, const char *file, void *pstat)
 		return 0;
 	*errnop = __libposix_get_errno(e);
 	return -1;
-}
-
-int
-POSIX_lstat(int *errnop, const char *file, void *pstat)
-{
-	return POSIX_stat(errnop, file, pstat);
 }
 
 int
@@ -576,13 +545,6 @@ POSIX_chown(int *errnop, const char *pathname, int owner, int group)
 
 int
 POSIX_fchownat(int *errnop, int fd, const char *path, int owner, int group, int flag)
-{
-	/* TODO: implement when actually needed */
-	return 0;
-}
-
-int
-POSIX_lchown(int *errnop, const char *path, int owner, int group)
 {
 	/* TODO: implement when actually needed */
 	return 0;

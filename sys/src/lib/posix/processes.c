@@ -28,6 +28,17 @@ ChildList **__libposix_child_list;
 static PosixExitStatusTranslator __libposix_exit_status_translator;
 static int __libposix_wnohang;
 
+struct timeval {
+	unsigned int tv_sec;
+	unsigned int tv_usec;
+};
+
+struct rusage {
+  	struct timeval ru_utime;	/* user time used */
+	struct timeval ru_stime;	/* system time used */
+	struct timeval ru_etime;	/* real elapsed time */
+};
+
 #define __POSIX_SIGNAL_PREFIX_LEN (sizeof(__POSIX_SIGNAL_PREFIX)-1)
 
 static int
@@ -136,6 +147,32 @@ POSIX_exit(int code)
 		snprint(buf, sizeof(buf), __POSIX_EXIT_PREFIX "%d", code);
 	}
 	exits(buf);
+}
+
+int
+POSIX_getrusage(int *errnop, PosixRUsages who, void *r_usagep)
+{
+	int32_t t[4];
+	struct rusage *r_usage = r_usagep;
+
+	times(&t[0]);
+	switch(who){
+	case PosixRUsageSelf:
+		r_usage->ru_utime.tv_sec = t[0]/1000;
+		r_usage->ru_utime.tv_sec = (t[0]%1000)*1000;
+		r_usage->ru_stime.tv_sec = t[1]/1000;
+		r_usage->ru_stime.tv_sec = (t[1]%1000)*1000;
+		return 0;
+	case PosixRUsageChildren:
+		r_usage->ru_utime.tv_sec = t[2]/1000;
+		r_usage->ru_utime.tv_sec = (t[2]%1000)*1000;
+		r_usage->ru_stime.tv_sec = t[3]/1000;
+		r_usage->ru_stime.tv_sec = (t[3]%1000)*1000;
+		return 0;
+	default:
+		*errnop = __libposix_get_errno(PosixEINVAL);
+		return -1;
+	}
 }
 
 int

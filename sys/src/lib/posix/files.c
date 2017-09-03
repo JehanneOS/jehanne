@@ -154,6 +154,38 @@ AccessDone:
 }
 
 int
+POSIX_dup2(int *errnop, int fildes, int fildes2)
+{
+	int newfd;
+	if(fildes < 0 || fildes2 < 0){
+		*errnop = __libposix_get_errno(PosixEBADF);
+		return -1;
+	}
+	newfd = dup(fildes, fildes2);
+	if(newfd < 0){
+		*errnop = __libposix_get_errno(PosixEINTR);
+		return -1;
+	}
+	return newfd;
+}
+
+int
+POSIX_dup(int *errnop, int fildes)
+{
+	int newfd;
+	if(fildes < 0){
+		*errnop = __libposix_get_errno(PosixEBADF);
+		return -1;
+	}
+	newfd = dup(fildes, -1);
+	if(newfd < 0){
+		*errnop = __libposix_get_errno(PosixEBADF);
+		return -1;
+	}
+	return newfd;
+}
+
+int
 POSIX_pipe(int *errnop, int fildes[2])
 {
 	int res;
@@ -425,6 +457,12 @@ POSIX_stat(int *errnop, const char *file, void *pstat)
 		return 0;
 	*errnop = __libposix_get_errno(e);
 	return -1;
+}
+
+int
+POSIX_lstat(int *errnop, const char *file, void *pstat)
+{
+	return POSIX_stat(errnop, file, pstat);
 }
 
 int

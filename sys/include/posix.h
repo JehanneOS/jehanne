@@ -142,6 +142,20 @@ extern void POSIX_free(void *ptr);
 extern unsigned int POSIX_sleep(unsigned int seconds);
 extern int POSIX_pipe(int *errnop, int fildes[2]);
 
+extern int POSIX_getuid(int *errnop);
+extern int POSIX_geteuid(int *errnop);
+extern int POSIX_setuid(int *errnop, int uid);
+extern int POSIX_seteuid(int *errnop, int euid);
+extern int POSIX_setreuid(int *errnop, int ruid, int euid);
+extern int POSIX_getgid(int *errnop);
+extern int POSIX_getegid(int *errnop);
+extern int POSIX_setgid(int *errnop, int gid);
+extern int POSIX_setegid(int *errnop, int egid);
+extern int POSIX_setregid(int *errnop, int rgid, int egid);
+extern int POSIX_setpgid(int *errnop, int pid, int pgid);
+extern int POSIX_getsid(int *errnop, int pid);
+extern int POSIX_setsid(int *errnop);
+
 extern int libposix_getdents(int *errnop, int fd, char *buf, int buf_bytes);
 
 /* Library initialization

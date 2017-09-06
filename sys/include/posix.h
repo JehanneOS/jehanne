@@ -143,6 +143,7 @@ extern unsigned int POSIX_sleep(unsigned int seconds);
 extern int POSIX_pipe(int *errnop, int fildes[2]);
 extern int POSIX_umask(int *errnop, int mask);
 
+extern int POSIX_getpgrp(int *errnop);
 extern int POSIX_getuid(int *errnop);
 extern int POSIX_geteuid(int *errnop);
 extern int POSIX_setuid(int *errnop, int uid);

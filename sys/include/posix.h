@@ -141,6 +141,7 @@ extern void *POSIX_calloc(int *errnop, size_t nelem, size_t size);
 extern void POSIX_free(void *ptr);
 extern unsigned int POSIX_sleep(unsigned int seconds);
 extern int POSIX_pipe(int *errnop, int fildes[2]);
+extern int POSIX_umask(int *errnop, int mask);
 
 extern int POSIX_getuid(int *errnop);
 extern int POSIX_geteuid(int *errnop);

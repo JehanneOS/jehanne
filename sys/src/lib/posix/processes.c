@@ -278,6 +278,12 @@ OnIgnoredSignalInterrupt:
 }
 
 int
+POSIX_umask(int *errnop, int mask)
+{
+	return 0;
+}
+
+int
 POSIX_waitpid(int *errnop, int reqpid, int *status, int options)
 {
 	Waitmsg *w;

@@ -37,6 +37,7 @@
 			"030-pause.c",
 			"031-setjmp.c",
 			"040-gettimeofday.c",
+			"050-setsid.c",
 			"100-files.c",
 			"101-files.c",
 			"102-files.c",

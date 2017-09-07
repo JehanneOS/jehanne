@@ -28,9 +28,8 @@ get_noteid(int *errnop, int pid)
 {
 	int n, f;
 	char buf[30];
-
 	sprint(buf, "/proc/%d/noteid", pid);
-	f = open(buf, 0);
+	f = open(buf, OREAD);
 	if(f < 0){
 		*errnop = __libposix_get_errno(PosixEPERM);
 		return -1;
@@ -61,7 +60,7 @@ set_noteid(int *errnop, int pid, int noteid)
 			return noteid;
 	}
 	sprint(buf, "/proc/%d/noteid", pid);
-	f = open(buf, 1);
+	f = open(buf, OWRITE);
 	if(f < 0) {
 		*errnop = __libposix_get_errno(PosixESRCH);
 		return -1;

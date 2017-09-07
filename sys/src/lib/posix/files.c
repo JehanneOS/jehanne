@@ -618,6 +618,74 @@ FailWithError:
 }
 
 int
+POSIX_rename(int *errnop, const char *from, const char *to)
+{
+	int n, ffd = -1, tfd = -1;
+	const char *f, *t;
+	char buf[8192];
+	PosixError e = 0;
+	Dir *d, nd;
+
+	if(from == nil || to == nil){
+		e = PosixENOENT;
+		goto FailWithError;
+	}
+
+	f = strrchr(from, '/');
+	t = strrchr(to, '/');
+	f = f ? f+1 : from;
+	t = t ? t+1 : to;
+
+	if(strcmp(".", f) == 0 || strcmp("..", f) == 0
+	|| strcmp(".", t) == 0 || strcmp("..", t) == 0){
+		e = PosixEINVAL;
+		goto FailWithError;
+	}
+	if(access(to, AEXIST) == 0){
+		if(remove(to) < 0){
+			e = PosixEACCES;
+			goto FailWithError;
+		}
+	}
+	if((d = dirstat(from)) == nil){
+		e = PosixENOENT;
+	} else if(f-from == t-to && strncmp(from, to, f-from) == 0){
+		/* from and to are in same directory (we miss some cases) */
+		nulldir(&nd);
+		nd.name = (char*)t;
+		if(dirwstat(from, &nd) < 0)
+			e = PosixEPERM;
+	} else {
+		/* different directories: with 9P2000 we have to copy */
+		if((ffd = open(from, OREAD)) < 0
+		|| (tfd = create(to, OWRITE, d->mode)) < 0){
+			e = PosixEPERM;
+		}
+		while(e == 0 && (n = read(ffd, buf, sizeof(buf))) > 0)
+			if(write(tfd, buf, n) != n)
+				e = PosixEIO;
+		if(ffd >= 0)
+			close(ffd);
+		if(tfd >= 0)
+			close(tfd);
+		if(e == 0 && remove(from) < 0)
+			e = PosixEIO;
+		if(e == PosixEIO && tfd >= 0)
+			remove(to);
+	}
+	if(e != 0)
+		goto FailWithError;
+	free(d);
+	return 0;
+
+FailWithError:
+	if(d != nil)
+		free(d);
+	*errnop = __libposix_get_errno(e);
+	return -1;
+}
+
+int
 POSIX_mkdir(int *errnop, const char *path, int mode)
 {
 	long cperm = 0;

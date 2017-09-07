@@ -144,6 +144,12 @@ POSIX_getpgrp(int *errnop)
 }
 
 int
+POSIX_getpgid(int *errnop, int pid)
+{
+	return get_noteid(errnop, pid);
+}
+
+int
 POSIX_setpgid(int *errnop, int pid, int pgid)
 {
 	if(pid < 0 || pgid < 0){

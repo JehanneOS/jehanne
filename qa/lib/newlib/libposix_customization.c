@@ -27,10 +27,8 @@ qa_exit_translator(int status)
 		 * should return PASS/FAIL
 		 */
 		if(status == 0){
-			jehanne_print("PASS\n");
 			return "PASS";
 		} else {
-			jehanne_print("FAIL: " __POSIX_EXIT_PREFIX "%d\n", status);
 			return "FAIL";
 		}
 	}
@@ -38,7 +36,25 @@ qa_exit_translator(int status)
 }
 
 void
+qa_exit_printer(int status, void *_)
+{
+	extern int printf(const char *format, ...);
+	if(jehanne_getpid() == jehanne_getmainpid()){
+		/* the QA test may fork, but only the main process
+		 * should return PASS/FAIL
+		 */
+		if(status == 0){
+			printf("PASS\n");
+		} else {
+			printf("FAIL: " __POSIX_EXIT_PREFIX "%d\n", status);
+		}
+	}
+}
+
+void
 __application_newlib_init(void)
 {
+	extern int on_exit(void (*func)(int, void*), void* arg);
+	on_exit(qa_exit_printer, nil);
 	libposix_translate_exit_status(qa_exit_translator);
 }

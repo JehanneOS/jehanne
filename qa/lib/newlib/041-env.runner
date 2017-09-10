@@ -1,0 +1,32 @@
+#!/cmd/rc
+runner=$0
+test = `{echo $runner|sed 's/.runner//'}
+test_output = /tmp/output-`{basename $test}
+
+if ( test -e $test_output) rm $test_output
+
+$test > $test_output
+
+expected_lines = ('Parent \$PATH = /cmd:.' \
+'Parent \$HOME = '^$HOME \
+'Parent \$USER = '^$USER \
+'Parent \$ROOT = \(null\)' \
+'Parent \$TEST = \(null\)' \
+'Parent putenv\(TEST=value\); now \$TEST = value' \
+'Child \$PATH = /cmd:.' \
+'Child \$HOME = '^$HOME \
+'Child \$USER = '^$USER \
+'Child \$ROOT = \(null\)' \
+'Child \$TEST = value' \
+'Parent unsetenv\(TEST\); now \$TEST = \(null\)' \
+PASS )
+
+for (line in $expected_lines) {
+	if ( ! cat $test_output | grep $"line > /dev/null ) {
+		cat $test_output
+		echo FAIL: can not find line: $line
+		exit FAIL
+	}
+}
+echo PASS
+exit PASS

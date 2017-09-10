@@ -5,7 +5,7 @@ test_output = /tmp/output-`{basename $test}
 
 if ( test -e $test_output) rm $test_output
 
-$test $test_output > /dev/null
+$test > $test_output
 if ( cat $test_output | grep 'FAIL' > /dev/null ) {
 	cat $test_output
 	echo FAIL

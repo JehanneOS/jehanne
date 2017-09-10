@@ -23,6 +23,13 @@
 static PosixTimevalReader __libposix_timeval_reader;
 static PosixTimezoneReader __libposix_timezone_reader;
 
+unsigned int
+POSIX_alarm(int *errnop, unsigned int seconds)
+{
+	long r = alarm(seconds * 1000);
+	return r/1000;
+}
+
 int
 POSIX_gettimeofday(int *errnop, void *timeval, void *timezone)
 {

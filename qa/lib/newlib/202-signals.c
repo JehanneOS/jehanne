@@ -28,6 +28,7 @@ main() {
 	if (pid == 0) {
 		signal(SIGCONT,sigcont); /* set function calls */
 		printf("Child going to loop...\n");
+		write(p[1], "", 1);
 		close(p[1]);
 		close(p[0]);
 		for(;;){
@@ -38,11 +39,8 @@ main() {
 	}
 	else /* parent */
 	{
+		read(p[0], &dummy, 1);
 		close(p[1]);
-		if(read(p[0], &dummy, 1) > 0){
-			printf("sync read received data");
-			exit(EXIT_FAILURE);
-		}
 		close(p[0]);
 		printf("PARENT: sending SIGCONT\n\n");
 		kill(pid,SIGCONT);

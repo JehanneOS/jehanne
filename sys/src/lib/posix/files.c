@@ -29,6 +29,10 @@ static int __libposix_R_OK;
 static int __libposix_W_OK;
 static int __libposix_X_OK;
 
+static int *__libposix_coe_fds;
+static int __libposix_coe_fds_size;
+static int __libposix_coe_fds_used;
+
 typedef enum SeekTypes
 {
 	SeekSet		= 0,
@@ -46,6 +50,71 @@ __libposix_files_check_conf(void)
 		sysfatal("libposix: no open translator");
 	if(__libposix_seek_types == nil)
 		sysfatal("libposix: no seek translations");
+}
+
+void
+__libposix_set_close_on_exec(int fd, int close)
+{
+	int i;
+	if(__libposix_coe_fds_size == __libposix_coe_fds_used){
+		__libposix_coe_fds_size += 8;
+		__libposix_coe_fds = realloc(__libposix_coe_fds, __libposix_coe_fds_size * sizeof(int));
+		i = __libposix_coe_fds_size;
+		while(i > __libposix_coe_fds_used)
+			__libposix_coe_fds[--i] = -1;
+	}
+	/* remove fd if already present */
+	i = 0;
+	while(i < __libposix_coe_fds_size){
+		if(__libposix_coe_fds[i] == fd){
+			__libposix_coe_fds[i] = -1;
+			--__libposix_coe_fds_used;
+			break;
+		}
+		++i;
+	}
+	if(close){
+		/* add fd to close on exec */
+		i = 0;
+		while(i < __libposix_coe_fds_size){
+			if(__libposix_coe_fds[i] == -1){
+				__libposix_coe_fds[i] = fd;
+				break;
+			}
+			++i;
+		}
+		++__libposix_coe_fds_used;
+	}
+}
+
+void
+__libposix_close_on_exec(void)
+{
+	int i = 0;
+	while(i < __libposix_coe_fds_size){
+		if(__libposix_coe_fds[i] != -1){
+			close(__libposix_coe_fds[i]);
+			__libposix_coe_fds[i] = -1;
+			--__libposix_coe_fds_used;
+		}
+		++i;
+	}
+	assert(__libposix_coe_fds_used == 0);
+	free(__libposix_coe_fds);
+	__libposix_coe_fds = nil;
+	__libposix_coe_fds_size = 0;
+}
+
+int
+__libposix_should_close_on_exec(int fd)
+{
+	int i = 0;
+	while(i < __libposix_coe_fds_size){
+		if(__libposix_coe_fds[i] == fd)
+			return 1;
+		++i;
+	}
+	return 0;
 }
 
 int
@@ -746,6 +815,8 @@ libposix_getdents(int *errnop, int fd, char *buf, int buf_bytes)
 		goto FailWithENOTDIR;	/* not a directory */
 
 	r = read(fd, buf, buf_bytes);
+	if(r == 0)
+		return 0;
 	if(r < 0)
 		goto FailWithENOENT;	/* removed? */
 	if(r < MINSTATLEN)

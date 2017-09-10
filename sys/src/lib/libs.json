@@ -22,11 +22,11 @@
 			"/sys/src/lib/mp/",
 			"/sys/src/lib/ndb/",
 			"/sys/src/lib/plumb/",
-			"/sys/src/lib/posix/",
 			"/sys/src/lib/regexp/",
 			"/sys/src/lib/sec/",
 			"/sys/src/lib/stdio/",
-			"/sys/src/lib/thread/"
+			"/sys/src/lib/thread/",
+			"/sys/src/lib/posix/"
 		]
 	}
 }

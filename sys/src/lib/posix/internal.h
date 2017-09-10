@@ -33,10 +33,29 @@ struct ChildList
 	ChildList *next;
 };
 
+typedef struct SignalConf SignalConf;
+struct SignalConf
+{
+	void* handler;
+	PosixSignalMask mask	: 56;
+	int sa_siginfo		: 1;
+	int sa_resethand	: 1;
+	int sa_restart		: 1;
+	int sa_nochildwait	: 1;
+};
+
+typedef struct PendingSignalList PendingSignalList;
+struct PendingSignalList
+{
+	PosixSignalInfo		signal;
+	PendingSignalList*	next;
+};
+
+extern int *__libposix_pid;
+
 extern void __libposix_files_check_conf(void);
 extern void __libposix_errors_check_conf(void);
 extern void __libposix_processes_check_conf(void);
-extern void __libposix_signal_check_conf(void);
 extern int __libposix_initialized(void);
 
 extern int __libposix_get_errno(PosixError e);
@@ -51,16 +70,75 @@ extern void __libposix_free_wait_list(void);
 
 extern void __libposix_setup_new_process(void);
 
-extern int __libposix_note_to_signal(char *note);
+extern int __libposix_signal_to_note(const PosixSignalInfo *si, char *buf, int size);
+
+extern int __libposix_note_to_signal(const char *note, PosixSignalInfo *siginfo);
 
 extern int __libposix_is_child(int pid);
+
+extern void __libposix_free_child_list(void);
 
 extern void __libposix_forget_child(int pid);
 
 extern int __libposix_send_control_msg(int pid, char *msg);
 
-extern PosixError __libposix_notify_signal_to_process(int pid, int signal);
+extern PosixError __libposix_notify_signal_to_process(int pid, PosixSignalInfo *siginfo);
 
-extern PosixError __libposix_receive_signal(int sig);
+extern PosixError __libposix_receive_signal(PosixSignalInfo *siginfo);
+
+extern PosixError __libposix_dispatch_signal(int pid, PosixSignalInfo* siginfo);
 
 extern int __libposix_restart_syscall(void);
+
+extern int __libposix_signal_blocked(PosixSignalInfo *siginfo);
+
+extern int __libposix_run_signal_handler(SignalConf *c, PosixSignalInfo *siginfo);
+
+extern void __libposix_reset_pending_signals(void);
+
+extern void __libposix_set_close_on_exec(int fd, int close);
+
+extern int __libposix_should_close_on_exec(int fd);
+
+extern void __libposix_close_on_exec(void);
+
+extern void __libposix_init_signal_handlers(void);
+
+#define SIGNAL_MASK(signal) (1ULL<<((signal)-1))
+#define SIGNAL_RAW_ADD(bitmask, signal) (bitmask |= SIGNAL_MASK(signal))
+#define SIGNAL_RAW_DEL(bitmask, signal) (bitmask &= ~SIGNAL_MASK(signal))
+
+typedef enum {
+	PHProcessExited,	/* WRITE, for nannies, the child might not be a libposix application */
+	PHCallingExec,		/* WRITE */
+
+	PHSignalProcess,	/* WRITE */
+	PHSignalGroup,		/* WRITE */
+	PHSignalForeground,	/* WRITE, for the controller process */
+
+	PHIgnoreSignal,		/* WRITE */
+	PHEnableSignal,		/* WRITE */
+	PHBlockSignals,		/* WRITE */
+	PHWaitSignals,		/* READ, may block */
+
+	PHGetSessionId,		/* WRITE, ret contains the id */
+	PHGetProcessGroupId,	/* WRITE, ret contains the id */
+	PHGetPendingSignals,	/* WRITE, ret contains the mask */
+	PHGetProcMask,		/* WRITE, ret contains the mask */
+
+	PHSetForegroundGroup,	/* WRITE */
+	PHGetForegroundGroup,	/* WRITE */
+	PHDetachSession,	/* WRITE */
+	PHSetProcessGroup,	/* WRITE */
+} PosixHelperCommand;
+typedef struct {
+	int			target;
+	PosixHelperCommand	command;
+} PosixHelperRequest;
+
+extern void __libposix_sighelper_open(void);
+extern long __libposix_sighelper_cmd(PosixHelperCommand command, int target);
+extern long __libposix_sighelper_set(PosixHelperCommand command, PosixSignalMask signal_set);
+extern long __libposix_sighelper_signal(PosixHelperCommand command, int target, PosixSignalInfo *siginfo);
+extern long __libposix_sighelper_wait(PosixSignalMask set, PosixSignalInfo *siginfo);
+extern long __libposix_sighelper_set_pgid(int target, int group_id);

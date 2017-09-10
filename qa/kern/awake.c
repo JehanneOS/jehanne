@@ -74,7 +74,7 @@ main(void)
 	elapsed = (nsec() - start) / (1000 * 1000);
 	if(verbose)
 		fprint(2, "rendezvous interrupted, returned %#p, elapsed = %d ms\n", res, elapsed);
-	if(!awakened(wkup) || elapsed < 900 || elapsed > 1300){
+	if(!awakened(wkup) || elapsed < 900 || elapsed > 1800){
 		print("FAIL: rendezvous\n");
 		exits("FAIL");
 	}
@@ -105,7 +105,7 @@ main(void)
 	elapsed = (nsec() - start) / (1000 * 1000);
 	if(verbose)
 		print("semacquire(&sem, 1): returned %lld, elapsed = %d ms\n", res, elapsed);
-	if(!awakened(wkup) || res != -1 || elapsed < 900 || elapsed > 1300){
+	if(!awakened(wkup) || res != -1 || elapsed < 900 || elapsed > 1800){
 		print("FAIL: semacquire\n");
 		exits("FAIL");
 	}
@@ -113,8 +113,8 @@ main(void)
 
 	/* verify that tsemacquire are NOT interrupted */
 	fprint(2, "verify that tsemacquire are NOT interrupted\n", elapsed);
-	wkup = awake(700);
 	start = nsec();
+	wkup = awake(500);
 	res = tsemacquire(&sem, 1500);
 	elapsed = (nsec() - start) / (1000 * 1000);
 	if(verbose)
@@ -137,7 +137,7 @@ main(void)
 	elapsed = (nsec() - start) / (1000 * 1000);
 	if(verbose)
 		fprint(2, "read(fds[0], buf, 1) returned %lld, elapsed = %d ms\n", res, elapsed);
-	if(!awakened(wkup) || res != -1 || elapsed < 900 || elapsed > 1300){
+	if(!awakened(wkup) || res != -1 || elapsed < 900 || elapsed > 1800){
 		print("FAIL: read\n");
 		exits("FAIL");
 	}
@@ -155,7 +155,7 @@ main(void)
 	elapsed = (nsec() - start) / (1000 * 1000);
 	if(verbose)
 		fprint(2, "writeTillBlock(fds[0]) returned %lld, elapsed = %d ms\n", res, elapsed);
-	if(!awakened(wkup) || res >= 256 || elapsed < 900 || elapsed > 1300){
+	if(!awakened(wkup) || res >= 256 || elapsed < 900 || elapsed > 1800){
 		print("FAIL: write\n");
 		exits("FAIL");
 	}

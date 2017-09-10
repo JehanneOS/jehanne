@@ -22,7 +22,8 @@ void childloop(void)
 {
 	signal(SIGCONT,sigcont); /* set function calls */
 	signal(SIGSTOP,sigstop); /* set function calls */
-	printf("Child going to loop...\n");
+	printf("Child %d going to loop...\n", getpid());
+	write(p[1], "", 1);
 	close(p[1]);
 	close(p[0]);
 	for(;;){
@@ -54,11 +55,8 @@ main() {
 	}
 	else /* parent */
 	{
+		read(p[0], &dummy, 1);
 		close(p[1]);
-		if(read(p[0], &dummy, 1) > 0){
-			printf("sync read received data");
-			exit(EXIT_FAILURE);
-		}
 		close(p[0]);
 		sleep(2);
 		printf("PARENT: sending SIGSTOP\n");

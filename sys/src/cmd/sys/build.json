@@ -1,9 +1,13 @@
 {
-	"disk": {
+	"SystemTools": {
 		"Include": [
 			"../cmd.json"
 		],
 		"Install": "/arch/$ARCH/cmd/sys/",
+		"Oflags": [
+			"-static",
+			"-lc"
+		],
 		"Projects": [
 			"call/"
 		],

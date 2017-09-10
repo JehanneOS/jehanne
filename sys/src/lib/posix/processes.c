@@ -55,39 +55,29 @@ int (*__libposix_fork)(int *errnop) = fork_without_sigchld;
 void
 __libposix_free_wait_list(void)
 {
-	WaitList *wl, *c;
+	WaitList *tail, *w;
 
 	/* free the wait list as the memory is NOT shared */
-	wl = *__libposix_wait_list;
-	if(wl != nil){
-		*__libposix_wait_list = nil;
-		do
-		{
-			c = wl;
-			wl = c->next;
-			free(c);
-		}
-		while (wl != nil);
+	tail = *__libposix_wait_list;
+	while(w = tail){
+		tail = tail->next;
+		free(w);
 	}
+	*__libposix_wait_list = nil;
 }
 
 void
 __libposix_free_child_list(void)
 {
-	ChildList *l, *c;
+	ChildList *tail, *c;
 
 	/* free the wait list as the memory is shared */
-	l = *__libposix_child_list;
-	if(l != nil){
-		*__libposix_child_list = nil;
-		do
-		{
-			c = l;
-			l = c->next;
-			free(c);
-		}
-		while (l != nil);
+	tail = *__libposix_child_list;
+	while(c = tail){
+		tail = tail->next;
+		free(c);
 	}
+	*__libposix_child_list = nil;
 }
 
 int
@@ -112,8 +102,7 @@ __libposix_forget_child(int pid)
 
 	/* free the wait list as the memory is shared */
 	l = __libposix_child_list;
-	while(*l != nil){
-		c = *l;
+	while(c = *l){
 		if(c->pid == pid){
 			*l = c->next;
 			free(c);
@@ -126,9 +115,18 @@ __libposix_forget_child(int pid)
 void
 __libposix_setup_new_process(void)
 {
+	extern PosixSignalMask *__libposix_signal_mask;
+
+	*__libposix_pid = getpid();
+
 	/* reset wait list for the child */
 	__libposix_free_wait_list();
 	__libposix_free_child_list();
+
+	/* clear pending signals; reload mask */
+	__libposix_reset_pending_signals();
+	__libposix_sighelper_open();
+	*__libposix_signal_mask = (PosixSignalMask)__libposix_sighelper_cmd(PHGetProcMask, 0);
 }
 
 void
@@ -178,8 +176,6 @@ POSIX_getrusage(int *errnop, PosixRUsages who, void *r_usagep)
 int
 POSIX_execve(int *errnop, const char *name, char * const*argv, char * const*env)
 {
-	long ret;
-
 	// see http://pubs.opengroup.org/onlinepubs/9699919799/functions/exec.html
 	if(env == environ){
 		/* just get a copy of the current environment */
@@ -190,25 +186,18 @@ POSIX_execve(int *errnop, const char *name, char * const*argv, char * const*env)
 	}
 
 	__libposix_free_wait_list();
+	__libposix_close_on_exec();
+	__libposix_sighelper_cmd(PHCallingExec, 0);
 
-	ret = sys_exec(name, argv);
-	switch(ret){
-	case 0:
-		return 0;
-	case ~0:
-		*errnop = __libposix_translate_errstr((uintptr_t)POSIX_execve);
-		break;
-	default:
-		*errnop = ret;
-		break;
-	}
+	sys_exec(name, argv);
+	*errnop = __libposix_translate_errstr((uintptr_t)POSIX_execve);
 	return -1;
 }
 
 int
 POSIX_getpid(int *errnop)
 {
-	return getpid();
+	return *__libposix_pid;
 }
 
 int
@@ -223,13 +212,14 @@ POSIX_fork(int *errnop)
 	return __libposix_fork(errnop);
 }
 
-int
-POSIX_wait(int *errnop, int *status)
+static int
+__libposix_wait(int *errnop, int *status, long ms)
 {
 	Waitmsg *w;
 	WaitList *l;
-	char *s;
+	char *s, err[ERRMAX];
 	int ret = 0, sig = 0, pid;
+	long wakeup = 0;
 	
 	l = *__libposix_wait_list;
 	if(l != nil){
@@ -242,10 +232,25 @@ POSIX_wait(int *errnop, int *status)
 	}
 
 OnIgnoredSignalInterrupt:
+	if(ms)
+		wakeup = awake(ms);
 	w = wait();
 	if(w == nil){
-		if(__libposix_restart_syscall())
+		rerrstr(err, ERRMAX);
+		if(strstr(err, "no living children") != nil){
+			*errnop = __libposix_get_errno(PosixECHILD);
+			return -1;
+		}
+		if(__libposix_restart_syscall()){
+			if(wakeup)
+				forgivewkp(wakeup);
 			goto OnIgnoredSignalInterrupt;
+		}
+		if(wakeup){
+			if(awakened(wakeup))
+				return 0;
+			forgivewkp(wakeup);
+		}
 		*errnop = __libposix_get_errno(PosixECHILD);
 		return -1;
 	}
@@ -284,12 +289,19 @@ POSIX_umask(int *errnop, int mask)
 }
 
 int
+POSIX_wait(int *errnop, int *status)
+{
+	return __libposix_wait(errnop, status, 0);
+}
+
+int
 POSIX_waitpid(int *errnop, int reqpid, int *status, int options)
 {
 	Waitmsg *w;
 	WaitList *c, **nl;
-	char *s;
-	int ret = 0, sig = 0, nohang = 0, pid;
+	char *s, err[ERRMAX];
+	int ret = 0, sig = 0, pid;
+	long nohang = 0;
 
 
 	if(options & __libposix_wnohang){
@@ -304,10 +316,9 @@ POSIX_waitpid(int *errnop, int reqpid, int *status, int options)
 	switch(reqpid){
 	case -1:
 		if(nohang){
-			*errnop = __libposix_get_errno(PosixEINVAL);
-			return -1;
+			return __libposix_wait(errnop, status, 100);
 		}
-		return POSIX_wait(errnop, status);
+		return __libposix_wait(errnop, status, 0);
 	case 0:
 		/* not yet implemented; requires changes to Waitmsg */
 		*errnop = __libposix_get_errno(PosixEINVAL);
@@ -337,13 +348,30 @@ POSIX_waitpid(int *errnop, int reqpid, int *status, int options)
 
 WaitAgain:
 OnIgnoredSignalInterrupt:
+	if(nohang)
+		nohang = awake(100);
 	w = wait();
 	if(w == nil){
-		if(__libposix_restart_syscall())
+		rerrstr(err, ERRMAX);
+		if(strstr(err, "no living children") != nil){
+			*errnop = __libposix_get_errno(PosixECHILD);
+			return -1;
+		}
+		if(__libposix_restart_syscall()){
+			if(nohang)
+				forgivewkp(nohang);
 			goto OnIgnoredSignalInterrupt;
+		}
+		if(nohang){
+			if(awakened(nohang))
+				return 0;
+			forgivewkp(nohang);
+		}
 		*errnop = __libposix_get_errno(PosixECHILD);
 		return -1;
 	}
+	if(nohang)
+		forgivewkp(nohang);
 	pid = w->pid;
 	__libposix_forget_child(pid);
 	if(w->msg[0] != 0){

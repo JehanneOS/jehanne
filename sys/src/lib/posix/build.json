@@ -1,6 +1,7 @@
 {
 	"LibPosix": {
 		"Cflags": [
+			"-DARCH=\"$ARCH\"",
 			"-fasm",
 			"-I."
 		],
@@ -12,16 +13,37 @@
 		"SourceFiles": [
 			"environment.c",
 			"errors.c",
+			"fcntl.c",
 			"files.c",
 			"ids.c",
 			"initlib.c",
+			"kill.c",
 			"links.c",
 			"memory.c",
 			"others.c",
 			"processes.c",
 			"sigchlds.c",
 			"signals.c",
+			"sigqueue.c",
+			"sigsets.c",
+			"sigsuspend.c",
+			"termios.c",
 			"timers.c"
+		]
+	},
+	"SignalHelper": {
+		"Include": [
+			"../../cmd/cmd.json"
+		],
+		"Install": "/arch/$ARCH/cmd/sys/",
+		"Oflags": [
+			"-static",
+			"-lposix",
+			"-l9p2000",
+			"-lc"
+		],
+		"SourceFilesCmd": [
+			"posixly.c"
 		]
 	}
 }

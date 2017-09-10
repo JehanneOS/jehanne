@@ -58,6 +58,7 @@ main() {
 		signal(SIGQUIT, sigquit);
 		
 		printf("\nChild going to loop...\n\n");
+		write(p[1], "", 1);
 		close(p[1]);
 		close(p[0]);
 		for(;;); /* loop for ever */
@@ -65,11 +66,11 @@ main() {
 	else /* parent */
 	{
 		signal(SIGCHLD,sigchld);
-		close(p[1]);
-		if(read(p[0], &dummy, 1) > 0){
-			printf("sync read received data");
+		if(read(p[0], &dummy, 1) != 1){
+			printf("sync read");
 			exit(EXIT_FAILURE);
 		}
+		close(p[1]);
 		close(p[0]);
 		printf("\nPARENT: sending SIGHUP\n\n");
 		kill(pid,SIGHUP);

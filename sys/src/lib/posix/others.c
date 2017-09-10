@@ -35,7 +35,8 @@ POSIX_isatty(int *errnop, int fd)
 	}
 	
 	l = strlen(buf);
-	if(l >= 9 && strcmp(buf+l-9, "/dev/cons") == 0)
+	if((l >= 9 && strcmp(buf+l-9, "/dev/cons") == 0)
+	 ||(l >= 8 && strcmp(buf+l-8, "/dev/tty") == 0))
 		return 1;
 	*errnop = __libposix_get_errno(PosixENOTTY);
 	return 0;
@@ -138,12 +139,14 @@ POSIX_getpass(int *errnop, const char *prompt)
 	char *p;
 	static char buf[256];
 
-	if(fd2path(0, buf, sizeof(buf)) == 0 && strcmp("/dev/cons", buf) == 0)
+	if(fd2path(0, buf, sizeof(buf)) == 0
+	&& (strcmp("/dev/cons", buf) == 0 || strcmp("/dev/tty", buf) == 0))
 		r = 0;
 	else if((r = open("/dev/cons", OREAD)) < 0)
 		goto ReturnENXIO;
 
-	if(fd2path(1, buf, sizeof(buf)) == 0 && strcmp("/dev/cons", buf) == 0)
+	if(fd2path(1, buf, sizeof(buf)) == 0
+	&& (strcmp("/dev/cons", buf) == 0 || strcmp("/dev/tty", buf) == 0))
 		w = 1;
 	else if((w = open("/dev/cons", OWRITE)) < 0)
 		goto CloseRAndReturnENXIO;

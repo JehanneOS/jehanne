@@ -2,6 +2,11 @@
 
 rfork
 
+if( ! test -d /dev/posix ){
+	sys/posixly -d /tmp/qa-posixly.log -p $PID &
+#	sys/ctrace -o /tmp/posixly.trace $APID &
+}
+
 dir=$1
 if(~ $dir '') dir=/qa
 	

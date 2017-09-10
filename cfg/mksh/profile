@@ -1,0 +1,2 @@
+export PWD=`cat /dev/wdir`
+export HOSTNAME=$SYSNAME

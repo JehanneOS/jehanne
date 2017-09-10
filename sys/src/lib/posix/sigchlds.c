@@ -21,60 +21,50 @@
 #include <posix.h>
 #include "internal.h"
 
-/* rendezvous points */
-extern unsigned char *__signals_to_code_map;
-extern unsigned char *__code_to_signal_map;
-extern ChildList **__libposix_child_list;
 
 /* pointer to the pid to forward notes to */
-extern int *__libposix_sigchld_target_pid;
-
-#define CHILD_READY(pid) ((long)rendezvous(&__signals_to_code_map, (void*)(~(pid))))
-#define C2P_READY(pid) ((long)rendezvous(&__code_to_signal_map, (void*)(~(pid))))
+extern ChildList **__libposix_child_list;
+extern WaitList **__libposix_wait_list;
+extern SignalConf *__libposix_signals;
+extern int *__libposix_devsignal;
 
 static void
-release_inherited_resources(void)
+open_sighelper_nanny(void)
 {
-	notify(nil);
-	rfork(RFCNAMEG|RFCENVG|RFNOTEG|RFCFDG);
-	bind("#p", "/proc", MREPL);
-	rfork(RFNOMNT);
+	int mypid;
+	if(*__libposix_devsignal >= 0)
+		close(*__libposix_devsignal);
+	mypid = *__libposix_pid;
+	*__libposix_devsignal = create("/dev/posix/nanny", OWRITE|OCEXEC, mypid);
+	if(*__libposix_devsignal < 0)
+		sysfatal("cannot create /dev/posix/nanny: %r");
 }
 
 static void
-forwarding_note_handler(void *ureg, char *note)
-{
-	extern int __min_known_sig;
-	extern int __max_known_sig;
-	int sig;
-	PosixSignals signal;
-	if(strncmp(note, __POSIX_SIGNAL_PREFIX, __POSIX_SIGNAL_PREFIX_LEN) == 0){
-		sig = __libposix_note_to_signal(note);
-		if(sig < __min_known_sig || sig > __max_known_sig){
-			/* Ignore unknown signals */
-			noted(NCONT);
-		}
-		signal = __code_to_signal_map[sig];
-		__libposix_notify_signal_to_process(*__libposix_sigchld_target_pid, sig);
-		if(signal == PosixSIGCONT)
-			__libposix_send_control_msg(*__libposix_sigchld_target_pid, "start");
-		noted(NCONT);
-	} else {
-		/* what happened? */
-		noted(NDFLT);
+exit_on_SA_NOCLDWAIT(char *msg){
+	/* we share the father's memory, we can inspect its configuration */
+	if(__libposix_signals[PosixSIGCHLD-1].sa_nochildwait){
+		/* the parent does not care about us*/
+		rfork(RFNOWAIT);
+		exits(msg);
 	}
 }
 
 static void
-forward_wait_msg(int sigchld_receiver, char *name)
+forward_wait_msg(int father, int child)
 {
-	int n;
-	char buf[512], err[ERRMAX], note[512], *fld[5];
+	int n, mypid;
+	PosixSignalInfo si;
+	char buf[512], err[ERRMAX], note[512], *fld[5], *tmp, *name;
 
-	snprint(buf, sizeof(buf), "/proc/%d/args", getpid());
+	mypid = *__libposix_pid;
+	name = smprint("signal proxy %d <> %d", father, child);
+	snprint(buf, sizeof(buf), "/proc/%d/args", mypid);
 	n = open(buf, OWRITE);
 	write(n, name, strlen(name)+1);
 	close(n);
+
+	rfork(RFCNAMEG|RFCENVG|RFNOMNT);
 
 	n = 0;
 WaitInterrupted:
@@ -84,21 +74,45 @@ WaitInterrupted:
 		if(strstr(err, "no living children") == nil)
 			goto WaitInterrupted;
 		snprint(note, sizeof(note), "%s: %r", name);
-		if(sigchld_receiver)
-			postnote(PNPROC, sigchld_receiver, note);
+		exit_on_SA_NOCLDWAIT(note);
+		postnote(PNPROC, father, note);
+		__libposix_sighelper_cmd(PHProcessExited, child);
 		exits(note);
 	}
 	buf[n] = '\0';
 	if(jehanne_tokenize(buf, fld, nelem(fld)) != nelem(fld)){
-		snprint(note, sizeof(note), "%s: couldn't parse wait message", name);
-		if(sigchld_receiver)
-			postnote(PNPROC, sigchld_receiver, note);
+		snprint(note, sizeof(note), "%s: can not parse wait msg: %s", name, buf);
+		exit_on_SA_NOCLDWAIT(note);
+		postnote(PNPROC, father, note);
 		exits(note);
 	}
-	snprint(note, sizeof(note), __POSIX_SIGNAL_PREFIX " %d", __signals_to_code_map[PosixSIGCHLD]);
-	if(sigchld_receiver){
-		postnote(PNPROC, sigchld_receiver, note);
-	}
+	memset(&si, 0, sizeof(PosixSignalInfo));
+	si.si_pid = mypid;
+	si.si_signo = PosixSIGCHLD;
+	si.si_code = PosixSIChildExited;
+	si.si_uid = POSIX_getuid(&n);
+	tmp = fld[4];
+	if(tmp == nil || tmp[0] == '\0')
+		n = 0;
+	else if(strcmp(__POSIX_EXIT_PREFIX, tmp) == 0)
+		n = atoi(tmp + (sizeof(__POSIX_EXIT_PREFIX)/sizeof(char) - 1));
+	else if(strcmp(__POSIX_EXIT_SIGNAL_PREFIX, tmp) == 0){
+		n = atoi(tmp + (sizeof(__POSIX_EXIT_SIGNAL_PREFIX)/sizeof(char) - 1));
+		if(n == PosixSIGTRAP)
+			si.si_code = PosixSIChildTrapped;
+		else
+			si.si_code = PosixSIChildKilled;
+	} else
+		n = 127;
+	si.si_status = n;
+
+	exit_on_SA_NOCLDWAIT("SIGCHLD explicity ignored by parent");
+
+	__libposix_notify_signal_to_process(father, &si);
+
+	__libposix_sighelper_cmd(PHProcessExited, child);
+	if(n == 0)
+		exits(nil);
 	exits(fld[4]);
 }
 
@@ -106,99 +120,76 @@ WaitInterrupted:
 static int
 fork_with_sigchld(int *errnop)
 {
-	int father = getpid();
-	int p2c;
-	long c2p = -1, child = -1;
-	char proxy_name[256];
+	int proxy, father, child = -1;
 	ChildList *c;
+	uint64_t rend;
+	char *buf;
 
 	/* Father here:
-	 * - create P2C
-	 * - wait for C2P to be ready
-	 * - register P2C in children list
-	 * - return P2C pid
+	 * - create proxy
+	 * - wait for child to be ready
+	 * - register proxy in children list
+	 * - return proxy pid
 	 */
-	switch(p2c = rfork(RFPROC|RFMEM)){
+	father = getpid();
+
+	switch(proxy = rfork(RFPROC|RFMEM|RFFDG)){
 	case -1:
 		return -1;
 	case 0:
-		/* P2C here:
-		 * - create C2P
-		 * - wait for the child pid
-		 * - release all inherited resources
-		 * - install forwarding_note_handler
-		 * - send to father the C2P pid
-		 * - start waiting for the child
+		/* proxy here:
+		 * - create child
+		 * - start waiting
 		 */
-		switch(c2p = rfork(RFPROC|RFMEM)){
+		*__libposix_pid = getpid();
+		open_sighelper_nanny();
+		switch(child = rfork(RFPROC|RFFDG)){
 		case -1:
-			while(C2P_READY(-2) == -1)
-				;
-			exits("rfork (c2p)");
+			rend = *__libposix_pid;
+			while(rendezvous((void*)rend, "e") == (void*)-1)
+				sleep(100);
+			rfork(RFNOWAIT);
+			exits("rfork (child)");
 		case 0:
-			/* C2P here:
-			 * - create child
-			 * - wait for it to get a copy of everything
-			 * - release all inherited resources
-			 * - install forwarding_note_handler
-			 * - send to P2C the child pid
-			 * - start forwarding notes to the father
+			/* Beloved child here
 			 */
-			switch(child = fork()){
-			case -1:
-				while(CHILD_READY(-2) == -1)
-					;
-				exits("rfork (child)");
-			case 0:
-				/* Beloved child here
-				 */
-				__libposix_setup_new_process();
-				return 0;
-			default:
-				release_inherited_resources();
-				*__libposix_sigchld_target_pid = father;
-				notify(forwarding_note_handler);
-				snprint(proxy_name, sizeof(proxy_name), "libposix signal proxy %d < %d", father, child);
-				while(CHILD_READY(child) == -1)
-					;
-				forward_wait_msg(father, proxy_name);
-			}
+			__libposix_setup_new_process();
+			rend = *__libposix_pid;
+			while(rendezvous((void*)rend, "d") == (void*)-1)
+				sleep(100);
+			rfork(RFREND);
+			return 0;
 		default:
-			while((child = CHILD_READY(-3)) == -1)
-				;
-			child = ~child;
-			if(child < 0){
-				while(C2P_READY(-2) == -1)
-					;
-				waitpid();
-				exits("rfork (child)");
-			}
-			release_inherited_resources();
-			*__libposix_sigchld_target_pid = child;
-			notify(forwarding_note_handler);
-			snprint(proxy_name, sizeof(proxy_name), "libposix signal proxy %d > %d", father, child);
-			while(C2P_READY(c2p) == -1)
-				;
-			forward_wait_msg(0, proxy_name);
+			rend = child;
+			while((buf = rendezvous((void*)rend, "")) == (void*)-1)
+				sleep(100);
+			rend = *__libposix_pid;
+			while(rendezvous((void*)rend, "d") == (void*)-1)
+				sleep(100);
+
+			/* we share the memory of the parent but we do
+			 * not need these that fortunately are on the private stack
+			 */
+			*__libposix_wait_list = nil;
+			*__libposix_child_list = nil;
+			forward_wait_msg(father, child);
 		}
 	default:
-		while((c2p = C2P_READY(-3)) == -1)
-			;
-		c2p = ~c2p;
-		if(c2p < 0){
-			waitpid();
+		rend = proxy;
+		while((buf = rendezvous((void*)rend, "")) == (void*)-1)
+			sleep(100);
+		if(buf[0] == 'e')
 			return -1;
-		}
 		break;
 	}
 
 	/* no need to lock: the child list is private */
 	c = malloc(sizeof(ChildList));
-	c->pid = p2c;
+	c->pid = proxy;
 	c->next = *__libposix_child_list;
 	*__libposix_child_list = c;
 
-	return p2c;
+	return proxy;
 }
 
 int

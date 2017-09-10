@@ -89,12 +89,96 @@ put_in_list(EnvVar* newenv)
 	wunlock(&list_lock);
 }
 
-char *
-POSIX_getenv(int *errno, const char *name)
+static int
+write_env_file(const char *name, const char *value, int size)
+{
+	int f;
+	char buf[MAX_ENVNAME_LEN];
+
+	snprint(buf, sizeof(buf), "/env/%s", name);
+	f = ocreate(buf, OWRITE, 664);
+	if(f < 0)
+		return 0;
+	if(write(f, value, size) < 0){
+		close(f);
+		return 0;
+	}
+	close(f);
+	return 1;
+}
+
+int
+POSIX_setenv(int *errnop, const char *name, const char *value, int overwrite)
 {
 	EnvVar* e;
-	if(name == nil || name[0] == 0 || strchr(name, '=') == nil){
-		*errno = PosixEINVAL;
+	if(name == nil || name[0] == 0 || strchr(name, '=') != nil){
+		*errnop = PosixEINVAL;
+		return -1;
+	}
+	if(!overwrite && POSIX_getenv(errnop, name) != nil)
+		return 0;
+	if(strlen(name) > 127){
+		*errnop = PosixENOMEM;
+		return -1;
+	}
+	e = malloc(sizeof(EnvVar));
+	e->next = nil;
+	e->value = strdup(value);	// see free_env
+	e->name = strdup(name);
+	if(!write_env_file(name, e->value, strlen(value) + 1)){
+		free_env(e);
+		*errnop = PosixENOMEM;
+		return -1;
+	}
+	put_in_list(e);
+	return 0;
+}
+
+int
+POSIX_unsetenv(int *errnop, const char *name)
+{
+	EnvVar* e, **o;
+	char buf[MAX_ENVNAME_LEN];
+	if(name == nil || name[0] == 0 || strchr(name, '=') != nil){
+		*errnop = PosixEINVAL;
+		return -1;
+	}
+	if(POSIX_getenv(errnop, name) == nil)
+		return 0;
+	e = malloc(sizeof(EnvVar));
+
+	wlock(&list_lock);
+
+	e = list_start;
+	o = &list_start;
+	while(e != nil){
+		if(strcmp(e->name, name) == 0){
+			*o = e->next;
+			free(e);
+			e = nil; // done
+		} else {
+			o = &e->next;
+			e = *o;
+		}
+	}
+
+	wunlock(&list_lock);
+
+	snprint(buf, sizeof(buf), "/env/%s", name);
+	remove(buf);
+	return 0;
+}
+
+char *
+POSIX_getenv(int *errnop, const char *name)
+{
+	EnvVar* e;
+	if(name == nil || name[0] == 0 || strchr(name, '=') != nil){
+		*errnop = PosixEINVAL;
+		return nil;
+	}
+	if(strlen(name) > 127){
+		*errnop = PosixEINVAL;
 		return nil;
 	}
 	
@@ -110,12 +194,16 @@ POSIX_getenv(int *errno, const char *name)
 		return e->value;
 
 	e = malloc(sizeof(EnvVar));
+	if(e == nil){
+		*errnop = PosixEINVAL;
+		return nil;
+	}
 	e->next = nil;
 	e->value = nil;	// see free_env
 	e->name = strdup(name);
 	if(e->name == nil){
 		free_env(e);
-		*errno = PosixENOMEM;
+		*errnop = PosixEINVAL;
 		return nil;
 	}
 	e->value = getenv(name);

@@ -132,6 +132,39 @@ get_posix_error(PosixErrorMap *translations, char *err, uintptr_t caller)
 	return PosixEINVAL;
 }
 
+PosixError
+libposix_translate_kernel_errors(const char *msg)
+{
+	// TODO: autogenerate from /sys/src/sysconf.json
+	if(nil == msg)
+		return 0;
+	if(strncmp("interrupted", msg, 9) == 0)
+		return PosixEINTR;
+	if(strncmp("no living children", msg, 18) == 0)
+		return PosixECHILD;
+	if(strstr(msg, "file not found") != nil)
+		return PosixENOENT;
+	if(strstr(msg, "does not exist") != nil)
+		return PosixENOENT;
+	if(strstr(msg, "file already exists") != nil)
+		return PosixEEXIST;
+	if(strstr(msg, "file is a directory") != nil)
+		return PosixEISDIR;
+	if(strncmp("fd out of range or not open", msg, 27) == 0)
+		return PosixEBADF;
+	if(strstr(msg, "not a directory") != nil)
+		return PosixENOTDIR;
+	if(strstr(msg, "permission denied") != nil)
+		return PosixEPERM;
+	if(strstr(msg, "name too long") != nil)
+		return PosixENAMETOOLONG;
+	if(strcmp("i/o error", msg) == 0)
+		return PosixEIO;
+	if(strcmp("i/o on hungup channel", msg) == 0)
+		return PosixEIO;
+	return 0;
+}
+
 int
 __libposix_translate_errstr(uintptr_t caller)
 {
@@ -153,6 +186,8 @@ __libposix_translate_errstr(uintptr_t caller)
 		perr = get_posix_error(handler->head, err, caller);
 	if(perr == 0)
 		perr = get_posix_error(generic_handlers, err, caller);
+	if(perr == 0)
+		perr = libposix_translate_kernel_errors(err);
 	ret = __libposix_get_errno(perr);
 	sys_errstr(err, ERRMAX);
 	return ret;

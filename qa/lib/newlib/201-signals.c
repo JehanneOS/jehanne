@@ -26,6 +26,7 @@ main() {
 
 	if (pid == 0) {
 		printf("\nI am the new child!\n\n");
+		write(p[1], "", 1);
 		close(p[1]);
 		close(p[0]);
 		for(;;){
@@ -36,11 +37,11 @@ main() {
 	}
 	else /* parent */
 	{
-		close(p[1]);
-		if(read(p[0], &dummy, 1) > 0){
-			printf("sync read received data");
+		if(read(p[0], &dummy, 1) != 1){
+			printf("sync read");
 			exit(EXIT_FAILURE);
 		}
+		close(p[1]);
 		close(p[0]);
 		printf("\nPARENT: sending SIGINT\n\n");
 		kill(pid,SIGINT);

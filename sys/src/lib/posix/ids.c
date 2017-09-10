@@ -21,70 +21,83 @@
 #include <posix.h>
 #include "internal.h"
 
+typedef union {
+	int	group;
+	char	raw[sizeof(int)];
+} IntBuf;
+
+extern int *__libposix_devsignal;
 int __libposix_session_leader = -1;
 
 static int
-get_noteid(int *errnop, int pid)
+get_ppid(int pid)
 {
-	int n, f;
-	char buf[30];
-	sprint(buf, "/proc/%d/noteid", pid);
-	f = open(buf, OREAD);
-	if(f < 0){
-		*errnop = __libposix_get_errno(PosixEPERM);
+	long n;
+	char buf[32];
+	sprint(buf, "/proc/%d/ppid", pid);
+	n = remove(buf);
+	if(n == -1)
 		return -1;
-	}
-	n = read(f, buf, sizeof(buf) - 1);
-	if(n < 0){
-		*errnop = __libposix_get_errno(PosixEPERM);
-		return -1;
-	}
-	buf[n] = '\0';
-	n = atoi(buf);
-	close(f);
+	return (int)n;
+}
 
-	return n;
+long
+__libposix_sighelper_set_pgid(int target, int group)
+{
+	union {
+		PosixHelperRequest	request;
+		long			raw;
+	} offset;
+	IntBuf buf;
+
+	offset.request.command = PHSetProcessGroup;
+	offset.request.target = target;
+
+	buf.group = group;
+	return pwrite(*__libposix_devsignal, buf.raw, sizeof(buf.raw), offset.raw);
 }
 
 static int
-set_noteid(int *errnop, int pid, int noteid)
+set_group_id(int *errnop, int pid, int group)
 {
-	int n, f;
-	char buf[30];
+	int mypid, ppid;
 
-	if(pid == 0)
-		pid = getpid();
-	if(noteid == 0){
-		noteid = get_noteid(errnop, pid);
-		if(noteid < 0)
-			return noteid;
-	}
-	sprint(buf, "/proc/%d/noteid", pid);
-	f = open(buf, OWRITE);
-	if(f < 0) {
-		*errnop = __libposix_get_errno(PosixESRCH);
+	if(pid < 0 || group < 0){
+		*errnop = __libposix_get_errno(PosixEINVAL);
 		return -1;
 	}
-	n = sprint(buf, "%d", noteid);
-	n = write(f, buf, n);
-	if(n < 0){
+	if(pid == __libposix_session_leader){
 		*errnop = __libposix_get_errno(PosixEPERM);
 		return -1;
 	}
-	close(f);
-	return 0;
+	mypid = *__libposix_pid;
+	if(pid == 0 && group == 0){
+		/* the caller wants a new process group */
+CreateNewProcessGroup:
+		rfork(RFNOTEG);
+		return __libposix_sighelper_cmd(PHSetProcessGroup, mypid);
+	}
+	ppid = get_ppid(pid);
+	if(ppid == -1 || pid != mypid && mypid != ppid){
+		*errnop = __libposix_get_errno(PosixESRCH);
+		return -1;
+	}
+	if(pid == group && pid == mypid)
+		goto CreateNewProcessGroup;
+
+	return __libposix_sighelper_set_pgid(pid, group);
 }
 
 int
 POSIX_getuid(int *errnop)
 {
-	return 0;
+	return 1000;
 }
 
 int
 POSIX_geteuid(int *errnop)
 {
-	return 0;
+	return 1000;
 }
 
 int
@@ -102,7 +115,7 @@ POSIX_seteuid(int *errnop, int euid)
 int
 POSIX_setreuid(int *errnop, int ruid, int euid)
 {
-	return 0;
+	return 1000;
 }
 
 int
@@ -138,61 +151,129 @@ POSIX_setregid(int *errnop, int rgid, int egid)
 int
 POSIX_getpgrp(int *errnop)
 {
-	int pid = getpid();
-	return get_noteid(errnop, pid);
+	long ret;
+	int pid = *__libposix_pid;
+	ret = __libposix_sighelper_cmd(PHGetProcessGroupId, pid);
+	if(ret < 0)
+		return pid;
+	return ret;
 }
 
 int
 POSIX_getpgid(int *errnop, int pid)
 {
-	return get_noteid(errnop, pid);
+	long ret;
+	ret = __libposix_sighelper_cmd(PHGetProcessGroupId, pid);
+	if(ret < 0)
+		*errnop = __libposix_get_errno(PosixESRCH);
+	return ret;
 }
 
 int
 POSIX_setpgid(int *errnop, int pid, int pgid)
 {
-	if(pid < 0 || pgid < 0){
-		*errnop = __libposix_get_errno(PosixEINVAL);
-		return -1;
-	}
-	return set_noteid(errnop, pid, pgid);
+	return set_group_id(errnop, pid, pgid);
 }
 
 int
 POSIX_getsid(int *errnop, int pid)
 {
-	int reqnoteid, mynoteid;
+	int mypid;
+	long sid;
+	char buf[32];
 
 	if(pid < 0){
+FailWithESRCH:
 		*errnop = __libposix_get_errno(PosixESRCH);
 		return -1;
 	}
+	snprint(buf, sizeof(buf), "/proc/%d/ns", pid);
+	if(access(buf, AEXIST) != 0)
+		goto FailWithESRCH;
+
+	mypid = *__libposix_pid;
 	if(pid == 0)
-		pid = getpid();
-	else if(pid == getpid())
-		return __libposix_session_leader;
-	reqnoteid = get_noteid(errnop, pid);
-	if(reqnoteid < 0)
-		return reqnoteid;
-	if(__libposix_session_leader < 0)
-		return reqnoteid;
-	mynoteid = POSIX_getpgrp(errnop);
-	if(mynoteid == reqnoteid){
-		/* if it share our pgrp (aka noteid), it shares
-		 * our session leader
-		 */
-		return __libposix_session_leader;
+		pid = mypid;
+	sid = __libposix_sighelper_cmd(PHGetSessionId, pid);
+	if(sid < 0){
+		*errnop = __libposix_get_errno(PosixEPERM);
+		return -1;
 	}
-	return reqnoteid;
+	if(pid == mypid)
+		__libposix_session_leader = (int)sid;
+
+	return sid;
 }
 
 int
 POSIX_setsid(int *errnop)
 {
-	if(rfork(RFNAMEG|RFNOTEG) < 0){
-		*errnop = __libposix_get_errno(PosixEPERM);
-		return -1;
+	extern PosixSignalMask *__libposix_signal_mask;
+	extern SignalConf *__libposix_signals;
+	extern int *__libposix_devsignal;
+
+	char *posixly_args[4], *fname;
+	int mypid = *__libposix_pid;
+	int oldsid;
+	long controlpid;
+	SignalConf *c;
+
+	/* detach the previous session */
+	oldsid = (int)__libposix_sighelper_cmd(PHGetSessionId, 0);
+	fname = smprint("#s/posixly.%s.%d", getuser(), oldsid);
+	if(fname == nil || __libposix_sighelper_cmd(PHDetachSession, 0) < 0)
+		goto FailWithEPERM;
+	if(*__libposix_devsignal >= 0)
+		close(*__libposix_devsignal);
+	*__libposix_devsignal = -1;
+	rfork(RFNAMEG|RFNOTEG|RFENVG|RFFDG);
+	unmount(fname, "/dev");
+	free(fname);
+	fname = nil;
+	assert(access("/dev/posix", AEXIST) != 0);
+
+	/* start the new session */
+	switch(controlpid = sys_rfork(RFPROC|RFNOTEG|RFENVG|RFFDG)){
+	case -1:
+		goto FailWithEPERM;
+	case 0:
+		posixly_args[0] = "posixly";
+		posixly_args[1] = "-p";
+		posixly_args[2] = smprint("%d", mypid);
+		posixly_args[3] = nil;
+		jehanne_pexec("sys/posixly", posixly_args);
+		rfork(RFNOWAIT);
+		sysfatal("pexec sys/posixly");
+	default:
+		break;
 	}
-	__libposix_session_leader = POSIX_getpgrp(errnop);
-	return __libposix_session_leader;
+
+	/* wait for /dev/posix/ */
+	fname = smprint("/proc/%d/note", controlpid);
+	if(fname == nil)
+		goto FailWithEPERM;
+	while(access("/dev/posix", AEXIST) != 0 && access(fname, AWRITE) == 0)
+		sleep(250);
+	if(access(fname, AWRITE) != 0)
+		goto FailWithEPERM;
+	free(fname);
+	fname = nil;
+
+	/* connect to the new session */
+	__libposix_sighelper_open();
+	__libposix_sighelper_set(PHBlockSignals, *__libposix_signal_mask);
+	c = __libposix_signals;
+	while(c < __libposix_signals + PosixNumberOfSignals){
+		if(c->handler == (void*)1)
+			__libposix_sighelper_set(PHIgnoreSignal, SIGNAL_MASK(1+(c-__libposix_signals)));
+		++c;
+	}
+	__libposix_session_leader = mypid;
+	return mypid;
+
+FailWithEPERM:
+	if(fname)
+		free(fname);
+	*errnop = __libposix_get_errno(PosixEPERM);
+	return -1;
 }

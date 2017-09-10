@@ -19,22 +19,25 @@
 /* POSIX signals have weird semantics that are hard to emulate in a
  * sane system without giving up on its sanity.
  *
- * We distinguish control signals (SIGKILL, SIGSTOP, SIGCONT,
- * SIGABRT, SIGIOT), SIGCHLD/SIGCLD, timers' wakeups
+ * We distinguish control signals (SIGKILL, SIGSTOP, SIGTSTP, SIGCONT,
+ * SIGABRT, SIGTTIN, SIGTTOU, SIGIOT), SIGCHLD/SIGCLD, timers' wakeups
  * (SIGALRM, SIGPROF, SIGVTALRM) and all the others.
  *
  * TRASMISSION
  * -----------
- * Signal transmission depends on the relation between the sender
- * and the receiver:
- * 1) if sender and receiver have no relation the signal is translated
- *    to a note and sent to the receiver(s);
- * 2) if sender == receiver the signal trampoline is directly invoked
- *    for all signals except control ones and the default disposition occurs if
- *    the trampoline does not handle the signal
- * 3) if sender is parent or child of receiver the transmision
- *    differs from the default if libposix_emulate_SIGCHLD() has been
- *    called during library initialization
+ * Signal transmission is done though a file server mounted /dev/posix/,
+ * provided by sys/posixly. On startup and at each fork, processes
+ * create a file named /dev/posix/signal with ORDWR mode and perm
+ * equals to their pid. Writing and Reading such file they can
+ * control signal dispatching, process groups and so on.
+ *
+ * When a signal is written to /dev/posix/signal, it is translated for
+ * each receiver to a note, and written to the specific note file.
+ *
+ * If the receiver is a known process, the note is in the format
+ * 	posix: si_signo si_pid si_uid si_value si_code
+ * otherwise, if possible, it is translated to an idiomatic note
+ * (eg "interrupt" or "alarm").
  *
  * Since notes in Jehanne are not reentrant, signals translated to
  * notes will be enqueued in kernel. A special machinery is implemented
@@ -53,14 +56,15 @@
  * ----------------
  * Control messages are translated by the receiver to equivalent actions:
  * - SIGKILL => write "kill" to the control file of the current process
- * - SIGSTOP => write "stop" to the control file of the current process
+ * - SIGSTOP, SIGTSTP, SIGTTOU, SIGTTIN
+ *            => write "stop" to the control file of the current process
+ *               (when the signal is not handled nor ignored)
  * - SIGABRT/SIGIOT => invoke the registered signal handlers and abort
  *                     the current process
  * - SIGCONT => invoke the registered signal handlers via the signal
  *              trampoline and continue; note that (since a stopped
- *              process cannot resume itself) the sender will write
- *              "start" to the control file of the receiver before
- *              sending the note (unless SIGCHLD emulation is enable).
+ *              process cannot resume itself) sys/posixly will write
+ *              "start" to the control file of the receiver.
  *
  * SIGCHLD/SIGCLD
  * --------------
@@ -72,30 +76,26 @@
  *
  * Such emulation changes the way POSIX_fork and POSIX_kill works.
  *
- * Each fork() will spawn two additional processes that are designed
- * to proxy signals between the parent and the desired child:
+ * Each fork() will spawn an additional process that share the memory
+ * of the parent, and waits for the child, so that it can send SIGCHLD:
  *
  *   parent
- *     +- proxy from parent to child (P2C)
- *          +- proxy from child to parent (C2P)
- *               +- child
+ *     +- nanny
+ *          +- child
  *
- * Fork will return the pid of P2C to the parent, so that the
- * parent process will see the first proxy as its child; the child will
- * see the second as its parent. Each proxy waits for its child and
- * forwards the notes it receive to its designed target.
+ * Such "nannies" connect to sys/posixly by creating /dev/posix/nanny
+ * so that the filesystem will handle them differently:
+ * - any signal for the nanny sent from the parent is delivered to the child
+ * - any signal for the nanny sent from the child is delivered to the parent
+ * - any signal for the nanny sent from anybody else is delivered to the child
+ *
  * Finally fork in child will return 0.
  *
- * When the child exits, C2P will send a SIGCHLD note to parent and
- * then exit with the same status. Then P2C will exit with
- * the same status too.
+ * When the child exits, the proxy will send a SIGCHLD sigchld to parent
+ * and then exit with the same status.
  *
- * As the parent process will see P2C as its child, it will send any
- * signal to it via kill and will wait it on SIGCHLD.
- * However, when this machinary is enabled, kill will treat all signals
- * for forked children in the same way, sending them to P2C.
- * It's P2C's responsibility to translate control messages as required,
- * so that SIGCONT will work as expected.
+ * As the parent process will see the proxy as its child, it will send
+ * any signal to it via kill or sigqueue and will wait it on SIGCHLD.
  *
  * TIMERS
  * ------
@@ -104,6 +104,7 @@
  * expire in a signal handler (interrupting a blocking syscall) but
  * without giving up the simplicity of notes.
  *
+ * (TO BE IMPLEMENTED: )
  * We allocate these timers on libposix initialization. When normal
  * code is running timers will be implemented via Jehanne's alarms,
  * producing a note on expiration that will be mapped to the proper
@@ -122,16 +123,22 @@
 #include <posix.h>
 #include "internal.h"
 
-unsigned char *__signals_to_code_map;
-unsigned char *__code_to_signal_map;
 int *__handling_external_signal;
 int *__restart_syscall;
+extern PosixSignalMask *__libposix_signal_mask;
+extern int *__libposix_devsignal;
 
-static int __sigrtmin;
-static int __sigrtmax;
-int __min_known_sig;
-int __max_known_sig;
-static PosixSignalTrampoline __libposix_signal_trampoline;
+typedef union {
+	PosixSignalInfo	signal;
+	char		raw[sizeof(PosixSignalInfo)];
+} SignalBuf;
+typedef union {
+	PosixSignalMask	signals;
+	char		raw[sizeof(PosixSignalMask)];
+} SigSetBuf;
+
+static SignalConf signal_configurations[PosixNumberOfSignals];
+SignalConf *__libposix_signals = signal_configurations;
 
 typedef enum PosixSignalDisposition
 {
@@ -143,21 +150,35 @@ typedef enum PosixSignalDisposition
 } PosixSignalDisposition;
 
 static PosixError
-note_all_writable_processes(int sig)
+note_all_writable_processes(PosixSignalInfo* siginfo)
 {
 	// TODO: loop over writable note files and post note.
 	return PosixEPERM;
 }
 
 static void
-terminated_by_signal(int sig)
+terminated_by_signal(int signo)
 {
 	char buf[64];
 
 	__libposix_free_wait_list();
 
-	snprint(buf, sizeof(buf), __POSIX_EXIT_SIGNAL_PREFIX "%d", sig);
+	snprint(buf, sizeof(buf), __POSIX_EXIT_SIGNAL_PREFIX "%d", signo);
 	exits(buf);
+}
+
+void
+__libposix_init_signal_handlers(void)
+{
+	__libposix_sighelper_set(PHIgnoreSignal, SIGNAL_MASK(PosixSIGCHLD));
+	__libposix_sighelper_set(PHIgnoreSignal, SIGNAL_MASK(PosixSIGURG));
+	__libposix_sighelper_set(PHIgnoreSignal, SIGNAL_MASK(PosixSIGWINCH));
+	__libposix_signals[PosixSIGCHLD-1].handler = (void*)1;
+	__libposix_signals[PosixSIGCHLD-1].sa_restart = 1;
+	__libposix_signals[PosixSIGURG-1].handler = (void*)1;
+	__libposix_signals[PosixSIGURG-1].sa_restart = 1;
+	__libposix_signals[PosixSIGWINCH-1].handler = (void*)1;
+	__libposix_signals[PosixSIGWINCH-1].sa_restart = 1;
 }
 
 int
@@ -189,7 +210,7 @@ ErrorBeforeOpen:
 /* Executes a PosixSignalDisposition.
  */
 static int
-execute_disposition(int sig, PosixSignalDisposition action)
+execute_disposition(int signo, PosixSignalDisposition action)
 {
 	int aborted_by_signal;
 
@@ -199,32 +220,27 @@ execute_disposition(int sig, PosixSignalDisposition action)
 		*__restart_syscall = 1;
 		return 1;
 	case TerminateTheProcess:
-		terminated_by_signal(sig);
+		terminated_by_signal(signo);
 		break;
 	case TerminateTheProcessAndCoreDump:
 		aborted_by_signal = 0;
 		assert(aborted_by_signal);
 		break;
 	case StopTheProcess:
-		return __libposix_send_control_msg(getpid(), "stop");
+		return __libposix_send_control_msg(*__libposix_pid, "stop");
 	}
 	return 0;
 }
 
 static PosixSignalDisposition
-default_signal_disposition(int code)
+default_signal_disposition(PosixSignals signal)
 {
-	PosixSignals signal;
-
-	// see http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/signal.h.html
-	if(__sigrtmin != 0 && __sigrtmax != 0
-	&&(code >= __sigrtmin || code <= __sigrtmax))
+	if(signal >= PosixSIGRTMIN && signal <= PosixSIGRTMAX)
 		return TerminateTheProcess;
 
-	signal = __code_to_signal_map[code];
 	switch(signal){
 	default:
-		sysfatal("libposix: undefined signal %d", code);
+		sysfatal("libposix: undefined signal %d", signal);
 
 	case PosixSIGALRM:
 	case PosixSIGHUP:
@@ -255,7 +271,6 @@ default_signal_disposition(int code)
 	case PosixSIGXFSZ:
 		return TerminateTheProcessAndCoreDump;
 	case PosixSIGCHLD:
-	case PosixSIGCLD:
 	case PosixSIGURG:
 		return IgnoreWithNoEffect;
 	case PosixSIGCONT:
@@ -263,209 +278,360 @@ default_signal_disposition(int code)
 	}
 }
 
-PosixError
-__libposix_receive_signal(int sig)
+/* returns 1 if the signal handling has been completed, 0 otherwise */
+int
+__libposix_run_signal_handler(SignalConf *c, PosixSignalInfo *siginfo)
 {
-	PosixSignalAction action = SignalDefault;
-	PosixSignals psig = __code_to_signal_map[sig];
-	PosixSignalDisposition disposition;
-	
-	if(psig != PosixSIGKILL && psig != PosixSIGSTOP)
-		action = __libposix_signal_trampoline(sig);
-	if(psig == PosixSIGABRT)
-		action = SignalDefault;	// lets abort despite the user will
+	PosixSigHandler h;
+	PosixSigAction a;
+	PosixSignalMask m;
 
-	switch(action){
-	case SignalCatched:
+	switch((uintptr_t)c->handler){
+	case 0:
+		/* SIG_DFL */
+		if(c->sa_restart)
+			*__restart_syscall = 1;
 		break;
-	case SignalIgnored:
+	case 1:
+		/* SIG_IGN */
+		if(siginfo->si_signo == PosixSIGABRT)
+			break;
 		*__restart_syscall = 1;
-		break;
-	case SignalDefault:
-		disposition = default_signal_disposition(sig);
-		if(!execute_disposition(sig, disposition))
-			return PosixEPERM;
-		break;
-	case SignalError:
-		return PosixEINVAL;
+		return 1;
+	default:
+		m = *__libposix_signal_mask;
+		*__libposix_signal_mask |= c->mask;
+		__libposix_sighelper_set(PHBlockSignals, *__libposix_signal_mask);
+		a = c->handler;
+		h = c->handler;
+
+		if(c->sa_resethand)
+			c->handler = 0;
+
+		if(c->sa_siginfo){
+			a(siginfo->si_signo, siginfo, nil);
+		} else {
+			h(siginfo->si_signo);
+		}
+		if(c->sa_restart)
+			*__restart_syscall = 1;
+		*__libposix_signal_mask = m;
+		__libposix_sighelper_set(PHBlockSignals, *__libposix_signal_mask);
+		if(siginfo->si_signo == PosixSIGABRT)
+			break;
+		return 1;
 	}
 	return 0;
 }
 
 PosixError
-__libposix_notify_signal_to_process(int pid, int signal)
+__libposix_receive_signal(PosixSignalInfo *siginfo)
 {
-	char buf[128];
-	int fd, n;
+	SignalConf *c;
+	PosixSignalDisposition disposition;
+	PosixSignals signo = siginfo->si_signo;
 
-	snprint(buf, sizeof(buf), "/proc/%d/note", pid);
-	if((fd = open(buf, OWRITE)) < 0){
-		if(access(buf, AEXIST) == 0)
-			return PosixEPERM;
-		else
-			return PosixESRCH;
-	}
-	n = snprint(buf, sizeof(buf), __POSIX_SIGNAL_PREFIX "%d", signal);
-	write(fd, buf, n);
-	close(fd);
+	if(signo == PosixSIGKILL || signo == PosixSIGSTOP)
+		goto ExecuteDefaultDisposition;
+
+	if(__libposix_signal_blocked(siginfo))
+		return 0;
+
+	c = __libposix_signals + (signo-1);
+	if(__libposix_run_signal_handler(c, siginfo))
+		return 0;
+
+ExecuteDefaultDisposition:
+	disposition = default_signal_disposition(signo);
+	if(!execute_disposition(signo, disposition))
+		return PosixEPERM;
 	return 0;
 }
 
-static PosixError
-notify_signal_to_group(int pid, int signal)
+long
+__libposix_sighelper_signal(PosixHelperCommand command, int posix_process_pid, PosixSignalInfo *siginfo)
 {
-	char buf[128];
-	int fd, n;
+	union {
+		PosixHelperRequest	request;
+		long			raw;
+	} offset;
+	char buf[sizeof(PosixSignalInfo)];
 
-	snprint(buf, sizeof(buf), "/proc/%d/notepg", pid);
-	if((fd = open(buf, OWRITE)) < 0){
-		if(access(buf, AEXIST) == 0)
-			return PosixEPERM;
-		else
-			return PosixESRCH;
-	}
-	n = snprint(buf, sizeof(buf), __POSIX_SIGNAL_PREFIX "%d", signal);
-	write(fd, buf, n);
-	close(fd);
-	return 0;
+	offset.request.command = command;
+	offset.request.target = posix_process_pid;
+
+	memcpy(buf, siginfo, sizeof(buf));
+
+	return pwrite(*__libposix_devsignal, buf, sizeof(buf), offset.raw);
+}
+
+long
+__libposix_sighelper_set(PosixHelperCommand command, PosixSignalMask signal_set)
+{
+	union {
+		PosixHelperRequest	request;
+		long			raw;
+	} offset;
+	union {
+		PosixSignalMask	mask;
+		char		raw[sizeof(PosixSignalMask)];
+	} buffer;
+
+	offset.request.command = command;
+	offset.request.target = 0;
+
+	buffer.mask = signal_set;
+
+	return pwrite(*__libposix_devsignal, buffer.raw, sizeof(buffer.raw), offset.raw);
+}
+
+PosixError
+__libposix_notify_signal_to_process(int pid, PosixSignalInfo *siginfo)
+{
+	long e = __libposix_sighelper_signal(PHSignalProcess, pid, siginfo);
+	return (PosixError)e;
 }
 
 static PosixError
-dispatch_signal(int pid, int sig)
+notify_signal_to_group(int pid, PosixSignalInfo* siginfo)
 {
-	PosixSignals signal;
+	long e = __libposix_sighelper_signal(PHSignalGroup, pid, siginfo);
+	return (PosixError)e;
+}
+
+PosixError
+__libposix_dispatch_signal(int pid, PosixSignalInfo* siginfo)
+{
 	PosixError error;
 	switch(pid){
 	case 0:
-		return notify_signal_to_group(getpid(), sig);
+		return notify_signal_to_group(*__libposix_pid, siginfo);
 	case -1:
-		return note_all_writable_processes(sig);
+		return note_all_writable_processes(siginfo);
 	default:
 		if(pid < 0)
-			return notify_signal_to_group(-pid, sig);
+			return notify_signal_to_group(-pid, siginfo);
 		break;
 	}
-	signal = __code_to_signal_map[sig];
-	error = __libposix_notify_signal_to_process(pid, sig);
-	if(signal == PosixSIGCONT && !__libposix_is_child(pid))
+	error = __libposix_notify_signal_to_process(pid, siginfo);
+	if(siginfo->si_signo == PosixSIGCONT && !__libposix_is_child(pid))
 		__libposix_send_control_msg(pid, "start");
 	return error;
 }
 
-int
-POSIX_kill(int *errnop, int pid, int sig)
+static int
+translate_jehanne_kernel_note(const char *note, PosixSignalInfo *siginfo)
 {
-	PosixSignals signal;
-	PosixError perror;
+	char *trap[3];
+	char *tmp;
 
-	signal = __code_to_signal_map[sig];
-	if(signal == 0
-	&&(__sigrtmin != 0 && __sigrtmax != 0)
-	&&(sig < __sigrtmin || sig > __sigrtmax))
-		sysfatal("libposix: undefined signal %d", sig);
-	if(pid == getpid())
-		perror = __libposix_receive_signal(sig);
-	else
-		perror = dispatch_signal(pid, sig);
-	if(perror != 0){
-		*errnop = __libposix_get_errno(perror);
-		return -1;
+	assert(siginfo->si_signo == 0);
+
+	if(strncmp("trap: fault ", note, 12) == 0){
+		// trap: fault read addr=0x0 pc=0x400269
+		note += 12;
+		siginfo->si_signo = PosixSIGTRAP;
+		tmp = strdup(note);
+		if(getfields(tmp, trap, 3, 1, " ") == 3){
+			if(trap[0][0] == 'r')
+				siginfo->si_code = PosixSIFaultMapError;
+			else
+				siginfo->si_code = PosixSIFaultAccessError;
+			siginfo->si_value._sival_raw = atoll(trap[1]+5);
+		}
+		free(tmp);
+	} else if(strncmp("write on closed pipe", note, 20) == 0){
+		// write on closed pipe pc=0x400269
+		siginfo->si_signo = PosixSIGPIPE;
+		note += 24;
+		siginfo->si_value._sival_raw = atoll(note);
+	} else if(strncmp("bad address in syscall", note, 22) == 0){
+		// bad address in syscall pc=0x41cc54
+		siginfo->si_signo = PosixSIGSEGV;
+		note += 26;
+		siginfo->si_value._sival_raw = atoll(note);
 	}
-	return 0;
+	// TODO: implement
+
+	return siginfo->si_signo == 0 ? 0 : 1;
 }
 
 static int
-translate_jehanne_note(char *note)
+translate_jehanne_note(const char *note, PosixSignalInfo *siginfo)
 {
-	// TODO: implement
+	if(note == nil || note[0] == 0)
+		return 0;
+
+	if(strncmp("alarm", note, 5) == 0){
+		siginfo->si_signo = PosixSIGALRM;
+		return 1;
+	}
+	if(strncmp("sys: ", note, 5) == 0)
+		return translate_jehanne_kernel_note(note + 5, siginfo);
+	if(strncmp("interrupt", note, 9) == 0){
+		siginfo->si_signo = PosixSIGINT;
+		return 1;
+	}
+	if(strncmp("hangup", note, 6) == 0){
+		siginfo->si_signo = PosixSIGHUP;
+		return 1;
+	}
+
 	return 0;
 }
 
 int
-__libposix_note_to_signal(char *note)
+__libposix_signal_to_note(const PosixSignalInfo *si, char *buf, int size)
 {
-	return atoi(note+__POSIX_SIGNAL_PREFIX_LEN);
+	return
+	snprint(buf, size, __POSIX_SIGNAL_PREFIX "%d %d %d %#p %d",
+		si->si_signo, si->si_pid, si->si_uid,
+		si->si_value._sival_raw, si->si_code);
+}
+
+/* The format of a note sent by libposix as a signal is
+ *
+ *	"posix: %d %d %d %#p %d", signo, pid, uid, value, code
+ */
+int
+__libposix_note_to_signal(const char *note, PosixSignalInfo *siginfo)
+{
+	assert(siginfo->si_signo == 0); /* siginfo must be zeroed */
+	if(strncmp(note, __POSIX_SIGNAL_PREFIX, __POSIX_SIGNAL_PREFIX_LEN) != 0)
+		return translate_jehanne_note(note, siginfo);
+	char *rest = (char*)note + __POSIX_SIGNAL_PREFIX_LEN;
+	if(*rest == 0)
+		return 0;
+	siginfo->si_signo = strtol(rest, &rest, 0);
+	if(*rest == 0)
+		return 1;
+	siginfo->si_pid = strtol(rest, &rest, 0);
+	if(*rest == 0)
+		return 1;
+	siginfo->si_uid = strtoul(rest, &rest, 0);
+	if(*rest == 0)
+		return 1;
+	siginfo->si_value._sival_raw = strtoull(rest, &rest, 0);
+	if(*rest == 0)
+		return 1;
+	siginfo->si_code = strtoul(rest, &rest, 0);
+	return 1;
 }
 
 int
 __libposix_note_handler(void *ureg, char *note)
 {
-	int sig;
+	PosixSignalInfo siginfo;
 	PosixError error;
-	if(strncmp(note, __POSIX_SIGNAL_PREFIX, __POSIX_SIGNAL_PREFIX_LEN) != 0)
-		return translate_jehanne_note(note); // TODO: should we translate common notes?
-	sig = __libposix_note_to_signal(note);
-	if(sig < __min_known_sig || sig > __max_known_sig)
+
+	memset(&siginfo, 0, sizeof(PosixSignalInfo));
+
+	if(!__libposix_note_to_signal(note, &siginfo)
+	&& (siginfo.si_signo < 1 || siginfo.si_signo > PosixNumberOfSignals))
 		sysfatal("libposix: '%s' does not carry a signal", note);
 	*__handling_external_signal = 1;
-	error = __libposix_receive_signal(sig);
+	error = __libposix_receive_signal(&siginfo);
 	*__handling_external_signal = 0;
+	werrstr("interrupted");
 	return error == 0;
-}
-
-int
-libposix_define_realtime_signals(int sigrtmin, int sigrtmax)
-{
-	if(sigrtmin >= 256 || sigrtmin <=0)
-		sysfatal("libposix: invalid SIGRTMIN %d (must be positive and less then 256)", sigrtmin);
-	if(sigrtmax >= 256 || sigrtmax <=0)
-		sysfatal("libposix: invalid SIGRTMAX %d (must be positive and less then 256)", sigrtmax);
-	if(sigrtmax <= sigrtmin)
-		sysfatal("libposix: invalid SIGRTMAX %d (must be greater than SIGRTMIN %d)", sigrtmax, sigrtmin);
-	if(__libposix_initialized())
-		return 0;
-	__sigrtmin = sigrtmin;
-	__sigrtmax = sigrtmax;
-	if(sigrtmin < __min_known_sig || __min_known_sig == 0)
-		__min_known_sig = sigrtmin;
-	if(sigrtmax > __max_known_sig || __max_known_sig == 0)
-		__max_known_sig = sigrtmax;
-	return 1;
-}
-
-int
-libposix_define_signal(PosixSignals signal, int code)
-{
-	if(signal >= PosixNumberOfSignals)
-		sysfatal("libposix: unknown PosixSignal %d", signal);
-	if(code >= 256 || code <=0)
-		sysfatal("libposix: invalid signal number %d (must be positive and less then 256)", code);
-	if(__libposix_initialized())
-		return 0;
-	__signals_to_code_map[signal] = (unsigned char)code;
-	if(signal != PosixSIGCLD || code != __signals_to_code_map[PosixSIGCHLD]){
-		/* if SIGCHLD == SIGCLD then we use PosixSIGCHLD to identify the signal */
-		__code_to_signal_map[code] = (unsigned char)signal;
-	}
-	if(code < __min_known_sig || __min_known_sig == 0)
-		__min_known_sig = code;
-	if(code > __max_known_sig || __max_known_sig == 0)
-		__max_known_sig = code;
-	return 1;
-}
-
-int
-libposix_set_signal_trampoline(PosixSignalTrampoline trampoline)
-{
-	if(__libposix_initialized())
-		return 0;
-	if(trampoline == nil)
-		return 0;
-	__libposix_signal_trampoline = trampoline;
-	return 1;
 }
 
 int
 __libposix_restart_syscall(void)
 {
-	int r = *__restart_syscall;
+	int r;
+
+	if(*__handling_external_signal)
+		return 0;
+
+	r = *__restart_syscall;
 	*__restart_syscall = 0;
 	return r;
 }
 
-void
-__libposix_signal_check_conf(void)
+int
+POSIX_sigaction(int *errnop, int signo, const struct sigaction *act, struct sigaction *old)
 {
-	if(__libposix_signal_trampoline == nil)
-		sysfatal("libposix: no signal trampoline");
+	SignalConf *c, oconf;
+
+	if(signo < 1 || signo > PosixNumberOfSignals)
+		goto FailWithEINVAL;
+
+	c = __libposix_signals + (signo-1);
+
+	if(old)
+		memcpy(&oconf, c, sizeof(SignalConf));
+
+	if(act){
+		memset(c, 0, sizeof(SignalConf));
+		if(signo == PosixSIGKILL || signo == PosixSIGSTOP)
+			goto FailWithEINVAL;
+		if(act->sa_flags & PosixSAFSigInfo){
+			c->sa_siginfo = 1;
+			c->handler = act->sa_sigaction;
+		} else {
+			c->handler = act->sa_handler;
+		}
+		c->mask = act->sa_mask & ~((255UL<<56) | SIGNAL_MASK(PosixSIGKILL) | SIGNAL_MASK(PosixSIGSTOP));
+		if(act->sa_flags & PosixSAFResetHandler)
+			c->sa_resethand = 1;
+		else
+			c->sa_resethand = 0;
+		if(act->sa_flags & PosixSAFRestart)
+			c->sa_restart = 1;
+		else
+			c->sa_restart = 0;
+		if(signo == PosixSIGCHLD){
+			if(act->sa_flags & PosixSAFNoChildrenWait)
+				c->sa_nochildwait = 1;
+			else
+				c->sa_nochildwait = 0;
+			if(c->handler == (void*)1) /* SIGCHLD && SIG_IGN => SA_NOCLDWAIT */
+				c->sa_nochildwait = 1;
+		}
+		if(c->handler == (void*)1){
+			/* ignore signal */
+			__libposix_sighelper_set(PHIgnoreSignal, SIGNAL_MASK(signo));
+		} else if(c->handler == (void*)0){
+			/* default behavior */
+			switch(signo){
+			case PosixSIGCHLD:
+			case PosixSIGURG:
+			case PosixSIGWINCH:
+				__libposix_sighelper_set(PHIgnoreSignal, SIGNAL_MASK(signo));
+				break;
+			default:
+				__libposix_sighelper_set(PHEnableSignal, SIGNAL_MASK(signo));
+				break;
+			}
+		} else {
+			/* do not ignore signal */
+			__libposix_sighelper_set(PHEnableSignal, SIGNAL_MASK(signo));
+		}
+	}
+
+	if(old){
+		if(oconf.sa_siginfo){
+			old->sa_sigaction = oconf.handler;
+			old->sa_mask = oconf.mask;
+			old->sa_flags = 0;
+			if(oconf.sa_siginfo)
+				old->sa_flags |= PosixSAFSigInfo;
+			if(oconf.sa_resethand)
+				old->sa_flags |= PosixSAFResetHandler;
+			if(oconf.sa_restart)
+				old->sa_flags |= PosixSAFRestart;
+			if(oconf.sa_nochildwait)
+				old->sa_flags |= PosixSAFNoChildrenWait;
+		} else {
+			old->sa_handler = oconf.handler;
+			old->sa_flags = 0;
+			old->sa_mask = 0;
+		}
+	}
+	return 0;
+
+FailWithEINVAL:
+	*errnop = __libposix_get_errno(PosixEINVAL);
+	return -1;
 }

@@ -558,15 +558,27 @@ procqidwidth(Chan *c)
 	return jehanne_sprint(buf, "%lud", c->qid.vers);
 }
 
+
 static int
-_procfdprint(Chan *c, int fd, int w, char *s, int ns, char * modestr)
+_procfdprint(Chan *c, int fd, int w, char *s, int ns, char *modestr)
 {
 	int n;
+	char *flags;
+	if((c->mode&(OCEXEC|ORCLOSE)) == (OCEXEC|ORCLOSE))
+		flags = "ED";
+	else if(c->mode&OCEXEC)
+		flags = "E ";
+	else if(c->mode&ORCLOSE)
+		flags = "D ";
+	else
+		flags = "  ";
+
 	if(w == 0)
 		w = procqidwidth(c);
-	n = jehanne_snprint(s, ns, "%3d %.2s %C %4ud (%.16llux %*lud %.2ux) %5ld %8lld %s\n",
+	n = jehanne_snprint(s, ns, "%3d %.2s%s %C %4ud (%.16llux %*lud %.2ux) %5ld %8lld %s\n",
 		fd,
 		&modestr[(c->mode&3)<<1],
+		flags,
 		c->dev->dc, c->devno,
 		c->qid.path, w, c->qid.vers, c->qid.type,
 		c->iounit, c->offset, c->path->s);

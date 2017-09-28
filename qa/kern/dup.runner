@@ -1,0 +1,37 @@
+#!/cmd/rc
+
+runner=$0
+test = `{echo $runner|sed 's/.runner//'}
+test_output = /tmp/output-`{basename $test}
+
+if ( test -e $test_output) rm $test_output
+
+$test > $test_output
+testpid=$apid
+
+wait $testpid
+
+if ( ! cat $test_output | grep 'Got 0ctl:   0  r   ' > /dev/null ) {
+	cat $test_output
+	echo FAIL
+	exit FAIL
+}
+if ( ! cat $test_output | grep 'Got 1ctl:   1  w   ' > /dev/null ) {
+	cat $test_output
+	echo FAIL
+	exit FAIL
+}
+if ( ! cat $test_output | grep 'Got 2ctl:   2  w   ' > /dev/null ) {
+	cat $test_output
+	echo FAIL
+	exit FAIL
+}
+if ( ! cat $test_output | grep 'Got:   3  rE  ' > /dev/null ) {
+	cat $test_output
+	echo FAIL
+	exit FAIL
+}
+
+rm $test_output
+echo PASS
+exit PASS

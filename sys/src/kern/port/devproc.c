@@ -564,11 +564,11 @@ _procfdprint(Chan *c, int fd, int w, char *s, int ns, char *modestr)
 {
 	int n;
 	char *flags;
-	if((c->mode&(OCEXEC|ORCLOSE)) == (OCEXEC|ORCLOSE))
+	if((c->flag&(OCEXEC|ORCLOSE)) == (OCEXEC|ORCLOSE))
 		flags = "ED";
-	else if(c->mode&OCEXEC)
+	else if(c->flag&OCEXEC)
 		flags = "E ";
-	else if(c->mode&ORCLOSE)
+	else if(c->flag&ORCLOSE)
 		flags = "D ";
 	else
 		flags = "  ";

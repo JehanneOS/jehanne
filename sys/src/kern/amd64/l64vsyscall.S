@@ -49,8 +49,7 @@ syscallentry:
 	pushq	$UESEL				/* old code segment */
 	pushq	%rcx				/* old ip */
 
-	movq	%r14, 24(%r15)			/* restore %r14 from m->tmp0 */
-	movq	%r13, 32(%r15)			/* restore %r13 from m->tmp1 */
+	movq	32(%r15), %r13			/* restore %r13 from m->tmp1 */
 	xchgq	%gs:0, %r15			/* restore %r15 */
 
 	subq	$(17*8), %rsp

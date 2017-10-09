@@ -336,8 +336,11 @@ awake_gc_proc(Proc *p)
 	assert(p->wakeups[0].count == 0);
 	assert(p->wakeups[1].count == 0);
 
-	while(p->nwakeups > 0)
+	while(p->nwakeups > 0){
+		while(waserror())
+			;
 		resrcwait(nil, nil);
+	}
 }
 
 static long

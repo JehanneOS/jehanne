@@ -340,6 +340,7 @@ awake_gc_proc(Proc *p)
 		while(waserror())
 			;
 		resrcwait(nil, nil);
+		poperror();
 	}
 }
 

@@ -487,7 +487,7 @@ extern	void		jehanne_freenetconninfo(NetConnInfo*);
  */
 #define	STATMAX	65535U	/* max length of machine-independent stat structure */
 #define	DIRMAX	(sizeof(Dir)+STATMAX)	/* max length of Dir structure */
-#define	ERRMAX	256	/* max length of error string */
+#define	ERRMAX	128	/* max length of error string */
 
 #define	MORDER	0x0003	/* mask for bits defining order of mounting */
 #define	MREPL	0x0000	/* mount replaces object */

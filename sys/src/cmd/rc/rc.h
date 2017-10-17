@@ -6,32 +6,12 @@
  * modified, propagated, or distributed except according to the terms contained
  * in the LICENSE file.
  */
-
-/*
- * Assume plan 9 by default; if Unix is defined, assume unix.
- * Please don't litter the code with ifdefs.  The five below should be enough.
- */
-
-#ifndef Unix
-/* plan 9 */
 #include <u.h>
 #include <lib9.h>
 
 #define	NSIG	32
 #define	SIGINT	2
 #define	SIGQUIT	3
-
-#define fcntl(fd, op, arg)	/* unix compatibility */
-#define F_SETFD
-#define FD_CLOEXEC
-#define YYSIZE_T size_t		/* GNU Bison/yacc has hundred of types :( */
-#else
-#include "unix.h"
-#endif
-
-#ifndef ERRMAX
-#define ERRMAX 128
-#endif
 
 #define	YYMAXDEPTH	500
 #ifndef YYPREFIX
@@ -49,11 +29,6 @@ typedef struct list list;
 typedef struct redir redir;
 typedef struct thread thread;
 typedef struct builtin builtin;
-
-#ifndef Unix
-#pragma incomplete word
-#pragma incomplete io
-#endif
 
 struct tree{
 	int	type;
@@ -84,12 +59,13 @@ union code{
 	char	*s;
 };
 
+int newwdir;
 char *promptstr;
 int doprompt;
 
 #define	NTOK	8192		/* maximum bytes in a word (token) */
 
-char tok[NTOK + UTFmax];
+char tok[NTOK];
 
 #define	APPEND	1
 #define	WRITE	2
@@ -116,9 +92,11 @@ var *gvar[NVAR];		/* hash for globals */
 
 #define	new(type)	((type *)emalloc(sizeof(type)))
 
-void *emalloc(int32_t);
-void *Malloc(uint32_t);
-void efree(void *);
+void *emalloc(int);
+void *erealloc(void *, int);
+char *estrdup(char*);
+
+#define	NOFILE	128		/* should come from <param.h> */
 
 struct here{
 	tree	*tag;
@@ -135,7 +113,12 @@ int mypid;
  *	GLOB[...] matches anything in the brackets
  *	GLOBGLOB matches GLOB
  */
-#define	GLOB	'\001'
+#define	GLOB	((char)0x01)
+/*
+ * onebyte(c)
+ * Is c the first character of a one-byte utf sequence?
+ */
+#define	onebyte(c)	((c&0x80)==0x00)
 
 char **argp;
 char **args;

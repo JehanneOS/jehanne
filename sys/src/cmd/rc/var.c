@@ -11,17 +11,14 @@
 #include "exec.h"
 #include "fns.h"
 
-unsigned
-hash(char *as, int n)
+int
+hash(char *s, int n)
 {
-	int i = 1;
-	unsigned h = 0;
-	uint8_t *s;
-
-	s = (uint8_t *)as;
-	while (*s)
+	int h = 0, i = 1;
+	while(*s) 
 		h += *s++ * i++;
-	return h % n;
+	h%=n;
+	return h < 0 ? h+n : h;
 }
 
 #define	NKW	30
@@ -76,8 +73,10 @@ gvlook(char *name)
 {
 	int h = hash(name, NVAR);
 	var *v;
-	for(v = gvar[h];v;v = v->next) if(strcmp(v->name, name)==0) return v;
-	return gvar[h] = newvar(strdup(name), gvar[h]);
+	for(v = gvar[h];v;v = v->next)
+		if(strcmp(v->name, name)==0)
+			return v;
+	return gvar[h] = newvar(name, gvar[h]);
 }
 
 var*

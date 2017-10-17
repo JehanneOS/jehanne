@@ -30,7 +30,6 @@ pcmd(io *f, tree *t)
 {
 	if(t==0)
 		return;
-	assert(f != nil);
 	switch(t->type){
 	default:	pfmt(f, "bad cmd %d %p %p %p", t->type, c0, c1, c2);
 	break;
@@ -42,7 +41,7 @@ pcmd(io *f, tree *t)
 	break;
 	case '^':	pfmt(f, "%t^%t", c0, c1);
 	break;
-	case '`':	pfmt(f, "`%t", c0);
+	case '`':	pfmt(f, "`%t%t", c0, c1);
 	break;
 	case ANDAND:	pfmt(f, "%t && %t", c0, c1);
 	break;

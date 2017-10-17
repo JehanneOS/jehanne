@@ -31,10 +31,7 @@ int
 morecode(void)
 {
 	ncode+=100;
-	codebuf = (code *)realloc((char *)codebuf, ncode*sizeof codebuf[0]);
-	if(codebuf==0)
-		panic("Can't realloc %d bytes in morecode!",
-				ncode*sizeof codebuf[0]);
+	codebuf = (code *)erealloc((char *)codebuf, ncode*sizeof codebuf[0]);
 	return 0;
 }
 
@@ -55,7 +52,7 @@ compile(tree *t)
 	emiti(0);			/* reference count */
 	outcode(t, flag['e']?1:0);
 	if(nerror){
-		efree((char *)codebuf);
+		free(codebuf);
 		return 0;
 	}
 	readhere();
@@ -68,7 +65,7 @@ void
 cleanhere(char *f)
 {
 	emitf(Xdelhere);
-	emits(strdup(f));
+	emits(estrdup(f));
 }
 
 char*
@@ -120,13 +117,10 @@ outcode(tree *t, int eflag)
 		break;
 	case '&':
 		emitf(Xasync);
-		if(havefork){
-			p = emiti(0);
-			outcode(c0, eflag);
-			emitf(Xexit);
-			stuffdot(p);
-		} else
-			emits(fnstr(c0));
+		p = emiti(0);
+		outcode(c0, eflag);
+		emitf(Xexit);
+		stuffdot(p);
 		break;
 	case ';':
 		outcode(c0, eflag);
@@ -140,14 +134,21 @@ outcode(tree *t, int eflag)
 		emitf(Xconc);
 		break;
 	case '`':
-		emitf(Xbackq);
-		if(havefork){
-			p = emiti(0);
+		emitf(Xmark);
+		if(c0){
 			outcode(c0, 0);
-			emitf(Xexit);
-			stuffdot(p);
-		} else
-			emits(fnstr(c0));
+			emitf(Xglob);
+		} else {
+			emitf(Xmark);
+			emitf(Xword);
+			emits(estrdup("ifs"));
+			emitf(Xdol);
+		}
+		emitf(Xbackq);
+		p = emiti(0);
+		outcode(c1, 0);
+		emitf(Xexit);
+		stuffdot(p);
 		break;
 	case ANDAND:
 		outcode(c0, 0);
@@ -223,13 +224,10 @@ outcode(tree *t, int eflag)
 		break;
 	case SUBSHELL:
 		emitf(Xsubshell);
-		if(havefork){
-			p = emiti(0);
-			outcode(c0, eflag);
-			emitf(Xexit);
-			stuffdot(p);
-		} else
-			emits(fnstr(c0));
+		p = emiti(0);
+		outcode(c0, eflag);
+		emitf(Xexit);
+		stuffdot(p);
 		if(eflag)
 			emitf(Xeflag);
 		break;
@@ -270,7 +268,7 @@ outcode(tree *t, int eflag)
 		else{
 			emitf(Xmark);
 			emitf(Xword);
-			emits(strdup("*"));
+			emits(estrdup("*"));
 			emitf(Xdol);
 		}
 		emitf(Xmark);		/* dummy value for Xlocal */
@@ -286,8 +284,19 @@ outcode(tree *t, int eflag)
 		emitf(Xunlocal);
 		break;
 	case WORD:
-		emitf(Xword);
-		emits(strdup(t->str));
+		if(t->quoted){
+			emitf(Xword);
+			emits(estrdup(t->str));
+		} else {
+			if((q = Globsize(t->str)) > 0){
+				emitf(Xglobs);
+				emits(estrdup(t->str));
+				emiti(q);
+			} else {
+				emitf(Xword);
+				emits(deglob(estrdup(t->str)));
+			}
+		}
 		break;
 	case DUP:
 		if(t->rtype==DUPFD){
@@ -305,14 +314,10 @@ outcode(tree *t, int eflag)
 	case PIPEFD:
 		emitf(Xpipefd);
 		emiti(t->rtype);
-		if(havefork){
-			p = emiti(0);
-			outcode(c0, eflag);
-			emitf(Xexit);
-			stuffdot(p);
-		} else {
-			emits(fnstr(c0));
-		}
+		p = emiti(0);
+		outcode(c0, eflag);
+		emitf(Xexit);
+		stuffdot(p);
 		break;
 	case REDIR:
 		emitf(Xmark);
@@ -367,16 +372,11 @@ outcode(tree *t, int eflag)
 		emitf(Xpipe);
 		emiti(t->fd0);
 		emiti(t->fd1);
-		if(havefork){
-			p = emiti(0);
-			q = emiti(0);
-			outcode(c0, eflag);
-			emitf(Xexit);
-			stuffdot(p);
-		} else {
-			emits(fnstr(c0));
-			q = emiti(0);
-		}
+		p = emiti(0);
+		q = emiti(0);
+		outcode(c0, eflag);
+		emitf(Xexit);
+		stuffdot(p);
 		outcode(c1, eflag);
 		emitf(Xreturn);
 		stuffdot(q);
@@ -485,11 +485,12 @@ codefree(code *cp)
 		|| p->f==Xsubshell || p->f==Xtrue) p++;
 		else if(p->f==Xdup || p->f==Xpipefd) p+=2;
 		else if(p->f==Xpipe) p+=4;
-		else if(p->f==Xword || p->f==Xdelhere) efree((++p)->s);
+		else if(p->f==Xglobs) free(p[1].s), p+=2;
+		else if(p->f==Xword || p->f==Xdelhere) free((++p)->s);
 		else if(p->f==Xfn){
-			efree(p[2].s);
+			free(p[2].s);
 			p+=2;
 		}
 	}
-	efree((char *)cp);
+	free(cp);
 }

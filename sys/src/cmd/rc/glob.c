@@ -10,22 +10,22 @@
 #include "rc.h"
 #include "exec.h"
 #include "fns.h"
-char *globname;
-struct word *globv;
+
 /*
  * delete all the GLOB marks from s, in place
  */
 
-void
-deglob(void *as)
+char*
+deglob(char *s)
 {
-	char *s = as;
+	char *b = s;
 	char *t = s;
 	do{
 		if(*t==GLOB)
 			t++;
 		*s++=*t;
 	}while(*t++);
+	return b;
 }
 
 int
@@ -45,23 +45,33 @@ globsort(word *left, word *right)
 	for(a = left,n = 0;a!=right;a = a->next,n++) list[n] = a->word;
 	qsort((void *)list, n, sizeof(void *), globcmp);
 	for(a = left,n = 0;a!=right;a = a->next,n++) a->word = list[n];
-	efree((char *)list);
+	free(list);
 }
+
 /*
- * Push names prefixed by globname and suffixed by a match of p onto the astack.
- * namep points to the end of the prefix in globname.
+ * Does the string s match the pattern p
+ * . and .. are only matched by patterns starting with .
+ * * matches any sequence of characters
+ * ? matches any single character
+ * [...] matches the enclosed list of characters
  */
 
-void
-globdir(uint8_t *p, uint8_t *namep)
+static int
+matchfn(char *s, char *p)
 {
-	uint8_t *t, *newp;
+	if(s[0]=='.' && (s[1]=='\0' || s[1]=='.' && s[2]=='\0') && p[0]!='.')
+		return 0;
+	return match(s, p, '/');
+}
+
+static word*
+globdir(word *list, char *p, char *name, char *namep)
+{
+	char *t, *newp;
 	int f;
 	/* scan the pattern looking for a component with a metacharacter in it */
-	if(*p=='\0'){
-		globv = newword(globname, globv);
-		return;
-	}
+	if(*p=='\0')
+		return newword(name, list);
 	t = namep;
 	newp = p;
 	while(*newp){
@@ -76,64 +86,63 @@ globdir(uint8_t *p, uint8_t *namep)
 	/* If we ran out of pattern, append the name if accessible */
 	if(*newp=='\0'){
 		*t='\0';
-		if(access(globname, AEXIST)==0)
-			globv = newword(globname, globv);
-		return;
+		if(access(name, AEXIST)==0)
+			list = newword(name, list);
+		return list;
 	}
 	/* read the directory and recur for any entry that matches */
 	*namep='\0';
-	if((f = Opendir(globname[0]?globname:"."))<0) return;
-	while(*newp!='/' && *newp!='\0') newp++;
-	while(Readdir(f, namep, *newp=='/')){
-		if(matchfn(namep, p)){
-			for(t = namep;*t;t++);
-			globdir(newp, t);
+	if((f = Opendir(name[0]?name:".")) >= 0){
+		while(*newp!='/' && *newp!='\0') newp++;
+		while(Readdir(f, namep, *newp=='/')){
+			if(matchfn(namep, p)){
+				for(t = namep;*t;t++);
+				list = globdir(list, newp, name, t);
+			}
 		}
+		Closedir(f);
 	}
-	Closedir(f);
+	return list;
 }
+
 /*
- * Push all file names matched by p on the current thread's stack.
- * If there are no matches, the list consists of p.
+ * Subsitute a word with its glob in place.
  */
 
-void
-glob(void *ap)
+static void
+globword(word *w)
 {
-	uint8_t *p = ap;
-	word *svglobv = globv;
-	int globlen = Globsize(ap);
+	word *left, *right;
+	char *name;
 
-	if(!globlen){
-		deglob(p);
-		globv = newword((char *)p, globv);
+	if(w->glob == 0)
 		return;
+	name = emalloc(w->glob);
+	memset(name, 0, w->glob);
+	right = w->next;
+	left = globdir(right, w->word, name, name);
+	free(name);
+	if(left == right) {
+		deglob(w->word);
+		w->glob = 0;
+	} else {
+		free(w->word);
+		globsort(left, right);
+		*w = *left;
+		free(left);
 	}
-	globname = emalloc(globlen);
-	globname[0]='\0';
-	globdir(p, (uint8_t *)globname);
-	efree(globname);
-	if(svglobv==globv){
-		deglob(p);
-		globv = newword((char *)p, globv);
-	}
-	else
-		globsort(globv, svglobv);
 }
 
-/*
- * Do p and q point at equal utf codes
- */
-int
-equtf(uint8_t *p, uint8_t *q)
+word*
+globlist(word *l)
 {
-	Rune pr, qr;
-	if(*p!=*q)
-		return 0;
+	word *p, *q;
 
-	chartorune(&pr, (char*)p);
-	chartorune(&qr, (char*)q);
-	return pr == qr;
+	for(p=l;p;p=q){
+		q = p->next;
+		globword(p);
+	}
+	return l;
 }
 
 /*
@@ -141,49 +150,43 @@ equtf(uint8_t *p, uint8_t *q)
  * not jumping past nuls in broken utf codes!
  */
 
-uint8_t*
-nextutf(uint8_t *p)
+static char*
+nextutf(char *p)
 {
 	Rune dummy;
-	return p + chartorune(&dummy, (char*)p);
+
+	return p + chartorune(&dummy, p);
 }
 
 /*
  * Convert the utf code at *p to a unicode value
  */
 
-int
-unicode(uint8_t *p)
+static int
+unicode(char *p)
 {
 	Rune r;
 
-	chartorune(&r, (char*)p);
+	chartorune(&r, p);
 	return r;
 }
 
 /*
- * Does the string s match the pattern p
- * . and .. are only matched by patterns starting with .
- * * matches any sequence of characters
- * ? matches any single character
- * [...] matches the enclosed list of characters
+ * Do p and q point at equal utf codes
  */
 
-int
-matchfn(void *as, void *ap)
+static int
+equtf(char *p, char *q)
 {
-	uint8_t *s = as, *p = ap;
-
-	if(s[0]=='.' && (s[1]=='\0' || s[1]=='.' && s[2]=='\0') && p[0]!='.')
-		return 0;
-	return match(s, p, '/');
+	if(*p!=*q)
+ 		return 0;
+	return unicode(p) == unicode(q);
 }
 
 int
-match(void *as, void *ap, int stop)
+match(char *s, char *p, int stop)
 {
 	int compl, hit, lo, hi, t, c;
-	uint8_t *s = as, *p = ap;
 
 	for(; *p!=stop && *p!='\0'; s = nextutf(s), p = nextutf(p)){
 		if(*p!=GLOB){
@@ -241,28 +244,4 @@ match(void *as, void *ap, int stop)
 		}
 	}
 	return *s=='\0';
-}
-
-void
-globlist1(word *gl)
-{
-	if(gl){
-		globlist1(gl->next);
-		glob(gl->word);
-	}
-}
-
-void
-globlist(void)
-{
-	word *a;
-	globv = 0;
-	globlist1(runq->argv->words);
-	poplist();
-	pushlist();
-	if(globv){
-		for(a = globv;a->next;a = a->next);
-		a->next = runq->argv->words;
-		runq->argv->words = globv;
-	}
 }

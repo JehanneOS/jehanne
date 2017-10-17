@@ -16,7 +16,7 @@ extern void Xexit(void), Xfalse(void), Xfn(void), Xfor(void), Xglob(void);
 extern void Xjump(void), Xmark(void), Xmatch(void), Xpipe(void), Xread(void);
 extern void Xrdwr(void);
 extern void Xrdfn(void), Xunredir(void), Xstar(void), Xreturn(void), Xsubshell(void);
-extern void Xtrue(void), Xword(void), Xwrite(void), Xpipefd(void), Xcase(void);
+extern void Xtrue(void), Xword(void), Xglobs(void), Xwrite(void), Xpipefd(void), Xcase(void);
 extern void Xlocal(void), Xunlocal(void), Xassign(void), Xsimple(void), Xpopm(void);
 extern void Xrdcmds(void), Xwastrue(void), Xif(void), Xifnot(void), Xpipewait(void);
 extern void Xdelhere(void), Xpopredir(void), Xsub(void), Xeflag(void), Xsettrue(void);
@@ -29,6 +29,7 @@ extern void Xerror1(char*);
 struct word{
 	char *word;
 	word *next;
+	int glob;			/* Globsize(word) */
 };
 struct list{
 	word *words;
@@ -76,7 +77,6 @@ struct builtin{
 };
 extern struct builtin Builtin[];
 int eflagok;			/* kludge flag so that -e doesn't exit in startup */
-int havefork;
 
 void execcd(void), execwhatis(void), execeval(void), execexec(void);
 int execforkexec(void);

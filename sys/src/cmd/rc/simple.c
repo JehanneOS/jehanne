@@ -29,18 +29,17 @@ void
 Xsimple(void)
 {
 	word *a;
-	thread *p = runq;
 	var *v;
 	struct builtin *bp;
 	int pid;
-	globlist();
-	a = runq->argv->words;
+
+	a = globlist(runq->argv->words);
 	if(a==0){
 		Xerror1("empty argument list");
 		return;
 	}
 	if(flag['x'])
-		pfmt(err, "%v\n", p->argv->words); /* wrong, should do redirs */
+		pfmt(err, "%v\n", a); /* wrong, should do redirs */
 	v = gvlook(a->word);
 	if(v->fn)
 		execfunc(v);
@@ -64,7 +63,6 @@ Xsimple(void)
 			/* fork and wait is redundant */
 			pushword("exec");
 			execexec();
-			Xexit();
 		}
 		else{
 			flush(err);
@@ -129,6 +127,7 @@ execexec(void)
 	doredir(runq->redir);
 	Execute(runq->argv->words, searchpath(runq->argv->words->word));
 	poplist();
+	Xexit();
 }
 
 void
@@ -140,7 +139,7 @@ execfunc(var *func)
 	runq->argv->words = 0;
 	poplist();
 	start(func->fn, func->pc, runq->local);
-	runq->local = newvar(strdup("*"), runq->local);
+	runq->local = newvar("*", runq->local);
 	runq->local->val = starval;
 	runq->local->changed = 1;
 }
@@ -149,34 +148,10 @@ int
 dochdir(char *word)
 {
 	/* report to /dev/wdir if it exists and we're interactive */
-	static int wdirfd = -2;
-	if(chdir(word)<0) return -1;
-	if(flag['i']!=0){
-		if(wdirfd==-2)	/* try only once */
-			wdirfd = open("/dev/wdir", OWRITE|OCEXEC);
-		if(wdirfd>=0) {
-			fcntl(wdirfd, F_SETFD, FD_CLOEXEC);
-			write(wdirfd, word, strlen(word));
-		}
-	}
+	if(chdir(word)<0)
+		return -1;
+	newwdir = 1;
 	return 1;
-}
-
-static char *
-appfile(char *dir, char *comp)
-{
-	int dirlen, complen;
-	char *s, *p;
-
-	dirlen = strlen(dir);
-	complen = strlen(comp);
-	s = emalloc(dirlen + 1 + complen + 1);
-	memmove(s, dir, dirlen);
-	p = s + dirlen;
-	*p++ = '/';
-	memmove(p, comp, complen);
-	p[complen] = '\0';
-	return s;
 }
 
 void
@@ -197,9 +172,10 @@ execcd(void)
 			cdpath = &nullpath;
 		for(; cdpath; cdpath = cdpath->next){
 			if(cdpath->word[0] != '\0')
-				dir = appfile(cdpath->word, a->next->word);
+				dir = smprint("%s/%s", cdpath->word,
+					a->next->word);
 			else
-				dir = strdup(a->next->word);
+				dir = estrdup(a->next->word);
 
 			if(dochdir(dir) >= 0){
 				if(cdpath->word[0] != '\0' &&
@@ -261,24 +237,15 @@ execshift(void)
 		break;
 	}
 	star = vlook("*");
-	for(;n && star->val;--n){
+	for(;n>0 && star->val;--n){
 		a = star->val->next;
-		efree(star->val->word);
-		efree((char *)star->val);
+		free(star->val->word);
+		free(star->val);
 		star->val = a;
 		star->changed = 1;
 	}
 	setstatus("");
 	poplist();
-}
-
-int
-octal(char *s)
-{
-	int n = 0;
-	while(*s==' ' || *s=='\t' || *s=='\n') s++;
-	while('0'<=*s && *s<='7') n = n*8+*s++-'0';
-	return n;
 }
 
 int
@@ -320,26 +287,19 @@ execcmds(io *f)
 void
 execeval(void)
 {
-	char *cmdline, *s, *t;
-	int len = 0;
-	word *ap;
+	char *cmdline;
+	int len;
 	if(count(runq->argv->words)<=1){
 		Xerror1("Usage: eval cmd ...");
 		return;
 	}
 	eflagok = 1;
-	for(ap = runq->argv->words->next;ap;ap = ap->next)
-		len+=1+strlen(ap->word);
-	cmdline = emalloc(len);
-	s = cmdline;
-	for(ap = runq->argv->words->next;ap;ap = ap->next){
-		for(t = ap->word;*t;) *s++=*t++;
-		*s++=' ';
-	}
-	s[-1]='\n';
+	cmdline = list2str(runq->argv->words->next);
+	len = strlen(cmdline);
+	cmdline[len] = '\n';
 	poplist();
-	execcmds(opencore(cmdline, len));
-	efree(cmdline);
+	execcmds(opencore(cmdline, len+1));
+	free(cmdline);
 }
 union code dotcmds[14];
 
@@ -382,14 +342,14 @@ execdot(void)
 		Xerror1("Usage: . [-i] file [arg ...]");
 		return;
 	}
-	zero = strdup(p->argv->words->word);
+	zero = estrdup(p->argv->words->word);
 	popword();
 	fd = -1;
 	for(path = searchpath(zero); path; path = path->next){
 		if(path->word[0] != '\0')
-			file = appfile(path->word, zero);
+			file = smprint("%s/%s", path->word, zero);
 		else
-			file = strdup(zero);
+			file = estrdup(zero);
 
 		fd = open(file, OREAD);
 		free(file);
@@ -420,7 +380,7 @@ execdot(void)
 	/* free caller's copy of $* */
 	av = p->argv;
 	p->argv = av->next;
-	efree((char *)av);
+	free(av);
 	/* push $0 value */
 	pushlist();
 	pushword(zero);
@@ -469,7 +429,6 @@ execwhatis(void){	/* mildly wrong -- should fork before writing */
 		return;
 	}
 	setstatus("");
-	memset(out, 0, sizeof out);
 	out->fd = mapfd(1);
 	out->bufp = out->buf;
 	out->ebuf = &out->buf[NBUF];
@@ -505,10 +464,10 @@ execwhatis(void){	/* mildly wrong -- should fork before writing */
 				for(path = searchpath(a->word); path;
 				    path = path->next){
 					if(path->word[0] != '\0')
-						file = appfile(path->word,
-							a->word);
+						file = smprint("%s/%s",
+							path->word, a->word);
 					else
-						file = strdup(a->word);
+						file = estrdup(a->word);
 					if(Executable(file)){
 						pfmt(out, "%s\n", file);
 						free(file);

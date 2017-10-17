@@ -88,35 +88,6 @@ rchr(io *b)
 	return *b->bufp++;
 }
 
-int
-rutf(io *b, char *buf, Rune *r)
-{
-	int n, i, c;
-
-	c = rchr(b);
-	if(c == EOF)
-		return EOF;
-	*buf = c;
-	if(c < Runesync){
-		*r = c;
-		return 1;
-	}
-	for(i = 1; (c = rchr(b)) != EOF; ){
-		buf[i++] = c;
-		buf[i] = 0;
-		if(fullrune(buf, i)){
-			n = chartorune(r, buf);
-			b->bufp -= i - n;	/* push back unconsumed bytes */
-			assert(b->fd == -1 || b->bufp > b->buf);
-			return n;
-		}
-	}
-	/* at eof */
-	b->bufp -= i - 1;			/* consume 1 byte */
-	*r = Runeerror;
-	return runetochar(buf, r);
-}
-
 void
 pquo(io *f, char *s)
 {
@@ -216,9 +187,7 @@ flush(io *f)
 
 	if(f->strp){
 		n = f->ebuf - f->strp;
-		f->strp = realloc(f->strp, n+Stralloc+1);
-		if(f->strp==0)
-			panic("Can't realloc %d bytes in flush!", n+Stralloc+1);
+		f->strp = erealloc(f->strp, n+Stralloc+1);
 		f->bufp = f->strp + n;
 		f->ebuf = f->bufp + Stralloc;
 		memset(f->bufp, '\0', Stralloc+1);
@@ -270,7 +239,7 @@ opencore(char *s, int len)
 	f->fd = -1 /*open("/dev/null", OREAD)*/;
 	f->bufp = f->strp = buf;
 	f->ebuf = buf+len;
-	Memcpy(buf, s, len);
+	memmove(buf, s, len);
 	return f;
 }
 
@@ -288,11 +257,11 @@ rewind(io *io)
 void
 closeio(io *io)
 {
-	if(io->fd>=0)
+	if(io->fd >= 0)
 		close(io->fd);
 	if(io->strp)
-		efree(io->strp);
-	efree(io);
+		free(io->strp);
+	free(io);
 }
 
 int

@@ -101,6 +101,16 @@ pprompt(void)
 	if(runq->iflag){
 		pstr(err, promptstr);
 		flush(err);
+		if(newwdir){
+			char dir[4096];
+			int fd;
+			if((fd=open("/dev/wdir", OWRITE))>=0){
+				getwd(dir, sizeof(dir));
+				write(fd, dir, strlen(dir));
+				close(fd);
+			}
+			newwdir = 0;
+		}
 		prompt = vlook("prompt");
 		if(prompt->val && prompt->val->next)
 			promptstr = prompt->val->next->word;
@@ -163,7 +173,7 @@ addtok(char *p, int val)
 {
 	if(p==0)
 		return 0;
-	if(p >= &tok[NTOK]){
+	if(p == &tok[NTOK-1]){
 		*p = 0;
 		yyerror("token buffer too short");
 		return 0;
@@ -179,7 +189,7 @@ addutf(char *p, int c)
 	int i;
 
 	p = addtok(p, c);	/* 1-byte UTF runes are special */
-	if(c < Runeself)
+	if(onebyte(c))
 		return p;
 
 	m = 0xc0;

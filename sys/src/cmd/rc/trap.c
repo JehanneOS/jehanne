@@ -27,7 +27,7 @@ dotrap(void)
 		trapreq = vlook(Signame[i]);
 		if(trapreq->fn){
 			start(trapreq->fn, trapreq->pc, (struct var *)0);
-			runq->local = newvar(strdup("*"), runq->local);
+			runq->local = newvar("*", runq->local);
 			runq->local->val = copywords(starval, (struct word *)0);
 			runq->local->changed = 1;
 			runq->redir = runq->startredir = 0;

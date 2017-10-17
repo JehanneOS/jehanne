@@ -12,9 +12,6 @@
 #include "exec.h"
 #include "io.h"
 #include "fns.h"
-#include <String.h>
-
-int havefork = 1;
 
 void
 Xasync(void)
@@ -22,10 +19,12 @@ Xasync(void)
 	int null = open("/dev/null", OREAD);
 	int pid;
 	char npid[10];
+
 	if(null<0){
 		Xerror("Can't open /dev/null\n");
 		return;
 	}
+	Updenv();
 	switch(pid = rfork(RFFDG|RFPROC|RFNOTEG)){
 	case -1:
 		close(null);
@@ -55,10 +54,12 @@ Xpipe(void)
 	int lfd = p->code[pc++].i;
 	int rfd = p->code[pc++].i;
 	int pfd[2];
+
 	if(pipe(pfd)<0){
 		Xerror("can't get pipe");
 		return;
 	}
+	Updenv();
 	switch(forkid = fork()){
 	case -1:
 		Xerror("try again");
@@ -84,25 +85,25 @@ Xpipe(void)
 /*
  * Who should wait for the exit from the fork?
  */
+enum { Stralloc = 100, };
 
 void
 Xbackq(void)
 {
-	int n, pid;
+	int c, l, pid;
 	int pfd[2];
-	char *stop;
-	char utf[UTFmax+1];
+	char *s, *wd, *ewd, *stop;
 	struct io *f;
-	var *ifs = vlook("ifs");
 	word *v, *nextv;
-	Rune r;
-	String *word;
 
-	stop = ifs->val? ifs->val->word: "";
+	stop = "";
+	if(runq->argv && runq->argv->words)
+		stop = runq->argv->words->word;
 	if(pipe(pfd)<0){
 		Xerror("can't make pipe");
 		return;
 	}
+	Updenv();
 	switch(pid = fork()){
 	case -1:
 		Xerror("try again");
@@ -119,28 +120,32 @@ Xbackq(void)
 		addwaitpid(pid);
 		close(pfd[PWR]);
 		f = openfd(pfd[PRD]);
-		word = s_new();
-		v = nil;
-		/* rutf requires at least UTFmax+1 bytes in utf */
-		while((n = rutf(f, utf, &r)) != EOF){
-			utf[n] = '\0';
-			if(utfutf(stop, utf) == nil)
-				s_nappend(word, utf, n);
-			else
-				/*
-				 * utf/r is an ifs rune (e.g., \t, \n), thus
-				 * ends the current word, if any.
-				 */
-				if(s_len(word) > 0){
-					v = newword(s_to_c(word), v);
-					s_reset(word);
+		s = wd = ewd = 0;
+		v = 0;
+		while((c = rchr(f))!=EOF){
+			if(s==ewd){
+				l = s-wd;
+				wd = erealloc(wd, l+Stralloc);
+				ewd = wd+l+Stralloc-1;
+				s = wd+l;
+			}
+			if(strchr(stop, c)){
+				if(s!=wd){
+					*s='\0';
+					v = newword(wd, v);
+					s = wd;
 				}
+			}
+			else *s++=c;
 		}
-		if(s_len(word) > 0)
-			v = newword(s_to_c(word), v);
-		s_free(word);
+		if(s!=wd){
+			*s='\0';
+			v = newword(wd, v);
+		}
+		free(wd);
 		closeio(f);
 		Waitfor(pid, 0);
+		poplist();	/* ditch split in "stop" */
 		/* v points to reversed arglist -- reverse it onto argv */
 		while(v){
 			nextv = v->next;
@@ -161,6 +166,7 @@ Xpipefd(void)
 	char name[40];
 	int pfd[2];
 	int sidefd, mainfd;
+
 	if(pipe(pfd)<0){
 		Xerror("can't get pipe");
 		return;
@@ -173,6 +179,7 @@ Xpipefd(void)
 		sidefd = pfd[PRD];
 		mainfd = pfd[PWR];
 	}
+	Updenv();
 	switch(pid = fork()){
 	case -1:
 		Xerror("try again");
@@ -200,6 +207,8 @@ void
 Xsubshell(void)
 {
 	int pid;
+
+	Updenv();
 	switch(pid = fork()){
 	case -1:
 		Xerror("try again");

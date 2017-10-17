@@ -14,8 +14,8 @@
 
 struct here *here, **ehere;
 int ser = 0;
-char tmp[] = "/tmp/here0000.0000";
-char hex[] = "0123456789abcdef";
+char tmp[]="/tmp/here0000.0000";
+char hex[]="0123456789abcdef";
 
 void psubst(io*, uint8_t*);
 void pstrs(io*, word*);
@@ -45,7 +45,7 @@ heredoc(tree *tag)
 	h->tag = tag;
 	hexnum(&tmp[9], getpid());
 	hexnum(&tmp[14], ser++);
-	h->name = strdup(tmp);
+	h->name = estrdup(tmp);
 	return token(tmp, WORD);
 }
 
@@ -58,25 +58,24 @@ heredoc(tree *tag)
 void
 readhere(void)
 {
-	int c, subst;
-	char *s, *tag;
-	char line[NLINE+1];
-	io *f;
 	struct here *h, *nexth;
-
-	for(h = here; h; h = nexth){
-		subst = !h->tag->quoted;
+	io *f;
+	char *s, *tag;
+	int c, subst;
+	char line[NLINE+1];
+	for(h = here;h;h = nexth){
+		subst=!h->tag->quoted;
 		tag = h->tag->str;
 		c = Creat(h->name);
-		if(c < 0)
+		if(c<0)
 			yyerror("can't create here document");
 		f = openfd(c);
 		s = line;
 		pprompt();
 		while((c = rchr(runq->cmdfd)) != EOF){
 			if(c == '\n' || s == &line[NLINE]){
-				*s = '\0';
-				if(tag && strcmp(line, tag) == 0)
+				*s='\0';
+				if(tag && strcmp(line, tag)==0)
 					break;
 				if(subst)
 					psubst(f, (uint8_t *)line);
@@ -95,7 +94,7 @@ readhere(void)
 		closeio(f);
 		cleanhere(h->name);
 		nexth = h->next;
-		efree((char *)h);
+		free(h);
 	}
 	here = 0;
 	doprompt = 1;
@@ -106,19 +105,26 @@ psubst(io *f, uint8_t *s)
 {
 	int savec, n;
 	uint8_t *t, *u;
-	Rune r;
 	word *star;
 
 	while(*s){
-		if(*s != '$'){		/* copy plain text rune */
-			if(*s < Runeself)
+		if(*s != '$'){
+			if(0xa0 <= *s && *s <= 0xf5){
 				pchr(f, *s++);
-			else{
-				n = chartorune(&r, (char *)s);
-				while(n-- > 0)
-					pchr(f, *s++);
+				if(*s == '\0')
+					break;
 			}
-		}else{			/* $something -- perform substitution */
+			else if(0xf6 <= *s && *s <= 0xf7){
+				pchr(f, *s++);
+				if(*s == '\0')
+					break;
+				pchr(f, *s++);
+				if(*s == '\0')
+					break;
+			}
+			pchr(f, *s++);
+		}
+		else{
 			t = ++s;
 			if(*t == '$')
 				pchr(f, *t++);
@@ -130,14 +136,15 @@ psubst(io *f, uint8_t *s)
 				n = 0;
 				for(u = s; *u && '0' <= *u && *u <= '9'; u++)
 					n = n*10 + *u - '0';
-				if(n && *u == '\0'){
+				if(n && *u=='\0'){
 					star = vlook("*")->val;
 					if(star && 1 <= n && n <= count(star)){
 						while(--n)
 							star = star->next;
 						pstr(f, star->word);
 					}
-				}else
+				}
+				else
 					pstrs(f, vlook((char *)s)->val);
 				*t = savec;
 				if(savec == '^')

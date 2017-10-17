@@ -13,24 +13,35 @@
 #include "fns.h"
 
 void *
-emalloc(int32_t n)
+emalloc(int n)
 {
-	void *p = Malloc(n);
-
+	void *p = malloc(n);
 	if(p==0)
 		panic("Can't malloc %d bytes", n);
-/*	if(err){ pfmt(err, "malloc %d->%p\n", n, p); flush(err); } */
 	return p;
 }
 
-void
-efree(void *p)
+void*
+erealloc(void *p, int n)
 {
-/*	pfmt(err, "free %p\n", p); flush(err); */
-	if(p)
-		free(p);
-	else pfmt(err, "free 0\n");
+	p = realloc(p, n);
+	if(p==0 && n!=0)
+		panic("Can't realloc %d bytes\n", n);
+	return p;
 }
+
+char*
+estrdup(char *s)
+{
+	char *d;
+	int n;
+
+	n = strlen(s)+1;
+	d = emalloc(n);
+	memmove(d, s, n);
+	return d;
+}
+
 extern int lastword, lastdol;
 
 void
@@ -68,7 +79,7 @@ iacvt(int n)
 }
 
 void
-inttoascii(char *s, int32_t n)
+inttoascii(char *s, int n)
 {
 	bp = s;
 	iacvt(n);

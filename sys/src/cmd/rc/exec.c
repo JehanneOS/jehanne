@@ -168,7 +168,8 @@ main(int argc, char *argv[])
 		flag['l'] = flagset;
 	if(flag['I'])
 		flag['i'] = 0;
-	else if(flag['i']==0 && argc==1 && Isatty(0)) flag['i'] = flagset;
+	else if(flag['i']==0 && argc==1 && Isatty(0))
+		flag['i'] = flagset;
 	rcmain = flag['m']?flag['m'][0]:Rcmain;
 	err = openfd(2);
 	kinit();
@@ -332,7 +333,7 @@ Xexit(void)
 			--runq->pc;
 			starval = vlook(ENV_RCARGLIST)->val;
 			start(trapreq->fn, trapreq->pc, (struct var *)0);
-			runq->local = newvar("*", runq->local);
+			runq->local = newvar(ENV_RCARGLIST, runq->local);
 			runq->local->val = copywords(starval, (struct word *)0);
 			runq->local->changed = 1;
 			runq->redir = runq->startredir = 0;

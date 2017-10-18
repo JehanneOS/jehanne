@@ -139,7 +139,7 @@ execfunc(var *func)
 	runq->argv->words = 0;
 	poplist();
 	start(func->fn, func->pc, runq->local);
-	runq->local = newvar("*", runq->local);
+	runq->local = newvar(ENV_RCARGLIST, runq->local);
 	runq->local->val = starval;
 	runq->local->changed = 1;
 }

@@ -144,6 +144,12 @@ Vinit(void)
 					/* Charitably add a 0 at the end if need be */
 					if(buf[len-1])
 						buf[len++]='\0';
+					if(strcmp(ENV_PATH, ent[i].name) == 0
+					|| strcmp(ENV_CDPATH, ent[i].name) == 0)
+						while(n-- > 0){
+							if(buf[n] == ':')
+								buf[n] = '\0';
+						}
 					s = buf+len-1;
 					for(;;){
 						while(s!=buf && s[-1]!='\0') --s;

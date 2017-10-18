@@ -137,7 +137,7 @@ psubst(io *f, uint8_t *s)
 				for(u = s; *u && '0' <= *u && *u <= '9'; u++)
 					n = n*10 + *u - '0';
 				if(n && *u=='\0'){
-					star = vlook("*")->val;
+					star = vlook(ENV_RCARGLIST)->val;
 					if(star && 1 <= n && n <= count(star)){
 						while(--n)
 							star = star->next;

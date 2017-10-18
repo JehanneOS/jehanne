@@ -111,7 +111,7 @@ pprompt(void)
 			}
 			newwdir = 0;
 		}
-		prompt = vlook("prompt");
+		prompt = vlook(ENV_PROMPT);
 		if(prompt->val && prompt->val->next)
 			promptstr = prompt->val->next->word;
 		else

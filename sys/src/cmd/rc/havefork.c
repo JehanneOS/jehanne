@@ -41,7 +41,7 @@ Xasync(void)
 		close(null);
 		runq->pc = runq->code[runq->pc].i;
 		inttoascii(npid, pid);
-		setvar("apid", newword(npid, (word *)0));
+		setvar(ENV_APID, newword(npid, (word *)0));
 		break;
 	}
 }

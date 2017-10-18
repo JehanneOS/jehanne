@@ -62,7 +62,7 @@ yyerror(char *m)
 	lastdol = 0;
 	while(lastc!='\n' && lastc!=EOF) advance();
 	nerror++;
-	setvar("status", newword(m, (word *)0));
+	setvar(ENV_STATUS, newword(m, (word *)0));
 }
 char *bp;
 

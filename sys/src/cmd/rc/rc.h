@@ -9,6 +9,16 @@
 #include <u.h>
 #include <lib9.h>
 
+#define ENV_RCARGLIST	"*"
+#define ENV_APID	"apid"
+#define ENV_HOME	"home"
+#define ENV_IFS		"ifs"
+#define ENV_PATH	"path"
+#define ENV_PID		"pid"
+#define ENV_PROMPT	"prompt"
+#define ENV_STATUS	"status"
+#define ENV_CDPATH	"cdpath"
+
 #define	NSIG	32
 #define	SIGINT	2
 #define	SIGQUIT	3

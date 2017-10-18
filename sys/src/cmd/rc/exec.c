@@ -175,7 +175,7 @@ main(int argc, char *argv[])
 	Trapinit();
 	Vinit();
 	inttoascii(num, mypid = getpid());
-	setvar("pid", newword(num, (word *)0));
+	setvar(ENV_PID, newword(num, (word *)0));
 	setvar("cflag", flag['c']?newword(flag['c'][0], (word *)0)
 				:(word *)0);
 	setvar("rcname", newword(argv[0], (word *)0));
@@ -330,7 +330,7 @@ Xexit(void)
 		if(trapreq->fn){
 			beenhere = 1;
 			--runq->pc;
-			starval = vlook("*")->val;
+			starval = vlook(ENV_RCARGLIST)->val;
 			start(trapreq->fn, trapreq->pc, (struct var *)0);
 			runq->local = newvar("*", runq->local);
 			runq->local->val = copywords(starval, (struct word *)0);
@@ -686,7 +686,7 @@ Xdol(void)
 	if(n==0 || *t)
 		a = copywords(vlook(s)->val, a);
 	else{
-		star = vlook("*")->val;
+		star = vlook(ENV_RCARGLIST)->val;
 		if(star && 1<=n && n<=count(star)){
 			while(--n) star = star->next;
 			a = newword(star->word, a);
@@ -797,7 +797,7 @@ Xcount(void)
 		inttoascii(num, count(a));
 	}
 	else{
-		a = vlook("*")->val;
+		a = vlook(ENV_RCARGLIST)->val;
 		inttoascii(num, a && 1<=n && n<=count(a)?1:0);
 	}
 	poplist();
@@ -916,9 +916,9 @@ Xrdcmds(void)
 	flush(err);
 	nerror = 0;
 	if(flag['s'] && !truestatus())
-		pfmt(err, "status=%v\n", vlook("status")->val);
+		pfmt(err, "%s=%v\n", ENV_STATUS, vlook(ENV_STATUS)->val);
 	if(runq->iflag){
-		prompt = vlook("prompt")->val;
+		prompt = vlook(ENV_PROMPT)->val;
 		if(prompt)
 			promptstr = prompt->word;
 		else
@@ -975,13 +975,13 @@ Xerror1(char *s)
 void
 setstatus(char *s)
 {
-	setvar("status", newword(s, (word *)0));
+	setvar(ENV_STATUS, newword(s, (word *)0));
 }
 
 char*
 getstatus(void)
 {
-	var *status = vlook("status");
+	var *status = vlook(ENV_STATUS);
 	return status->val?status->val->word:"";
 }
 

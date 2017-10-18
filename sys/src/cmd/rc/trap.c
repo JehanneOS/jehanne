@@ -19,7 +19,7 @@ dotrap(void)
 	int i;
 	struct var *trapreq;
 	struct word *starval;
-	starval = vlook("*")->val;
+	starval = vlook(ENV_RCARGLIST)->val;
 	while(ntrap) for(i = 0;i!=NSIG;i++) while(trap[i]){
 		--trap[i];
 		--ntrap;
@@ -27,7 +27,7 @@ dotrap(void)
 		trapreq = vlook(Signame[i]);
 		if(trapreq->fn){
 			start(trapreq->fn, trapreq->pc, (struct var *)0);
-			runq->local = newvar("*", runq->local);
+			runq->local = newvar(ENV_RCARGLIST, runq->local);
 			runq->local->val = copywords(starval, (struct word *)0);
 			runq->local->changed = 1;
 			runq->redir = runq->startredir = 0;

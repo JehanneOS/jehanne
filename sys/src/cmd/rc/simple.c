@@ -111,7 +111,7 @@ searchpath(char *w)
 	|| strncmp(w, "#", 1)==0
 	|| strncmp(w, "./", 2)==0
 	|| strncmp(w, "../", 3)==0
-	|| (path = vlook("path")->val)==0)
+	|| (path = vlook(ENV_PATH)->val)==0)
 		path=&nullpath;
 	return path;
 }
@@ -162,7 +162,7 @@ execcd(void)
 	char *dir;
 
 	setstatus("can't cd");
-	cdpath = vlook("cdpath")->val;
+	cdpath = vlook(ENV_CDPATH)->val;
 	switch(count(a)){
 	default:
 		pfmt(err, "Usage: cd [directory]\n");
@@ -191,7 +191,7 @@ execcd(void)
 			pfmt(err, "Can't cd %s: %r\n", a->next->word);
 		break;
 	case 1:
-		a = vlook("home")->val;
+		a = vlook(ENV_HOME)->val;
 		if(count(a)>=1){
 			if(dochdir(a->word)>=0)
 				setstatus("");
@@ -236,7 +236,7 @@ execshift(void)
 		n = 1;
 		break;
 	}
-	star = vlook("*");
+	star = vlook(ENV_RCARGLIST);
 	for(;n>0 && star->val;--n){
 		a = star->val->next;
 		free(star->val->word);

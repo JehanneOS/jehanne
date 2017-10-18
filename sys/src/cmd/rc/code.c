@@ -141,7 +141,7 @@ outcode(tree *t, int eflag)
 		} else {
 			emitf(Xmark);
 			emitf(Xword);
-			emits(estrdup("ifs"));
+			emits(estrdup(ENV_IFS));
 			emitf(Xdol);
 		}
 		emitf(Xbackq);

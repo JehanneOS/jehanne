@@ -256,8 +256,17 @@ addenv(var *v)
 		if((f = Creat(envname))<0)
 			pfmt(err, "rc: can't open %s: %r\n", envname);
 		else{
-			for(w = v->val;w;w = w->next)
-				write(f, w->word, strlen(w->word)+1L);
+			if(strcmp(ENV_PATH, v->name) == 0
+			|| strcmp(ENV_CDPATH, v->name) == 0){
+				for(w = v->val; w != nil; w = w->next){
+					write(f, w->word, strlen(w->word));
+					if(w->next)
+						write(f, ":", 1);
+				}
+			} else {
+				for(w = v->val; w != nil; w = w->next)
+					write(f, w->word, strlen(w->word)+1L);
+			}
 			close(f);
 		}
 	}

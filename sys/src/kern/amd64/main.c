@@ -22,6 +22,7 @@
 #include "fns.h"
 #include "ureg.h"
 #include "pool.h"
+#include "envvars.h"
 
 #include "io.h"
 #include "apic.h"
@@ -374,11 +375,11 @@ init0(void)
 		jehanne_snprint(buf, sizeof(buf), "%s %s", "AMD64", conffile);
 		loadenv(oargc, oargv);
 		ksetenv("terminal", buf, 0);
-		ksetenv("cputype", "amd64", 0);
+		ksetenv(ENV_CPUTYPE, "amd64", 0);
 		if(cpuserver)
-			ksetenv("service", "cpu", 0);
+			ksetenv(ENV_SERVICE, "cpu", 0);
 		else
-			ksetenv("service", "terminal", 0);
+			ksetenv(ENV_SERVICE, "terminal", 0);
 		poperror();
 	}
 	kproc("alarm", alarmkproc, 0);

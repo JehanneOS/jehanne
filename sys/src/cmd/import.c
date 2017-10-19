@@ -9,6 +9,7 @@
 
 #include <u.h>
 #include <lib9.h>
+#include <envvars.h>
 #include <auth.h>
 #include <libsec.h>
 
@@ -363,7 +364,7 @@ passive(void)
 		sysfatal("auth_proxy: %r");
 	if(auth_chuid(ai, nil) < 0)
 		sysfatal("auth_chuid: %r");
-	putenv("service", "import");
+	putenv(ENV_SERVICE, "import");
 
 	fd = dup(0, -1);
 	close(0);

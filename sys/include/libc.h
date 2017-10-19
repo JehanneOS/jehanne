@@ -325,7 +325,6 @@ extern	int	jehanne_encodefmt(Fmt*);
 extern	void	jehanne_exits(const char*) __attribute__ ((noreturn));
 extern	double	jehanne_frexp(double, int*);
 extern	uintptr_t	jehanne_getcallerpc(void);
-extern	char*	jehanne_getenv(const char*);
 extern	int	jehanne_getfields(char*, char**, int, int, const char*);
 extern	int	jehanne_gettokens(char *, char **, int, const char *);
 extern	char*	jehanne_getuser(void);
@@ -344,7 +343,6 @@ extern	void	jehanne_perror(const char*);
 extern	int	jehanne_pipe(int pipes[2]);
 extern	int	jehanne_postnote(int, int, const char *);
 extern	double	jehanne_pow10(int);
-extern	int	jehanne_putenv(const char*, const char*);
 extern	void	jehanne_qsort(void*, long, int,
 			int (*)(const void*, const void*));
 extern	void*	jehanne_bsearch(const void* key, const void* base, size_t nmemb, size_t size,

@@ -9,6 +9,7 @@
 
 #include <u.h>
 #include <lib9.h>
+#include <envvars.h>
 #include <draw.h>
 #include <thread.h>
 #include <cursor.h>

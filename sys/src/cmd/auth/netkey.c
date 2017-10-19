@@ -26,7 +26,7 @@ main(int argc, char *argv[])
 	if(argc)
 		usage();
 
-	s = getenv("service");
+	s = getenv(ENV_SERVICE);
 	if(s && strcmp(s, "cpu") == 0){
 		fprint(2, "netkey must not be run on the cpu server\n");
 		exits("boofhead");

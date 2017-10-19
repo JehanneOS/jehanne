@@ -9,6 +9,7 @@
 
 #include <u.h>
 #include <libc.h>
+#include <envvars.h>
 #include <auth.h>
 #include <9P2000.h>
 #include "../boot/boot.h"

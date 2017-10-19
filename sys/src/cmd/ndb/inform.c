@@ -1,6 +1,7 @@
 /* RFC2136 DNS inform - necessary for Win2k3 DNS servers */
 #include <u.h>
 #include <lib9.h>
+#include <envvars.h>
 #include <bio.h>
 #include <ndb.h>
 #include <ip.h>
@@ -123,8 +124,8 @@ main(int argc, char *argv[])
 	if(argc != 0)
 		usage();
 
-	if((sysname = getenv("sysname")) == nil)
-		sysfatal("$sysname not set");
+	if((sysname = getenv(ENV_SYSNAME)) == nil)
+		sysfatal("$%s not set", ENV_SYSNAME);
 
 	if((db = ndbopen(nil)) == nil)
 		sysfatal("can't open ndb: %r");

@@ -1,5 +1,6 @@
 #include <u.h>
 #include <lib9.h>
+#include <envvars.h>
 #include <draw.h>
 #include <thread.h>
 #include <cursor.h>
@@ -172,7 +173,7 @@ threadmain(int argc, char *argv[])
 		maxtab = 4;
 	free(s);
 
-	s = getenv("cputype");
+	s = getenv(ENV_CPUTYPE);
 	if(s){
 		snprint(buf, sizeof(buf), "/arch/%s/aux/rio", s);
 		bind(buf, "/cmd", MBEFORE);

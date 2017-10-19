@@ -1,5 +1,6 @@
 #include <u.h>
 #include <lib9.h>
+#include <envvars.h>
 #include <bio.h>
 #include <auth.h>
 #include <authsrv.h>
@@ -65,9 +66,9 @@ buildns(int newns, char *user, char *file)
 	}
 	if(newns){
 		rfork(RFENVG|RFCNAMEG);
-		setenv("user", user);
+		setenv(ENV_USER, user);
 		snprint(home, sizeof home, "/usr/%s", user);
-		setenv("home", home);
+		setenv(ENV_HOME, home);
 	}
 
 	cdroot = nsfile(newns ? "newns" : "addns", b, rpc);

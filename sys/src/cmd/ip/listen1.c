@@ -9,6 +9,7 @@
 
 #include <u.h>
 #include <lib9.h>
+#include <envvars.h>
 #include <auth.h>
 
 int verbose;

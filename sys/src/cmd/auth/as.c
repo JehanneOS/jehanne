@@ -63,7 +63,7 @@ runas(char *user, char *cmd)
 {
 	if(becomeuser(user) < 0)
 		sysfatal("can't change uid for %s: %r", user);
-	putenv("service", "rx");
+	putenv(ENV_SERVICE, "rx");
 	execl("/bin/rc", "rc", "-lc", cmd, nil);
 	sysfatal("exec /bin/rc: %r");
 }

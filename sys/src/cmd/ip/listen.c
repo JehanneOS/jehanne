@@ -9,6 +9,7 @@
 
 #include <u.h>
 #include <lib9.h>
+#include <envvars.h>
 #include <auth.h>
 
 #define	NAMELEN	64	/* reasonable upper limit for name elements */
@@ -97,7 +98,7 @@ main(int argc, char *argv[])
 	quiet = 0;
 	immutable = 0;
 	argv0 = argv[0];
-	cpu = getenv("cputype");
+	cpu = getenv(ENV_CPUTYPE);
 	if(cpu == 0)
 		error("can't get cputype");
 

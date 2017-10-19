@@ -1,5 +1,6 @@
 #include <u.h>
 #include <lib9.h>
+#include <envvars.h>
 #include <ctype.h>
 #include <draw.h>
 #include <event.h>
@@ -1236,7 +1237,7 @@ main(int argc, char *argv[])
 	quotefmtinstall();
 
 	nmach = 1;
-	mysysname = getenv("sysname");
+	mysysname = getenv(ENV_SYSNAME);
 	if(mysysname == nil){
 		fprint(2, "stats: can't find $sysname: %r\n");
 		exits("sysname");

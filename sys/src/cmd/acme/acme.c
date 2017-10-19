@@ -9,6 +9,7 @@
 
 #include <u.h>
 #include <lib9.h>
+#include <envvars.h>
 #include <draw.h>
 #include <thread.h>
 #include <cursor.h>
@@ -124,9 +125,9 @@ threadmain(int argc, char *argv[])
 	fontnames[1] = estrdup(fontnames[1]);
 
 	quotefmtinstall();
-	cputype = getenv("cputype");
-	objtype = getenv("objtype");
-	home = getenv("home");
+	cputype = getenv(ENV_CPUTYPE);
+	objtype = getenv(ENV_OBJTYPE);
+	home = getenv(ENV_HOME);
 	p = getenv("tabstop");
 	if(p != nil){
 		maxtab = strtoul(p, nil, 0);

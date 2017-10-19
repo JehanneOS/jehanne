@@ -9,6 +9,7 @@
 
 #include <u.h>
 #include <lib9.h>
+#include <envvars.h>
 #include <plumb.h>
 #include "errors.h"
 
@@ -353,7 +354,6 @@ extern Rune	*right[];
 
 extern char	RSAM[];		/* system dependent */
 extern char	SAMTERM[];
-extern char	HOME[];
 extern char	TMPDIR[];
 extern char	SH[];
 extern char	SHPATH[];

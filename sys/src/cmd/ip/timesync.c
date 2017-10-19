@@ -1,5 +1,6 @@
 #include <u.h>
 #include <lib9.h>
+#include <envvars.h>
 #include <auth.h>
 #include <ip.h>
 #include <mp.h>
@@ -249,7 +250,7 @@ main(int argc, char **argv)
 	fmtinstall('E', eipfmt);
 	fmtinstall('I', eipfmt);
 	fmtinstall('V', eipfmt);
-	sysid = getenv("sysname");
+	sysid = getenv(ENV_SYSNAME);
 
 	/* detach from the current namespace */
 	if(debug)

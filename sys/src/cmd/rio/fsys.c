@@ -1,5 +1,6 @@
 #include <u.h>
 #include <lib9.h>
+#include <envvars.h>
 #include <draw.h>
 #include <thread.h>
 #include <cursor.h>
@@ -167,7 +168,7 @@ filsysinit(Channel *cxfidalloc)
 	 * Post srv pipe
 	 */
 	snprint(srvpipe, sizeof(srvpipe), "/srv/rio.%s.%d", fs->user, pid);
-	post(srvpipe, "wsys", fs->cfd);
+	post(srvpipe, ENV_WSYS, fs->cfd);
 
 	return fs;
 

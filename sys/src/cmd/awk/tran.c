@@ -24,6 +24,7 @@ THIS SOFTWARE.
 
 #include <u.h>
 #include <lib9.h>
+#include <envvars.h>
 #include <ctype.h>
 #include <bio.h>
 #include "awk.h"

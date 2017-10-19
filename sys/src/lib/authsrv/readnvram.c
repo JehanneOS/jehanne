@@ -1,5 +1,6 @@
 #include <u.h>
 #include <lib9.h>
+#include <envvars.h>
 #include <authsrv.h>
 
 static int32_t	finddosfile(int, char*);
@@ -137,7 +138,7 @@ findnvram(Nvrwhere *locp)
 	if (nvrfile == nil)
 		nvrfile = getenv("nvram");
 	if (cputype == nil)
-		cputype = getenv("cputype");
+		cputype = getenv(ENV_CPUTYPE);
 	if(cputype == nil)
 		cputype = strdup("mips");
 	if(strcmp(cputype, "386")==0 || strcmp(cputype, "amd64")==0 || strcmp(cputype, "alpha")==0) {

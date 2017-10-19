@@ -1,5 +1,6 @@
 #include <u.h>
 #include <lib9.h>
+#include <envvars.h>
 #include <bio.h>
 #include <auth.h>
 #include <9P2000.h>

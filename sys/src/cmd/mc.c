@@ -16,10 +16,11 @@
  *	-t suppresses expanding multiple blanks into tabs
  *
  */
-#include	<u.h>
-#include	<lib9.h>
-#include	<draw.h>
-#include	<bio.h>
+#include <u.h>
+#include <lib9.h>
+#include <envvars.h>
+#include <draw.h>
+#include <bio.h>
 
 #define	WIDTH			80
 #define	TAB	4

@@ -568,7 +568,7 @@ rexec(User *user, Job *j)
 	open("/dev/null", OWRITE);
 
 	if(strcmp(j->host, "local") == 0){
-		putenv("service", "rx");
+		putenv(ENV_SERVICE, "rx");
 		execl("/bin/rc", "rc", "-lc", buf, nil);
 	} else {
 		execl("/bin/rx", "rx", j->host, buf, nil);

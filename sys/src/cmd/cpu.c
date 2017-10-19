@@ -16,6 +16,7 @@
 
 #include <u.h>
 #include <lib9.h>
+#include <envvars.h>
 #include <bio.h>
 #include <auth.h>
 #include <9P2000.h>
@@ -301,7 +302,7 @@ remoteside(int old)
 	int i, n, fd, badchdir, gotcmd;
 
 	rfork(RFENVG);
-	putenv("service", "cpu");
+	putenv(ENV_SERVICE, "cpu");
 	fd = 0;
 
 	/* negotiate authentication mechanism */
@@ -319,9 +320,9 @@ remoteside(int old)
 		fatal(1, "srvauth");
 
 	/* Set environment values for the user */
-	putenv("user", user);
+	putenv(ENV_USER, user);
 	sprint(home, "/usr/%s", user);
-	putenv("home", home);
+	putenv(ENV_HOME, home);
 
 	/* Now collect invoking cpu's current directory or possibly a command */
 	gotcmd = 0;

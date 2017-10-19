@@ -1,5 +1,6 @@
 #include <u.h>
 #include <lib9.h>
+#include <envvars.h>
 #include <ip.h>
 #include <bio.h>
 #include <ndb.h>
@@ -1360,7 +1361,7 @@ readsysname(void)
 			return name;
 		}
 	}
-	p = getenv("sysname");
+	p = getenv(ENV_SYSNAME);
 	if(p == nil || *p == 0)
 		return "unknown";
 	return p;

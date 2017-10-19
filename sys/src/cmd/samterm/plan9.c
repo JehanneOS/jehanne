@@ -9,6 +9,7 @@
 
 #include <u.h>
 #include <libc.h>
+#include <envvars.h>
 #include <draw.h>
 #include <thread.h>
 #include <mouse.h>

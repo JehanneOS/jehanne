@@ -1,5 +1,6 @@
 #include <u.h>
 #include <lib9.h>
+#include <envvars.h>
 #include <auth.h>
 #include <9P2000.h>
 #include <bio.h>
@@ -1032,7 +1033,7 @@ ipid(void)
 		 *  is the ip address.  ignore that.
 		 *
 		 */
-		p = getenv("sysname");
+		p = getenv(ENV_SYSNAME);
 		if(p && *p){
 			attr = ipattr(p);
 			if(strcmp(attr, "ip") != 0)

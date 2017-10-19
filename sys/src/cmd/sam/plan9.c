@@ -26,7 +26,6 @@ Rune *right[]= {
 
 char	RSAM[] = "sam";
 char	SAMTERM[] = "/cmd/aux/samterm";
-char	HOME[] = "home";
 char	TMPDIR[] = "/tmp";
 char	SH[] = "rc";
 char	SHPATH[] = "/cmd/rc";

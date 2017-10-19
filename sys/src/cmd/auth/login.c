@@ -1,5 +1,6 @@
 #include <u.h>
 #include <lib9.h>
+#include <envvars.h>
 #include <auth.h>
 #include <authsrv.h>
 #include <bio.h>
@@ -70,10 +71,12 @@ void
 setenv(char *var, char *val)
 {
 	int fd;
+	char buf[128+4];
 
-	fd = ocreate(var, OWRITE, 0644);
+	snprint(buf, sizeof(buf), "#e/%s", var);
+	fd = ocreate(buf, OWRITE, 0644);
 	if(fd < 0)
-		print("init: can't open %s\n", var);
+		print("init: can't open %s\n", buf);
 	else{
 		fprint(fd, val);
 		close(fd);
@@ -126,7 +129,7 @@ getauthdom(void)
 	if(authdom != nil)
 		return authdom;
 
-	sysname = getenv("sysname");
+	sysname = getenv(ENV_SYSNAME);
 	if(sysname == nil)
 		return strdup("cs.bell-labs.com");
 
@@ -209,7 +212,7 @@ main(int argc, char *argv[])
 
 	rfork(RFENVG|RFNAMEG);
 
-	service = getenv("service");
+	service = getenv(ENV_SERVICE);
 	if(strcmp(service, "cpu") == 0)
 		fprint(2, "login: warning: running on a cpu server!\n");
 	if(argc != 1){
@@ -239,24 +242,23 @@ main(int argc, char *argv[])
 	mountfactotum(srvname);
 
 	/* set up a new environment */
-	cputype = getenv("cputype");
-	sysname = getenv("sysname");
+	cputype = getenv(ENV_CPUTYPE);
+	sysname = getenv(ENV_SYSNAME);
 	tz = getenv("timezone");
 	rfork(RFCENVG);
-	setenv("#e/service", "con");
-	setenv("#e/user", user);
+	setenv(ENV_SERVICE, "con");
+	setenv(ENV_USER, user);
 	snprint(home, sizeof(home), "/usr/%s", user);
-	setenv("#e/home", home);
-	setenv("#e/cputype", cputype);
-	setenv("#e/objtype", cputype);
+	setenv(ENV_HOME, home);
+	setenv(ENV_CPUTYPE, cputype);
+	setenv(ENV_OBJTYPE, cputype);
 	if(sysname != nil)
-		setenv("#e/sysname", sysname);
+		setenv(ENV_SYSNAME, sysname);
 	if(tz != nil)
-		setenv("#e/timezone", tz);
+		setenv("timezone", tz);
 
 	/* go to new home directory */
-	snprint(buf, sizeof(buf), "/usr/%s", user);
-	if(chdir(buf) < 0)
+	if(chdir(home) < 0)
 		chdir("/");
 
 	/* read profile and start interactive rc */

@@ -12,6 +12,7 @@
  */
 #include <u.h>
 #include <lib9.h>
+#include <envvars.h>
 #include <auth.h>
 #include <9P2000.h>
 #include <libsec.h>
@@ -213,7 +214,7 @@ main(int argc, char **argv)
 			fatal("exportfs by none disallowed");
 		if(auth_chuid(ai, nsfile) < 0)
 			fatal("auth_chuid: %r");
-		putenv("service", "exportfs");
+		putenv(ENV_SERVICE, "exportfs");
 	}
 
 	if(srvfdfile){

@@ -9,6 +9,7 @@
 
 #include <u.h>
 #include <lib9.h>
+#include <envvars.h>
 #include <bio.h>
 #include <thread.h>
 #include <9P2000.h>
@@ -61,7 +62,7 @@ threadmain(int argc, char *argv[])
 		av = emalloc(3*sizeof(char*));
 		av[0] = "rc";
 		av[1] = "-i";
-		name = getenv("sysname");
+		name = getenv(ENV_SYSNAME);
 	}else{
 		av = argv;
 		name = utfrrune(av[0], '/');

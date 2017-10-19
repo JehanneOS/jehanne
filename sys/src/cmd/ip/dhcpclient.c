@@ -9,6 +9,7 @@
 
 #include <u.h>
 #include <lib9.h>
+#include <envvars.h>
 #include <ip.h>
 #include "dhcp.h"
 
@@ -210,6 +211,7 @@ void
 dhcpinit(void)
 {
 	int fd;
+	char *sysname;
 
 	dhcp.state = Sinit;
 	dhcp.timeout = 4;
@@ -222,7 +224,9 @@ dhcpinit(void)
 		dhcp.xid = time(0)*getpid();
 	srand(dhcp.xid);
 
-	sprint(dhcp.cid, "%s.%d", getenv("sysname"), getpid());
+	sysname = getenv(ENV_SYSNAME);
+	sprint(dhcp.cid, "%s.%d", sysname, getpid());
+	free(sysname);
 }
 
 void

@@ -1,3 +1,4 @@
+#include <envvars.h>
 #include "dat.h"
 
 //static char secstore[100];   /* server name */ // NOT USED
@@ -712,7 +713,7 @@ promptforhostowner(void)
 	char owner[64], *p;
 
 	/* hack for bitsy; can't prompt during boot */
-	if(p = getenv("user")){
+	if(p = getenv(ENV_USER)){
 		writehostowner(p);
 		free(p);
 		return;

@@ -83,7 +83,7 @@ void main(int argc, char *argv[])
 	Strinit0(&rhs);
 	Strinit0(&curwd);
 	Strinit0(&plan9cmd);
-	home = getenv(HOME);
+	home = getenv(ENV_HOME);
 	disk = diskinit();
 	if(home == 0)
 		home = "/";

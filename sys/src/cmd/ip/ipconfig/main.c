@@ -3,6 +3,7 @@
  */
 #include <u.h>
 #include <lib9.h>
+#include <envvars.h>
 #include <ip.h>
 #include <bio.h>
 #include <ndb.h>
@@ -390,7 +391,7 @@ init(void)
  	nsec();			/* make sure time file is open before forking */
 
 	setnetmtpt(conf.mpoint, sizeof conf.mpoint, nil);
-	conf.cputype = getenv("cputype");
+	conf.cputype = getenv(ENV_CPUTYPE);
 	if(conf.cputype == nil)
 		conf.cputype = "386";
 
@@ -410,7 +411,7 @@ parseargs(int argc, char **argv)
 
 	/* default to any host name we already have */
 	if(*conf.hostname == 0){
-		p = getenv("sysname");
+		p = getenv(ENV_SYSNAME);
 		if(p == nil || *p == 0)
 			p = sysname();
 		if(p != nil)

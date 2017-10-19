@@ -9,6 +9,7 @@
 
 #include <u.h>
 #include <lib9.h>
+#include <envvars.h>
 #include <draw.h>
 
 /* Connect us to new window, if possible */
@@ -19,7 +20,7 @@ newwindow(char *str)
 	char *wsys;
 	char buf[256];
 
-	wsys = getenv("wsys");
+	wsys = getenv(ENV_WSYS);
 	if(wsys == nil)
 		return -1;
 	fd = open(wsys, ORDWR);

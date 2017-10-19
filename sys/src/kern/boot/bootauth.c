@@ -9,6 +9,7 @@
 
 #include <u.h>
 #include <libc.h>
+#include <envvars.h>
 #include <auth.h>
 #include <9P2000.h>
 #include "../boot/boot.h"
@@ -22,7 +23,7 @@ authentication(int cpuflag)
 	char *argv[16], **av;
 	int ac;
 
-	if(jehanne_access(factotumPath, AEXEC) < 0 || jehanne_getenv("user") != nil){
+	if(jehanne_access(factotumPath, AEXEC) < 0 || jehanne_getenv(ENV_USER) != nil){
 		glenda();
 		return;
 	}
@@ -69,7 +70,7 @@ glenda(void)
 	int fd;
 	char *s;
 
-	s = jehanne_getenv("user");
+	s = jehanne_getenv(ENV_USER);
 	if(s == nil)
 		s = "glenda";
 

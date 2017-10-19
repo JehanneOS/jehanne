@@ -25,7 +25,7 @@ main(int argc, char **argv)
 		syslog(0, "secstore", "no /lib/ndb/local");
 	db = ndbcat(db, db2);
 
-	print("user=%s\n", getenv("user"));
-	print("%s\n", secureidcheck(getenv("user"), argv[1]));
+	print("%s=%s\n", ENV_USER, getenv(ENV_USER));
+	print("%s\n", secureidcheck(getenv(ENV_USER), argv[1]));
 	exits(0);
 }

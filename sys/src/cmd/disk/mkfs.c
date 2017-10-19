@@ -1,5 +1,6 @@
 #include <u.h>
 #include <lib9.h>
+#include <envvars.h>
 #include <disk.h>
 #include <auth.h>
 #include <bio.h>
@@ -115,7 +116,7 @@ main(int argc, char **argv)
 	zbuf = malloc(buflen);
 	memset(zbuf, 0, buflen);
 
-	cputype = getenv("cputype");
+	cputype = getenv(ENV_CPUTYPE);
 	if(cputype == 0)
 		cputype = "386";
 

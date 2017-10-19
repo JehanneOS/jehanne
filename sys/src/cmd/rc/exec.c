@@ -177,9 +177,9 @@ main(int argc, char *argv[])
 	Vinit();
 	inttoascii(num, mypid = getpid());
 	setvar(ENV_PID, newword(num, (word *)0));
-	setvar("cflag", flag['c']?newword(flag['c'][0], (word *)0)
+	setvar(ENV_RCCMD, flag['c']?newword(flag['c'][0], (word *)0)
 				:(word *)0);
-	setvar("rcname", newword(argv[0], (word *)0));
+	setvar(ENV_RCNAME, newword(argv[0], (word *)0));
 	i = 0;
 	bootstrap[i++].i = 1;
 	bootstrap[i++].f = Xmark;

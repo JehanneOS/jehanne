@@ -12,13 +12,13 @@ if(~ $rcname ?.out) prompt=('broken! ' '	')
 if(flag p) path=/cmd
 if not{
 	finit
-	if(~ $#path 0) path=(. /cmd)
+	if(~ $#path 0) path=(/cmd .)
 }
 fn sigexit
-if(! ~ $#cflag 0){
+if(! ~ $#rccmd 0){
 	if(flag l && /cmd/test -r $home/lib/profile) . $home/lib/profile
 	status=''
-	eval $cflag
+	eval $rccmd
 }
 if not if(flag i){
 	if(flag l && /cmd/test -r $home/lib/profile) . $home/lib/profile

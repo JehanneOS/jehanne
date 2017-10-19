@@ -18,6 +18,8 @@
 #define ENV_PROMPT	"prompt"
 #define ENV_STATUS	"status"
 #define ENV_CDPATH	"cdpath"
+#define ENV_RCNAME	"rcname"
+#define ENV_RCCMD	"rccmd"
 
 #define	NSIG	32
 #define	SIGINT	2

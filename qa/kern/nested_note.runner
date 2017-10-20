@@ -9,7 +9,7 @@ test_output = /tmp/output-`{basename $test}
 if ( test -e $test_output) rm $test_output
 
 $test $test_output &
-testpid = $apid
+testpid = $APID
 
 while ( ! test -e $test_output ) { sleep 2 }
 

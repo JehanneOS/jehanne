@@ -24,7 +24,7 @@
  * to boot a minimal system.
  */
 
-#define ENV_APID	"apid"
+#define ENV_APID	"APID"
 #define ENV_USER	"user"
 #define ENV_HOME	"home"
 #define ENV_IFS		"ifs"

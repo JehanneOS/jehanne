@@ -7,7 +7,7 @@ test_output = /tmp/output-`{basename $test}
 if ( test -e $test_output) rm $test_output
 
 $test > $test_output >[2=1] &
-testpid=$apid
+testpid=$APID
 
 wait $testpid
 

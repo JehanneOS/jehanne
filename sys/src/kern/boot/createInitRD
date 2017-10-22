@@ -3,5 +3,5 @@
 cd /sys/src/kern/boot
 mkdir -p bootfs
 disk/mkfs -s / -d bootfs bootfs.proto
-disk/mkrofs -o /arch/$objtype/kern/initrd bootfs
+disk/mkrofs -o /arch/$OBJTYPE/kern/initrd bootfs
 rm -rf bootfs

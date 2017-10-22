@@ -1,8 +1,10 @@
 #include <u.h>
 #include <lib9.h>
+#include <envvars.h>
 #include <auth.h>
 #include <authsrv.h>
 
+char*	readfile(char *name);
 char*	readenv(char*);
 void	setenv(char*, char*);
 void	cpenv(char*, char*);
@@ -51,12 +53,16 @@ main(int argc, char *argv[])
 		close(fd);
 	}
 
-	cpu = readenv("#e/cputype");
-	setenv("#e/objtype", cpu);
-	setenv("#e/service", service);
-	cpenv("/cfg/timezone", "#e/timezone");
-	user = readenv("#c/user");
-	systemname = readenv("#c/sysname");
+	cpu = readenv(ENV_CPUTYPE);
+	setenv(ENV_OBJTYPE, cpu);
+	setenv(ENV_SERVICE, service);
+	cpenv("/cfg/timezone", "timezone");
+	user = readfile("#c/user");
+	if(user == nil)
+		user = "*unknown*";
+	systemname = readfile("#c/sysname");
+	if(systemname == nil)
+		systemname = "*unknown*";
 
 	newns(user, 0);
 	iscpu = strcmp(service, "cpu")==0;
@@ -155,7 +161,7 @@ rcexec(void)
 	else if(manual || iscpu){
 		execl("/cmd/rc", "rc", "-m/arch/rc/lib/rcmain", "-i", nil);
 	}else if(strcmp(service, "terminal") == 0)
-		execl("/cmd/rc", "rc", "-c", ". /sys/lib/rc/startup/terminal; home=/usr/$user; cd && . lib/profile", nil);
+		execl("/cmd/rc", "rc", "-c", ". /sys/lib/rc/startup/terminal; HOME=/usr/$USER; cd && . lib/profile", nil);
 	else
 		execl("/cmd/rc", "rc", nil);
 }
@@ -208,8 +214,10 @@ char*
 readenv(char *name)
 {
 	char *val;
+	char buf[128+4];
 
-	val = readfile(name);
+	snprint(buf, sizeof(buf), "#e/%s", name);
+	val = readfile(buf);
 	if(val == nil)
 		val = "*unknown*";
 	return val;
@@ -219,10 +227,12 @@ void
 setenv(char *name, char *val)
 {
 	int fd;
+	char buf[128+4];
 
-	fd = ocreate(name, OWRITE, 0644);
+	snprint(buf, sizeof(buf), "#e/%s", name);
+	fd = ocreate(buf, OWRITE, 0644);
 	if(fd < 0)
-		fprint(2, "init: can't create %s: %r\n", name);
+		fprint(2, "init: can't create %s: %r\n", buf);
 	else{
 		write(fd, val, strlen(val));
 		close(fd);
@@ -230,13 +240,13 @@ setenv(char *name, char *val)
 }
 
 void
-cpenv(char *from, char *to)
+cpenv(char *from, char *envname)
 {
 	char *val;
 
 	val = readfile(from);
 	if(val != nil){
-		setenv(to, val);
+		setenv(envname, val);
 		free(val);
 	}
 }

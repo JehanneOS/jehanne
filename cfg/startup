@@ -7,7 +7,7 @@ mntgen -s slashn && chmod 666 /srv/slashn
 
 # name translation, cs sets /dev/sysname
 ndb/cs
-sysname=`{cat /dev/sysname}
+SYSNAME=`{cat /dev/sysname}
 
 # parallelism for mk
 NPROC = `{wc -l </dev/sysstat}
@@ -16,15 +16,15 @@ NPROC = `{wc -l </dev/sysstat}
 if(test -e /arch/rc/cmd/cpurc.local)
 	. /arch/rc/cmd/cpurc.local
 
-if (~ $#sysname 0 || ~ $sysname '') {
-	sysname = jehanne	# default
-	echo -n $sysname >/dev/sysname
+if (~ $#SYSNAME 0 || ~ $SYSNAME '') {
+	SYSNAME = jehanne	# default
+	echo -n $SYSNAME >/dev/sysname
 }
-prompt=($sysname^'# ' '	')
+PROMPT=($SYSNAME^'# ' '	')
 
 # cpu-specific startup
-if(test -e /cfg/$sysname/cpurc)
-	. /cfg/$sysname/cpurc
+if(test -e /cfg/$SYSNAME/cpurc)
+	. /cfg/$SYSNAME/cpurc
 
 # start up internet if we don't already have an address
 if(! grep u /net/ipselftab | grep -sv 127.0.0.1)
@@ -69,8 +69,8 @@ if(! netstat -n | grep -s 'tcp.*Listen.* (7|9|21|22|23|25|110|113|565|993|17007|
 #}
 
 # cpu-specific late startup
-if(test -e /cfg/$sysname/cpustart)
-	. /cfg/$sysname/cpustart
+if(test -e /cfg/$SYSNAME/cpustart)
+	. /cfg/$SYSNAME/cpustart
 
 # mode of /proc/*/ctl is inherited across rfork, and sets modes on
 # other /proc files, such as note, so let listen be killed.
@@ -83,5 +83,5 @@ if(test ! -e '#s/comconsole')
 echo 'key proto=p9sk1 dom=jehanne user=glenda !password=demodemo' >/mnt/factotum/ctl
 ip/listen1 -t tcp!*!17010 /cmd/cpu -R &
 
-# echo `{date} $sysname >>/sys/log/boot
+# echo `{date} $SYSNAME >>/sys/log/boot
 exit ''

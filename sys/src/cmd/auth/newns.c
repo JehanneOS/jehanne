@@ -25,7 +25,7 @@ void
 main(int argc, char **argv)
 {
 	extern int newnsdebug;
-	char *defargv[] = { "/bin/rc", "-i", nil };
+	char *defargv[] = { "/cmd/rc", "-i", nil };
 	char *nsfile, err[ERRMAX];
 	int add;
 
@@ -55,7 +55,7 @@ main(int argc, char **argv)
 	exec(argv[0], argv);
 	if(!rooted(argv[0])){
 		rerrstr(err, sizeof err);
-		exec(smprint("/bin/%s", argv[0]), argv);
+		exec(smprint("/cmd/%s", argv[0]), argv);
 		errstr(err, sizeof err);
 	}
 	sysfatal("exec: %s: %r", argv[0]);

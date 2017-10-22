@@ -6,7 +6,7 @@ dir=$1
 if(~ $dir '') dir=/qa
 	
 
-l = `{du -a /arch/$objtype/$dir|awk '{print $2}'|sort}
+l = `{du -a /arch/$OBJTYPE/$dir|awk '{print $2}'|sort}
 
 failed = ()
 runner=.runner
@@ -17,7 +17,7 @@ for(t in $l){
 		if not {
 			echo -n $t:
 			$t > /tmp/qa.log >[2=1]
-			st = $status
+			st = $STATUS
 			switch( `{echo $st|field 3} ){
 			case PASS
 				rm /tmp/qa.log && echo PASS

@@ -29,7 +29,7 @@ mount -a /boot /cmd
 mount -a /srv/factotum /mnt
 
 # standard bin
-bind /arch/$cputype/cmd /cmd
+bind /arch/$CPUTYPE/cmd /cmd
 bind -a /arch/rc/cmd /cmd
 
 # internal networks
@@ -42,9 +42,9 @@ mount -a /srv/net /net
 mount -b /srv/ssh /net
 
 
-bind -c /usr/$user/tmp /tmp
-cd /usr/$user
+bind -c /usr/$USER/tmp /tmp
+cd /usr/$USER
 
 . /lib/namespace.local
-. /lib/namespace.$sysname
-. /cfg/$sysname/namespace
+. /lib/namespace.$SYSNAME
+. /cfg/$SYSNAME/namespace

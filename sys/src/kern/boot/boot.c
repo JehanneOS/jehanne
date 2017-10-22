@@ -93,7 +93,7 @@ boot(int argc, char *argv[])
 		fflag = 1;
 		break;
 	}ARGEND
-	readfile("#e/cputype", cputype, sizeof(cputype));
+	readfile("#e/" ENV_CPUTYPE, cputype, sizeof(cputype));
 
 	/*
 	 *  set up usb keyboard, mouse and disk, if any.

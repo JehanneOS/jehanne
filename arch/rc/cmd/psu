@@ -11,7 +11,7 @@ while (! ~ $#* 0 && ~ $1 -*) {
 # this is a huge difference in drawterm.
 switch($#*){
 case 0
-	ps $flags | sed -n '/^'$user' /p'
+	ps $flags | sed -n '/^'$USER' /p'
 case 1
 	ps $flags | sed -n '/^'$1' /p'
 case *

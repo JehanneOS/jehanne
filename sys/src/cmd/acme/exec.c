@@ -1368,19 +1368,19 @@ runproc(void *argvp)
 Hard:
 
 	/*
-	 * ugly: set path = (. $cputype /cmd)
-	 * should honor $path if unusual.
+	 * ugly: set PATH = (/cmd . $CPUTYPE)
+	 * should honor $PATH if unusual.
 	 */
 	if(cputype){
 		n = 0;
-		memmove(buf+n, ".", 2);
+		memmove(buf+n, "/cmd:", 5);
+		n += 5;
+		memmove(buf+n, ".:", 2);
 		n += 2;
 		i = strlen(cputype)+1;
 		memmove(buf+n, cputype, i);
 		n += i;
-		memmove(buf+n, "/cmd", 5);
-		n += 5;
-		fd = ocreate("/env/path", OWRITE, 0666);
+		fd = ocreate("/env/PATH", OWRITE, 0666);
 		write(fd, buf, n);
 		close(fd);
 	}

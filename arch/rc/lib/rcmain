@@ -1,34 +1,34 @@
 # rcmain: Plan 9 version
-if(~ $#home 0) home=/
-if(~ $#ifs 0) ifs=' 	
+if(~ $#HOME 0) HOME=/
+if(~ $#IFS 0) IFS=' 	
 '
-switch($#prompt){
+switch($#PROMPT){
 case 0
-	prompt=('% ' '	')
+	PROMPT=('% ' '	')
 case 1
-	prompt=($prompt '	')
+	PROMPT=($PROMPT '	')
 }
-if(~ $rcname ?.out) prompt=('broken! ' '	')
-if(flag p) path=/cmd
+if(~ $rcname ?.out) PROMPT=('broken! ' '	')
+if(flag p) PATH=/cmd
 if not{
 	finit
-	if(~ $#path 0) path=(/cmd .)
+	if(~ $#PATH 0) PATH=(/cmd .)
 }
 fn sigexit
 if(! ~ $#rccmd 0){
-	if(flag l && /cmd/test -r $home/lib/profile) . $home/lib/profile
-	status=''
+	if(flag l && /cmd/test -r $HOME/lib/profile) . $HOME/lib/profile
+	STATUS=''
 	eval $rccmd
 }
 if not if(flag i){
-	if(flag l && /cmd/test -r $home/lib/profile) . $home/lib/profile
-	status=''
+	if(flag l && /cmd/test -r $HOME/lib/profile) . $HOME/lib/profile
+	STATUS=''
 	if(! ~ $#* 0) . $*
 	. -i '#d/0'
 }
 if not if(~ $#* 0) . '#d/0'
 if not{
-	status=''
+	STATUS=''
 	. $*
 }
-exit $status
+exit $STATUS

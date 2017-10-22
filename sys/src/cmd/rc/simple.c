@@ -199,7 +199,7 @@ execcd(void)
 				pfmt(err, "Can't cd %s: %r\n", a->word);
 		}
 		else
-			pfmt(err, "Can't cd -- $home empty\n");
+			pfmt(err, "Can't cd -- $HOME empty\n");
 		break;
 	}
 	poplist();

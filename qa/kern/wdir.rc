@@ -20,7 +20,7 @@ if ( ! ~ $dir $cwd ) {
 	exit FAIL
 }
 
-ppath=/proc/$pid/wdir
+ppath=/proc/$PID/wdir
 
 cwd=`{cat $ppath}
 if ( ! ~ $dir $cwd ) {

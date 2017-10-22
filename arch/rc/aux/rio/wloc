@@ -1,7 +1,7 @@
 #!/cmd/rc
 
 rfork e
-ifs='
+IFS='
 '
 
 for(i in `{ls /dev/wsys}) {

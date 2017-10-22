@@ -31,9 +31,9 @@ if(~ $#* 0){
 	# set up any fs(3) partitions
 	if (! test -e /dev/fs/ctl && test -e '#k/fs')
 		bind -b '#k' /dev
-	if (~ $#sysname 1 && ! ~ $sysname '' &&
-	  test -r /cfg/$sysname/fsconfig && test -w /dev/fs/ctl)
-		awk '{print $0; fflush}' /cfg/$sysname/fsconfig >/dev/fs/ctl
+	if (~ $#SYSNAME 1 && ! ~ $SYSNAME '' &&
+	  test -r /cfg/$SYSNAME/fsconfig && test -w /dev/fs/ctl)
+		awk '{print $0; fflush}' /cfg/$SYSNAME/fsconfig >/dev/fs/ctl
 }
 if not {
 	for(disk) {

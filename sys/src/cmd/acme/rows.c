@@ -316,7 +316,7 @@ rowdump(Row *row, char *file)
 	buf = fbufalloc();
 	if(file == nil){
 		if(home == nil){
-			warning(nil, "can't find file for dump: $home not defined\n");
+			warning(nil, "can't find file for dump: $HOME not defined\n");
 			goto Rescue;
 		}
 		sprint(buf, "%s/acme.dump", home);
@@ -498,7 +498,7 @@ rowload(Row *row, char *file, int initing)
 	buf = fbufalloc();
 	if(file == nil){
 		if(home == nil){
-			warning(nil, "can't find file for load: $home not defined\n");
+			warning(nil, "can't find file for load: $HOME not defined\n");
 			goto Rescue1;
 		}
 		sprint(buf, "%s/acme.dump", home);

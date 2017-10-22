@@ -27,15 +27,15 @@ if(test -e /arch/rc/cmd/termrc.local)
 # cs sets sysname (termrc.local may already have started it so check)
 if(! test -e /srv/cs && ! test -e /net/cs)
 	ndb/cs -f $NDBFILE
-sysname=`{cat /dev/sysname}
-if (~ $#sysname 0 || ~ $sysname '') {
-	sysname = jehanne	# default
-	echo -n $sysname >/dev/sysname
+SYSNAME=`{cat /dev/sysname}
+if (~ $#SYSNAME 0 || ~ $SYSNAME '') {
+	SYSNAME = jehanne	# default
+	echo -n $SYSNAME >/dev/sysname
 }
 
 # machine specific startup (e.g., for devices not probed)
-if(test -e /cfg/$sysname/termrc)
-	. /cfg/$sysname/termrc
+if(test -e /cfg/$SYSNAME/termrc)
+	. /cfg/$SYSNAME/termrc
 
 # start IP on the LAN, if not already configured.  diskless terminals
 # are already configured by now.  It's commented out to avoid a long timeout
@@ -46,7 +46,7 @@ if(test -e /cfg/$sysname/termrc)
 #if(! test -e /net/ipifc/0/ctl)
 #	ip/ipconfig
 #
-# Otherwise, see /cfg/$sysname/termrc (/cfg/example/termrc is an example).
+# Otherwise, see /cfg/$SYSNAME/termrc (/cfg/example/termrc is an example).
 
 # start dns if we have an internet
 if(test -e /net/ipifc/0/ctl && ! test -e /srv/dns)

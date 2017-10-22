@@ -100,7 +100,7 @@ main(int argc, char *argv[])
 	argv0 = argv[0];
 	cpu = getenv(ENV_CPUTYPE);
 	if(cpu == 0)
-		error("can't get cputype");
+		error("can't get $CPUTYPE");
 
 	ARGBEGIN{
 	case 'd':

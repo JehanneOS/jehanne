@@ -1239,7 +1239,7 @@ main(int argc, char *argv[])
 	nmach = 1;
 	mysysname = getenv(ENV_SYSNAME);
 	if(mysysname == nil){
-		fprint(2, "stats: can't find $sysname: %r\n");
+		fprint(2, "stats: can't find $" ENV_SYSNAME ": %r\n");
 		exits("sysname");
 	}
 

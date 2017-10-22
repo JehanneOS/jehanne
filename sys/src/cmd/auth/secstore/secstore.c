@@ -2,6 +2,7 @@
 #define PORTABLE_SYSCALLS
 #include <u.h>
 #include <lib9.h>
+#include <envvars.h>
 #include <mp.h>
 #include <libsec.h>
 #include <authsrv.h>

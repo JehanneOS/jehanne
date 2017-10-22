@@ -53,7 +53,7 @@ fn getwctl{
 	if(~ $wctl ''){
 		if(test -f /dev/wctl) echo /dev/wctl
 		if not if(test -f /mnt/term/dev/wctl) echo /mnt/term/dev/wctl
-		if not if(~ $service cpu) echo /mnt/term/srv/riowctl.*.*
+		if not if(~ $SERVICE cpu) echo /mnt/term/srv/riowctl.*.*
 		if not {
 			echo window: '$wctl' not defined >[1=2]
 			exit usage

@@ -212,7 +212,7 @@ configure_kernel(void)
 	int i, userpcnt;
 	unsigned int kpages;
 
-	if(p = getconf("service")){
+	if(p = getconf(ENV_SERVICE)){
 		if(strcmp(p, "cpu") == 0)
 			cpuserver = 1;
 		else if(strcmp(p,"terminal") == 0)

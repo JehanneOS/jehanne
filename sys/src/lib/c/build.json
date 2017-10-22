@@ -139,6 +139,7 @@
 			"port/ctype.c",
 			"port/encodefmt.c",
 			"port/execl.c",
+			"port/exits.c",
 			"port/exp.c",
 			"port/fabs.c",
 			"port/floor.c",

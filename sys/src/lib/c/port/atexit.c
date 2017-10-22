@@ -10,6 +10,8 @@
 #include <u.h>
 #include <libc.h>
 
+extern void (*_jehanne_onexit)(void);
+
 #define	NEXIT	33
 
 typedef struct Onex Onex;
@@ -21,11 +23,26 @@ struct Onex{
 static Lock onexlock;
 Onex onex[NEXIT];
 
+static void
+onexit(void)
+{
+	int i, pid;
+	void (*f)(void);
+
+	pid = jehanne_getpid();
+	for(i = nelem(onex)-1; i >= 0; i--)
+		if((f = onex[i].f) != nil && onex[i].pid == pid) {
+			onex[i].f = nil;
+			(*f)();
+		}
+}
+
 int
 jehanne_atexit(void (*f)(void))
 {
 	int i;
 
+	_jehanne_onexit = onexit;
 	jehanne_lock(&onexlock);
 	for(i=0; i<NEXIT; i++)
 		if(onex[i].f == 0) {
@@ -48,25 +65,3 @@ jehanne_atexitdont(void (*f)(void))
 		if(onex[i].f == f && onex[i].pid == pid)
 			onex[i].f = 0;
 }
-
-#pragma profile off
-
-void
-jehanne_exits(const char *s)
-{
-	void _fini(void);
-	int i, pid;
-	void (*f)(void);
-
-	pid = jehanne_getpid();
-	for(i = NEXIT-1; i >= 0; i--)
-		if((f = onex[i].f) && pid == onex[i].pid) {
-			onex[i].f = 0;
-			(*f)();
-		}
-	_fini();
-	_exits(s);
-	__builtin_unreachable();
-}
-
-#pragma profile on

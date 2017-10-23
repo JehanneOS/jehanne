@@ -217,4 +217,5 @@ post(char *srv, int fd)
 	sprint(buf, "%d", fd);
 	if(write(f, buf, strlen(buf)) != strlen(buf))
 		sysfatal("write");
+	close(f);
 }

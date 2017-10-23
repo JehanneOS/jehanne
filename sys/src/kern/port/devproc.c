@@ -899,17 +899,15 @@ procread(Chan *c, void *va, long n, int64_t off)
 			n = 0;
 		else {
 			i = jehanne_strlen(p->note[0].msg) + 1;
-			if(i > n)
-				i = n;
+			if(i < n)
+				n = i;
 			rptr = va;
-			jehanne_memmove(rptr, p->note[0].msg, i);
-			rptr[i-1] = '\0';
-			p->nnote--;
+			jehanne_memmove(rptr, p->note[0].msg, n);
+			rptr[n-1] = '\0';
+			if(--p->nnote == 0)
+				p->notepending = 0;
 			jehanne_memmove(p->note, p->note+1, p->nnote*sizeof(Note));
-			n = i;
 		}
-		if(p->nnote == 0)
-			p->notepending = 0;
 		poperror();
 		qunlock(&p->debug);
 		psdecref(p);

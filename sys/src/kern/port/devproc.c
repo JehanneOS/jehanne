@@ -1281,6 +1281,11 @@ procwrite(Chan *c, void *va, long n, int64_t off)
 		pgrpcpy(up->pgrp, p->pgrp);
 		/* inherit noattach */
 		up->pgrp->noattach = p->pgrp->noattach;
+		/* inherit dot */
+		if(up->dot != nil)
+			cclose(up->dot);
+		up->dot = p->dot;
+		incref(&up->dot->r);
 		closepgrp(opg);
 		break;
 

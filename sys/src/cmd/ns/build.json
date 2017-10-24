@@ -1,0 +1,11 @@
+{
+	"ns": {
+		"Include": [
+			"../cmd.json"
+		],
+		"Install": "/arch/$ARCH/cmd/ns/",
+		"SourceFilesCmd": [
+			"cat.c"
+		]
+	}
+}

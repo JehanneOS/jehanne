@@ -38,7 +38,7 @@ int	rflag;
 void
 usage(void)
 {
-	fprint(2, "usage: ns [-r] [pid]\n");
+	fprint(2, "usage: ns/cat [-r] [pid]\n");
 	exits("usage");
 }
 

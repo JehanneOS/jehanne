@@ -5,7 +5,8 @@
 		],
 		"Install": "/arch/$ARCH/cmd/ns/",
 		"SourceFilesCmd": [
-			"cat.c"
+			"cat.c",
+			"clone.c"
 		]
 	}
 }

@@ -588,7 +588,7 @@ _procfdprint(Chan *c, int fd, int w, char *s, int ns, char *modestr)
 int
 procfdprint(Chan *c, int fd, int w, char *s, int ns)
 {
-	return _procfdprint(c, fd, w, s, ns, "s r w rw");
+	return _procfdprint(c, fd, w, s, ns, " s r wrw");
 }
 
 static int
@@ -635,12 +635,12 @@ procfds(Proc *p, char *va, int count, long offset)
 		c = f->fd[i];
 		if(c == nil)
 			continue;
-		modestr = "s r w rw";
+		modestr = " s r wrw";
 		if(p->blockingfd == i){
 			if(p->scallnr == SysPread)
-				modestr = "s R w Rw";
+				modestr = " s R wRw";
 			else
-				modestr = "s r W rW";
+				modestr = " s r WrW";
 		}
 		n += _procfdprint(c, i, w, a+n, count-n, modestr);
 		offset = procoffset(offset, a, &n);

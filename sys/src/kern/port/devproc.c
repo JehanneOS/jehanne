@@ -101,7 +101,7 @@ Dirtab procdir[] =
 	"note",		{Qnote},	0,			0000,
 	"noteid",	{Qnoteid},	0,			0664,
 	"notepg",	{Qnotepg},	0,			0000,
-	"ns",		{Qns},		0,			0440,
+	"ns",		{Qns},		0,			0640,
 	"proc",		{Qproc},	0,			0400,
 	"regs",		{Qregs},	sizeof(Ureg),		0000,
 	"segment",	{Qsegment},	0,			0444,
@@ -426,9 +426,14 @@ procopen(Chan *c, unsigned long omode)
 		break;
 
 	case Qns:
-		if(omode != OREAD)
+		if(omode == OREAD){
+			c->aux = jehanne_malloc(sizeof(Mntwalk));
+		} else if(omode == OWRITE){
+			if(up->pgrp->noattach || strcmp(up->user, p->user) != 0)
+				error(Eperm);
+		} else {
 			error(Eperm);
-		c->aux = jehanne_malloc(sizeof(Mntwalk));
+		}
 		break;
 
 	case Qnotepg:
@@ -1142,6 +1147,7 @@ static long
 procwrite(Chan *c, void *va, long n, int64_t off)
 {
 	Proc *p, *t;
+	Pgrp *opg;
 	int i, id, l;
 	char **args, buf[ERRMAX];
 	uintptr_t offset;
@@ -1257,6 +1263,17 @@ procwrite(Chan *c, void *va, long n, int64_t off)
 	case Qwdir:
 		n = write_working_dir(p, va, n, off);
 		break;
+	case Qns:
+		if(strcmp("clone", va) != 0)
+			error(Ebadarg);
+		opg = up->pgrp;
+		up->pgrp = newpgrp();
+		pgrpcpy(up->pgrp, p->pgrp);
+		/* inherit noattach */
+		up->pgrp->noattach = p->pgrp->noattach;
+		closepgrp(opg);
+		break;
+
 	default:
 		poperror();
 		qunlock(&p->debug);

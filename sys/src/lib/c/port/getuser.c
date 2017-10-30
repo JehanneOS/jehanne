@@ -23,8 +23,7 @@ jehanne_getuser(void)
 	n = read(fd, user, (sizeof user)-1);
 	close(fd);
 	if(n <= 0)
-		jehanne_strcpy(user, "none");
-	else
-		user[n] = 0;
+		return "none";
+	user[n] = '\0';
 	return user;
 }

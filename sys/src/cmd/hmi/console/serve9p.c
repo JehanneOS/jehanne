@@ -179,13 +179,14 @@ static int
 sendmessage(int fd, Fcall *rep)
 {
 	int n;
+	static uint8_t repdata[Maxiosize];
 
-	n = convS2M(rep, data, Maxiosize);
+	n = convS2M(rep, repdata, Maxiosize);
 	if(n == 0) {
 		debug("sendmessage: convS2M error\n");
 		return 0;
 	}
-	if(write(fd, data, n) != n) {
+	if(write(fd, repdata, n) != n) {
 		debug("sendmessage: write\n");
 		return 0;
 	}
@@ -994,7 +995,7 @@ fsserve(int connection, char *owner)
 
 	if(owner == nil)
 		sysfatal("owner undefined");
-	filesowner = owner;
+	filesowner = strdup(owner);
 
 	fspid = getpid();
 	req = malloc(sizeof(Fcall)+Maxfdata);

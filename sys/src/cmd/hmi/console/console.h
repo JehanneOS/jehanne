@@ -65,7 +65,7 @@ extern void post(char *srv, int fd);
 
 
 extern int fsinit(int *, int *);
-extern void fsserve(int, char*);
+extern void fsserve(int);
 
 extern void passthrough(int, int);
 

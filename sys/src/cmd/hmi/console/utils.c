@@ -85,24 +85,6 @@ debug(const char *fmt, ...)
 }
 
 /* process management */
-static char*
-gethostowner(void)
-{
-	int f, r;
-	char *res;
-
-	res = (char*)malloc(256);
-	if(res == nil)
-		sysfatal("out of memory");
-	f = open("#c/hostowner", OREAD);
-	if(f < 0)
-		sysfatal("open(#c/hostowner) %r");
-	r = read(f, res, 255);
-	if(r < 0)
-		sysfatal("read(#c/hostowner)");
-	close(f);
-	return res;
-}
 /* start the relevant services
  *
  * assumes that
@@ -116,11 +98,6 @@ int
 servecons(StreamFilter inputFilter, StreamFilter outputFilter, int *devmnt)
 {
 	int pid, input, output, fs, mnt;
-	char *s;
-
-	s = gethostowner();
-	if(s == nil)
-		sysfatal("cannot read hostowner");
 
 	pid = getpid();
 
@@ -142,18 +119,15 @@ servecons(StreamFilter inputFilter, StreamFilter outputFilter, int *devmnt)
 			close(0);
 			close(1);
 			close(mnt);
-			s = strdup(s);
 			PROVIDE(fs);
 			rfork(RFREND);
-			fsserve(fs, s);
+			fsserve(fs);
 			break;
 		default:
 			break;
 	}
 
 	WAIT_FOR(fs);
-	free(s);
-	s = nil;
 	close(fs);
 
 	/* start output device writer */

@@ -41,7 +41,6 @@ static Status status;
 static int rawmode;
 
 static int fspid;
-static char *filesowner;
 static void *data;
 
 enum {
@@ -533,10 +532,33 @@ invalidioreq(Fcall *req)
 		return "bad read/write count";
 	return nil;
 }
+static char*
+gethostowner(void)
+{
+	int f, r;
+	char *res;
+
+	res = (char*)malloc(256);
+	if(res == nil)
+		sysfatal("out of memory");
+	f = open("#c/hostowner", OREAD);
+	if(f < 0)
+		sysfatal("open(#c/hostowner) %r");
+	r = read(f, res, 255);
+	if(r < 0)
+		sysfatal("read(#c/hostowner)");
+	res[r] = '\0';
+	close(f);
+	return res;
+}
 static int
 fillstat(uint64_t path, Dir *d)
 {
 	struct Qtab *t;
+	static char *filesowner;
+
+	if(filesowner == nil)
+		filesowner = gethostowner();
 
 	memset(d, 0, sizeof(Dir));
 	d->uid = filesowner;
@@ -987,15 +1009,11 @@ fsinit(int *mnt, int *mntdev)
 }
 /* fsserve is the main loop */
 void
-fsserve(int connection, char *owner)
+fsserve(int connection)
 {
 	int r, w, syncrep;
 	Fcall	rep;
 	Fcall	*req;
-
-	if(owner == nil)
-		sysfatal("owner undefined");
-	filesowner = strdup(owner);
 
 	fspid = getpid();
 	req = malloc(sizeof(Fcall)+Maxfdata);

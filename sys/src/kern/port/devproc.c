@@ -46,6 +46,7 @@ enum
 	Qnotepg,
 	Qns,
 	Qproc,
+	Qppid,
 	Qregs,
 	Qsegment,
 	Qstatus,
@@ -103,6 +104,7 @@ Dirtab procdir[] =
 	"notepg",	{Qnotepg},	0,			0000,
 	"ns",		{Qns},		0,			0640,
 	"proc",		{Qproc},	0,			0400,
+	"ppid",		{Qppid},	0,			0400,
 	"regs",		{Qregs},	sizeof(Ureg),		0000,
 	"segment",	{Qsegment},	0,			0444,
 	"status",	{Qstatus},	STATSIZE,		0444,
@@ -384,6 +386,7 @@ procopen(Chan *c, unsigned long omode)
 		return tc;
 
 	case Qproc:
+	case Qppid:
 	case Qkregs:
 	case Qprofile:
 	case Qfd:
@@ -1102,6 +1105,10 @@ procread(Chan *c, void *va, long n, int64_t off)
 		r = readnum(offset, va, n, p->noteid, NUMSIZE);
 		psdecref(p);
 		return r;
+	case Qppid:
+		r = readnum(offset, va, n, p->parentpid, NUMSIZE);
+		psdecref(p);
+		return r;
 	case Qfd:
 		r = procfds(p, va, n, offset);
 		psdecref(p);
@@ -1302,6 +1309,36 @@ procwrite(Chan *c, void *va, long n, int64_t off)
 	return n;
 }
 
+static void
+procremove(Chan* c)
+{
+	Proc *p;
+	int pid;
+
+	if((p = psincref(SLOT(c->qid))) == nil)
+		error(Eprocdied);
+	qlock(&p->debug);
+	if(waserror()){
+		qunlock(&p->debug);
+		psdecref(p);
+		nexterror();
+	}
+	pid = PID(c->qid);
+	if(p->pid != pid)
+		error(Eprocdied);
+
+	switch(QID(c->qid)){
+	case Qppid:
+		errorl(nil, p->parentpid);
+		break;
+	case Qnoteid:
+		errorl(nil, p->noteid);
+		break;
+	default:
+		error(Eperm);
+	}
+}
+
 Dev procdevtab = {
 	'p',
 	"proc",
@@ -1319,7 +1356,7 @@ Dev procdevtab = {
 	devbread,
 	procwrite,
 	devbwrite,
-	devremove,
+	procremove,
 	procwstat,
 };
 

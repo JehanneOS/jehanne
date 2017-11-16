@@ -53,9 +53,10 @@ cwrite(Reader *r, char *cmd)
 void
 reader(void *v)
 {
-	int forking = 0, newpid;
+	int newpid;
 	Reader r;
 	Msg *s;
+	char *rf, *a[16];
 
 	r.pid = (int)(uintptr)v;
 	r.tfd = r.cfd = -1;
@@ -72,31 +73,19 @@ reader(void *v)
 	cwrite(&r, "startsyscall");
 
 	while(pread(r.tfd, s->buf, sizeof(s->buf)-1, 0) > 0){
-		if (forking && s->buf[1] == '=' && s->buf[3] != '-') {
-			forking = 0;
-			newpid = strtol(&s->buf[3], 0, 0);
-			sendp(forkc, (void*)(uintptr_t)newpid);
-			procrfork(reader, (void*)(uintptr_t)newpid, Stacksize, 0);
-		}
-
-		/*
-		 * There are three tests here and they (I hope) guarantee
-		 * no false positives.
-		 */
-		if (strstr(s->buf, " Rfork") != nil) {
-			char *a[8];
-			char *rf;
-
+		if(strstr(s->buf, " rfork ") != nil){
 			rf = strdup(s->buf);
-         		if (tokenize(rf, a, 8) == 5) {
-				unsigned long flags;
-
-				flags = strtoul(a[4], 0, 16);
-				if (flags & RFPROC)
-					forking = 1;
+			if(tokenize(rf, a, 9) == 9
+			&& a[4][0] == '<'
+			&& a[5][0] != '-'
+			&& strcmp(a[2], "rfork") == 0) {
+				newpid = strtol(a[5], 0, 0);
+				sendp(forkc, (void*)(uintptr_t)newpid);
+				procrfork(reader, (void*)(uintptr_t)newpid, Stacksize, 0);
 			}
 			free(rf);
 		}
+
 		s->pid = r.pid;
 		sendp(out, s);
 

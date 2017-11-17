@@ -10,6 +10,7 @@ Channel *out;
 Channel *quit;
 Channel *forkc;
 int readers = 1;
+int output;
 
 typedef struct Msg Msg;
 struct Msg {
@@ -80,8 +81,10 @@ reader(void *v)
 			&& a[5][0] != '-'
 			&& strcmp(a[2], "rfork") == 0) {
 				newpid = strtol(a[5], 0, 0);
-				sendp(forkc, (void*)(uintptr_t)newpid);
-				procrfork(reader, (void*)(uintptr_t)newpid, Stacksize, 0);
+				if(newpid){
+					sendp(forkc, (void*)(uintptr_t)newpid);
+					procrfork(reader, (void*)(uintptr_t)newpid, Stacksize, 0);
+				}
 			}
 			free(rf);
 		}
@@ -123,14 +126,14 @@ writer(int lastpid)
 				lastpid = s->pid;
 				if(lastc != '\n'){
 					lastc = '\n';
-					write(2, &lastc, 1);
+					write(output, &lastc, 1);
 				}
 				if(s->buf[1] == '=')
-					fprint(2, "%d ...", lastpid);
+					fprint(output, "%d ...", lastpid);
 			}
 			n = strlen(s->buf);
 			if(n > 0){
-				write(2, s->buf, n);
+				write(output, s->buf, n);
 				lastc = s->buf[n-1];
 			}
 			free(s);
@@ -145,7 +148,7 @@ writer(int lastpid)
 void
 usage(void)
 {
-	fprint(2, "Usage: sys/ctrace [pid] | [-c cmd [arg...]]\n");
+	fprint(2, "Usage: sys/ctrace [-o file] [pid] | [-c cmd [arg...]]\n");
 	threadexits("usage");
 }
 
@@ -158,12 +161,13 @@ threadmain(int argc, char **argv)
 
 	/*
 	 * don't bother with fancy arg processing, because it picks up options
-	 * for the command you are starting.  Just check for -c as argv[1]
-	 * and then take it from there.
+	 * for the command you are starting.
+	 * Just check for -o and -c as initial arguments and then take it from there.
 	 */
 	if (argc < 2)
 		usage();
-	if (argv[1][0] == '-')
+ParseArguments:
+	if (argv[1][0] == '-'){
 		switch(argv[1][1]) {
 		case 'c':
 			if (argc < 3)
@@ -171,9 +175,26 @@ threadmain(int argc, char **argv)
 			cmd = strdup(argv[2]);
 			args = &argv[2];
 			break;
+		case 'o':
+			if (argc < 4)	// sys/ctrace -o file pid
+				usage();
+			if (output)	// -o can only appear once
+				usage();
+			output = ocreate(argv[2], OWRITE|OCEXEC, 0660);
+			if(output < 0){
+				fprint(2, "sys/ctrace: cannot open %d: %r\n", argv[2]);
+				threadexits("output");
+			}
+			argc -= 2;
+			argv += 2;
+			goto ParseArguments;
 		default:
 			usage();
 		}
+	}
+
+	if(!output)
+		output = 2;
 
 	/* run a command? */
 	if(cmd) {

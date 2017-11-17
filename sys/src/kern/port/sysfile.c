@@ -51,7 +51,7 @@ growfd(Fgrp *f, int fd)	/* fd is always >= 0 */
 	 * Unbounded allocation is unwise
 	 */
 	if(f->nfd >= 5000){
-    Exhausted:
+Exhausted:
 		jehanne_print("no free file descriptors\n");
 		return -1;
 	}

@@ -323,13 +323,15 @@ syscall(Syscalls scallnr, Ureg* ureg)
 		}
 		if(up->syscallq != nil){
 			qlock(&up->debug);
-			if(up->syscallq != nil){
+			if(up->syscallq != nil
+			&& !waserror()){
 				notedefer();
 				if(!waserror()){
 					qwrite(up->syscallq, str, jehanne_strlen(str));
 					poperror();
 				}
 				noteallow();
+				poperror();
 			}
 			qunlock(&up->debug);
 		}

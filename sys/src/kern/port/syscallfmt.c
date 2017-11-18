@@ -1,7 +1,7 @@
 /*
  * This file is part of Jehanne.
  *
- * Copyright (C) 2015-2016 Giacomo Tesio <giacomo@tesio.it>
+ * Copyright (C) 2015-2017 Giacomo Tesio <giacomo@tesio.it>
  *
  * Jehanne is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,7 +31,7 @@ fmtrwdata(Fmt* f, char* a, int n)
 	char *t;
 
 	if(a == nil){
-		jehanne_fmtprint(f, " 0x0%s");
+		jehanne_fmtprint(f, " 0x0/\"\"");
 		return;
 	}
 	a = validaddr(a, n, 0);

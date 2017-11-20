@@ -857,6 +857,7 @@ procread(Chan *c, void *va, long n, int64_t off)
 		return n;
 
 	case Qsyscall:
+		psdecref(p);
 		return qread(c->aux, va, n);
 
 	case Qmem:
@@ -949,13 +950,18 @@ procread(Chan *c, void *va, long n, int64_t off)
 		rptr = (uint8_t*)&p->fpsave;
 		rsize = sizeof(FPsave);
 	regread:
-		if(rptr == nil)
+		if(rptr == nil){
+			psdecref(p);
 			error(Enoreg);
-		if(offset >= rsize)
+		}
+		if(offset >= rsize){
+			psdecref(p);
 			return 0;
+		}
 		if(offset+n > rsize)
 			n = rsize - offset;
 		memmove(a, rptr+offset, n);
+		psdecref(p);
 		return n;
 
 	case Qstatus:

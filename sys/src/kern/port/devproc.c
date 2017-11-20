@@ -826,6 +826,12 @@ procread(Chan *c, void *va, long n, int64_t off)
 		}
 		return rptr - (uint8_t*)va;
 	}
+	if(QID(c->qid) == Qsyscall && qcanread(c->aux)){
+		/* whatever the process status, the reader can read
+		 * pending syscall records
+		 */
+		return qread(c->aux, va, n);
+	}
 
 	if((p = psincref(SLOT(c->qid))) == nil)
 		error(Eprocdied);

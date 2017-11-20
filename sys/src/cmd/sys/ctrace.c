@@ -11,6 +11,7 @@ Channel *quit;
 Channel *forkc;
 int readers = 1;
 int output;
+int hanging = 0;
 
 typedef struct Msg Msg;
 struct Msg {
@@ -70,7 +71,10 @@ reader(void *v)
 	if ((r.tfd = open(s->buf, OREAD)) < 0)
 		die(&r);
 
-	cwrite(&r, "stop");
+	if(hanging)
+		cwrite(&r, "waitstop");
+	else
+		cwrite(&r, "stop");
 	cwrite(&r, "startsyscall");
 
 	while(pread(r.tfd, s->buf, sizeof(s->buf)-1, 0) > 0){
@@ -198,6 +202,7 @@ ParseArguments:
 
 	/* run a command? */
 	if(cmd) {
+		hanging	= 1;
 		pid = fork();
 		if (pid < 0)
 			sysfatal("fork failed: %r");

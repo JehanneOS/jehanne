@@ -355,7 +355,7 @@ syscall(Syscalls scallnr, Ureg* ureg)
 	splhi();
 	if(scallnr != SysRfork && (up->procctl || up->nnote))
 		notify(ureg);
-	else
+	if(up->nnote == 0)
 		awake_awakened(up);	// we are not sleeping after all!
 
 	/* if we delayed sched because we held a lock, sched now */

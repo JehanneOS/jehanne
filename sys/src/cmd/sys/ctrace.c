@@ -54,10 +54,11 @@ cwrite(Reader *r, char *cmd, int ignore_errors)
 void
 reader(void *v)
 {
-	int newpid;
+	int newpid, n;
 	Reader r;
 	Msg *s;
 	char *rf, *a[16];
+	long wakeup;
 
 	r.pid = (int)(uintptr)v;
 	r.tfd = r.cfd = -1;
@@ -73,7 +74,10 @@ reader(void *v)
 	cwrite(&r, "stop", 0);
 	cwrite(&r, "startsyscall", 0);
 
-	while(pread(r.tfd, s->buf, sizeof(s->buf)-1, 0) > 0){
+StartReading:
+	wakeup = awake(500);
+	while((n = pread(r.tfd, s->buf, sizeof(s->buf)-1, 0)) > 0){
+		forgivewkp(wakeup);
 		if(strstr(s->buf, " rfork ") != nil){
 			rf = strdup(s->buf);
 			if(tokenize(rf, a, 9) == 9
@@ -94,6 +98,11 @@ reader(void *v)
 
 		r.msg = s = mallocz(sizeof(Msg), 1);
 		cwrite(&r, "startsyscall", 1);
+		wakeup = awake(500);
+	}
+	if(n < 0 && awakened(wakeup)){
+		cwrite(&r, "startsyscall", 0);
+		goto StartReading;
 	}
 	die(&r);
 }

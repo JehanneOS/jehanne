@@ -10,7 +10,7 @@
 
 extern Channel *hc[2];
 
-static File *devcons, *devconsctl;
+static File *devcons, *devtty, *devconsctl;
 
 static Channel *readreq;
 static Channel *flushreq;
@@ -61,7 +61,7 @@ fsreader(void* _)
 static void
 fsread(Req *r)
 {
-	if(r->fid->file == devcons){
+	if(r->fid->file == devcons || r->fid->file == devtty){
 		sendp(readreq, r);
 		return;
 	}
@@ -118,7 +118,7 @@ cvtc2r(char *b, int n, Partutf *u)
 static void
 fswrite(Req *r)
 {
-	if(r->fid->file == devcons){
+	if(r->fid->file == devcons || r->fid->file == devtty){
 		Partutf *u;
 		Rune *rp;
 
@@ -206,6 +206,9 @@ mountcons(void)
 	devcons = createfile(fs.tree->root, "cons", "vt", 0666, nil);
 	if(devcons == nil)
 		sysfatal("creating /dev/cons: %r");
+	devtty = createfile(fs.tree->root, "tty", "vt", 0666, nil);
+	if(devtty == nil)
+		sysfatal("creating /dev/tty: %r");
 	devconsctl = createfile(fs.tree->root, "consctl", "vt", 0666, nil);
 	if(devconsctl == nil)
 		sysfatal("creating /dev/consctl: %r");

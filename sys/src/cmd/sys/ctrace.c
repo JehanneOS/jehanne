@@ -71,11 +71,11 @@ reader(void *v)
 	if ((r.tfd = open(s->buf, OREAD)) < 0)
 		die(&r);
 
+StartReading:
 	cwrite(&r, "stop", 0);
 	cwrite(&r, "startsyscall", 0);
 
-StartReading:
-	wakeup = awake(500);
+	wakeup = awake(750);
 	while((n = pread(r.tfd, s->buf, sizeof(s->buf)-1, 0)) > 0){
 		forgivewkp(wakeup);
 		if(strstr(s->buf, " rfork ") != nil){
@@ -100,9 +100,13 @@ StartReading:
 		cwrite(&r, "startsyscall", 1);
 		wakeup = awake(500);
 	}
-	if(n < 0 && awakened(wakeup)){
-		cwrite(&r, "startsyscall", 0);
-		goto StartReading;
+	if(awakened(wakeup)){
+		rf = smprint("/proc/%d/status", r.pid);
+		if(access(rf, AEXIST) == 0){
+			free(rf);
+			goto StartReading;
+		}
+		free(rf);
 	}
 	die(&r);
 }

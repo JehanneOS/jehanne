@@ -744,10 +744,15 @@ mntrdwr(int type, Chan *c, void *buf, long n, int64_t off)
 		r->request.count = nreq;
 		mountrpc(mnt, r);
 		nr = r->reply.count;
-		if(nr > nreq)
-			nr = nreq;
-		if(type == Tread)
+		if(type == Tread){
+			/* in Jehanne, we let the server respond
+			 * to Twrite with a count bigger than the
+			 * requested
+			 */
+			if(nr > nreq)
+				nr = nreq;
 			nr = readblist(r->b, (uint8_t*)uba, nr, 0);
+		}
 		mntfree(r);
 		poperror();
 

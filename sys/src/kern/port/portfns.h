@@ -33,6 +33,8 @@ Block*		allocb(int);
 Block*		allocbalign(int, int);
 int		anyhigher(void);
 int		anyready(void);
+Syscalls	awake_disable(void);
+void		awake_enable(Syscalls s);
 void		awake_tick(unsigned long tick);
 void		awake_timer(void*);
 void		awake_ringer(void*);

@@ -805,6 +805,7 @@ mountio(Mnt *mnt, Mntrpc *r)
 {
 	Block *b;
 	int n;
+	Syscalls awksysc;
 
 	while(waserror()) {
 		if(mnt->rip == up)
@@ -854,7 +855,28 @@ mountio(Mnt *mnt, Mntrpc *r)
 		if(mnt->rip == nil)
 			break;
 		unlock(&mnt->l);
+		if(r->request.type == Tflush){
+			/* Tflush must not be interrupted by awake
+			 * or we will consume all tags trying: since
+			 * awake cannot know that it's not worth to
+			 * flush an interrupted flush it will interrupt
+			 * them all and each interrupt will cause
+			 * a new flush to be sent.
+			 *
+			 * TODO: verify we do not have to do the same
+			 * with notes
+			 */
+			awksysc = awake_disable();
+			if(waserror()){
+				awake_enable(awksysc);
+				nexterror();
+			}
+		}
 		sleep(r->z, rpcattn, r);
+		if(r->request.type == Tflush){
+			awake_enable(awksysc);
+			poperror();
+		}
 		if(r->done){
 			poperror();
 			mntflushfree(mnt, r);

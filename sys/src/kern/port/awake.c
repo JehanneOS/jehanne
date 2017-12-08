@@ -239,6 +239,19 @@ awake_fell_asleep(Proc *p)
 	}
 }
 
+Syscalls
+awake_disable(void)
+{
+	Syscalls blockingsc = up->wakeups[up->notified].blockingsc;
+	up->wakeups[up->notified].blockingsc = 0;
+	return blockingsc;
+}
+void
+awake_enable(Syscalls s)
+{
+	up->wakeups[up->notified].blockingsc = s;
+}
+
 int
 awake_should_wake_up(Proc *p)
 {

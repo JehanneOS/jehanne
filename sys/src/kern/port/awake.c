@@ -54,6 +54,10 @@ static AlarmPool awkpool;
 static AwakeAlarm *registry;
 static Lock rl;
 
+enum
+{
+	AwakeDisabled = 64,	/* must be greater than all syscalls */
+};
 
 typedef enum ElapsedAlarmFate
 {
@@ -146,6 +150,8 @@ awake_can_interrupt(Syscalls scall)
 {
 	if(scall == 0)
 		panic("awake_can_interrupts on page fault");
+	if(scall == (Syscalls)AwakeDisabled)
+		return 0;
 	if(scall >= nelem(awakeable_syscalls) - 1)
 		panic("awake_can_interrupts: unknown syscall %d", scall);
 	return awakeable_syscalls[scall];
@@ -153,7 +159,7 @@ awake_can_interrupt(Syscalls scall)
 
 #else
 # define awake_detect_loop(h)
-# define awake_can_interrupt(scall)	(awakeable_syscalls[scall])
+# define awake_can_interrupt(scall)	(scall != (Syscalls)AwakeDisabled && awakeable_syscalls[scall])
 //# undef assert
 //# define assert(a)
 #endif
@@ -230,6 +236,8 @@ void
 awake_fell_asleep(Proc *p)
 {
 	Syscalls cs = p->cursyscall;
+	if(p->wakeups[p->notified].blockingsc == (Syscalls)AwakeDisabled)
+		return;
 	if(cs != 0 && cs != SysAwake){
 		/* awake_register might sleep() on alarm_new and we
 		 * don't want this sleep to be interrupted.
@@ -243,7 +251,7 @@ Syscalls
 awake_disable(void)
 {
 	Syscalls blockingsc = up->wakeups[up->notified].blockingsc;
-	up->wakeups[up->notified].blockingsc = 0;
+	up->wakeups[up->notified].blockingsc = AwakeDisabled;
 	return blockingsc;
 }
 void

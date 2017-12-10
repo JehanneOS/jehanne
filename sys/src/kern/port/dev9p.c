@@ -1,3 +1,20 @@
+/*
+ * This file is part of Jehanne.
+ *
+ * Copyright (C) 2015-2017 Giacomo Tesio <giacomo@tesio.it>
+ *
+ * Jehanne is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 2 of the License.
+ *
+ * Jehanne is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Jehanne.  If not, see <http://www.gnu.org/licenses/>.
+ */
 #include	"u.h"
 #include	"../port/lib.h"
 #include	"mem.h"
@@ -807,6 +824,7 @@ mountio(Mnt *mnt, Mntrpc *r)
 	int n;
 	Syscalls awksysc;
 
+	awksysc = 0;
 	while(waserror()) {
 		if(mnt->rip == up)
 			mntgate(mnt);
@@ -847,6 +865,23 @@ mountio(Mnt *mnt, Mntrpc *r)
 	}
 	b->wp += n;
 	poperror();
+
+	if(r->request.type == Tflush){
+		/* Tflush must not be interrupted by awake.
+		 *
+		 * The following code might call sleep() but it must
+		 * since the syscall has already been interrupted
+		 * (or we would not have to send a Tflush) awake must
+		 * not interrupt such sleep.
+		 *
+		 * Thus we disable awake otherwise we will consume all
+		 * tags trying to flush the flush.
+		 *
+		 * TODO: verify we do not have to do the same
+		 * with notes
+		 */
+		awksysc = awake_disable();
+	}
 	mnt->c->dev->bwrite(mnt->c, b, 0);
 
 	/* Gate readers onto the mount point one at a time */
@@ -855,29 +890,10 @@ mountio(Mnt *mnt, Mntrpc *r)
 		if(mnt->rip == nil)
 			break;
 		unlock(&mnt->l);
-		if(r->request.type == Tflush){
-			/* Tflush must not be interrupted by awake
-			 * or we will consume all tags trying: since
-			 * awake cannot know that it's not worth to
-			 * flush an interrupted flush it will interrupt
-			 * them all and each interrupt will cause
-			 * a new flush to be sent.
-			 *
-			 * TODO: verify we do not have to do the same
-			 * with notes
-			 */
-			awksysc = awake_disable();
-			if(waserror()){
-				awake_enable(awksysc);
-				nexterror();
-			}
-		}
 		sleep(r->z, rpcattn, r);
-		if(r->request.type == Tflush){
-			awake_enable(awksysc);
-			poperror();
-		}
 		if(r->done){
+			if(r->request.type == Tflush)
+				awake_enable(awksysc);
 			poperror();
 			mntflushfree(mnt, r);
 			return;
@@ -890,6 +906,9 @@ mountio(Mnt *mnt, Mntrpc *r)
 			error(Emountrpc);
 		mountmux(mnt, r);
 	}
+	if(r->request.type == Tflush)
+		awake_enable(awksysc);
+
 	mntgate(mnt);
 	poperror();
 	mntflushfree(mnt, r);

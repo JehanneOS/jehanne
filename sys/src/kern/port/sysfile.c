@@ -612,7 +612,7 @@ syspread(int fd, void *p, long n, int64_t off)
 		 * to read the buffer must be nil
 		 */
 InvalidAddress:
-		pprint("trap: invalid address %#p/%ld in pread pc=%#P\n", p, n, userpc(nil));
+		pprint("trap: invalid address %#p/%lld in pread pc=%#P\n", p, n, userpc(nil));
 		postnote(up, 1, "sys: bad address in pread", NDebug);
 		error(Ebadarg);
 	}

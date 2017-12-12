@@ -188,7 +188,7 @@ notify(Ureg* ureg)
 		pexit("Suicide", 0);
 	}
 
-	sp = ureg->sp - sizeof(NFrame);
+	sp = ureg->sp - ROUNDUP(sizeof(NFrame), 16);
 	if(!okaddr(sp, sizeof(NFrame), 1)){
 		qunlock(&up->debug);
 		pprint("suicide: bad stack address %#p in notify\n", sp);

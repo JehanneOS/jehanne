@@ -249,7 +249,8 @@ procgen(Chan *c, char *name, Dirtab *tab, int _1, int s, Dir *dp)
 		/* file length might be relevant to the caller to
 		 * malloc enough space in the buffer
 		 */
-		len = 1 + jehanne_strlen(p->dot->path->s);
+		if(p->dot)
+			len = 1 + jehanne_strlen(p->dot->path->s);
 		break;
 	}
 

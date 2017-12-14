@@ -403,6 +403,8 @@ procopen(Chan *c, unsigned long omode)
 	case Qnote:
 		if(p->privatemem)
 			error(Eperm);
+		if(p->state < Ready && omode != OREAD && omode != OSTAT)
+			error(Eperm);
 		break;
 
 	case Qmem:

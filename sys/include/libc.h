@@ -601,6 +601,7 @@ extern	int	jehanne_brk(void*);
 extern	int	jehanne_execl(const char*, ...);
 extern	int	jehanne_forgivewkp(int64_t);
 extern	pid_t	jehanne_fork(void);
+extern	int	jehanne_pexec(const char* cmd, char* args[]);
 extern	int32_t	jehanne_readn(int, void*, int32_t);
 extern	void*	jehanne_segbrk(uint32_t);
 #define sbrk(incr) jehanne_segbrk(incr)
@@ -674,4 +675,3 @@ extern char *argv0;
 
 /* this is used by segbrk and brk,  it's a really bad idea to redefine it */
 extern	char	end[];
-

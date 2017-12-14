@@ -60,6 +60,7 @@
 			"9sys/nsec.c",
 			"9sys/nulldir.c",
 			"9sys/ocreate.c",
+			"9sys/pexec.c",
 			"9sys/pipe.c",
 			"9sys/postnote.c",
 			"9sys/privalloc.c",

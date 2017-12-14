@@ -111,7 +111,8 @@
 			"sam/",
 			"samterm/",
 			"sys/",
-			"usb/"
+			"usb/",
+			"vt/"
 		]
 	}
 }

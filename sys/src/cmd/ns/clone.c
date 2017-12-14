@@ -22,8 +22,8 @@
 void
 main(int argc, char *argv[])
 {
-	int fd, npaths;
-	char buf[256], *cmd, **args, *paths[17];
+	int fd;
+	char buf[256], *cmd, **args;
 
 	rfork(RFNAMEG);
 	if(argc < 3){
@@ -48,16 +48,6 @@ main(int argc, char *argv[])
 		sysfatal("exec %s failed: %r", cmd);
 	}
 
-	npaths = getfields(getenv(ENV_PATH), paths, nelem(paths), 1, ":");
-
-	if(npaths == nelem(paths))
-		--npaths;	// ignore last (possibly spurious) path
-
-	fd = 0;
-	while(fd < npaths){
-		snprint(buf, sizeof(buf), "%s/%s", paths[fd], cmd);
-		exec(buf, args);
-		++fd;
-	}
+	jehanne_pexec(cmd, args);
 	sysfatal("exec %s failed: %r", cmd);
 }

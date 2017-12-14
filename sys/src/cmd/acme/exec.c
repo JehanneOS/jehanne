@@ -1203,7 +1203,7 @@ runproc(void *argvp)
 	/* end of args */
 	char *e, *t, *name, *filename, *dir, **av, *news;
 	Rune r, **incl;
-	int ac, w, inarg, i, n, fd, nincl, winid;
+	int ac, w, inarg, i, n, nincl, winid;
 	int pipechar;
 	char buf[512];
 	void **argv;
@@ -1366,24 +1366,6 @@ runproc(void *argvp)
 	goto Fail;
 
 Hard:
-
-	/*
-	 * ugly: set PATH = (/cmd . $CPUTYPE)
-	 * should honor $PATH if unusual.
-	 */
-	if(cputype){
-		n = 0;
-		memmove(buf+n, "/cmd:", 5);
-		n += 5;
-		memmove(buf+n, ".:", 2);
-		n += 2;
-		i = strlen(cputype)+1;
-		memmove(buf+n, cputype, i);
-		n += i;
-		fd = ocreate("/env/PATH", OWRITE, 0666);
-		write(fd, buf, n);
-		close(fd);
-	}
 
 	if(arg){
 		news = emalloc(strlen(t) + 1 + 1 + strlen(arg) + 1 + 1);

@@ -555,6 +555,7 @@ int
 Isatty(int fd)
 {
 	char buf[64];
+	int l;
 
 	if(fd2path(fd, buf, sizeof buf) != 0)
 		return 0;
@@ -563,8 +564,12 @@ Isatty(int fd)
 	if(strcmp(buf, "#c/cons") == 0)
 		return 1;
 
-	/* might be /mnt/term/dev/cons */
-	return strlen(buf) >= 9 && strcmp(buf+strlen(buf)-9, "/dev/cons") == 0;
+	/* might be /mnt/term/dev/cons or a virtual tty */
+	l = strlen(buf);
+	if((l >= 9 && strcmp(buf+l-9, "/dev/cons") == 0)
+	 ||(l >= 8 && strcmp(buf+l-8, "/dev/tty") == 0))
+		return 1;
+	return 0;
 }
 
 void

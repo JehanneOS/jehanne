@@ -4,6 +4,7 @@ arch/amd64/kern
 arch/amd64/lib
 arch/amd64/qa
 arch/amd64/include/syscalls.h
+arch/mksh/
 
 sys/src/9/port/error.h
 sys/src/9/root/nvram
@@ -20,3 +21,4 @@ o.*
 9pccpuf
 
 cfg/pxe/tftpboot
+usr/*/lib/mkshrc

@@ -1,10 +1,10 @@
-bind -a $home/cmd/rc /cmd
-bind -a $home/cmd/$cputype /cmd
+bind -a $HOME/cmd/rc /cmd
+bind -a $HOME/cmd/$CPUTYPE /cmd
 bind -c tmp /tmp
 if(! syscall create /tmp/xxx 1 0666 >[2]/dev/null)
 	ramfs	# in case we're running off a cd
 font = /lib/font/bit/fixed/unicode.6x13.font
-switch($service){
+switch($SERVICE){
 case terminal
 	plumber
 	echo -n accelerated > '#m/mousectl'
@@ -16,7 +16,7 @@ case cpu
 	if (test -e /mnt/term/mnt/wsys) { # rio already running
 		bind -a /mnt/term/mnt/wsys /dev
 		if(test -w /dev/label)
-			echo -n $sysname > /dev/label
+			echo -n $SYSNAME > /dev/label
 	}
 	bind /mnt/term/dev/cons /dev/cons
 	bind /mnt/term/dev/consctl /dev/consctl

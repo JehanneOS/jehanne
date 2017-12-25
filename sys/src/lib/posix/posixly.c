@@ -329,8 +329,10 @@ group_create(Process *leader)
 	ProcessGroup* g;
 	assert(leader != nil);
 
-	if((leader->flags & GroupLeader) || (leader->flags & SessionLeader))
+	if(leader->flags & SessionLeader)
 		return nil;	/* operation not permitted */
+	if(leader->group && leader->group->pgid == leader->pid)
+		return leader->group;	/* nothing to do */
 
 	g = mallocz(sizeof(ProcessGroup), 1);
 	if(g == nil)

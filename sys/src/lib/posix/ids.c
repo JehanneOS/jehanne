@@ -49,12 +49,14 @@ __libposix_sighelper_set_pgid(int target, int group)
 		long			raw;
 	} offset;
 	IntBuf buf;
+	long ret;
 
 	offset.request.command = PHSetProcessGroup;
 	offset.request.target = target;
 
 	buf.group = group;
-	return pwrite(*__libposix_devsignal, buf.raw, sizeof(buf.raw), offset.raw);
+	ret = pwrite(*__libposix_devsignal, buf.raw, sizeof(buf.raw), offset.raw);
+	return ret;
 }
 
 static int
@@ -77,11 +79,15 @@ CreateNewProcessGroup:
 		rfork(RFNOTEG);
 		return __libposix_sighelper_cmd(PHSetProcessGroup, mypid);
 	}
+	if(pid == 0)
+		pid = mypid;
 	ppid = get_ppid(pid);
 	if(ppid == -1 || pid != mypid && mypid != ppid){
 		*errnop = __libposix_get_errno(PosixESRCH);
 		return -1;
 	}
+	if(group == 0)
+		group = pid;
 	if(pid == group && pid == mypid)
 		goto CreateNewProcessGroup;
 

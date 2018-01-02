@@ -1,3 +1,10 @@
+/* Copyright (C) Charles Forsyth
+ * See /doc/license/NOTICE.Plan9-9k.txt for details about the licensing.
+ */
+/* Portions of this file are Copyright (C) 9front's team.
+ * See /doc/license/9front-mit for details about the licensing.
+ * See http://code.9front.org/hg/plan9front/ for a list of authors.
+ */
 typedef	struct	Fadt	Fadt;
 typedef	struct	Gas	Gas;
 typedef	struct	Tbl	Tbl;

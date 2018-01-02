@@ -2,6 +2,13 @@
  * intel 10gbe pcie driver
  * copyright © 2007—2012, coraid, inc.
  */
+/* Portions of this file are Copyright (C) Charles Forsyth
+ * See /doc/license/NOTICE.Plan9-9k.txt for details about the licensing.
+ */
+/* Portions of this file are Copyright (C) 9front's team.
+ * See /doc/license/9front-mit for details about the licensing.
+ * See http://code.9front.org/hg/plan9front/ for a list of authors.
+ */
 #include "u.h"
 #include "../port/lib.h"
 #include "mem.h"

@@ -6,6 +6,14 @@
  * we use uint64_t rather than uintptr_t to hold addresses so that
  * we don't get "warning: stupid shift" on 32-bit architectures.
  */
+
+/* Portions of this files are Copyright (C) Charles Forsyth
+ * See /doc/license/NOTICE.Plan9-9k.txt for details about the licensing.
+ */
+/* Portions of this file are Copyright (C) 9front's team.
+ * See /doc/license/9front-mit for details about the licensing.
+ * See http://code.9front.org/hg/plan9front/ for a list of authors.
+ */
 #include "u.h"
 #include "../port/lib.h"
 #include "mem.h"

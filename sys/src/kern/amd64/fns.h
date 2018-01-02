@@ -1,20 +1,14 @@
-/*
- * This file is part of Jehanne.
- *
- * Copyright (C) 2015-2016 Giacomo Tesio <giacomo@tesio.it>
- *
- * Jehanne is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, version 2 of the License.
- *
- * Jehanne is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with Jehanne.  If not, see <http://www.gnu.org/licenses/>.
+/* Copyright (C) Charles Forsyth
+ * See /doc/license/NOTICE.Plan9-9k.txt for details about the licensing.
  */
+/* Portions of this file are Copyright (C) 2015-2018 Giacomo Tesio <giacomo@tesio.it>
+ * See /doc/license/gpl-2.0.txt for details about the licensing.
+ */
+/* Portions of this file are Copyright (C) 9front's team.
+ * See /doc/license/9front-mit for details about the licensing.
+ * See http://code.9front.org/hg/plan9front/ for a list of authors.
+ */
+
 #include "../port/portfns.h"
 
 #define SUPPORT_MWAIT	(m->cpuinfo[1][2] & (1<<3))
@@ -307,4 +301,3 @@ int slim_setlabel(Label*) __attribute__((returns_twice));
                     err;})
 
 #pragma GCC diagnostic pop
-

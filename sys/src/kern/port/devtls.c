@@ -1,3 +1,10 @@
+/* Copyright (C) Charles Forsyth
+ * See /doc/license/NOTICE.Plan9-9k.txt for details about the licensing.
+ */
+/* Portions of this file are Copyright (C) 2015-2018 Giacomo Tesio <giacomo@tesio.it>
+ * See /doc/license/gpl-2.0.txt for details about the licensing.
+ */
+
 /*
  *  devtls - record layer for transport layer security 1.0 and secure sockets layer 3.0
  */

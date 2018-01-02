@@ -1,3 +1,6 @@
+/* Copyright (C) Charles Forsyth
+ * See /doc/license/NOTICE.Plan9-9k.txt for details about the licensing.
+ */
 #include "u.h"
 
 /* mul64fract(uint64_t*r, uint64_t a, uint64_t b)

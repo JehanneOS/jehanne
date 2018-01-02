@@ -1,3 +1,7 @@
+/* Portions of this file are Copyright (C) 2015-2018 Giacomo Tesio <giacomo@tesio.it>
+ * See /doc/license/gpl-2.0.txt for details about the licensing.
+ */
+
 #include "amd64.h"
 
 .code64

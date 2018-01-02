@@ -1,3 +1,6 @@
+/* Copyright (C) Charles Forsyth
+ * See /doc/license/NOTICE.Plan9-9k.txt for details about the licensing.
+ */
 typedef struct Mii Mii;
 typedef struct MiiPhy MiiPhy;
 

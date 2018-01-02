@@ -1,3 +1,11 @@
+/* Portions of this file are Copyright (C) 2015-2018 Giacomo Tesio <giacomo@tesio.it>
+ * See /doc/license/gpl-2.0.txt for details about the licensing.
+ */
+/* Portions of this file are Copyright (C) 9front's team.
+ * See /doc/license/9front-mit for details about the licensing.
+ * See http://code.9front.org/hg/plan9front/ for a list of authors.
+ */
+
 #include "u.h"
 #include "../port/lib.h"
 #include "mem.h"

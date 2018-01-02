@@ -1,3 +1,6 @@
+/* Copyright (C) Charles Forsyth
+ * See /doc/license/NOTICE.Plan9-9k.txt for details about the licensing.
+ */
 #include "u.h"
 #include "../port/lib.h"
 

@@ -6,6 +6,10 @@
  * modified, propagated, or distributed except according to the terms contained
  * in the LICENSE file.
  */
+/* Portions of this file are Copyright (C) 9front's team.
+ * See /doc/license/9front-mit for details about the licensing.
+ * See http://code.9front.org/hg/plan9front/ for a list of authors.
+ */
 
 #pragma	src	"/sys/src/lib/memdraw"
 #pragma	lib	"libmemdraw.a"
@@ -202,4 +206,3 @@ extern int		drawdebug;
 #pragma varargck type "lb" ulong
 #pragma varargck type "b" int
 #pragma varargck type "b" uint32_t
-

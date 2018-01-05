@@ -4,6 +4,9 @@
 /* Portions of this file are Copyright (C) 2015-2018 Giacomo Tesio <giacomo@tesio.it>
  * See /doc/license/gpl-2.0.txt for details about the licensing.
  */
+/* Portions of this file are Copyright (C) 2015 Ronald G. Minnich <rminnich@gmail.com>
+ * See /doc/license/gpl-2.0.txt for details about the licensing.
+ */
 #include	"u.h"
 #include	"../port/lib.h"
 #include	"mem.h"

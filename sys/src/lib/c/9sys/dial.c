@@ -6,6 +6,9 @@
  * modified, propagated, or distributed except according to the terms contained
  * in the LICENSE file.
  */
+/* Portions of this file are Copyright (C) 2015-2018 Giacomo Tesio <giacomo@tesio.it>
+ * See /doc/license/gpl-2.0.txt for details about the licensing.
+ */
 
 /*
  * dial - connect to a service (parallel version)

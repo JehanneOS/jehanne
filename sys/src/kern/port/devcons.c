@@ -665,7 +665,7 @@ enum{
 	Qosversion,
 	Qrandom,
 	Qreboot,
-	Qswap,
+	Qsysmem,
 	Qsysname,
 	Qsysstat,
 	Qtime,
@@ -693,7 +693,7 @@ static Dirtab consdir[]={
 	"osversion",	{Qosversion},	0,		0444,
 	"random",	{Qrandom},	0,		0444,
 	"reboot",	{Qreboot},	0,		0664,
-	"swap",		{Qswap},	0,		0664,
+	"sysmem",	{Qsysmem},	0,		0664,
 	"sysname",	{Qsysname},	0,		0664,
 	"sysstat",	{Qsysstat},	0,		0666,
 	"time",		{Qtime},	NUMSIZE+3*VLNUMSIZE,	0664,
@@ -985,7 +985,7 @@ consread(Chan *c, void *buf, long n, int64_t off)
 		poperror();
 		return n;
 
-	case Qswap:
+	case Qsysmem:
 		memory_stats(&mstats);
 		jehanne_snprint(tmp, sizeof tmp,
 			"%llud memory\n"
@@ -1150,7 +1150,7 @@ conswrite(Chan *c, void *va, long n, int64_t off)
 		}
 		break;
 
-	case Qswap:
+	case Qsysmem:
 		/* no more */
 		break;
 

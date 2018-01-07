@@ -27,11 +27,11 @@ struct Graph
 
 enum
 {
-	/* old /dev/swap */
+	/* old /dev/sysmem */
 	Mem		= 0,
 	Maxmem,
 	Swap,
-	Maxswap,
+	Maxsysmem,
 
 	Kern,
 	Maxkern,
@@ -62,7 +62,7 @@ struct Machine
 	char		*shortname;
 	int		remote;
 	int		statsfd;
-	int		swapfd;
+	int		sysmemfd;
 	int		etherfd;
 	int		ifstatsfd;
 	int		batteryfd;
@@ -70,7 +70,7 @@ struct Machine
 	int		tempfd;
 	int		disable;
 
-	uint64_t		devswap[8];
+	uint64_t		devsysmem[8];
 	uint64_t		devsysstat[10];
 	uint64_t		prevsysstat[10];
 	int		nproc;
@@ -120,7 +120,7 @@ enum Menu2
 	Mintr,
 	Mload,
 	Mmem,
-	Mswap,
+	Msysmem,
 	Mkern,
 	Mdraw,
 	Msyscall,
@@ -144,7 +144,7 @@ char	*menu2strtpl[Nmenu2+1] = {
 	"add  intr    ",
 	"add  load    ",
 	"add  mem     ",
-	"add  swap    ",
+	"add  sysmem  ",
 	"add  kern    ",
 	"add  draw    ",
 	"add  syscall ",
@@ -167,7 +167,7 @@ void	contextval(Machine*, uint64_t*, uint64_t*, int),
 	loadval(Machine*, uint64_t*, uint64_t*, int),
 	idleval(Machine*, uint64_t*, uint64_t*, int),
 	memval(Machine*, uint64_t*, uint64_t*, int),
-	swapval(Machine*, uint64_t*, uint64_t*, int),
+	sysmemval(Machine*, uint64_t*, uint64_t*, int),
 	kernval(Machine*, uint64_t*, uint64_t*, int),
 	drawval(Machine*, uint64_t*, uint64_t*, int),
 	syscallval(Machine*, uint64_t*, uint64_t*, int),
@@ -192,7 +192,7 @@ void	(*newvaluefn[Nmenu2])(Machine*, uint64_t*, uint64_t*, int init) = {
 	intrval,
 	loadval,
 	memval,
-	swapval,
+	sysmemval,
 	kernval,
 	drawval,
 	syscallval,
@@ -464,10 +464,10 @@ readnums(Machine *m, int n, uint64_t *a, int spanlines)
 }
 
 int
-readswap(Machine *m, uint64_t *a)
+readsysmem(Machine *m, uint64_t *a)
 {
 	if(strstr(m->buf, "memory\n")){
-		/* new /dev/swap - skip first 3 numbers */
+		/* new /dev/sysmem - skip first 3 numbers */
 		if(!readnums(m, 5, a, 1))
 			return 0;
 		a[0] = a[3];
@@ -569,10 +569,10 @@ initmach(Machine *m, char *name)
 		free(w);
 	}
 
-	snprint(buf, sizeof buf, "%s/dev/swap", mpt);
-	m->swapfd = open(buf, OREAD);
-	if(loadbuf(m, &m->swapfd) && readswap(m, a))
-		memmove(m->devswap, a, sizeof m->devswap);
+	snprint(buf, sizeof buf, "%s/dev/sysmem", mpt);
+	m->sysmemfd = open(buf, OREAD);
+	if(loadbuf(m, &m->sysmemfd) && readsysmem(m, a))
+		memmove(m->devsysmem, a, sizeof m->devsysmem);
 
 	snprint(buf, sizeof buf, "%s/dev/sysstat", mpt);
 	m->statsfd = open(buf, OREAD);
@@ -628,9 +628,9 @@ alarmed(void *a, char *s)
 }
 
 int
-needswap(int init)
+needsysmem(int init)
 {
-	return init | present[Mmem] | present[Mswap] | present[Mkern] | present[Mdraw];
+	return init | present[Mmem] | present[Msysmem] | present[Mkern] | present[Mdraw];
 }
 
 
@@ -693,8 +693,8 @@ readmach(Machine *m, int init)
 		atnotify(alarmed, 1);
 		alarm(5000);
 	}
-	if(needswap(init) && loadbuf(m, &m->swapfd) && readswap(m, a))
-		memmove(m->devswap, a, sizeof m->devswap);
+	if(needsysmem(init) && loadbuf(m, &m->sysmemfd) && readsysmem(m, a))
+		memmove(m->devsysmem, a, sizeof m->devsysmem);
 	if(needstat(init) && loadbuf(m, &m->statsfd)){
 		memmove(m->prevsysstat, m->devsysstat, sizeof m->devsysstat);
 		memset(m->devsysstat, 0, sizeof m->devsysstat);
@@ -725,17 +725,17 @@ readmach(Machine *m, int init)
 void
 memval(Machine *m, uint64_t *v, uint64_t *vmax, int _)
 {
-	*v = m->devswap[Mem];
-	*vmax = m->devswap[Maxmem];
+	*v = m->devsysmem[Mem];
+	*vmax = m->devsysmem[Maxmem];
 	if(*vmax == 0)
 		*vmax = 1;
 }
 
 void
-swapval(Machine *m, uint64_t *v, uint64_t *vmax, int _)
+sysmemval(Machine *m, uint64_t *v, uint64_t *vmax, int _)
 {
-	*v = m->devswap[Swap];
-	*vmax = m->devswap[Maxswap];
+	*v = m->devsysmem[Swap];
+	*vmax = m->devsysmem[Maxsysmem];
 	if(*vmax == 0)
 		*vmax = 1;
 }
@@ -743,8 +743,8 @@ swapval(Machine *m, uint64_t *v, uint64_t *vmax, int _)
 void
 kernval(Machine *m, uint64_t *v, uint64_t *vmax, int _)
 {
-	*v = m->devswap[Kern];
-	*vmax = m->devswap[Maxkern];
+	*v = m->devsysmem[Kern];
+	*vmax = m->devsysmem[Maxkern];
 	if(*vmax == 0)
 		*vmax = 1;
 }
@@ -752,8 +752,8 @@ kernval(Machine *m, uint64_t *v, uint64_t *vmax, int _)
 void
 drawval(Machine *m, uint64_t *v, uint64_t *vmax, int _)
 {
-	*v = m->devswap[Draw];
-	*vmax = m->devswap[Maxdraw];
+	*v = m->devsysmem[Draw];
+	*vmax = m->devsysmem[Maxdraw];
 	if(*vmax == 0)
 		*vmax = 1;
 }
@@ -1337,7 +1337,7 @@ main(int argc, char *argv[])
 		addgraph(Msignal);
 		break;
 	case 'w':
-		addgraph(Mswap);
+		addgraph(Msysmem);
 		break;
 	case 'k':
 		addgraph(Mkern);

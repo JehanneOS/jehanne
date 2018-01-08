@@ -1,7 +1,7 @@
 /*
  * This file is part of Jehanne.
  *
- * Copyright (C) 2015 Giacomo Tesio <giacomo@tesio.it>
+ * Copyright (C) 2015-2018 Giacomo Tesio <giacomo@tesio.it>
  *
  * Jehanne is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,6 +34,7 @@ extern int systemwide;	/* all the system depend on this console:
 extern int blind;	/* no feedback for input, disables rawmode */
 extern int linecontrol;
 extern int crnl;	/* turn \n into \r\n to output device */
+extern int posix;	/* Qcons name is "tty" instead of "cons" */
 
 extern int debugging;
 extern void enabledebug(const char *);

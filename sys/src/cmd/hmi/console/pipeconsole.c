@@ -1,7 +1,7 @@
 /*
  * This file is part of Jehanne.
  *
- * Copyright (C) 2015 Giacomo Tesio <giacomo@tesio.it>
+ * Copyright (C) 2015-2018 Giacomo Tesio <giacomo@tesio.it>
  *
  * Jehanne is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@ int crnl;
 static void
 usage(void)
 {
-	fprint(2, "usage: %s [-d dbgfile] [-l] [-b] program [args]\n", argv0);
+	fprint(2, "usage: %s [-d dbgfile] [-l] [-b] [-P] program [args]\n", argv0);
 	exits("usage");
 }
 void
@@ -48,6 +48,9 @@ main(int argc, char *argv[])
 	case 'l':
 		linecontrol = 0;
 		break;
+	case 'P':
+		posix = 1;
+		break;
 	default:
 		usage();
 	}ARGEND;
@@ -66,10 +69,15 @@ main(int argc, char *argv[])
 	/* become the requested program */
 	rfork(RFNOTEG|RFREND|RFCFDG);
 
-	fd = open("/dev/cons", OREAD);
-	fd = open("/dev/cons", OWRITE);
+	if(posix){
+		fd = open("/dev/tty", OREAD);
+		fd = open("/dev/tty", OWRITE);
+	} else {
+		fd = open("/dev/cons", OREAD);
+		fd = open("/dev/cons", OWRITE);
+	}
 	if(dup(fd, 2) != 2)
 		sysfatal("bad FDs: %r");
-	exec(argv[0], argv);
+	jehanne_pexec(argv[0], argv);
 	sysfatal("exec %s: %r", argv[0]);
 }

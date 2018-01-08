@@ -1,7 +1,7 @@
 /*
  * This file is part of Jehanne.
  *
- * Copyright (C) 2015 Giacomo Tesio <giacomo@tesio.it>
+ * Copyright (C) 2015-2018 Giacomo Tesio <giacomo@tesio.it>
  *
  * Jehanne is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,6 +36,7 @@ typedef enum
 } Status;
 
 int systemwide;
+int posix;
 
 static Status status;
 static int rawmode;
@@ -1014,6 +1015,9 @@ fsserve(int connection)
 	int r, w, syncrep;
 	Fcall	rep;
 	Fcall	*req;
+
+	if(posix)
+		qtab[Qcons].name = "tty";
 
 	fspid = getpid();
 	req = malloc(sizeof(Fcall)+Maxfdata);

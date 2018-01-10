@@ -1,7 +1,7 @@
 /*
  * This file is part of Jehanne.
  *
- * Copyright (C) 2017 Giacomo Tesio <giacomo@tesio.it>
+ * Copyright (C) 2017-2018 Giacomo Tesio <giacomo@tesio.it>
  *
  * This is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -20,6 +20,8 @@
 #include <lib9.h>
 #include <posix.h>
 #include "internal.h"
+
+extern int __libposix_O_NONBLOCK;
 
 static int
 fcntl_dup(int *errnop, int fd, int minfd)
@@ -150,8 +152,9 @@ POSIX_fcntl(int *errnop, int fd, PosixFDCmds cmd, uintptr_t arg)
 			return -1;
 		return flags & (~OCEXEC);
 	case PosixFDCSetFL:
+		flags = (int)arg;
+		__libposix_set_non_blocking(fd, flags & __libposix_O_NONBLOCK);
 		return 0;
-		break;
 	}
 
 	*errnop = __libposix_get_errno(PosixEINVAL);

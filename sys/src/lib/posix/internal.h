@@ -142,3 +142,4 @@ extern long __libposix_sighelper_set(PosixHelperCommand command, PosixSignalMask
 extern long __libposix_sighelper_signal(PosixHelperCommand command, int target, PosixSignalInfo *siginfo);
 extern long __libposix_sighelper_wait(PosixSignalMask set, PosixSignalInfo *siginfo);
 extern long __libposix_sighelper_set_pgid(int target, int group_id);
+extern void __libposix_set_non_blocking(int fd, int enable);

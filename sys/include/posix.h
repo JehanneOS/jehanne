@@ -1,7 +1,7 @@
 /*
  * This file is part of Jehanne.
  *
- * Copyright (C) 2017 Giacomo Tesio <giacomo@tesio.it>
+ * Copyright (C) 2017-2018 Giacomo Tesio <giacomo@tesio.it>
  *
  * This is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -374,6 +374,9 @@ extern int libposix_translate_error(PosixErrorTranslator translation, uintptr_t 
 
 /* define the value of AT_FDCWD according to the library headers */
 extern int libposix_define_at_fdcwd(int AT_FDCWD);
+
+/* define the value of O_NONBLOCK according to the library headers */
+extern int libposix_define_ononblock(int O_NONBLOCK);
 
 /* define the value of a specific PosixError according to the library headers */
 extern int libposix_define_errno(PosixError e, int errno);

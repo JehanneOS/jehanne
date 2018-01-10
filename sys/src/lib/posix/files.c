@@ -1,7 +1,7 @@
 /*
  * This file is part of Jehanne.
  *
- * Copyright (C) 2017 Giacomo Tesio <giacomo@tesio.it>
+ * Copyright (C) 2017-2018 Giacomo Tesio <giacomo@tesio.it>
  *
  * This is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -32,6 +32,11 @@ static int __libposix_X_OK;
 static int *__libposix_coe_fds;
 static int __libposix_coe_fds_size;
 static int __libposix_coe_fds_used;
+
+int __libposix_O_NONBLOCK;
+static int *__libposix_nb_fds;
+static int __libposix_nb_fds_size;
+static int __libposix_nb_fds_used;
 
 typedef enum SeekTypes
 {
@@ -111,6 +116,53 @@ __libposix_should_close_on_exec(int fd)
 	int i = 0;
 	while(i < __libposix_coe_fds_size){
 		if(__libposix_coe_fds[i] == fd)
+			return 1;
+		++i;
+	}
+	return 0;
+}
+
+void
+__libposix_set_non_blocking(int fd, int enable)
+{
+	int i;
+	if(__libposix_nb_fds_size == __libposix_nb_fds_used){
+		__libposix_nb_fds_size += 8;
+		__libposix_nb_fds = realloc(__libposix_nb_fds, __libposix_nb_fds_size * sizeof(int));
+		i = __libposix_nb_fds_size;
+		while(i > __libposix_nb_fds_used)
+			__libposix_nb_fds[--i] = -1;
+	}
+	/* remove fd if already present */
+	i = 0;
+	while(i < __libposix_nb_fds_size){
+		if(__libposix_nb_fds[i] == fd){
+			__libposix_nb_fds[i] = -1;
+			--__libposix_nb_fds_used;
+			break;
+		}
+		++i;
+	}
+	if(enable){
+		/* add fd to ensure it will not block */
+		i = 0;
+		while(i < __libposix_nb_fds_size){
+			if(__libposix_nb_fds[i] == -1){
+				__libposix_nb_fds[i] = fd;
+				break;
+			}
+			++i;
+		}
+		++__libposix_nb_fds_used;
+	}
+}
+
+int
+__libposix_should_not_block(int fd)
+{
+	int i = 0;
+	while(i < __libposix_nb_fds_size){
+		if(__libposix_nb_fds[i] == fd)
 			return 1;
 		++i;
 	}
@@ -295,8 +347,11 @@ POSIX_open(int *errnop, const char *name, int flags, int mode)
 	} else {
 		f = ocreate(name, (unsigned int)omode, (unsigned int)cperm);
 	}
-	if(f >= 0)
+	if(f >= 0){
+		if(flags & __libposix_O_NONBLOCK)
+			__libposix_set_non_blocking(f, 1);
 		return f;
+	}
 	*errnop = __libposix_translate_errstr((uintptr_t)POSIX_open);
 	return -1;
 
@@ -308,40 +363,60 @@ FailWithError:
 long
 POSIX_read(int *errnop, int fd, char *buf, size_t len)
 {
-	long r;
+	long r, wkp = 0;
 
 	if(fd < 0){
 		*errnop = __libposix_get_errno(PosixEBADF);
 		return -1;
 	}
 OnIgnoredSignalInterrupt:
+	if(__libposix_should_not_block(fd))
+		wkp = awake(2);
 	r = sys_pread(fd, buf, len, -1);
 	if(r < 0){
+		if(wkp){
+			if(!awakened(wkp))
+				forgivewkp(wkp);
+			*errnop = __libposix_get_errno(PosixEAGAIN);
+			return -1;
+		}
 		if(__libposix_restart_syscall())
 			goto OnIgnoredSignalInterrupt;
 		*errnop = __libposix_translate_errstr((uintptr_t)POSIX_read);
 		return -1;
 	}
+	if(wkp)
+		forgivewkp(wkp);
 	return r;
 }
 
 long
 POSIX_write(int *errnop, int fd, const void *buf, size_t len)
 {
-	long w;
+	long w, wkp = 0;
 
 	if(fd < 0){
 		*errnop = __libposix_get_errno(PosixEBADF);
 		return -1;
 	}
 OnIgnoredSignalInterrupt:
+	if(__libposix_should_not_block(fd))
+		wkp = awake(2);
 	w = sys_pwrite(fd, buf, len, -1);
 	if(w < 0){
+		if(wkp){
+			if(!awakened(wkp))
+				forgivewkp(wkp);
+			*errnop = __libposix_get_errno(PosixEAGAIN);
+			return -1;
+		}
 		if(__libposix_restart_syscall())
 			goto OnIgnoredSignalInterrupt;
 		*errnop = __libposix_translate_errstr((uintptr_t)POSIX_write);
 		return -1;
 	}
+	if(wkp)
+		forgivewkp(wkp);
 	return w;
 }
 
@@ -370,40 +445,60 @@ POSIX_lseek(int *errnop, int fd, off_t pos, int whence)
 long
 POSIX_pread(int *errnop, int fd, char *buf, size_t len, long offset)
 {
-	long r;
+	long r, wkp = 0;
 
 	if(fd < 0){
 		*errnop = __libposix_get_errno(PosixEBADF);
 		return -1;
 	}
 OnIgnoredSignalInterrupt:
+	if(__libposix_should_not_block(fd))
+		wkp = awake(2);
 	r = sys_pread(fd, buf, len, offset);
 	if(r < 0){
+		if(wkp){
+			if(!awakened(wkp))
+				forgivewkp(wkp);
+			*errnop = __libposix_get_errno(PosixEAGAIN);
+			return -1;
+		}
 		if(__libposix_restart_syscall())
 			goto OnIgnoredSignalInterrupt;
 		*errnop = __libposix_translate_errstr((uintptr_t)POSIX_read);
 		return -1;
 	}
+	if(wkp)
+		forgivewkp(wkp);
 	return r;
 }
 
 long
 POSIX_pwrite(int *errnop, int fd, const char *buf, size_t len, long offset)
 {
-	long w;
+	long w, wkp = 0;
 
 	if(fd < 0){
 		*errnop = __libposix_get_errno(PosixEBADF);
 		return -1;
 	}
 OnIgnoredSignalInterrupt:
+	if(__libposix_should_not_block(fd))
+		wkp = awake(2);
 	w = sys_pwrite(fd, buf, len, offset);
 	if(w < 0){
+		if(wkp){
+			if(!awakened(wkp))
+				forgivewkp(wkp);
+			*errnop = __libposix_get_errno(PosixEAGAIN);
+			return -1;
+		}
 		if(__libposix_restart_syscall())
 			goto OnIgnoredSignalInterrupt;
 		*errnop = __libposix_translate_errstr((uintptr_t)POSIX_write);
 		return -1;
 	}
+	if(wkp)
+		forgivewkp(wkp);
 	return w;
 }
 
@@ -879,5 +974,14 @@ libposix_define_at_fdcwd(int AT_FDCWD)
 	if(__libposix_AT_FDCWD != 0)
 		return -1;
 	__libposix_AT_FDCWD = AT_FDCWD;
+	return 0;
+}
+
+int
+libposix_define_ononblock(int O_NONBLOCK)
+{
+	if(__libposix_O_NONBLOCK != 0)
+		return -1;
+	__libposix_O_NONBLOCK = O_NONBLOCK;
 	return 0;
 }

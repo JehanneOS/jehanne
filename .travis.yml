@@ -9,6 +9,7 @@ cache:
   directories:
   - tmp/toolchain/
 before_install:
+- sudo apt-get install --reinstall ca-certificates
 - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
 - sudo add-apt-repository ppa:ubuntu-lxc/lxd-stable -y
 - sudo add-apt-repository ppa:jacob/virtualisation -y

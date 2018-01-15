@@ -11,7 +11,7 @@ cache:
 before_install:
 - sudo apt-get install --reinstall ca-certificates
 - sudo -E add-apt-repository ppa:ubuntu-toolchain-r/test -y
-- sudo -E add-apt-repository ppa:ubuntu-lxc/lxd-stable -y
+- sudo -E add-apt-repository ppa:ubuntu-lxc/lxc-stable -y
 - sudo -E add-apt-repository ppa:jacob/virtualisation -y
 - sudo apt-get update
 - sudo apt-get install -y --force-yes gcc-4.9 g++-4.9 rc golang build-essential flex bison qemu-system syslinux

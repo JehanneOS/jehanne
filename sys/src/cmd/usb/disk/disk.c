@@ -64,7 +64,7 @@ Part *
 lookpart(Umsc *lun, char *name)
 {
 	Part *part, *p;
-	
+
 	part = lun->part;
 	for(p=part; p < &part[Qmax]; p++){
 		if(p->inuse && strcmp(p->name, name) == 0)
@@ -77,7 +77,7 @@ Part *
 freepart(Umsc *lun)
 {
 	Part *part, *p;
-	
+
 	part = lun->part;
 	for(p=part; p < &part[Qmax]; p++){
 		if(!p->inuse)
@@ -139,7 +139,7 @@ void
 fixlength(Umsc *lun, int64_t blocks)
 {
 	Part *part, *p;
-	
+
 	part = lun->part;
 	part[Qdata].length = blocks;
 	for(p=&part[Qdata+1]; p < &part[Qmax]; p++){
@@ -171,7 +171,7 @@ ctlstring(Umsc *lun)
 {
 	Part *p, *part;
 	Fmt fmt;
-	
+
 	part = &lun->part[0];
 
 	fmtstrinit(&fmt);
@@ -194,7 +194,7 @@ ctlparse(Umsc *lun, char *msg)
 	int64_t start, end;
 	char *argv[16];
 	int argc;
-	
+
 	argc = tokenize(msg, argv, nelem(argv));
 
 	if(argc < 1){
@@ -265,6 +265,7 @@ umsreset(void)
 		fprint(2, "disk: reset: %r\n");
 		return -1;
 	}
+	sleep(100);
 	return 0;
 }
 
@@ -574,7 +575,7 @@ dirgen(int n, Dir* d, void *aux)
 {
 	Umsc *lun;
 	int i;
-	
+
 	lun = aux;
 	for(i = Qctl; i < Qmax; i++){
 		if(lun->part[i].inuse == 0)
@@ -1043,7 +1044,7 @@ umsdevfree(void *a)
  * for windows driver installation. switch mode here
  * and exit if we detect one so the real driver can
  * attach it.
- */ 
+ */
 static void
 notreallyums(Dev *dev)
 {
@@ -1083,7 +1084,7 @@ main(int argc, char **argv)
 	}ARGEND
 	if(argc != 1)
 		usage();
-	
+
 	dev = getdev(*argv);
 	if(dev == nil)
 		sysfatal("getdev: %r");

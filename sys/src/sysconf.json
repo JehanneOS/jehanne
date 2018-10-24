@@ -121,7 +121,7 @@
 		{
 			"Args": [
 				"int32_t",
-				"const char*",
+				"char*",
 				"uint32_t"
 			],
 			"Id": 10,

@@ -60,10 +60,10 @@ These are my rules of thumb:
 **Do not abstract**  
 : Replace abstractions used less than 3 times. Remove unused code.
 
-Aestetics
+Aesthetics
 ---------
 
-I do not care too much about aestetics, but readability matters.  
+I do not care too much about aesthetics, but readability matters.  
 Unfortunately, just like any other programmer, what I find readable
 largely depends on the code that I had to debug in the past.
 
@@ -154,8 +154,8 @@ environment with `./hacking/devshell.sh` that will start a new Bash:
 
 * your `$PS1` will be prepended with "JehanneDEV "
 * the environment variable `$JEHANNE` will hold the path of the root
-  of the respository
-* the environment variable `$ARCH` will be "amd64" (aka x86_64, the
+  of the repository
+* the environment variable `$ARCH` will be "amd64" (aka x86\_64, the
   only supported architecture so far)
 * `$PATH` will include `$JEHANNE/hacking/bin` and
   `$JEHANNE/hacking/cross/toolchain/bin`
@@ -191,7 +191,7 @@ that [Aki was right]: a general purpose language provide both power
 and painless evolution to a build system.
 
 Thus, to build Jehanne you use the `build` commands.
-Its source code is at `./hacking/src/jehanne/cmd/` and its documantation
+Its source code is at `./hacking/src/jehanne/cmd/` and its documentation
 can be obtained with `build --help`.
 
 It consumes small JSON files (usually named `build.json`) describing the
@@ -371,7 +371,7 @@ Finally `./hacking/continuous-build.sh` and
 
 Third parties
 -------------
-In the hacking/third_party directory you can file the
+In the `hacking/third_party` directory you can file the
 [Go 9P2000 server] used during development and [drawterm], both
 downloaded as git submodules and compiled by `./hacking/buildtools.sh`.
 

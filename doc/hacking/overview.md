@@ -37,10 +37,10 @@ file and stick with it. Note however that this won't apply to libraries.
 Use good sense
 --------------
 
-> Le bon sens est la chose du monde la mieux partagée; car 
+> Le bon sens est la chose du monde la mieux partagée; car
 > chacun pense en être si bien pourvu, que ceux même qui sont les
 > plus difficiles à contenter en toute autre chose n’ont point coutume
-> d’en désirer plus qu’ils en ont.  
+> d’en désirer plus qu’ils en ont.
 >
 > -- [René Descartes], [Discours de la méthode]
 
@@ -60,10 +60,10 @@ These are my rules of thumb:
 **Do not abstract**  
 : Replace abstractions used less than 3 times. Remove unused code.
 
-Aestetics
+Aesthetics
 ---------
 
-I do not care too much about aestetics, but readability matters.  
+I do not care too much about aesthetics, but readability matters.  
 Unfortunately, just like any other programmer, what I find readable
 largely depends on the code that I had to debug in the past.
 
@@ -87,10 +87,10 @@ The conventions I try to honor are:
         }
         
         switch(v){
-        case AnOption:	
+        case AnOption:
         	...
         	break;
-        case AnotherOption:	
+        case AnotherOption:
         	...
         	break;
         default:
@@ -110,26 +110,26 @@ The conventions I try to honor are:
         }
     ```
 
-5.  Use one space around `=`  `+`  `-`  `<`  `>`  `*`  `/`  `%`  
+5.  Use one space around `=`  `+`  `-`  `<`  `>`  `*`  `/`  `%`
     `|`  `&`  `^`  `<=`  `>=`  `==`  `!=`  `?`  `:`, but no space between
     unary operators (`&`  `*`  `+`  `-`  `~`  `!`  `sizeof`  `typeof`
-    `alignof`  `__attribute__`  `defined`  `++`  `--`) and their 
+    `alignof`  `__attribute__`  `defined`  `++`  `--`) and their
     operand, and obviously no space around the `.` and `->` structure
     member operators
 
 6.  Use short names in local variables and module functions when the
-    meaning is obvious in the context using them (`tmp`, `i`, `j`).  
+    meaning is obvious in the context using them (`tmp`, `i`, `j`).
 
 7.  Use descriptive names for globally visible functions and variables
     (eg `proc_segment_detach`). In Jehanne's kernel a few frequently
-    used global variables are allowed to violate this rule: 
+    used global variables are allowed to violate this rule:
     `up` (current user process), `m` (current processor) and `sys`.
-    
+
 8.  Use `typedefs` for struct and enums (CamelCase) but not for pointers.
 
 9.  Functions should be short, do one thing, hold few local variables
     and `goto` a centralized cleanup section on error.
-    Keep in mind errors when designing the return values of your functions.  
+    Keep in mind errors when designing the return values of your functions.
     Use Plan9's `error()` machinery only in functions directly called by
     other modules (like `Dev` methods and exported ones), not just
     to easily unroll the stack.
@@ -154,8 +154,8 @@ environment with `./hacking/devshell.sh` that will start a new Bash:
 
 * your `$PS1` will be prepended with "JehanneDEV "
 * the environment variable `$JEHANNE` will hold the path of the root
-  of the respository
-* the environment variable `$ARCH` will be "amd64" (aka x86_64, the
+  of the repository
+* the environment variable `$ARCH` will be "amd64" (aka x86\_64, the
   only supported architecture so far)
 * `$PATH` will include `$JEHANNE/hacking/bin` and
   `$JEHANNE/hacking/cross/toolchain/bin`
@@ -164,7 +164,7 @@ environment with `./hacking/devshell.sh` that will start a new Bash:
 
 `devshell.sh` also gives you an hook to customize your development
 environment without touching the repository: if the
-`$JEHANNE_DEVELOPER_DIR` (default: `~/.jehanne/`) exists and contains 
+`$JEHANNE_DEVELOPER_DIR` (default: `~/.jehanne/`) exists and contains
 a script named `devshell.sh`, such script will be sourced.
 For example my own `devshell.sh` starts a couple of terminals.
 
@@ -191,7 +191,7 @@ that [Aki was right]: a general purpose language provide both power
 and painless evolution to a build system.
 
 Thus, to build Jehanne you use the `build` commands.
-Its source code is at `./hacking/src/jehanne/cmd/` and its documantation
+Its source code is at `./hacking/src/jehanne/cmd/` and its documentation
 can be obtained with `build --help`.
 
 It consumes small JSON files (usually named `build.json`) describing the
@@ -219,14 +219,14 @@ to day testing is done with Qemu.
 To run the system in Qemu you can run:
 
 `./hacking/runOver9P.sh`
-: that connects a 9P2000 server running on the linux host 
+: that connects a 9P2000 server running on the linux host
   to mount `$JEHANNE` as the root file system
 
 `./hacking/runDisk.sh [path/to/disk/image]`
 : that uses the disk image
   provided (or `$DISK`) to as the root file system
 
-`./hacking/QA.sh` 
+`./hacking/QA.sh`
 : used by `runqemu` to start the workhorse or to execute the QA checks
   (it should not be executed directly).
 
@@ -245,13 +245,13 @@ These scripts react to a few environment variables:
 : number of simmetric processors to use
 
 Qemu will multiplex the terminal I/O between Jehanne's serial console
-and Qemu monitor. To switch between the two use `Ctrl-a x`. 
+and Qemu monitor. To switch between the two use `Ctrl-a x`.
 To stop Qemu use `Ctrl-a c`.
 
 To create or update a bootable usb stick (or a disk image to be used
 with Bochs or Qemu) you can use:
 
-`./hacking/disk-create.sh` 
+`./hacking/disk-create.sh`
 : creates a raw disk image at `$DISK`
   (default `./hacking/sample-disk.img`). It uses syslinux, its bios
   files (looked up at `$SYSLINUXBIOS`) and fdisk, but it can be run as
@@ -280,7 +280,7 @@ Debugging
 ---------
 Once you get used to the codebase, debugging Jehanne is pretty simple.
 
-First start the system in Qemu with either `./hacking/runOver9P.sh` or 
+First start the system in Qemu with either `./hacking/runOver9P.sh` or
 `./hacking/runDisk.sh`. If `$KAPPEND` contains the string "waitgdb",
 Jehanne will stop at an early stage after the boot and will wait for a
 gdb connection.
@@ -315,7 +315,7 @@ another hook to ease your debug as you like.
 
 If `$JEHANNE_GDB_LOGS` is defined the whole session will be logged there,
 prepended with the current commit hash and a brief summary of the
-repository status. 
+repository status.
 
 The workhorse
 -------------
@@ -330,7 +330,7 @@ Custom Go tools
 Here is a brief summary of the other custom tools in
 `./hacking/src/jehanne/cmd/`:
 
-`runqemu` 
+`runqemu`
 : runs Jehanne in a qemu instance and send commands to it.
   It is used both during compilation (to create the initial ram disk,
   for example) and to run [quality checks].
@@ -371,7 +371,7 @@ Finally `./hacking/continuous-build.sh` and
 
 Third parties
 -------------
-In the hacking/third_party directory you can file the
+In the `hacking/third_party` directory you can file the
 [Go 9P2000 server] used during development and [drawterm], both
 downloaded as git submodules and compiled by `./hacking/buildtools.sh`.
 

@@ -95,7 +95,7 @@ typedef union NativeTypes
 	volatile unsigned int ui;
 	volatile long l;
 	volatile unsigned long ul;
-	volatile void* p;
+	void* p;
 } NativeTypes;
 extern volatile NativeTypes* _sysargs;
 # include "syscalls.h"

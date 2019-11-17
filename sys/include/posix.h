@@ -242,6 +242,24 @@ typedef enum PosixFDCmds
 	PosixFDCSetFL
 } PosixFDCmds;
 
+/* https://pubs.opengroup.org/onlinepubs/9699919799/functions/sysconf.html
+ */
+typedef enum PosixSysConfNames
+{
+	/* Posix 1 */
+	PosixSCNArgMax = 1,	// _SC_ARG_MAX
+	PosixSCNChildMax,	// _SC_CHILD_MAX
+	PosixSCNHostNameMax,	// _SC_HOST_NAME_MAX
+	PosixSCNLoginNameMax,	// _SC_LOGIN_NAME_MAX
+	PosixSCNClockTicks,	// _SC_CLK_TCK
+	PosixSCNOpenMax,	// _SC_OPEN_MAX
+	PosixSCNPageSize,	// _SC_PAGESIZE
+	PosixSCNPosixVersion,	// _SC_VERSION
+
+	/* Posix 2 */
+	PosixSCNLineMax		// _SC_LINE_MAX
+} PosixSysConfNames;
+
 #endif /* _LIBPOSIX_DEF */
 
 #ifndef _LIBPOSIX_H
@@ -305,6 +323,7 @@ extern unsigned int POSIX_sleep(unsigned int seconds);
 extern int POSIX_pipe(int *errnop, int fildes[2]);
 extern int POSIX_umask(int *errnop, int mask);
 extern int POSIX_fcntl(int *errnop, int fd, PosixFDCmds cmd, uintptr_t arg);
+extern long POSIX_sysconf(int *errnop, PosixSysConfNames name);
 
 extern int POSIX_sigaddset(int *errnop, PosixSignalMask *set, int signo);
 extern int POSIX_sigdelset(int *errnop, PosixSignalMask *set, int signo);

@@ -1,6 +1,7 @@
 {
 	"LibPosix": {
 		"Cflags": [
+			"-DPORTABLE_SYSCALLS",
 			"-DARCH=\"$ARCH\"",
 			"-fasm",
 			"-I."
@@ -27,6 +28,7 @@
 			"sigqueue.c",
 			"sigsets.c",
 			"sigsuspend.c",
+			"sysconf.c",
 			"termios.c",
 			"timers.c"
 		]

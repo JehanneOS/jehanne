@@ -544,6 +544,35 @@ POSIX_unlink(int *errnop, const char *name)
 }
 
 int
+POSIX_rmdir(int *errnop, const char *name)
+{
+	Dir *db;
+	long ret;
+	if(name == nil || name[0] == 0){
+		*errnop = __libposix_get_errno(PosixENOENT);
+		return -1;
+	}
+	ret = sys_remove(name);
+	switch(ret){
+	case 0:
+		return 0;
+	case ~0:
+		db = nil;
+		if((db=dirstat(name))!=nil && (db->qid.type&QTDIR)){
+			*errnop = __libposix_translate_errstr((uintptr_t)POSIX_rmdir);
+		} else {
+			*errnop = __libposix_get_errno(PosixENOTDIR);
+		}
+		free(db);
+		break;
+	default:
+		*errnop = ret;
+		break;
+	}
+	return -1;
+}
+
+int
 POSIX_fstat(int *errnop, int file, void *pstat)
 {
 	Dir *d;

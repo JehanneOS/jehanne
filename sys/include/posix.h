@@ -1,7 +1,7 @@
 /*
  * This file is part of Jehanne.
  *
- * Copyright (C) 2017-2018 Giacomo Tesio <giacomo@tesio.it>
+ * Copyright (C) 2017-2019 Giacomo Tesio <giacomo@tesio.it>
  *
  * This is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -324,6 +324,7 @@ extern int POSIX_pipe(int *errnop, int fildes[2]);
 extern int POSIX_umask(int *errnop, int mask);
 extern int POSIX_fcntl(int *errnop, int fd, PosixFDCmds cmd, uintptr_t arg);
 extern long POSIX_sysconf(int *errnop, PosixSysConfNames name);
+extern int POSIX_rmdir(int *errnop, const char *name);
 
 extern int POSIX_sigaddset(int *errnop, PosixSignalMask *set, int signo);
 extern int POSIX_sigdelset(int *errnop, PosixSignalMask *set, int signo);

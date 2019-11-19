@@ -64,7 +64,7 @@ POSIX_usleep(int *errnop, unsigned int usec)
 int
 POSIX_pause(int *errnop)
 {
-	rendezvous((void*)~0, 1);
+	rendezvous((void*)~0, (void*)1);
 	*errnop = __libposix_get_errno(PosixEINTR);
 	return -1;
 }

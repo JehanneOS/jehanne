@@ -1,7 +1,7 @@
 /*
  * This file is part of Jehanne.
  *
- * Copyright (C) 2017-2018 Giacomo Tesio <giacomo@tesio.it>
+ * Copyright (C) 2017-2019 Giacomo Tesio <giacomo@tesio.it>
  *
  * This is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -343,7 +343,7 @@ POSIX_open(int *errnop, const char *name, int flags, int mode)
 		omode &= ~DMDIR;
 	}
 	if(cperm == 0){
-		f = sys_open(name, omode);
+		f = open(name, omode);
 	} else {
 		f = ocreate(name, (unsigned int)omode, (unsigned int)cperm);
 	}
@@ -372,7 +372,7 @@ POSIX_read(int *errnop, int fd, char *buf, size_t len)
 OnIgnoredSignalInterrupt:
 	if(__libposix_should_not_block(fd))
 		wkp = awake(2);
-	r = sys_pread(fd, buf, len, -1);
+	r = pread(fd, buf, len, -1);
 	if(r < 0){
 		if(wkp){
 			if(!awakened(wkp))
@@ -402,7 +402,7 @@ POSIX_write(int *errnop, int fd, const void *buf, size_t len)
 OnIgnoredSignalInterrupt:
 	if(__libposix_should_not_block(fd))
 		wkp = awake(2);
-	w = sys_pwrite(fd, buf, len, -1);
+	w = pwrite(fd, buf, len, -1);
 	if(w < 0){
 		if(wkp){
 			if(!awakened(wkp))
@@ -435,7 +435,7 @@ POSIX_lseek(int *errnop, int fd, off_t pos, int whence)
 		*errnop = __libposix_get_errno(PosixEBADF);
 		return -1;
 	}
-	r = sys_seek(fd, pos, stype);
+	r = seek(fd, pos, stype);
 	if(r >= 0)
 		return r;
 	*errnop = __libposix_translate_errstr((uintptr_t)POSIX_lseek);
@@ -454,7 +454,7 @@ POSIX_pread(int *errnop, int fd, char *buf, size_t len, long offset)
 OnIgnoredSignalInterrupt:
 	if(__libposix_should_not_block(fd))
 		wkp = awake(2);
-	r = sys_pread(fd, buf, len, offset);
+	r = pread(fd, buf, len, offset);
 	if(r < 0){
 		if(wkp){
 			if(!awakened(wkp))
@@ -484,7 +484,7 @@ POSIX_pwrite(int *errnop, int fd, const char *buf, size_t len, long offset)
 OnIgnoredSignalInterrupt:
 	if(__libposix_should_not_block(fd))
 		wkp = awake(2);
-	w = sys_pwrite(fd, buf, len, offset);
+	w = pwrite(fd, buf, len, offset);
 	if(w < 0){
 		if(wkp){
 			if(!awakened(wkp))
@@ -507,7 +507,7 @@ POSIX_close(int *errno, int file)
 {
 	long ret;
 
-	ret = sys_close(file);
+	ret = close(file);
 	switch(ret){
 	case 0:
 		return 0;
@@ -529,7 +529,7 @@ POSIX_unlink(int *errnop, const char *name)
 		*errnop = __libposix_get_errno(PosixENOENT);
 		return -1;
 	}
-	ret = sys_remove(name);
+	ret = remove(name);
 	switch(ret){
 	case 0:
 		return 0;
@@ -552,7 +552,7 @@ POSIX_rmdir(int *errnop, const char *name)
 		*errnop = __libposix_get_errno(PosixENOENT);
 		return -1;
 	}
-	ret = sys_remove(name);
+	ret = remove(name);
 	switch(ret){
 	case 0:
 		return 0;

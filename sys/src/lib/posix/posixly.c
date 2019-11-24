@@ -1,7 +1,7 @@
 /*
  * This file is part of Jehanne.
  *
- * Copyright (C) 2017 Giacomo Tesio <giacomo@tesio.it>
+ * Copyright (C) 2017-2019 Giacomo Tesio <giacomo@tesio.it>
  *
  * This is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -1765,7 +1765,7 @@ tty_from_cons(int fd, int mode)
 	int tmp;
 	char buf[256];
 
-	if(sys_fd2path(fd, buf, sizeof(buf)) < 0)
+	if(fd2path(fd, buf, sizeof(buf)) < 0)
 		sysfatal("fd2path: %d", fd);
 	tmp = strlen(buf);
 	if(tmp < 9 || strcmp(buf+tmp-9, "/dev/cons") != 0)

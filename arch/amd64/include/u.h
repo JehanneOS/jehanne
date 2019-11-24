@@ -85,17 +85,4 @@ typedef __builtin_va_list va_list;
 #define va_arg(v,l)	__builtin_va_arg(v,l)
 #define va_copy(v,l)	__builtin_va_copy(v,l)
 
-typedef union NativeTypes
-{
-	volatile char c;
-	volatile unsigned char uc;
-	volatile short s;
-	volatile unsigned short us;
-	volatile int i;
-	volatile unsigned int ui;
-	volatile long l;
-	volatile unsigned long ul;
-	void* p;
-} NativeTypes;
-extern volatile NativeTypes* _sysargs;
 # include "syscalls.h"

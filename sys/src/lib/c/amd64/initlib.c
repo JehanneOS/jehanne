@@ -1,7 +1,7 @@
 /*
  * This file is part of Jehanne.
  *
- * Copyright (C) 2017 Giacomo Tesio <giacomo@tesio.it>
+ * Copyright (C) 2017-2019 Giacomo Tesio <giacomo@tesio.it>
  *
  * Jehanne is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,13 +31,11 @@ __jehanne_libc_init(int argc, char *argv[])
 {
 	/* Initialize per process structures on the stack */
 	void *privates[NPRIVATES];
-	NativeTypes sysargs[6];
 
 	_nprivates = NPRIVATES;
 	for(_nprivates = 0; _nprivates < NPRIVATES; ++_nprivates)
 		privates[_nprivates] = nil;
 	_privates = privates;
-	_sysargs = &sysargs[0];
 
 	if(__libc_init != nil)
 		__libc_init(argc, argv);

@@ -1,7 +1,7 @@
 /*
  * This file is part of Jehanne.
  *
- * Copyright (C) 2016-2017 Giacomo Tesio <giacomo@tesio.it>
+ * Copyright (C) 2016-2019 Giacomo Tesio <giacomo@tesio.it>
  *
  * Jehanne is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -120,7 +120,7 @@ static void*	(*_rendezvousp)(void*, void*) = __rendezvous;
 #endif
 
 # define RENDEZVOUS(...) (*_rendezvousp)(__VA_ARGS__)
-//# define RENDEZVOUS(...) sys_rendezvous(__VA_ARGS__)
+//# define RENDEZVOUS(...) rendezvous(__VA_ARGS__)
 //# define RENDEZVOUS(tag, val) __rendezvous(tag, __builtin_return_address(0))
 
 /* this gets called by the thread library ONLY to get us to use its rendezvous */
@@ -821,4 +821,3 @@ jehanne_rwakeupall(Rendez *r)
 		;
 	return i;
 }
-

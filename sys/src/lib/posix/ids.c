@@ -1,7 +1,7 @@
 /*
  * This file is part of Jehanne.
  *
- * Copyright (C) 2017 Giacomo Tesio <giacomo@tesio.it>
+ * Copyright (C) 2017-2019 Giacomo Tesio <giacomo@tesio.it>
  *
  * This is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -239,7 +239,7 @@ POSIX_setsid(int *errnop)
 	assert(access("/dev/posix", AEXIST) != 0);
 
 	/* start the new session */
-	switch(controlpid = sys_rfork(RFPROC|RFNOTEG|RFENVG|RFFDG)){
+	switch(controlpid = rfork(RFPROC|RFNOTEG|RFENVG|RFFDG)){
 	case -1:
 		goto FailWithEPERM;
 	case 0:

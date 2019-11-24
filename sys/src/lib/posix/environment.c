@@ -1,7 +1,7 @@
 /*
  * This file is part of Jehanne.
  *
- * Copyright (C) 2017 Giacomo Tesio <giacomo@tesio.it>
+ * Copyright (C) 2017-2019 Giacomo Tesio <giacomo@tesio.it>
  *
  * This is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -240,8 +240,7 @@ __libposix_setup_exec_environment(char * const *env)
 			continue;
 		end++; /* after '=' */
 		len = strlen(end);
-		sys_pwrite(fd, end, len, -1);
-		sys_close(fd);
+		pwrite(fd, end, len, -1);
+		close(fd);
 	}
 }
-

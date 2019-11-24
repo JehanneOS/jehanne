@@ -6,5 +6,3 @@ char *argv0;
 int32_t _mainpid;
 char *_privates;
 char *_nprivates;
-volatile NativeTypes* _sysargs;
-

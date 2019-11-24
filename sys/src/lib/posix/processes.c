@@ -1,7 +1,7 @@
 /*
  * This file is part of Jehanne.
  *
- * Copyright (C) 2017 Giacomo Tesio <giacomo@tesio.it>
+ * Copyright (C) 2017-2019 Giacomo Tesio <giacomo@tesio.it>
  *
  * This is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -179,9 +179,9 @@ POSIX_execve(int *errnop, const char *name, char * const*argv, char * const*env)
 	// see http://pubs.opengroup.org/onlinepubs/9699919799/functions/exec.html
 	if(env == environ){
 		/* just get a copy of the current environment */
-		sys_rfork(RFENVG);
+		rfork(RFENVG);
 	} else {
-		sys_rfork(RFCENVG);
+		rfork(RFCENVG);
 		__libposix_setup_exec_environment(env);
 	}
 
@@ -189,7 +189,7 @@ POSIX_execve(int *errnop, const char *name, char * const*argv, char * const*env)
 	__libposix_close_on_exec();
 	__libposix_sighelper_cmd(PHCallingExec, 0);
 
-	sys_exec(name, argv);
+	exec(name, argv);
 	*errnop = __libposix_translate_errstr((uintptr_t)POSIX_execve);
 	return -1;
 }

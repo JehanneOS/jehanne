@@ -1,7 +1,7 @@
 /*
  * This file is part of Jehanne.
  *
- * Copyright (C) 2017 Giacomo Tesio <giacomo@tesio.it>
+ * Copyright (C) 2017-2019 Giacomo Tesio <giacomo@tesio.it>
  *
  * This is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -29,7 +29,7 @@ POSIX_isatty(int *errnop, int fd)
 		*errnop = __libposix_get_errno(PosixEBADF);
 		return 0;
 	}
-	if(sys_fd2path(fd, buf, sizeof(buf)) < 0){
+	if(fd2path(fd, buf, sizeof(buf)) < 0){
 		*errnop = __libposix_get_errno(PosixENOTTY);
 		return 0;
 	}

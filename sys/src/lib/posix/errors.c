@@ -1,7 +1,7 @@
 /*
  * This file is part of Jehanne.
  *
- * Copyright (C) 2017 Giacomo Tesio <giacomo@tesio.it>
+ * Copyright (C) 2017-2019 Giacomo Tesio <giacomo@tesio.it>
  *
  * This is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -173,7 +173,7 @@ __libposix_translate_errstr(uintptr_t caller)
 	char err[ERRMAX];
 	int ret;
 
-	if(sys_errstr(err, ERRMAX) < 0)
+	if(errstr(err, ERRMAX) < 0)
 		return __libposix_get_errno(PosixEINVAL);
 
 	handler = custom_handlers;
@@ -189,6 +189,6 @@ __libposix_translate_errstr(uintptr_t caller)
 	if(perr == 0)
 		perr = libposix_translate_kernel_errors(err);
 	ret = __libposix_get_errno(perr);
-	sys_errstr(err, ERRMAX);
+	errstr(err, ERRMAX);
 	return ret;
 }

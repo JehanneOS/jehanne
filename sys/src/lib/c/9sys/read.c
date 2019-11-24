@@ -1,7 +1,7 @@
 /*
  * This file is part of Jehanne.
  *
- * Copyright (C) 2015 Giacomo Tesio <giacomo@tesio.it>
+ * Copyright (C) 2015-2019 Giacomo Tesio <giacomo@tesio.it>
  *
  * Jehanne is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,5 +22,5 @@
 int
 read(int fd, void* buf, int nbytes)
 {
-	return sys_pread(fd, buf, nbytes, ~0LL);
+	return pread(fd, buf, nbytes, ~0LL);
 }

@@ -15,12 +15,11 @@
  * You should have received a copy of the GNU General Public License
  * along with Jehanne.  If not, see <http://www.gnu.org/licenses/>.
  */
-#define PORTABLE_SYSCALLS
 #include <u.h>
 #include <libc.h>
 
 int
-read(int fd, void* buf, int nbytes)
+jehanne_read(int fd, void* buf, int nbytes)
 {
-	return pread(fd, buf, nbytes, ~0LL);
+	return sys_pread(fd, buf, nbytes, ~0LL);
 }

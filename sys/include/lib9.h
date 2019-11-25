@@ -1,7 +1,7 @@
 /*
  * This file is part of Jehanne.
  *
- * Copyright (C) 2017 Giacomo Tesio <giacomo@tesio.it>
+ * Copyright (C) 2017-2019 Giacomo Tesio <giacomo@tesio.it>
  *
  * Jehanne is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -309,3 +309,5 @@
 #define sizeD2M jehanne_sizeD2M
 #define dirmodefmt jehanne_dirmodefmt
 #define chartorune jehanne_chartorune
+#define read(fd, buf, size) jehanne_pread(fd, buf, size, -1)
+#define write(fd, buf, size) jehanne_pwrite(fd, buf, size, -1)

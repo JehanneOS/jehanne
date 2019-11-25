@@ -15,12 +15,11 @@
  * You should have received a copy of the GNU General Public License
  * along with Jehanne.  If not, see <http://www.gnu.org/licenses/>.
  */
-#define PORTABLE_SYSCALLS
 #include <u.h>
 #include <libc.h>
 
 int
-write(int fd, const void* buf, int nbytes)
+jehanne_write(int fd, const void* buf, int nbytes)
 {
-	return pwrite(fd, buf, nbytes, ~0LL);
+	return sys_pwrite(fd, buf, nbytes, ~0LL);
 }

@@ -614,6 +614,9 @@ extern	Waitmsg*	jehanne_wait(void);
 extern	int	jehanne_waitpid(void);
 extern	int	jehanne_wstat(const char*, uint8_t*, int);
 
+extern	int32_t	jehanne_read(int, void*, int32_t);
+extern	int32_t	jehanne_write(int, const void*, int32_t);
+
 extern	Dir*	jehanne_dirstat(const char*);
 extern	Dir*	jehanne_dirfstat(int);
 extern	int	jehanne_dirwstat(const char*, Dir*);

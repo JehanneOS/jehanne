@@ -296,7 +296,7 @@ extern int POSIX_getpid(int *errnop);
 extern int POSIX_getppid(int *errnop);
 extern int POSIX_isatty(int *errnop, int file);
 extern int POSIX_kill(int *errnop, int pid, int sig);
-extern int POSIX_link(int *errnop, const char *old, const char *new);
+extern int POSIX_link(int *errnop, const char *existingPath, const char *newPath);
 extern off_t POSIX_lseek(int *errnop, int fd, off_t pos, int whence);
 extern int POSIX_open(int *errnop, const char *name, int flags, int mode);
 extern long POSIX_pread(int *errnop, int fd, char *buf, size_t len, long offset);

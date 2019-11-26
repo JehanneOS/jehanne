@@ -39,17 +39,17 @@ FILE *freopen(const char *name, const char *mode, FILE *f){
 	default:
 		return NULL;
 	case 'r':
-		f->fd=open(name, (*mode == '+'? ORDWR: OREAD));
+		f->fd=sys_open(name, (*mode == '+'? ORDWR: OREAD));
 		break;
 	case 'w':
 		f->fd=ocreate(name, (*mode == '+'? ORDWR: OWRITE), 0666);
 		break;
 	case 'a':
 		m = (*mode == '+'? ORDWR: OWRITE);
-		f->fd=open(name, m);
+		f->fd=sys_open(name, m);
 		if(f->fd<0)
 			f->fd=ocreate(name, m, 0666);
-		seek(f->fd, 0LL, 2);
+		sys_seek(f->fd, 0LL, 2);
 		break;
 	}
 

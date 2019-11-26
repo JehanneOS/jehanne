@@ -74,7 +74,7 @@ main(int argc, char *argv[])
 
 	dhcpinit();
 
-	rfork(RFNOTEG|RFREND);
+	sys_rfork(RFNOTEG|RFREND);
 
 	thread(timerthread, 0);
 	thread(stdinthread, 0);
@@ -91,7 +91,7 @@ main(int argc, char *argv[])
 		dhcprecv();
 
 	/* allows other clients on this machine */
-	close(dhcp.fd);
+	sys_close(dhcp.fd);
 	dhcp.fd = -1;
 
 	print("ip=%I\n", dhcp.client);
@@ -118,7 +118,7 @@ main(int argc, char *argv[])
 			dhcprecv();
 
 		/* allows other clients on this machine */
-		close(dhcp.fd);
+		sys_close(dhcp.fd);
 		dhcp.fd = -1;
 	}
 }
@@ -190,7 +190,7 @@ stdinthread(void* v)
 	int n;
 
 	for(;;) {
-		n = read(0, buf, sizeof(buf));
+		n = jehanne_read(0, buf, sizeof(buf));
 		if(n <= 0)
 			break;
 	}
@@ -216,10 +216,10 @@ dhcpinit(void)
 	dhcp.state = Sinit;
 	dhcp.timeout = 4;
 
-	fd = open("/dev/random", OREAD);
+	fd = sys_open("/dev/random", OREAD);
 	if(fd >= 0) {
-		read(fd, &dhcp.xid, sizeof(dhcp.xid));
-		close(fd);
+		jehanne_read(fd, &dhcp.xid, sizeof(dhcp.xid));
+		sys_close(fd);
 	} else
 		dhcp.xid = time(0)*getpid();
 	srand(dhcp.xid);
@@ -279,7 +279,7 @@ dhcpsend(int type)
 
 	n = p - (uint8_t*)&bp;
 
-	if(write(dhcp.fd, &bp, n) != n)
+	if(jehanne_write(dhcp.fd, &bp, n) != n)
 		myfatal("dhcpsend: write failed: %r");
 }
 
@@ -293,7 +293,7 @@ dhcprecv(void)
 	uint8_t mask[IPaddrlen];
 
 	qunlock(&dhcp.lk);
-	n = read(dhcp.fd, buf, sizeof(buf));
+	n = jehanne_read(dhcp.fd, buf, sizeof(buf));
 	qlock(&dhcp.lk);
 
 	if(n <= 0)
@@ -382,10 +382,10 @@ openlisten(char *net)
 		myfatal("can't set header mode: %r");
 
 	sprint(data, "%s/data", devdir);
-	fd = open(data, ORDWR);
+	fd = sys_open(data, ORDWR);
 	if(fd < 0)
 		myfatal("open %s: %r", data);
-	close(cfd);
+	sys_close(cfd);
 	return fd;
 }
 
@@ -645,7 +645,7 @@ thread(void(*f)(void*), void *a)
 {
 	int pid;
 
-	pid = rfork(RFNOWAIT|RFMEM|RFPROC);
+	pid = sys_rfork(RFNOWAIT|RFMEM|RFPROC);
 	if(pid < 0)
 		myfatal("rfork failed: %r");
 	if(pid != 0)

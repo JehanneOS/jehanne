@@ -48,7 +48,7 @@ authentication(int cpuflag)
 	case -1:
 		fatal("starting factotum");
 	case 0:
-		exec(factotumPath, (const char**)av);
+		sys_exec(factotumPath, (const char**)av);
 		fatal("execing factotum");
 	default:
 		break;
@@ -72,11 +72,11 @@ glenda(void)
 	if(s == nil)
 		s = "glenda";
 
-	fd = open("#c/hostowner", OWRITE);
+	fd = sys_open("#c/hostowner", OWRITE);
 	if(fd >= 0){
-		if(write(fd, s, jehanne_strlen(s)) != jehanne_strlen(s))
+		if(jehanne_write(fd, s, jehanne_strlen(s)) != jehanne_strlen(s))
 			jehanne_fprint(2, "setting #c/hostowner to %s: %r\n", s);
-		close(fd);
+		sys_close(fd);
 	}
 	jehanne_fprint(2, "Set hostowner to %s\n", s);
 }

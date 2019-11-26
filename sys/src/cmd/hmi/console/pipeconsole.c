@@ -61,20 +61,20 @@ main(int argc, char *argv[])
 	fd = servecons(passthrough, passthrough, &devmnt);
 
 	debug("%s %d: mounting cons for %s\n", argv0, getpid(), argv[0]);
-	if(mount(fd, -1, "/dev", MBEFORE, "", devmnt) == -1)
+	if(sys_mount(fd, -1, "/dev", MBEFORE, "", devmnt) == -1)
 		sysfatal("mount (%s): %r", argv[0]);
 
-	debug("%s (%d): all services started, ready to exec(%s)\n", argv0, getpid(), argv[0]);
+	debug("%s (%d): all services started, ready to sys_exec(%s)\n", argv0, getpid(), argv[0]);
 
 	/* become the requested program */
-	rfork(RFNOTEG|RFREND|RFCFDG);
+	sys_rfork(RFNOTEG|RFREND|RFCFDG);
 
 	if(posix){
-		fd = open("/dev/tty", OREAD);
-		fd = open("/dev/tty", OWRITE);
+		fd = sys_open("/dev/tty", OREAD);
+		fd = sys_open("/dev/tty", OWRITE);
 	} else {
-		fd = open("/dev/cons", OREAD);
-		fd = open("/dev/cons", OWRITE);
+		fd = sys_open("/dev/cons", OREAD);
+		fd = sys_open("/dev/cons", OWRITE);
 	}
 	if(dup(fd, 2) != 2)
 		sysfatal("bad FDs: %r");

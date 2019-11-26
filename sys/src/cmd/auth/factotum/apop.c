@@ -205,7 +205,7 @@ apopclose(Fsstate *fss)
 
 	s = fss->ps;
 	if(s->asfd >= 0){
-		close(s->asfd);
+		sys_close(s->asfd);
 		s->asfd = -1;
 	}
 	if(s->key != nil){
@@ -243,16 +243,16 @@ dochal(State *s)
 	s->asfd = _authreq(&s->tr, &s->k);
 	if(s->asfd < 0)
 		goto err;
-	alarm(30*1000);
+	sys_alarm(30*1000);
 	n = _asrdresp(s->asfd, s->chal, sizeof s->chal);
-	alarm(0);
+	sys_alarm(0);
 	if(n <= 5)
 		goto err;
 	return 0;
 
 err:
 	if(s->asfd >= 0)
-		close(s->asfd);
+		sys_close(s->asfd);
 	s->asfd = -1;
 	return -1;
 }
@@ -271,22 +271,22 @@ doreply(State *s, char *user, char *response)
 
 	genrandom((uint8_t*)s->tr.chal, CHALLEN);
 	safecpy(s->tr.uid, user, sizeof(s->tr.uid));
-	alarm(30*1000);
+	sys_alarm(30*1000);
 	if(_asrequest(s->asfd, &s->tr) < 0){
-		alarm(0);
+		sys_alarm(0);
 		goto err;
 	}
-	if(write(s->asfd, response, MD5dlen*2) != MD5dlen*2){
-		alarm(0);
+	if(jehanne_write(s->asfd, response, MD5dlen*2) != MD5dlen*2){
+		sys_alarm(0);
 		goto err;
 	}
 	n = _asgetresp(s->asfd, &s->t, &a, &s->k);
-	alarm(0);
+	sys_alarm(0);
 	if(n < 0){
 		/* leave connection open so we can try again */
 		return -1;
 	}
-	close(s->asfd);
+	sys_close(s->asfd);
 	s->asfd = -1;
 
 	if(s->t.num != AuthTs
@@ -305,7 +305,7 @@ doreply(State *s, char *user, char *response)
 	return 0;
 err:
 	if(s->asfd >= 0)
-		close(s->asfd);
+		sys_close(s->asfd);
 	s->asfd = -1;
 	return -1;
 }

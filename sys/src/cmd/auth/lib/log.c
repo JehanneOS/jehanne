@@ -26,11 +26,11 @@ record(char *db, char *user, char *msg)
 	int fd;
 
 	snprint(buf, sizeof buf, "%s/%s/log", db, user);
-	fd = open(buf, OWRITE);
+	fd = sys_open(buf, OWRITE);
 	if(fd < 0)
 		return;
-	write(fd, msg, strlen(msg));
-	close(fd);
+	jehanne_write(fd, msg, strlen(msg));
+	sys_close(fd);
 	return;
 }
 

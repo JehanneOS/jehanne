@@ -11,8 +11,8 @@
 #include <lib9.h>
 
 /*
- * like fprint but be sure to deliver as a single write.
- * (fprint uses a small write buffer.)
+ * like fprint but be sure to deliver as a single jehanne_write.
+ * (fprint uses a small jehanne_write buffer.)
  */
 void
 xfprint(int fd, char *fmt, ...)
@@ -25,7 +25,7 @@ xfprint(int fd, char *fmt, ...)
 	va_end(arg);
 	if(s == nil)
 		sysfatal("smprint: %r");
-	write(fd, s, strlen(s));
+	jehanne_write(fd, s, strlen(s));
 	free(s);
 }
 
@@ -35,7 +35,7 @@ main(int argc, char **argv)
 	int fd;
 	char dir[512];
 
-	fd = open("/dev/acme/ctl", OWRITE);
+	fd = sys_open("/dev/acme/ctl", OWRITE);
 	if(fd < 0)
 		exits(0);
 	getwd(dir, 512);

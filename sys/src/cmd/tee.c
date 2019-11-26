@@ -54,10 +54,10 @@ main(int argc, char **argv)
 	n = 0;
 	while(*argv) {
 		if(aflag) {
-			openf[n] = open(argv[0], OWRITE);
+			openf[n] = sys_open(argv[0], OWRITE);
 			if(openf[n] < 0)
 				openf[n] = ocreate(argv[0], OWRITE, 0666);
-			seek(openf[n], 0L, 2);
+			sys_seek(openf[n], 0L, 2);
 		} else
 			openf[n] = ocreate(argv[0], OWRITE, 0666);
 		if(openf[n] < 0) {
@@ -69,11 +69,11 @@ main(int argc, char **argv)
 	openf[n++] = 1;
 
 	for(;;) {
-		r = read(0, in, sizeof in);
+		r = jehanne_read(0, in, sizeof in);
 		if(r <= 0)
 			exits(nil);
 		for(i=0; i<n; i++)
-			write(openf[i], in, r);
+			jehanne_write(openf[i], in, r);
 	}
 }
 

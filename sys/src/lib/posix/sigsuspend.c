@@ -35,7 +35,7 @@ POSIX_sigsuspend(int *errnop, const PosixSignalMask *mask)
 		return -1;
 
 	do
-		rendezvous((void*)~0, (void*)1);
+		sys_rendezvous((void*)~0, (void*)1);
 	while(__libposix_restart_syscall());
 
 	if(POSIX_sigprocmask(errnop, PosixSPMSetMask, &old, nil) != 0)

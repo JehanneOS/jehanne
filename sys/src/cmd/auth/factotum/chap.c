@@ -140,7 +140,7 @@ chapclose(Fsstate *fss)
 
 	s = fss->ps;
 	if(s->asfd >= 0){
-		close(s->asfd);
+		sys_close(s->asfd);
 		s->asfd = -1;
 	}
 	free(s);
@@ -334,9 +334,9 @@ dochal(State *s)
 	if(s->asfd < 0)
 		goto err;
 	
-	alarm(30*1000);
+	sys_alarm(30*1000);
 	n = readn(s->asfd, s->chal, sizeof s->chal);
-	alarm(0);
+	sys_alarm(0);
 	if(n != sizeof s->chal)
 		goto err;
 
@@ -344,7 +344,7 @@ dochal(State *s)
 
 err:
 	if(s->asfd >= 0)
-		close(s->asfd);
+		sys_close(s->asfd);
 	s->asfd = -1;
 	return -1;
 }
@@ -355,22 +355,22 @@ doreply(State *s, uint8_t *reply, int nreply)
 	int n;
 	Authenticator a;
 
-	alarm(30*1000);
-	if(write(s->asfd, reply, nreply) != nreply){
-		alarm(0);
+	sys_alarm(30*1000);
+	if(jehanne_write(s->asfd, reply, nreply) != nreply){
+		sys_alarm(0);
 		goto err;
 	}
 	n = _asgetresp(s->asfd, &s->t, &a, &s->k);
 	if(n < 0){
-		alarm(0);
+		sys_alarm(0);
 		/* leave connection open so we can try again */
 		return -1;
 	}
 	s->nsecret = readn(s->asfd, s->secret, sizeof s->secret);
-	alarm(0);
+	sys_alarm(0);
 	if(s->nsecret < 0)
 		s->nsecret = 0;
-	close(s->asfd);
+	sys_close(s->asfd);
 	s->asfd = -1;
 
 	if(s->t.num != AuthTs
@@ -389,7 +389,7 @@ doreply(State *s, uint8_t *reply, int nreply)
 	return 0;
 err:
 	if(s->asfd >= 0)
-		close(s->asfd);
+		sys_close(s->asfd);
 	s->asfd = -1;
 	return -1;
 }

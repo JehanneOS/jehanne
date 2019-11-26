@@ -38,7 +38,7 @@ cdcreceive(Dev *ep)
 	int n;
 
 	b = allocb(Maxpkt);
-	if((n = read(ep->dfd, b->wp, b->lim - b->base)) < 0){
+	if((n = jehanne_read(ep->dfd, b->wp, b->lim - b->base)) < 0){
 		freeb(b);
 		return -1;
 	}
@@ -53,7 +53,7 @@ cdctransmit(Dev *ep, Block *b)
 	int n;
 
 	n = BLEN(b);
-	if(write(ep->dfd, b->rp, n) < 0){
+	if(jehanne_write(ep->dfd, b->rp, n) < 0){
 		freeb(b);
 		return;
 	}
@@ -66,7 +66,7 @@ cdctransmit(Dev *ep, Block *b)
 	 * should do the same?
 	 */
 	if((n % ep->maxpkt) == 0)
-		write(ep->dfd, "", 0);
+		jehanne_write(ep->dfd, "", 0);
 }
 
 int

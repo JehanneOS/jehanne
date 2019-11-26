@@ -160,7 +160,7 @@ xfidopen(Xfid *x)
 					n = (BUFSIZE-1)/UTFmax;
 				bufread(t->file, q0, r, n);
 				m = snprint(s, BUFSIZE, "%.*S", n, r);
-				if(write(w->rdselfd, s, m) != m){
+				if(jehanne_write(w->rdselfd, s, m) != m){
 					warning(nil, "can't write temp file for pipe command %r\n");
 					break;
 				}
@@ -244,7 +244,7 @@ xfidclose(Xfid *x)
 			}
 			break;
 		case QWrdsel:
-			close(w->rdselfd);
+			sys_close(w->rdselfd);
 			w->rdselfd = 0;
 			break;
 		case QWwrsel:
@@ -355,12 +355,12 @@ xfidread(Xfid *x)
 		break;
 
 	case QWrdsel:
-		seek(w->rdselfd, off, 0);
+		sys_seek(w->rdselfd, off, 0);
 		n = x->count;
 		if(n > BUFSIZE)
 			n = BUFSIZE;
 		b = fbufalloc();
-		n = read(w->rdselfd, b, n);
+		n = jehanne_read(w->rdselfd, b, n);
 		if(n < 0){
 			respond(x, &fc, "I/O error in temp file");
 			break;

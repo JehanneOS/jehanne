@@ -46,9 +46,9 @@ boot(int argc, char *argv[])
 	char buf[32];
 	AuthInfo *ai;
 
-	open("/dev/cons", OREAD);
-	open("/dev/cons", OWRITE);
-	open("/dev/cons", OWRITE);
+	sys_open("/dev/cons", OREAD);
+	sys_open("/dev/cons", OWRITE);
+	sys_open("/dev/cons", OWRITE);
 
 	jehanne_fmtinstall('r', jehanne_errfmt);
 
@@ -70,11 +70,11 @@ boot(int argc, char *argv[])
 	 * init will reinitialize its namespace.
 	 * #ec gets us plan9.ini settings (*var variables).
 	 */
-	bind("#ec", "/env", MREPL);
-	bind("#e", "/env", MBEFORE|MCREATE);
-	bind("#s", "/srv", MREPL|MCREATE);
-	bind("#p", "/proc", MREPL|MCREATE);
-	bind("#σ", "/shr", MREPL);
+	sys_bind("#ec", "/env", MREPL);
+	sys_bind("#e", "/env", MBEFORE|MCREATE);
+	sys_bind("#s", "/srv", MREPL|MCREATE);
+	sys_bind("#p", "/proc", MREPL|MCREATE);
+	sys_bind("#σ", "/shr", MREPL);
 	jehanne_print("Diex vos sait! Je m'appelle Jehanne O:-)\n");
 #ifdef DEBUG
 	jehanne_print("argc=%d\n", argc);
@@ -136,7 +136,7 @@ jehanne_print("\n");
 
 	jehanne_print("version...");
 	buf[0] = '\0';
-	n = fversion(fd, 0, buf, sizeof buf);
+	n = sys_fversion(fd, 0, buf, sizeof buf);
 	if(n < 0)
 		fatal("can't init 9P");
 
@@ -148,50 +148,50 @@ jehanne_print("\n");
 	/*
 	 *  create the name space, mount the root fs
 	 */
-	if(bind("/", "/", MREPL) < 0)
+	if(sys_bind("/", "/", MREPL) < 0)
 		fatal("bind /");
 	rp = jehanne_getenv("rootspec");
 	if(rp == nil)
 		rp = "";
 
-	afd = fauth(fd, rp);
+	afd = sys_fauth(fd, rp);
 	if(afd >= 0){
 		ai = auth_proxy(afd, auth_getkey, "proto=p9any role=client");
 		if(ai == nil)
 			jehanne_print("authentication failed (%r), trying mount anyways\n");
 	}
-	if(mount(fd, afd, "/root", MREPL|MCREATE, rp, '9') < 0)
+	if(sys_mount(fd, afd, "/root", MREPL|MCREATE, rp, '9') < 0)
 		fatal("mount /");
 	rsp = rp;
 	rp = jehanne_getenv("rootdir");
 	if(rp == nil)
 		rp = rootdir;
-	if(bind(rp, "/", MAFTER|MCREATE) < 0){
+	if(sys_bind(rp, "/", MAFTER|MCREATE) < 0){
 		if(jehanne_strncmp(rp, "/root", 5) == 0){
 			jehanne_fprint(2, "boot: couldn't bind $rootdir=%s to root: %r\n", rp);
 			fatal("second bind /");
 		}
 		jehanne_snprint(rootbuf, sizeof rootbuf, "/root/%s", rp);
 		rp = rootbuf;
-		if(bind(rp, "/", MAFTER|MCREATE) < 0){
+		if(sys_bind(rp, "/", MAFTER|MCREATE) < 0){
 			jehanne_fprint(2, "boot: couldn't bind $rootdir=%s to root: %r\n", rp);
 			if(jehanne_strcmp(rootbuf, "/root//plan9") == 0){
 				jehanne_fprint(2, "**** warning: remove rootdir=/plan9 entry from plan9.ini\n");
 				rp = "/root";
-				if(bind(rp, "/", MAFTER|MCREATE) < 0)
+				if(sys_bind(rp, "/", MAFTER|MCREATE) < 0)
 					fatal("second bind /");
 			}else
 				fatal("second bind /");
 		}
 	}
-	close(fd);
+	sys_close(fd);
 	setenv("rootdir", rp);
 
 	savelogs();
 
 	settime(islocal, afd, rsp);
 	if(afd > 0)
-		close(afd);
+		sys_close(afd);
 
 	cmd = jehanne_getenv("init");
 	if(cmd == nil){
@@ -210,7 +210,7 @@ jehanne_print("\n");
 
 	iargv[iargc] = nil;
 
-	exec(cmd, (const char**)iargv);
+	sys_exec(cmd, (const char**)iargv);
 	fatal(cmd);
 }
 
@@ -311,7 +311,7 @@ usbinit(void)
 	case -1:
 		jehanne_print("usbinit: fork failed: %r\n");
 	case 0:
-		exec(usbrcPath, (const char**)argv);
+		sys_exec(usbrcPath, (const char**)argv);
 		fatal("can't exec usbd");
 	default:
 		break;
@@ -358,7 +358,7 @@ startconsole(void)
 	case -1:
 		fatal("starting screenconsole");
 	case 0:
-		exec(screenconsolePath, (const char**)av);
+		sys_exec(screenconsolePath, (const char**)av);
 		fatal("execing screenconsole");
 	default:
 		break;
@@ -369,20 +369,20 @@ startconsole(void)
 		jehanne_sleep(250);
 	}
 	/* replace 0, 1 and 2 */
-	if((i = open("#s/screenconsole", ORDWR)) < 0)
+	if((i = sys_open("#s/screenconsole", ORDWR)) < 0)
 		fatal("open #s/screenconsole");
-	if(mount(i, -1, "/dev", MBEFORE, "", '9') < 0)
+	if(sys_mount(i, -1, "/dev", MBEFORE, "", '9') < 0)
 		fatal("mount /dev");
-	if((i = open("/dev/cons", OREAD))<0)
+	if((i = sys_open("/dev/cons", OREAD))<0)
 		fatal("open /dev/cons, OREAD");
 	if(jehanne_dup(i, 0) != 0)
 		fatal("jehanne_dup(i, 0)");
-	close(i);
-	if((i = open("/dev/cons", OWRITE))<0)
+	sys_close(i);
+	if((i = sys_open("/dev/cons", OWRITE))<0)
 		fatal("open /dev/cons, OWRITE");
 	if(jehanne_dup(i, 1) != 1)
 		fatal("jehanne_dup(i, 1)");
-	close(i);
+	sys_close(i);
 	if(jehanne_dup(1, 2) != 2)
 		fatal("jehanne_dup(1, 2)");
 	return 0;
@@ -415,7 +415,7 @@ startcomconsole(void)
 	case -1:
 		fatal("starting comconsole");
 	case 0:
-		exec(comconsolePath, (const char**)av);
+		sys_exec(comconsolePath, (const char**)av);
 		fatal("execing comconsole");
 	default:
 		break;
@@ -426,20 +426,20 @@ startcomconsole(void)
 		jehanne_sleep(250);
 	}
 	/* replace 0, 1 and 2 */
-	if((i = open("#s/comconsole", ORDWR)) < 0)
+	if((i = sys_open("#s/comconsole", ORDWR)) < 0)
 		fatal("open #s/comconsole");
-	if(mount(i, -1, "/dev", MBEFORE, "", '9') < 0)
+	if(sys_mount(i, -1, "/dev", MBEFORE, "", '9') < 0)
 		fatal("mount /dev");
-	if((i = open("/dev/cons", OREAD))<0)
+	if((i = sys_open("/dev/cons", OREAD))<0)
 		fatal("open /dev/cons, OREAD");
 	if(jehanne_dup(i, 0) != 0)
 		fatal("jehanne_dup(i, 0)");
-	close(i);
-	if((i = open("/dev/cons", OWRITE))<0)
+	sys_close(i);
+	if((i = sys_open("/dev/cons", OWRITE))<0)
 		fatal("open /dev/cons, OWRITE");
 	if(jehanne_dup(i, 1) != 1)
 		fatal("jehanne_dup(i, 1)");
-	close(i);
+	sys_close(i);
 	if(jehanne_dup(1, 2) != 2)
 		fatal("jehanne_dup(1, 2)");
 	return 0;
@@ -453,7 +453,7 @@ bindBoot(void)
 	if(b == nil || b->name == nil)
 		return;
 	while(b->name){
-		bind(b->name, b->old, b->flag);
+		sys_bind(b->name, b->old, b->flag);
 		++b;
 	}
 }
@@ -469,7 +469,7 @@ unbindBoot(void)
 		++b;
 
 	while(--b >= bootbinds){
-		unmount(b->name, b->old);
+		sys_unmount(b->name, b->old);
 	}
 }
 
@@ -483,27 +483,27 @@ kbmap(void)
 	f = jehanne_getenv("kbmap");
 	if(f == nil)
 		return;
-	if(bind("#κ", "/dev", MAFTER) < 0){
+	if(sys_bind("#κ", "/dev", MAFTER) < 0){
 		warning("can't bind #κ");
 		return;
 	}
 
-	in = open(f, OREAD);
+	in = sys_open(f, OREAD);
 	if(in < 0){
 		warning("can't open kbd map");
 		return;
 	}
-	out = open("/dev/kbmap", OWRITE);
+	out = sys_open("/dev/kbmap", OWRITE);
 	if(out < 0) {
 		warning("can't open /dev/kbmap");
-		close(in);
+		sys_close(in);
 		return;
 	}
-	while((n = read(in, buf, sizeof(buf))) > 0)
-		if(write(out, buf, n) != n){
+	while((n = jehanne_read(in, buf, sizeof(buf))) > 0)
+		if(jehanne_write(out, buf, n) != n){
 			warning("write to /dev/kbmap failed");
 			break;
 		}
-	close(in);
-	close(out);
+	sys_close(in);
+	sys_close(out);
 }

@@ -35,7 +35,7 @@ get_ppid(int pid)
 	long n;
 	char buf[32];
 	sprint(buf, "/proc/%d/ppid", pid);
-	n = remove(buf);
+	n = sys_remove(buf);
 	if(n == -1)
 		return -1;
 	return (int)n;
@@ -55,7 +55,7 @@ __libposix_sighelper_set_pgid(int target, int group)
 	offset.request.target = target;
 
 	buf.group = group;
-	ret = pwrite(*__libposix_devsignal, buf.raw, sizeof(buf.raw), offset.raw);
+	ret = sys_pwrite(*__libposix_devsignal, buf.raw, sizeof(buf.raw), offset.raw);
 	return ret;
 }
 
@@ -76,7 +76,7 @@ set_group_id(int *errnop, int pid, int group)
 	if(pid == 0 && group == 0){
 		/* the caller wants a new process group */
 CreateNewProcessGroup:
-		rfork(RFNOTEG);
+		sys_rfork(RFNOTEG);
 		return __libposix_sighelper_cmd(PHSetProcessGroup, mypid);
 	}
 	if(pid == 0)
@@ -230,16 +230,16 @@ POSIX_setsid(int *errnop)
 	if(fname == nil || __libposix_sighelper_cmd(PHDetachSession, 0) < 0)
 		goto FailWithEPERM;
 	if(*__libposix_devsignal >= 0)
-		close(*__libposix_devsignal);
+		sys_close(*__libposix_devsignal);
 	*__libposix_devsignal = -1;
-	rfork(RFNAMEG|RFNOTEG|RFENVG|RFFDG);
-	unmount(fname, "/dev");
+	sys_rfork(RFNAMEG|RFNOTEG|RFENVG|RFFDG);
+	sys_unmount(fname, "/dev");
 	free(fname);
 	fname = nil;
 	assert(access("/dev/posix", AEXIST) != 0);
 
 	/* start the new session */
-	switch(controlpid = rfork(RFPROC|RFNOTEG|RFENVG|RFFDG)){
+	switch(controlpid = sys_rfork(RFPROC|RFNOTEG|RFENVG|RFFDG)){
 	case -1:
 		goto FailWithEPERM;
 	case 0:
@@ -248,7 +248,7 @@ POSIX_setsid(int *errnop)
 		posixly_args[2] = smprint("%d", mypid);
 		posixly_args[3] = nil;
 		jehanne_pexec("sys/posixly", posixly_args);
-		rfork(RFNOWAIT);
+		sys_rfork(RFNOWAIT);
 		sysfatal("pexec sys/posixly");
 	default:
 		break;

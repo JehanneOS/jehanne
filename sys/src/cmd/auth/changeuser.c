@@ -123,10 +123,10 @@ install(char *db, char *u, Authkey *key, int32_t t, int newkey)
 
 	if(!exists(db, u)){
 		sprint(buf, "%s/%s", db, u);
-		fd = create(buf, OREAD, 0777|DMDIR);
+		fd = sys_create(buf, OREAD, 0777|DMDIR);
 		if(fd < 0)
 			error("can't create user %s: %r", u);
-		close(fd);
+		sys_close(fd);
 	}
 
 	if(newkey){
@@ -137,10 +137,10 @@ install(char *db, char *u, Authkey *key, int32_t t, int newkey)
 	if(t == -1)
 		return;
 	sprint(buf, "%s/%s/expire", db, u);
-	fd = open(buf, OWRITE);
+	fd = sys_open(buf, OWRITE);
 	if(fd < 0 || fprint(fd, "%ld", t) < 0)
 		error("can't write expiration time");
-	close(fd);
+	sys_close(fd);
 }
 
 int

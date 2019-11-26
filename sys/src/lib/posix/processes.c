@@ -179,9 +179,9 @@ POSIX_execve(int *errnop, const char *name, char * const*argv, char * const*env)
 	// see http://pubs.opengroup.org/onlinepubs/9699919799/functions/exec.html
 	if(env == environ){
 		/* just get a copy of the current environment */
-		rfork(RFENVG);
+		sys_rfork(RFENVG);
 	} else {
-		rfork(RFCENVG);
+		sys_rfork(RFCENVG);
 		__libposix_setup_exec_environment(env);
 	}
 
@@ -189,7 +189,7 @@ POSIX_execve(int *errnop, const char *name, char * const*argv, char * const*env)
 	__libposix_close_on_exec();
 	__libposix_sighelper_cmd(PHCallingExec, 0);
 
-	exec(name, argv);
+	sys_exec(name, argv);
 	*errnop = __libposix_translate_errstr((uintptr_t)POSIX_execve);
 	return -1;
 }
@@ -233,7 +233,7 @@ __libposix_wait(int *errnop, int *status, long ms)
 
 OnIgnoredSignalInterrupt:
 	if(ms)
-		wakeup = awake(ms);
+		wakeup = sys_awake(ms);
 	w = wait();
 	if(w == nil){
 		rerrstr(err, ERRMAX);
@@ -349,7 +349,7 @@ POSIX_waitpid(int *errnop, int reqpid, int *status, int options)
 WaitAgain:
 OnIgnoredSignalInterrupt:
 	if(nohang)
-		nohang = awake(100);
+		nohang = sys_awake(100);
 	w = wait();
 	if(w == nil){
 		rerrstr(err, ERRMAX);

@@ -60,7 +60,7 @@ main(int argc, char *argv[])
 	DNSmsg reqmsg, repmsg;
 	Request req;
 
-	alarm(2*60*1000);
+	sys_alarm(2*60*1000);
 	cfg.cachedb = 1;
 	ARGBEGIN{
 	case 'd':
@@ -169,7 +169,7 @@ main(int argc, char *argv[])
 
 		if(req.isslave){
 			putactivity(0);
-			_exits(0);
+			sys__exits(0);
 		}
 	}
 	refreshmain(mntpt);
@@ -217,7 +217,7 @@ reply(int fd, DNSmsg *rep, Request *req)
 	len = convDNS2M(rep, buf+2, sizeof(buf) - 2);
 	buf[0] = len>>8;
 	buf[1] = len;
-	rv = write(fd, buf, len+2);
+	rv = jehanne_write(fd, buf, len+2);
 	if(rv != len+2){
 		dnslog("[%d] sending reply: %d instead of %d", getpid(), rv,
 			len+2);
@@ -333,11 +333,11 @@ getcaller(char *dir)
 	static char remote[128];
 
 	snprint(remote, sizeof(remote), "%s/remote", dir);
-	fd = open(remote, OREAD);
+	fd = sys_open(remote, OREAD);
 	if(fd < 0)
 		return;
-	n = read(fd, remote, sizeof remote - 1);
-	close(fd);
+	n = jehanne_read(fd, remote, sizeof remote - 1);
+	sys_close(fd);
 	if(n <= 0)
 		return;
 	if(remote[n-1] == '\n')
@@ -355,12 +355,12 @@ refreshmain(char *net)
 	snprint(file, sizeof(file), "%s/dns", net);
 	if(debug)
 		dnslog("refreshing %s", file);
-	fd = open(file, ORDWR);
+	fd = sys_open(file, ORDWR);
 	if(fd < 0)
 		dnslog("can't refresh %s", file);
 	else {
 		fprint(fd, "refresh");
-		close(fd);
+		sys_close(fd);
 	}
 }
 

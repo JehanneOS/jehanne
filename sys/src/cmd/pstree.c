@@ -65,15 +65,15 @@ theppid(int pid)
 	
 	ppid = 0;
 	snprint(b, sizeof(b), "%d/ppid", pid);
-	fd = open(b, OREAD);
+	fd = sys_open(b, OREAD);
 	if(fd >= 0){
 		memset(b, 0, sizeof b);
-		if(read(fd, b, sizeof b-1) >= 0){
+		if(jehanne_read(fd, b, sizeof b-1) >= 0){
 			ppid = atoi(b);
 			if(ppid < 0)
 				ppid = 0;
 		}
-		close(fd);
+		sys_close(fd);
 	}
 	return ppid;
 }
@@ -101,13 +101,13 @@ addprocs(void)
 	int fd, rc, i;
 	Dir *d;
 	
-	fd = open(".", OREAD);
+	fd = sys_open(".", OREAD);
 	if(fd < 0)
 		sysfatal("open: %r");
 	rc = dirreadall(fd, &d);
 	if(rc < 0)
 		sysfatal("dirreadall: %r");
-	close(fd);
+	sys_close(fd);
 	for(i = 0; i < rc; i++)
 		if(d[i].mode & DMDIR)
 			addproc(atoi(d[i].name));
@@ -123,17 +123,17 @@ readout(char *file)
 	int fd, rc, i, n;
 	char b[512];
 
-	fd = open(file, OREAD);
+	fd = sys_open(file, OREAD);
 	if(fd < 0)
 		return -1;
 	n = 0;
-	while((rc = read(fd, b, sizeof b)) > 0){
+	while((rc = jehanne_read(fd, b, sizeof b)) > 0){
 		for(i=0; i<rc; i++)
 			if(b[i] == '\n')
 				b[i] = ' ';
 		n += Bwrite(&bout, b, rc);
 	}
-	close(fd);
+	sys_close(fd);
 	return n;
 }
 
@@ -147,16 +147,16 @@ printargs(int pid)
 	if(readout(b) > 0)
 		return;
 	snprint(b, sizeof(b), "%d/status", pid);
-	fd = open(b, OREAD);
+	fd = sys_open(b, OREAD);
 	if(fd >= 0){
 		memset(b, 0, sizeof b);
-		if(read(fd, b, 27) > 0){
+		if(jehanne_read(fd, b, 27) > 0){
 			p = b + strlen(b);
 			while(p > b && p[-1] == ' ')
 				*--p = 0;
 			Bprint(&bout, "%s", b);
 		}
-		close(fd);
+		sys_close(fd);
 	}
 }
 

@@ -261,7 +261,7 @@ serialctl(Serialport *p, char *cmd)
 			if(ser->wait4write != nil)
 				nw = ser->wait4write(p, &x, 1);
 			else
-				nw = write(p->epout->dfd, &x, 1);
+				nw = jehanne_write(p->epout->dfd, &x, 1);
 			if(nw != 1){
 				serialrecover(ser, p, p->epout, "");
 				return -1;
@@ -456,11 +456,11 @@ Again:
 	} else {
 		dfd = p->epin->dfd;
 		qunlock(&ser->ql);
-		rcount = read(dfd, data, count);
+		rcount = jehanne_read(dfd, data, count);
 	}
 	if(rcount < 0) {
 		err[0] = 0;
-		errstr(err, sizeof err);
+		sys_errstr(err, sizeof err);
 		if(p->rq->flush == 0 && strstr(err, "timed out") != nil)
 			goto Again;
 		respond(req, err);
@@ -491,11 +491,11 @@ procwrite(Req *req)
 	} else {
 		dfd = p->epout->dfd;
 		qunlock(&ser->ql);
-		wcount = write(dfd, data, count);
+		wcount = jehanne_write(dfd, data, count);
 	}
 	if(wcount != count) {
 		err[0] = 0;
-		errstr(err, sizeof err);
+		sys_errstr(err, sizeof err);
 		respond(req, err);
 
 		qlock(&ser->ql);

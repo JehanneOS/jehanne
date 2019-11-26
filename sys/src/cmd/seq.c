@@ -96,7 +96,7 @@ main(int argc, char *argv[]){
 			if(constant)
 				for(j=0; buf[j]==' '; j++)
 					buf[j] ='0';
-			write(1, buf, n);
+			jehanne_write(1, buf, n);
 		}
 	}else{
 		for(val = min; val >= max; val += incr){
@@ -104,7 +104,7 @@ main(int argc, char *argv[]){
 			if(constant)
 				for(j=0; buf[j]==' '; j++)
 					buf[j] ='0';
-			write(1, buf, n);
+			jehanne_write(1, buf, n);
 		}
 	}
 	exits(0);

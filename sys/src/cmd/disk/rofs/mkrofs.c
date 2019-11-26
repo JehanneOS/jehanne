@@ -157,7 +157,7 @@ paqFile(char *name, Dir *dir)
 	uint8_t *block, *pointer;
 	uint32_t offset;
 
-	fd = open(name, OREAD);
+	fd = sys_open(name, OREAD);
 	if(fd < 0) {
 		warn("could not open file: %s: %r", name);
 		return nil;
@@ -169,7 +169,7 @@ paqFile(char *name, Dir *dir)
 	n = 0;
 	tot = 0;
 	for(;;) {
-		nn = read(fd, block+n, blocksize-n);
+		nn = jehanne_read(fd, block+n, blocksize-n);
 		if(nn < 0) {
 			warn("read failed: %s: %r", name);
 			goto Err;
@@ -197,13 +197,13 @@ paqFile(char *name, Dir *dir)
 
 	offset = writeBlock(pointer, PointerBlock);
 
-	close(fd);
+	sys_close(fd);
 	free(pointer);
 	free(block);
 	dir->length = tot;
 	return paqDirAlloc(dir, offset);
 Err:
-	close(fd);
+	sys_close(fd);
 	free(pointer);
 	free(block);
 	return nil;
@@ -219,14 +219,14 @@ paqDir(char *name, Dir *dir)
 	char *nname;
 	uint32_t offset;
 
-	fd = open(name, OREAD);
+	fd = sys_open(name, OREAD);
 	if(fd < 0) {
 		warn("could not open directory: %s: %r", name);
 		return nil;
 	}
 
 	ndir = dirreadall(fd, &dirs);
-	close(fd);
+	sys_close(fd);
 
 	if(ndir < 0) {
 		warn("could not read directory: %s: %r", name);

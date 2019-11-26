@@ -37,7 +37,7 @@ writesubfont(int fd, Subfont *f)
 	int nb;
 
 	sprint(hdr, "%11d %11d %11d ", f->n, f->height, f->ascent);
-	if(write(fd, hdr, 3*12) != 3*12){
+	if(jehanne_write(fd, hdr, 3*12) != 3*12){
    Err:
 		werrstr("writesubfont: bad write: %r");
 		return -1;
@@ -47,7 +47,7 @@ writesubfont(int fd, Subfont *f)
 	if(data == nil)
 		return -1;
 	packinfo(f->info, data, f->n);
-	if(write(fd, data, nb) != nb)
+	if(jehanne_write(fd, data, nb) != nb)
 		goto Err;
 	free(data);
 	return 0;

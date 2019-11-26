@@ -41,7 +41,7 @@ devopen(char* device, int mode)
 {
 	int fd;
 
-	if((fd = open(device, mode)) < 0)
+	if((fd = sys_open(device, mode)) < 0)
 		error("devopen(%s, %d): %r\n", device, mode);
 	return fd;
 }
@@ -54,7 +54,7 @@ inportb(int32_t port)
 	if(iobfd == -1)
 		iobfd = devopen("#P/iob", ORDWR);
 
-	if(pread(iobfd, &data, sizeof(data), port) != sizeof(data))
+	if(sys_pread(iobfd, &data, sizeof(data), port) != sizeof(data))
 		error("inportb(0x%4.4lx): %r\n", port);
 	return data;
 }
@@ -65,7 +65,7 @@ outportb(int32_t port, uint8_t data)
 	if(iobfd == -1)
 		iobfd = devopen("#P/iob", ORDWR);
 
-	if(pwrite(iobfd, &data, sizeof(data), port) != sizeof(data))
+	if(sys_pwrite(iobfd, &data, sizeof(data), port) != sizeof(data))
 		error("outportb(0x%4.4lx, 0x%2.2uX): %r\n", port, data);
 }
 
@@ -77,7 +77,7 @@ inportw(int32_t port)
 	if(iowfd == -1)
 		iowfd = devopen("#P/iow", ORDWR);
 
-	if(pread(iowfd, &data, sizeof(data), port) != sizeof(data))
+	if(sys_pread(iowfd, &data, sizeof(data), port) != sizeof(data))
 		error("inportw(0x%4.4lx): %r\n", port);
 	return data;
 }
@@ -88,7 +88,7 @@ outportw(int32_t port, uint16_t data)
 	if(iowfd == -1)
 		iowfd = devopen("#P/iow", ORDWR);
 
-	if(pwrite(iowfd, &data, sizeof(data), port) != sizeof(data))
+	if(sys_pwrite(iowfd, &data, sizeof(data), port) != sizeof(data))
 		error("outportw(0x%4.4lx, 0x%2.2uX): %r\n", port, data);
 }
 
@@ -100,7 +100,7 @@ inportl(int32_t port)
 	if(iolfd == -1)
 		iolfd = devopen("#P/iol", ORDWR);
 
-	if(pread(iolfd, &data, sizeof(data), port) != sizeof(data))
+	if(sys_pread(iolfd, &data, sizeof(data), port) != sizeof(data))
 		error("inportl(0x%4.4lx): %r\n", port);
 	return data;
 }
@@ -111,7 +111,7 @@ outportl(int32_t port, uint32_t data)
 	if(iolfd == -1)
 		iolfd = devopen("#P/iol", ORDWR);
 
-	if(pwrite(iolfd, &data, sizeof(data), port) != sizeof(data))
+	if(sys_pwrite(iolfd, &data, sizeof(data), port) != sizeof(data))
 		error("outportl(0x%4.4lx, 0x%2.2luX): %r\n", port, data);
 }
 
@@ -129,8 +129,8 @@ vgactlinit(void)
 		memset(attr, 0, sizeof(attr));
 	}
 
-	seek(ctlfd, 0, 0);
-	nattr = read(ctlfd, ctlbuf, Nctlchar-1);
+	sys_seek(ctlfd, 0, 0);
+	nattr = jehanne_read(ctlfd, ctlbuf, Nctlchar-1);
 	if(nattr < 0)
 		error("vgactlr: read: %r\n");
 	ctlbuf[nattr] = 0;
@@ -188,10 +188,10 @@ vgactlw(char* attr, char* val)
 	if(ctlfd == -1)
 		ctlfd = devopen("#v/vgactl", ORDWR);
 
-	seek(ctlfd, 0, 0);
+	sys_seek(ctlfd, 0, 0);
 	len = sprint(buf, "%s %s", attr, val);
 	trace("+vgactlw %s\n", buf);
-	if(write(ctlfd, buf, len) != len)
+	if(jehanne_write(ctlfd, buf, len) != len)
 		error("vgactlw: <%s>: %r\n",  buf);
 	trace("-vgactlw %s\n", buf);
 
@@ -213,7 +213,7 @@ doreadbios(char* buf, int32_t len, int32_t offset)
 	char file[64];
 
 	if(biosfd == -1){
-		biosfd = open("#v/vgabios", OREAD);
+		biosfd = sys_open("#v/vgabios", OREAD);
 		biosoffset = 0;
 	}
 	if(biosfd == -1){
@@ -223,8 +223,8 @@ doreadbios(char* buf, int32_t len, int32_t offset)
 	}
 	if(biosfd == -1)
 		return -1;
-	seek(biosfd, biosoffset+offset, 0);
-	return read(biosfd, buf, len);
+	sys_seek(biosfd, biosoffset+offset, 0);
+	return jehanne_read(biosfd, buf, len);
 }
 
 char*

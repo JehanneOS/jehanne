@@ -61,11 +61,11 @@ fcntl_dup(int *errnop, int fd, int minfd)
 	if(newfd >= minfd)
 		--i;
 	while(i >= 0)
-		close(opened[i--]);
+		sys_close(opened[i--]);
 	if(newfd >= minfd)
 		return newfd;
 
-	close(newfd);
+	sys_close(newfd);
 	if(e == 0)
 		e = PosixEMFILE;
 	*errnop = __libposix_get_errno(e);
@@ -79,11 +79,11 @@ file_flags(int *errnop, int fd)
 	char buf[128], *cols[3];
 
 	snprint(buf, sizeof(buf), "/fd/%dctl", fd);
-	newfd = open(buf, OREAD);
+	newfd = sys_open(buf, OREAD);
 	if(newfd < 0)
 		goto FailWithEBADF;
-	r = read(newfd, buf, sizeof(buf));
-	close(newfd);
+	r = jehanne_read(newfd, buf, sizeof(buf));
+	sys_close(newfd);
 	if(r < 0)
 		goto FailWithEBADF;
 

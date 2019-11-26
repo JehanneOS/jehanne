@@ -150,7 +150,7 @@ runthread(Proc *p)
 		q->asleep = 1;
 		_threaddebug(DBGSCHED, "sleeping for more work");
 		jehanne_unlock(&p->readylock);
-		while(rendezvous(q, 0) == (void*)~0){
+		while(sys_rendezvous(q, 0) == (void*)~0){
 			if(_threadexitsallstatus)
 				jehanne_exits(_threadexitsallstatus);
 		}
@@ -181,7 +181,7 @@ _threadready(Thread *t)
 		q->asleep = 0;
 		/* lock passes to runthread */
 		_threaddebug(DBGSCHED, "waking process %d", t->proc->pid);
-		while(rendezvous(q, 0) == (void*)~0){
+		while(sys_rendezvous(q, 0) == (void*)~0){
 			if(_threadexitsallstatus)
 				jehanne_exits(_threadexitsallstatus);
 		}

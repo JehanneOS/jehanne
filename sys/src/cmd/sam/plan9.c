@@ -106,12 +106,12 @@ notifyf(void *a, char *s)
 {
 	USED(a);
 	if(bpipeok && strcmp(s, "sys: write on closed pipe") == 0)
-		noted(NCONT);
+		sys_noted(NCONT);
 	if(strcmp(s, "interrupt") == 0)
-		noted(NCONT);
+		sys_noted(NCONT);
 	panicking = 1;
 	rescue();
-	noted(NDFLT);
+	sys_noted(NDFLT);
 }
 
 char*

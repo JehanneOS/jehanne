@@ -81,13 +81,13 @@ dodir(Fs *f)
 		complain("can't chdir to %s: %r", f->keys);
 		return;
 	}
- 	fd = open(".", OREAD);
+ 	fd = sys_open(".", OREAD);
 	if(fd < 0){
 		complain("can't open %s: %r\n", f->keys);
 		return;
 	}
 	nfiles = dirreadall(fd, &dirbuf);
-	close(fd);
+	sys_close(fd);
 	for(i = 0; i < nfiles; i++)
 		douser(f, dirbuf[i].name);
 }
@@ -226,7 +226,7 @@ mail(Fs *f, char *rcvr, char *user, int32_t et)
 	default:
 		if(debug)
 			fprint(2, "started %d\n", pid);
-		close(pfd[0]);
+		sys_close(pfd[0]);
 		ct = ctime(et);
 		p = strchr(ct, '\n');
 		*p = '.';
@@ -239,13 +239,13 @@ mail(Fs *f, char *rcvr, char *user, int32_t et)
 		else
 			p = f->keys;
 		sprint(buf, "/adm/warn.%s", p);
-		fd = open(buf, OREAD);
+		fd = sys_open(buf, OREAD);
 		if(fd >= 0){
-			while((i = read(fd, buf, sizeof(buf))) > 0)
-				write(pfd[1], buf, i);
-			close(fd);
+			while((i = jehanne_read(fd, buf, sizeof(buf))) > 0)
+				jehanne_write(pfd[1], buf, i);
+			sys_close(fd);
 		}
-		close(pfd[1]);
+		sys_close(pfd[1]);
 
 		/* wait for warning to be mailed */
 		for(;;){
@@ -272,8 +272,8 @@ mail(Fs *f, char *rcvr, char *user, int32_t et)
 	newns("none", 0);
 
 	dup(pfd[0], 0);
-	close(pfd[0]);
-	close(pfd[1]);
+	sys_close(pfd[0]);
+	sys_close(pfd[1]);
 	putenv("upasname", "netkeys");
 	if(debug){
 		print("\nto %s\n", rcvr);
@@ -299,7 +299,7 @@ complain(char *fmt, ...)
 	s = vseprint(s, buf + sizeof(buf) / sizeof(*buf), fmt, arg);
 	va_end(arg);
 	*s++ = '\n';
-	write(2, buf, s - buf);
+	jehanne_write(2, buf, s - buf);
 }
 
 int32_t
@@ -308,13 +308,13 @@ readnumfile(char *file)
 	int fd, n;
 	char buf[64];
 
-	fd = open(file, OREAD);
+	fd = sys_open(file, OREAD);
 	if(fd < 0){
 		complain("can't open %s: %r", file);
 		return 0;
 	}
-	n = read(fd, buf, sizeof(buf)-1);
-	close(fd);
+	n = jehanne_read(fd, buf, sizeof(buf)-1);
+	sys_close(fd);
 	if(n < 0){
 		complain("can't read %s: %r", file);
 		return 0;
@@ -328,11 +328,11 @@ writenumfile(char *file, int32_t num)
 {
 	int fd;
 
-	fd = open(file, OWRITE);
+	fd = sys_open(file, OWRITE);
 	if(fd < 0){
 		complain("can't open %s: %r", file);
 		return;
 	}
 	fprint(fd, "%ld", num);
-	close(fd);
+	sys_close(fd);
 }

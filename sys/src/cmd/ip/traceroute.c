@@ -54,7 +54,7 @@ csquery(DS *ds, char *clone, char *dest)
 	 *  open connection server
 	 */
 	snprint(buf, sizeof(buf), "%s/cs", ds->netdir);
-	fd = open(buf, ORDWR);
+	fd = sys_open(buf, ORDWR);
 	if(fd < 0){
 		if(!isdigit(*dest)){
 			werrstr("can't translate");
@@ -71,17 +71,17 @@ csquery(DS *ds, char *clone, char *dest)
 	 *  ask connection server to translate
 	 */
 	sprint(buf, "%s!%s", ds->proto, ds->rem);
-	if(write(fd, buf, strlen(buf)) < 0){
-		close(fd);
+	if(jehanne_write(fd, buf, strlen(buf)) < 0){
+		sys_close(fd);
 		return -1;
 	}
 
 	/*
 	 *  get an address.
 	 */
-	seek(fd, 0, 0);
-	n = read(fd, buf, sizeof(buf) - 1);
-	close(fd);
+	sys_seek(fd, 0, 0);
+	n = jehanne_read(fd, buf, sizeof(buf) - 1);
+	sys_close(fd);
 	if(n <= 0){
 		werrstr("problem with cs");
 		return -1;
@@ -136,9 +136,9 @@ tcpilprobe(int cfd, int dfd, char *dest, int interval)
 	USED(dfd);
 
 	n = snprint(msg, sizeof msg, "connect %s", dest);
-	alarm(interval);
-	n = write(cfd, msg, n);
-	alarm(0);
+	sys_alarm(interval);
+	n = jehanne_write(cfd, msg, n);
+	sys_alarm(0);
 	return n;
 }
 
@@ -153,15 +153,15 @@ udpprobe(int cfd, int dfd, char *dest, int interval)
 	char msg[Maxstring];
 	char err[Maxstring];
 
-	seek(cfd, 0, 0);
+	sys_seek(cfd, 0, 0);
 	n = snprint(msg, sizeof msg, "connect %s", dest);
-	if(write(cfd, msg, n)< 0)
+	if(jehanne_write(cfd, msg, n)< 0)
 		return -1;
 
 	rv = -1;
 	for(i = 0; i < 3; i++){
-		alarm(interval/3);
-		if(write(dfd, "boo hoo ", 8) < 0)
+		sys_alarm(interval/3);
+		if(jehanne_write(dfd, "boo hoo ", 8) < 0)
 			break;
 		/*
 		 *  a hangup due to an error looks like 3 eofs followed
@@ -169,21 +169,21 @@ udpprobe(int cfd, int dfd, char *dest, int interval)
 		 *  done for pipes.
 		 */
 		do {
-			n = read(dfd, msg, sizeof(msg)-1);
+			n = jehanne_read(dfd, msg, sizeof(msg)-1);
 		} while(n == 0);
-		alarm(0);
+		sys_alarm(0);
 		if(n > 0){
 			rv = 0;
 			break;
 		}
-		errstr(err, sizeof err);
+		sys_errstr(err, sizeof err);
 		if(strstr(err, "alarm") == 0){
 			werrstr(err);
 			break;
 		}
 		werrstr(err);
 	}
-	alarm(0);
+	sys_alarm(0);
 	return rv;
 }
 
@@ -198,15 +198,15 @@ icmpprobe(int cfd, int dfd, char *dest, int interval)
 	char buf[512], err[Maxstring], msg[Maxstring];
 	Icmphdr *ip;
 
-	seek(cfd, 0, 0);
+	sys_seek(cfd, 0, 0);
 	n = snprint(msg, sizeof msg, "connect %s", dest);
-	if(write(cfd, msg, n)< 0)
+	if(jehanne_write(cfd, msg, n)< 0)
 		return -1;
 
 	rv = -1;
 	ip = (Icmphdr *)(buf + IPV4HDR_LEN);
 	for(i = 0; i < 3; i++){
-		alarm(interval/3);
+		sys_alarm(interval/3);
 		ip->type = EchoRequest;
 		ip->code = 0;
 		strcpy((char*)ip->data, MSG);
@@ -215,14 +215,14 @@ icmpprobe(int cfd, int dfd, char *dest, int interval)
 		len = IPV4HDR_LEN + ICMP_HDRSIZE + sizeof(MSG);
 
 		/* send a request */
-		if(write(dfd, buf, len) < len)
+		if(jehanne_write(dfd, buf, len) < len)
 			break;
 
 		/* wait for reply */
-		n = read(dfd, buf, sizeof(buf));
-		alarm(0);
+		n = jehanne_read(dfd, buf, sizeof(buf));
+		sys_alarm(0);
 		if(n < 0){
-			errstr(err, sizeof err);
+			sys_errstr(err, sizeof err);
 			if(strstr(err, "alarm") == 0){
 				werrstr(err);
 				break;
@@ -237,7 +237,7 @@ icmpprobe(int cfd, int dfd, char *dest, int interval)
 			break;
 		}
 	}
-	alarm(0);
+	sys_alarm(0);
 	return rv;
 }
 
@@ -246,9 +246,9 @@ catch(void *a, char *msg)
 {
 	USED(a);
 	if(strstr(msg, "alarm"))
-		noted(NCONT);
+		sys_noted(NCONT);
 	else
-		noted(NDFLT);
+		sys_noted(NDFLT);
 }
 
 static int
@@ -259,13 +259,13 @@ call(DS *ds, char *clone, char *dest, int ttl, int32_t *interval)
 	char file[Maxstring];
 	int64_t start;
 
-	notify(catch);
+	sys_notify(catch);
 
 	/* start timing */
 	start = nsec()/1000;
 	rv = -1;
 
-	cfd = open(clone, ORDWR);
+	cfd = sys_open(clone, ORDWR);
 	if(cfd < 0){
 		werrstr("%s: %r", clone);
 		return -1;
@@ -273,14 +273,14 @@ call(DS *ds, char *clone, char *dest, int ttl, int32_t *interval)
 	dfd = -1;
 
 	/* get conversation number */
-	n = read(cfd, msg, sizeof(msg)-1);
+	n = jehanne_read(cfd, msg, sizeof(msg)-1);
 	if(n <= 0)
 		goto out;
 	msg[n] = 0;
 
 	/* open data file */
 	sprint(file, "%s/%s/%s/data", ds->netdir, ds->proto, msg);
-	dfd = open(file, ORDWR);
+	dfd = sys_open(file, ORDWR);
 	if(dfd < 0)
 		goto out;
 
@@ -297,10 +297,10 @@ call(DS *ds, char *clone, char *dest, int ttl, int32_t *interval)
 		rv = tcpilprobe(cfd, dfd, dest, 3000);
 out:
 	/* turn off alarms */
-	alarm(0);
+	sys_alarm(0);
 	*interval = nsec()/1000 - start;
-	close(cfd);
-	close(dfd);
+	sys_close(cfd);
+	sys_close(dfd);
 	return rv;
 }
 
@@ -406,7 +406,7 @@ main(int argc, char **argv)
 				done = 1;
 				continue;
 			}
-			errstr(err, sizeof err);
+			sys_errstr(err, sizeof err);
 			if(strstr(err, "refused")){
 				strcpy(hop, dest);
 				p = strchr(hop, '!');

@@ -55,7 +55,7 @@ Brdline(Biobufhdr *bp, int delim)
 	 */
 	ip = (char*)bp->bbuf + i;
 	while(i < bp->bsize) {
-		j = read(bp->fid, ip, bp->bsize-i);
+		j = jehanne_read(bp->fid, ip, bp->bsize-i);
 		if(j <= 0) {
 			/*
 			 * end of file with no delim

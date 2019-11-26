@@ -140,7 +140,7 @@ wait4data(Serialport *p, uint8_t *data, int count)
 	int n;
 
 	qunlock(&p->s->ql);
-	while ((n = read(p->epin->dfd, data, count)) == 0)
+	while ((n = jehanne_read(p->epin->dfd, data, count)) == 0)
 		;
 	qlock(&p->s->ql);
 	return n;

@@ -32,16 +32,16 @@ int32_t fwrite(const void *p, int32_t recl, int32_t nrec, FILE *f){
 				d=f->wp-f->buf;
 				if(d>0){
 					if(f->flags&APPEND)
-						seek(f->fd, 0L, 2);
-					if(write(f->fd, f->buf, d)!=d){
+						sys_seek(f->fd, 0L, 2);
+					if(jehanne_write(f->fd, f->buf, d)!=d){
 						f->state=ERR;
 						goto ret;
 					}
 					f->wp=f->rp=f->buf;
 				}
 				if(f->flags&APPEND)
-					seek(f->fd, 0L, 2);
-				d=write(f->fd, s, n);
+					sys_seek(f->fd, 0L, 2);
+				d=jehanne_write(f->fd, s, n);
 				if(d<=0){
 					f->state=ERR;
 					goto ret;

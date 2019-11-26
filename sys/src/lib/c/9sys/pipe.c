@@ -22,7 +22,7 @@ int
 jehanne_pipe(int pipes[2])
 {
 	FdPair pset;
-	pset.aslong = remove("#0/pipes");
+	pset.aslong = sys_remove("#0/pipes");
 	if(pset.aslong == -1)
 		return -1;
 	pipes[0] = pset.fd[0];

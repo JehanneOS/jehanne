@@ -19,6 +19,6 @@ regerror(char *s)
 	strcpy(buf, "regerror: ");
 	strcat(buf, s);
 	strcat(buf, "\n");
-	write(2, buf, strlen(buf));
+	jehanne_write(2, buf, strlen(buf));
 	exits("regerr");
 }

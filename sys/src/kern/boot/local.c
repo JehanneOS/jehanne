@@ -85,7 +85,7 @@ jehanne_print("configlocal: disk is %s\n", disk);
 static int
 print1(int fd, char *s)
 {
-	return write(fd, s, jehanne_strlen(s));
+	return jehanne_write(fd, s, jehanne_strlen(s));
 }
 
 void
@@ -93,15 +93,15 @@ configloopback(void)
 {
 	int fd;
 
-	if((fd = open("/net/ipifc/clone", ORDWR)) < 0){
-		bind("#I", "/net", MAFTER);
-		if((fd = open("/net/ipifc/clone", ORDWR)) < 0)
+	if((fd = sys_open("/net/ipifc/clone", ORDWR)) < 0){
+		sys_bind("#I", "/net", MAFTER);
+		if((fd = sys_open("/net/ipifc/clone", ORDWR)) < 0)
 			fatal("open /net/ipifc/clone for loopback");
 	}
 	if(print1(fd, "bind loopback /dev/null") < 0
 	|| print1(fd, "add 127.0.0.1 255.255.255.255") < 0)
 		fatal("write /net/ipifc/clone for loopback");
-	close(fd);
+	sys_close(fd);
 }
 
 int
@@ -122,7 +122,7 @@ connecthjfs(void)
 	/* start hjfs */
 	jehanne_print("hjfs(%s)...", partition);
 	shell("-c", jehanne_smprint("%s -f '%s' -n 'boot'", hjfsPath, partition));
-	fd = open("#s/boot", ORDWR);
+	fd = sys_open("#s/boot", ORDWR);
 	if(fd < 0){
 		jehanne_print("open #s/boot: %r\n");
 		return -1;
@@ -135,15 +135,15 @@ connectlocal(void)
 {
 	int fd;
 
-	if(bind("#0", "/dev", MREPL) < 0)
+	if(sys_bind("#0", "/dev", MREPL) < 0)
 		fatal("bind #0");
-	if(bind("#c", "/dev", MAFTER) < 0)
+	if(sys_bind("#c", "/dev", MAFTER) < 0)
 		fatal("bind #c");
-	if(bind("#p", "/proc", MREPL) < 0)
+	if(sys_bind("#p", "/proc", MREPL) < 0)
 		fatal("bind #p");
-	bind("#S", "/dev", MAFTER);
-	bind("#k", "/dev", MAFTER);
-	bind("#æ", "/dev", MAFTER);
+	sys_bind("#S", "/dev", MAFTER);
+	sys_bind("#k", "/dev", MAFTER);
+	sys_bind("#æ", "/dev", MAFTER);
 	if((fd = connecthjfs()) < 0){
 		shell("-i", nil);
 		return -1;

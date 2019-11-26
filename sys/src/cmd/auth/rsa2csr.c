@@ -54,6 +54,6 @@ main(int argc, char **argv)
 	if(cert == nil)
 		sysfatal("X509rsareq: %r");
 
-	write(1, cert, len);
+	jehanne_write(1, cert, len);
 	exits(0);
 }

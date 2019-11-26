@@ -116,11 +116,11 @@ snarf(Vga* vga, Ctlr* ctlr)
 			error("%s: not found\n", ctlr->name);
 		}
 
-		if((f = open("#v/vgactl", OWRITE)) < 0)
+		if((f = sys_open("#v/vgactl", OWRITE)) < 0)
 			error("%s: can't open vgactl\n", ctlr->name);
-		if(write(f, "type clgd546x", 13) != 13)
+		if(jehanne_write(f, "type clgd546x", 13) != 13)
 			error("%s: can't set type\n", ctlr->name);
-		close(f);
+		sys_close(f);
 	
 		mmio = segattach(0, "clgd546xmmio", 0, p->mem[1].size);
 		if(mmio == (void*)-1)

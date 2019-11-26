@@ -121,7 +121,7 @@ diskwrite(Disk *d, Block **bp, Rune *r, uint32_t n)
 		b = disknewblock(d, n);
 		*bp = b;
 	}
-	if(pwrite(d->fd, r, n*sizeof(Rune), b->addr) != n*sizeof(Rune))
+	if(sys_pwrite(d->fd, r, n*sizeof(Rune), b->addr) != n*sizeof(Rune))
 		error("write error to temp file");
 	b->n = n;
 }
@@ -139,7 +139,7 @@ diskread(Disk *d, Block *b, Rune *r, uint32_t n)
 	n *= sizeof(Rune);
 	p = (char*)r;
 	for(tot = 0; tot < n; tot += nr){
-		nr = pread(d->fd, p+tot, n-tot, b->addr+tot);
+		nr = sys_pread(d->fd, p+tot, n-tot, b->addr+tot);
 		if(nr <= 0)
 			error("read error from temp file");
 	}

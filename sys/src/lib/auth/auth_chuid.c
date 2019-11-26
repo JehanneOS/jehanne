@@ -28,22 +28,22 @@ auth_chuid(AuthInfo *ai, char *ns)
 	}
 
 	/* change uid */
-	fd = open("#¤/capuse", OWRITE);
+	fd = sys_open("#¤/capuse", OWRITE);
 	if(fd < 0){
 		werrstr("opening #¤/capuse: %r");
 		return -1;
 	}
-	rv = write(fd, ai->cap, strlen(ai->cap));
-	close(fd);
+	rv = jehanne_write(fd, ai->cap, strlen(ai->cap));
+	sys_close(fd);
 	if(rv < 0){
 		werrstr("writing %s to #¤/capuse: %r", ai->cap);
 		return -1;
 	}
 
 	/* get a link to factotum as new user */
-	fd = open("/srv/factotum", ORDWR);
+	fd = sys_open("/srv/factotum", ORDWR);
 	if(fd >= 0)
-		mount(fd, -1, "/mnt", MREPL, "", '9');
+		sys_mount(fd, -1, "/mnt", MREPL, "", '9');
 
 	/* set up new namespace */
 	return newns(ai->cuid, ns);

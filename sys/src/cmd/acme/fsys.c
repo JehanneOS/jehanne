@@ -135,15 +135,15 @@ fsysinit(void)
 	cfd = p[0];
 	sfd = p[1];
 	fmtinstall('F', fcallfmt);
-	clockfd = open("/dev/time", OREAD|OCEXEC);
-	fd = open("/dev/user", OREAD);
+	clockfd = sys_open("/dev/time", OREAD|OCEXEC);
+	fd = sys_open("/dev/user", OREAD);
 	if(fd >= 0){
-		n = read(fd, buf, sizeof buf-1);
+		n = jehanne_read(fd, buf, sizeof buf-1);
 		if(n > 0){
 			buf[n] = 0;
 			user = estrdup(buf);
 		}
-		close(fd);
+		sys_close(fd);
 	}
 	proccreate(fsysproc, nil, STACK);
 }
@@ -279,16 +279,16 @@ fsysmount(Rune *dir, int ndir, Rune **incl, int nincl)
 	Mntdir *m;
 
 	/* close server side so don't hang if acme is half-exited */
-	close(sfd);
+	sys_close(sfd);
 	m = fsysaddid(dir, ndir, incl, nincl);
 	sprint(buf, "%d", m->id);
-	if(mount(cfd, -1, "/mnt/acme", MREPL, buf, '9') < 0){
+	if(sys_mount(cfd, -1, "/mnt/acme", MREPL, buf, '9') < 0){
 		fsysdelid(m);
 		return nil;
 	}
-	close(cfd);
-	bind("/mnt/acme", "/mnt/wsys", MREPL);
-	if(bind("/mnt/acme", "/dev", MBEFORE) < 0){
+	sys_close(cfd);
+	sys_bind("/mnt/acme", "/mnt/wsys", MREPL);
+	if(sys_bind("/mnt/acme", "/dev", MBEFORE) < 0){
 		fsysdelid(m);
 		return nil;
 	}
@@ -299,8 +299,8 @@ void
 fsysclose(void)
 {
 	closing = 1;
-	close(cfd);
-	close(sfd);
+	sys_close(cfd);
+	sys_close(sfd);
 }
 
 Xfid*
@@ -320,7 +320,7 @@ respond(Xfid *x, Fcall *t, char *err)
 	n = convS2M(t, x->buf, messagesize);
 	if(n <= 0)
 		error("convert error in convS2M");
-	if(write(sfd, x->buf, n) != n)
+	if(jehanne_write(sfd, x->buf, n) != n)
 		error("write error in respond");
 	free(x->buf);
 	x->buf = nil;
@@ -749,7 +749,7 @@ getclock()
 	char buf[32];
 
 	buf[0] = '\0';
-	pread(clockfd, buf, sizeof buf, 0);
+	sys_pread(clockfd, buf, sizeof buf, 0);
 	return atoi(buf);
 }
 

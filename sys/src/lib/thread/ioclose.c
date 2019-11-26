@@ -18,7 +18,7 @@ _ioclose(va_list *arg)
 	int fd;
 
 	fd = va_arg(*arg, int);
-	return close(fd);
+	return sys_close(fd);
 }
 
 int

@@ -41,7 +41,7 @@ main(int argc, char **argv)
 	char *nsfile, err[ERRMAX];
 	int add;
 
-	rfork(RFNAMEG);
+	sys_rfork(RFNAMEG);
 	add = 0;
 	nsfile = "/lib/namespace";
 	ARGBEGIN{
@@ -64,11 +64,11 @@ main(int argc, char **argv)
 		addns(getuser(), nsfile);
 	else
 		newns(getuser(), nsfile);
-	exec(argv[0], argv);
+	sys_exec(argv[0], argv);
 	if(!rooted(argv[0])){
 		rerrstr(err, sizeof err);
-		exec(smprint("/cmd/%s", argv[0]), argv);
-		errstr(err, sizeof err);
+		sys_exec(smprint("/cmd/%s", argv[0]), argv);
+		sys_errstr(err, sizeof err);
 	}
 	sysfatal("exec: %s: %r", argv[0]);
 }	

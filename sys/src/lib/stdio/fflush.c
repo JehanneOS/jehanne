@@ -40,7 +40,7 @@ int _fflush(FILE *f){
 		return EOF;
 	case WR:
 		cnt=(f->flags&LINEBUF?f->lp:f->wp)-f->buf;
-		if(cnt && write(f->fd, f->buf, cnt)!=cnt){
+		if(cnt && jehanne_write(f->fd, f->buf, cnt)!=cnt){
 			f->state=ERR;
 			return EOF;
 		}

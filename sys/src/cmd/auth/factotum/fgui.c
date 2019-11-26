@@ -27,7 +27,7 @@ struct RequestType
 	char		*file;			/* file to read requests from */
 	void		(*f)(Request*);		/* request handler */
 	void		(*r)(Controlset*);	/* resize handler */
-	int		fd;			/* fd = open(file, ORDWR) */
+	int		fd;			/* fd = sys_open(file, ORDWR) */
 	Channel		*rc;			/* channel requests are multiplexed to */
 	Controlset	*cs;
 };
@@ -140,7 +140,7 @@ readreq(void *a)
 	Request r;
 	Attr **l;
 
-	rt->fd = open(rt->file, ORDWR);
+	rt->fd = sys_open(rt->file, ORDWR);
 	if(rt->fd < 0)
 		sysfatal("opening %s: %r", rt->file);
 	rt->cs = nil;
@@ -151,7 +151,7 @@ readreq(void *a)
 	r.rt = rt;
 
 	for(;;){
-		n = read(rt->fd, buf, Requestlen-1);
+		n = jehanne_read(rt->fd, buf, Requestlen-1);
 		if(n < 0)
 			break;
 		buf[n] = 0;
@@ -270,11 +270,11 @@ unhide(void)
 {
 	int wctl;
 
-	wctl = open("/dev/wctl", OWRITE);
+	wctl = sys_open("/dev/wctl", OWRITE);
 	if(wctl < 0)
 		return;
 	fprint(wctl, "unhide");
-	close(wctl);
+	sys_close(wctl);
 }
 static void
 hide(void)
@@ -282,7 +282,7 @@ hide(void)
 	int wctl;
 	int tries;
 
-	wctl = open("/dev/wctl", OWRITE);
+	wctl = sys_open("/dev/wctl", OWRITE);
 	if(wctl < 0)
 		return;
 	for(tries = 0; tries < 10; tries++){
@@ -290,7 +290,7 @@ hide(void)
 			break;
 		sleep(100);
 	}
-	close(wctl);
+	sys_close(wctl);
 }
 
 /*
@@ -805,10 +805,10 @@ needkey(Request *r)
 	}
 
 	/* enter the new key */
-	fd = open("/mnt/factotum/ctl", OWRITE);
+	fd = sys_open("/mnt/factotum/ctl", OWRITE);
 	if(fd >= 0){
 		fprint(fd, "key %A", r->a);
-		close(fd);
+		sys_close(fd);
 	}
 
 	teardownneedkey(r);

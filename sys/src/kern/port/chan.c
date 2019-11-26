@@ -1311,7 +1311,7 @@ namec(char *aname, int amode, long omode, long perm)
 		 * but Jehanne disable them to improve security.
 		 *
 		 * Who actually need them can bind #c and #p somewhere
-		 * before rfork(RFNOMNT)
+		 * before sys_rfork(RFNOMNT)
 		 */
 		if(up->pgrp->noattach && jehanne_utfrune("|0de", r)==nil)
 			error(Enoattach);

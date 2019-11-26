@@ -29,7 +29,7 @@ pppbinddev(void)
 	Waitmsg *w;
 
 	/* ppp does the binding */
-	switch(pid = rfork(RFPROC|RFFDG|RFMEM)){
+	switch(pid = sys_rfork(RFPROC|RFFDG|RFMEM)){
 	case -1:
 		sysfatal("can't start ppp: %r");
 	case 0:
@@ -45,8 +45,8 @@ pppbinddev(void)
 			av[ac++] = conf.baud;
 		}
 		av[ac] = nil;
-		exec("/bin/ip/ppp", av);
-		exec("/ppp", av);
+		sys_exec("/bin/ip/ppp", av);
+		sys_exec("/ppp", av);
 		sysfatal("execing /ppp: %r");
 	}
 

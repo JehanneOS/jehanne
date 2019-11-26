@@ -50,7 +50,7 @@ main(int argc, char *argv[])
 		fd = 0;
 		filename = "<stdin>";
 	}else{
-		fd = open(argv[0], OREAD);
+		fd = sys_open(argv[0], OREAD);
 		if(fd < 0)
 			sysfatal("can't open %s: %r", argv[0]);
 		filename = argv[0];
@@ -59,7 +59,7 @@ main(int argc, char *argv[])
 	i = readmemimage(fd);
 	if(i == nil)
 		sysfatal("can't readimage %s: %r", filename);
-	close(fd);
+	sys_close(fd);
 
 	err = memwritepng(&bout, i, &II);
 	freememimage(i);

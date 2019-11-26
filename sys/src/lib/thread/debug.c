@@ -55,6 +55,6 @@ _threadassert(char *s)
 	else
 		n = 0;
 	jehanne_snprint(buf+n, sizeof(buf)-n, "%s: assertion failed at %#p\n", s, jehanne_getcallerpc());
-	write(2, buf, jehanne_strlen(buf));
+	jehanne_write(2, buf, jehanne_strlen(buf));
 	abort();
 }

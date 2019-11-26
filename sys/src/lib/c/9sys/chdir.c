@@ -27,12 +27,12 @@ jehanne_chdir(const char *dirname)
 
 	tmp = jehanne_getpid();
 	jehanne_snprint(buf, sizeof(buf), "/proc/%d/wdir", tmp);
-	fd = open(buf, OWRITE);
+	fd = sys_open(buf, OWRITE);
 	if(fd < 0)
-		fd = open("#0/wdir", OWRITE);
+		fd = sys_open("#0/wdir", OWRITE);
 	if(fd < 0)
 		return fd;
-	tmp = write(fd, dirname, 1+jehanne_strlen(dirname));
-	close(fd);
+	tmp = jehanne_write(fd, dirname, 1+jehanne_strlen(dirname));
+	sys_close(fd);
 	return tmp;
 }

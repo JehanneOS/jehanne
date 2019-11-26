@@ -257,7 +257,7 @@ loadfile(int fd, uint32_t q0, int *nulls, int(*f)(void*, uint32_t, Rune*, int), 
 	 * last pass, possibly representing a partial rune.
 	 */
 	while(n > 0){
-		n = read(fd, p+m, Maxblock);
+		n = jehanne_read(fd, p+m, Maxblock);
 		if(n < 0){
 			warning(nil, "read error in Buffer.load");
 			break;

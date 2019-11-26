@@ -411,10 +411,10 @@ doimage(Icon *icon)
 
 	rv = -1;
 	snprint(file, sizeof(file), "%dx%d.img", icon->w, icon->h);
-	fd = create(file, OWRITE, 0664);
+	fd = sys_create(file, OWRITE, 0664);
 	if(fd >= 0){
 		rv = writememimage(fd, icon->img);
-		close(fd);
+		sys_close(fd);
 	}
 	if(rv < 0)
 		mesg("error writing %s: %r", file);
@@ -434,10 +434,10 @@ domask(Icon *icon)
 
 	rv = -1;
 	snprint(file, sizeof(file), "%dx%d.mask", icon->w, icon->h);
-	fd = create(file, OWRITE, 0664);
+	fd = sys_create(file, OWRITE, 0664);
 	if(fd >= 0){
 		rv = writememimage(fd, icon->mask);
-		close(fd);
+		sys_close(fd);
 	}
 	if(rv < 0)
 		mesg("error writing %s: %r", file);
@@ -569,7 +569,7 @@ main(int argc, char **argv)
 		fd = 0;
 		break;
 	case 1:
-		fd = open(argv[0], OREAD);
+		fd = sys_open(argv[0], OREAD);
 		if(fd < 0)
 			sysfatal("opening: %r");
 		break;

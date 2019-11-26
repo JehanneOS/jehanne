@@ -34,24 +34,24 @@ query(char *addr)
 	char buf[128];
 	int fd, n;
 
-	fd = open(server, ORDWR);
+	fd = sys_open(server, ORDWR);
 	if(fd < 0)
 		sysfatal("cannot open %s: %r", server);
-	if(write(fd, addr, strlen(addr)) != strlen(addr)){
+	if(jehanne_write(fd, addr, strlen(addr)) != strlen(addr)){
 		if(!statusonly)
 			fprint(2, "translating %s: %r\n", addr);
 		status = "errors";
-		close(fd);
+		sys_close(fd);
 		return;
 	}
 	if(!statusonly){
-		seek(fd, 0, 0);
-		while((n = read(fd, buf, sizeof(buf)-1)) > 0){
+		sys_seek(fd, 0, 0);
+		while((n = jehanne_read(fd, buf, sizeof(buf)-1)) > 0){
 			buf[n] = 0;
 			print("%s\n", buf);
 		}
 	}
-	close(fd);
+	sys_close(fd);
 }
 
 void

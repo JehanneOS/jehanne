@@ -31,7 +31,7 @@ error(char* format, ...)
 	if(vflag)
 		Bprint(&stdout, "%s", buf+n);
 	Bflush(&stdout);
-	write(2, buf, out-buf);
+	jehanne_write(2, buf, out-buf);
 	exits("error");
 }
 

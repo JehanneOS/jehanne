@@ -234,7 +234,7 @@ asixreceive(Dev *ep)
 	int n;
 
 	b = allocb(Maxpkt+4);
-	if((n = read(ep->dfd, b->wp, b->lim - b->base)) < 0){
+	if((n = jehanne_read(ep->dfd, b->wp, b->lim - b->base)) < 0){
 		freeb(b);
 		return -1;
 	}
@@ -273,7 +273,7 @@ asixtransmit(Dev *ep, Block *b)
 		PUT4(b->wp, mask);
 		b->wp += 4;
 	}
-	write(ep->dfd, b->rp, BLEN(b));
+	jehanne_write(ep->dfd, b->rp, BLEN(b));
 	freeb(b);
 }
 

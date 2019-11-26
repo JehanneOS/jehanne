@@ -81,9 +81,9 @@ threadsetname(char *fmt, ...)
 	va_end(arg);
 	if(t->cmdname && p->nthreads == 1){
 		jehanne_snprint(buf, sizeof buf, "#p/%lud/args", jehanne_getpid());
-		if((fd = open(buf, OWRITE)) >= 0){
-			write(fd, t->cmdname, jehanne_strlen(t->cmdname)+1);
-			close(fd);
+		if((fd = sys_open(buf, OWRITE)) >= 0){
+			jehanne_write(fd, t->cmdname, jehanne_strlen(t->cmdname)+1);
+			sys_close(fd);
 		}
 	}
 }

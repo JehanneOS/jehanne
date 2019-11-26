@@ -21,7 +21,7 @@ readn(int fd, void *buf, int32_t len)
 
 	p = buf;
 	for(n = 0; n < len; n += m){
-		m = read(fd, p+n, len-n);
+		m = jehanne_read(fd, p+n, len-n);
 		if(m <= 0)
 			return -1;
 	}
@@ -44,8 +44,8 @@ fromauth(Method *mp, char *trbuf, char *tbuf)
 		return error;
 	}
 
-	if(write(afd, trbuf, TICKREQLEN) < 0 || read(afd, &t, 1) != 1){
-		close(afd);
+	if(jehanne_write(afd, trbuf, TICKREQLEN) < 0 || jehanne_read(afd, &t, 1) != 1){
+		sys_close(afd);
 		jehanne_sprint(error, "%s: %r", pbmsg);
 		return error;
 	}
@@ -72,7 +72,7 @@ fromauth(Method *mp, char *trbuf, char *tbuf)
 		break;
 	}
 
-	close(afd);
+	sys_close(afd);
 	return msg;
 }
 
@@ -97,7 +97,7 @@ doauthenticate(int fd, Method *mp)
 	msg = fromauth(mp, trbuf, tbuf);
 	jehanne_print("authenticating...");
 	if(msg == 0)
-		if(fauth(fd, tbuf) >= 0)
+		if(sys_fauth(fd, tbuf) >= 0)
 			return;
 
 	/* didn't work, go for the security hole */

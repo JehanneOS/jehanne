@@ -57,16 +57,16 @@ main(int argc, char *argv[])
 		srv = "screenconsole";
 
 	/* first try in /dev so that binding can work */
-	if((fd = open("/dev/scancode", OREAD)) <= 0)
-		if((fd = open("#b/scancode", OREAD)) <= 0)
+	if((fd = sys_open("/dev/scancode", OREAD)) <= 0)
+		if((fd = sys_open("#b/scancode", OREAD)) <= 0)
 			sysfatal("open keyboard: %r");
 	dup(fd, 0);
-	close(fd);
-	if((fd = open("/dev/cgamem", OWRITE)) <= 0)
-		if((fd = open("#P/cgamem", OWRITE)) <= 0)
+	sys_close(fd);
+	if((fd = sys_open("/dev/cgamem", OWRITE)) <= 0)
+		if((fd = sys_open("#P/cgamem", OWRITE)) <= 0)
 			sysfatal("open screen: %r");
 	dup(fd, 1);
-	close(fd);
+	sys_close(fd);
 
 	fd = servecons(readkeyboard, writecga, &devmnt);
 	post(srv, fd);

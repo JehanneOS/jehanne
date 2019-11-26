@@ -92,7 +92,7 @@ search(char *file, int flag)
 		fid = 0;
 		flag |= Bflag;
 	} else
-		fid = open(file, OREAD);
+		fid = sys_open(file, OREAD);
 
 	if (fid < 0) {
 		fprint(2, "grep: can't open %s: %r\n", file);
@@ -133,7 +133,7 @@ loop0:
 		n = sizeof(u.pre);
 	memmove(u.buf - n, bol, n);
 	bol = u.buf - n;
-	n = read(fid, u.buf, sizeof(u.buf));
+	n = jehanne_read(fid, u.buf, sizeof(u.buf));
 	/* if file has no final newline, simulate one to emit matches to last line */
 	if (n > 0) {
 		empty = 0;
@@ -150,7 +150,7 @@ loop0:
 		}
 	}
 	if (n <= 0) {
-		close(fid);
+		sys_close(fid);
 		if (flag & Cflag) {
 			if (flag & Hflag)
 				Bprint(&bout, "%s:", file);

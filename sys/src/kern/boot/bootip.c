@@ -59,18 +59,18 @@ jehanne_print("ipconfig...");
 	} ARGEND;
 
 	/* bind in an ip interface */
-	if(bind("#I", mpoint, MAFTER) < 0)
+	if(sys_bind("#I", mpoint, MAFTER) < 0)
 		fatal("bind #I\n");
 	if(jehanne_access(ipconfigPath, AEXEC) < 0)
 		fatal("cannot access ipconfig");
 
-	if(jehanne_access("#l0", AEXIST) == 0 && bind("#l0", mpoint, MAFTER) < 0)
+	if(jehanne_access("#l0", AEXIST) == 0 && sys_bind("#l0", mpoint, MAFTER) < 0)
 		jehanne_print("bind #l0: %r\n");
-	if(jehanne_access("#l1", AEXIST) == 0 && bind("#l1", mpoint, MAFTER) < 0)
+	if(jehanne_access("#l1", AEXIST) == 0 && sys_bind("#l1", mpoint, MAFTER) < 0)
 		jehanne_print("bind #l1: %r\n");
-	if(jehanne_access("#l2", AEXIST) == 0 && bind("#l2", mpoint, MAFTER) < 0)
+	if(jehanne_access("#l2", AEXIST) == 0 && sys_bind("#l2", mpoint, MAFTER) < 0)
 		jehanne_print("bind #l2: %r\n");
-	if(jehanne_access("#l3", AEXIST) == 0 && bind("#l3", mpoint, MAFTER) < 0)
+	if(jehanne_access("#l3", AEXIST) == 0 && sys_bind("#l3", mpoint, MAFTER) < 0)
 		jehanne_print("bind #l3: %r\n");
 	jehanne_werrstr("");
 
@@ -79,7 +79,7 @@ jehanne_print("ipconfig...");
 	case -1:
 		fatal("fork configuring ip");
 	case 0:
-		exec(ipconfigPath, (const char**)arg);
+		sys_exec(ipconfigPath, (const char**)arg);
 		fatal("execing ipconfig");
 	default:
 		break;
@@ -169,17 +169,17 @@ netenv(char *attr, uint8_t *ip)
 
 	ipmove(ip, IPnoaddr);
 	jehanne_snprint(buf, sizeof(buf), "#ec/%s", attr);
-	fd = open(buf, OREAD);
+	fd = sys_open(buf, OREAD);
 	if(fd < 0)
 		return;
 
-	n = read(fd, buf, sizeof(buf)-1);
+	n = jehanne_read(fd, buf, sizeof(buf)-1);
 	if(n > 0){
 		buf[n] = 0;
 		if (parseip(ip, buf) == -1)
 			jehanne_fprint(2, "netenv: can't parse ip %s\n", buf);
 	}
-	close(fd);
+	sys_close(fd);
 }
 
 static void
@@ -191,11 +191,11 @@ netndb(char *attr, uint8_t *ip)
 
 	ipmove(ip, IPnoaddr);
 	jehanne_snprint(buf, sizeof(buf), "%s/ndb", mpoint);
-	fd = open(buf, OREAD);
+	fd = sys_open(buf, OREAD);
 	if(fd < 0)
 		return;
-	n = read(fd, buf, sizeof(buf)-1);
-	close(fd);
+	n = jehanne_read(fd, buf, sizeof(buf)-1);
+	sys_close(fd);
 	if(n <= 0)
 		return;
 	buf[n] = 0;

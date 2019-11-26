@@ -17,11 +17,11 @@ jehanne_getuser(void)
 	int fd;
 	int n;
 
-	fd = open("/dev/user", OREAD);
+	fd = sys_open("/dev/user", OREAD);
 	if(fd < 0)
 		return "none";
-	n = read(fd, user, (sizeof user)-1);
-	close(fd);
+	n = jehanne_read(fd, user, (sizeof user)-1);
+	sys_close(fd);
 	if(n <= 0)
 		return "none";
 	user[n] = '\0';

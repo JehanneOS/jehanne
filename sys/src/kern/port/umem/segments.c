@@ -521,7 +521,7 @@ segment_share(ProcSegment **s)
 	case SgLoad:
 		if(segment->image % NLOAD == 0
 		&& segment->permissions&SgWrite){
-			/* text segment in debug mode: on rfork(whatever)
+			/* text segment in debug mode: on sys_rfork(whatever)
 			 * it is going to be copied as a readonly
 			 */
 			segment_info(segment, &info);

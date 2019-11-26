@@ -277,7 +277,7 @@ Xappend(void)
 		break;
 	}
 	file = runq->argv->words->word;
-	if((f = open(file, OWRITE))<0 && (f = Creat(file))<0){
+	if((f = sys_open(file, OWRITE))<0 && (f = Creat(file))<0){
 		pfmt(err, "%s: ", file);
 		Xerror("can't open");
 		return;
@@ -394,7 +394,7 @@ Xread(void)
 		break;
 	}
 	file = runq->argv->words->word;
-	if((f = open(file, OREAD))<0){
+	if((f = sys_open(file, OREAD))<0){
 		pfmt(err, "%s: ", file);
 		Xerror("can't open");
 		return;
@@ -421,7 +421,7 @@ Xrdwr(void)
 		break;
 	}
 	file = runq->argv->words->word;
-	if((f = open(file, ORDWR))<0){
+	if((f = sys_open(file, ORDWR))<0){
 		pfmt(err, "%s: ", file);
 		Xerror("can't open");
 		return;
@@ -446,7 +446,7 @@ Xpopredir(void)
 		panic("turfredir null!", 0);
 	runq->redir = rp->next;
 	if(rp->type==ROPEN)
-		close(rp->from);
+		sys_close(rp->from);
 	free(rp);
 }
 

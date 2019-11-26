@@ -99,11 +99,11 @@ write_env_file(const char *name, const char *value, int size)
 	f = ocreate(buf, OWRITE, 664);
 	if(f < 0)
 		return 0;
-	if(write(f, value, size) < 0){
-		close(f);
+	if(jehanne_write(f, value, size) < 0){
+		sys_close(f);
 		return 0;
 	}
-	close(f);
+	sys_close(f);
 	return 1;
 }
 
@@ -165,7 +165,7 @@ POSIX_unsetenv(int *errnop, const char *name)
 	wunlock(&list_lock);
 
 	snprint(buf, sizeof(buf), "/env/%s", name);
-	remove(buf);
+	sys_remove(buf);
 	return 0;
 }
 
@@ -240,7 +240,7 @@ __libposix_setup_exec_environment(char * const *env)
 			continue;
 		end++; /* after '=' */
 		len = strlen(end);
-		pwrite(fd, end, len, -1);
-		close(fd);
+		sys_pwrite(fd, end, len, -1);
+		sys_close(fd);
 	}
 }

@@ -213,7 +213,7 @@ main(int argc, char *argv[])
 	fprint(fd, "; This file is generated automatically, do not edit!\n");
 	for(i = 0; i < nx; i++)
 		printArecord(fd, &x[i]);
-	close(fd);
+	sys_close(fd);
 
 	sprint(fn, "/cfg/ndb/equiv.%-.21s", domname);
 	fd = ocreate(fn, OWRITE, 0664);
@@ -223,7 +223,7 @@ main(int argc, char *argv[])
 	}
 	for(i = 0; i < nx; i++)
 		printsys(fd, &x[i]);
-	close(fd);
+	sys_close(fd);
 
 	sprint(fn, "/cfg/ndb/txt.%-.23s", domname);
 	fd = ocreate(fn, OWRITE, 0664);
@@ -233,7 +233,7 @@ main(int argc, char *argv[])
 	}
 	for(i = 0; i < nx; i++)
 		printtxt(fd, &x[i]);
-	close(fd);
+	sys_close(fd);
 
 	exits(0);
 }

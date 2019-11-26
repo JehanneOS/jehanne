@@ -57,27 +57,27 @@ main(int argc, char **argv)
 		exits("pipe");
 	}
 
-	switch(rfork(RFPROC|RFNOWAIT|RFNOTEG|RFFDG)){
+	switch(sys_rfork(RFPROC|RFNOWAIT|RFNOTEG|RFFDG)){
 	case -1:
 		fprint(2, "can't rfork: %r\n");
 		exits("rfork");
 	case 0:
 		dup(pipefd[0], 0);
 		dup(pipefd[0], 1);
-		close(pipefd[0]);
-		close(pipefd[1]);
-		exec(ename, arglist);
+		sys_close(pipefd[0]);
+		sys_close(pipefd[1]);
+		sys_exec(ename, arglist);
 		fprint(2, "can't exec exportfs: %r\n");
 		exits("exec");
 	default:
 		break;
 	}
-	close(pipefd[0]);
+	sys_close(pipefd[0]);
 	if(fprint(pipefd[1], "%s", argv[1]) < 0){
 		fprint(2, "can't write pipe: %r\n");
 		exits("write");
 	}
-	n = read(pipefd[1], buf, sizeof buf-1);
+	n = jehanne_read(pipefd[1], buf, sizeof buf-1);
 	if(n < 0){
 		fprint(2, "can't read pipe: %r\n");
 		exits("read");
@@ -97,7 +97,7 @@ main(int argc, char **argv)
 		exits("create");
 	}
 	fprint(fd, "%d", pipefd[1]);
-	close(fd);
-	close(pipefd[1]);
+	sys_close(fd);
+	sys_close(pipefd[1]);
 	exits(0);
 }

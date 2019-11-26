@@ -157,8 +157,8 @@ notifyf(void *a, char *s)
 {
 	USED(a);
 	if(strncmp(s, "interrupt", 9) == 0)
-		noted(NCONT);
-	noted(NDFLT);
+		sys_noted(NCONT);
+	sys_noted(NDFLT);
 }
 
 void
@@ -214,13 +214,13 @@ main(int argc, char *argv[])
 			if(fd < 0)
 				error("create failed");
 			sprint(buf, "%d", p[1]);
-			if(write(fd, buf, strlen(buf)) < 0)
+			if(jehanne_write(fd, buf, strlen(buf)) < 0)
 				error("writing service file");
 		}
 	}
 
 	user = getuser();
-	notify(notifyf);
+	sys_notify(notifyf);
 	nram = 1;
 	r = &ram[0];
 	r->busy = 1;
@@ -242,16 +242,16 @@ main(int argc, char *argv[])
 		fmtinstall('F', fcallfmt);
 		fmtinstall('M', dirmodefmt);
 	}
-	switch(rfork(RFFDG|RFPROC|RFNAMEG|RFNOTEG)){
+	switch(sys_rfork(RFFDG|RFPROC|RFNAMEG|RFNOTEG)){
 	case -1:
 		error("fork");
 	case 0:
-		close(p[1]);
+		sys_close(p[1]);
 		io();
 		break;
 	default:
-		close(p[0]);	/* don't deadlock if child fails */
-		if(defmnt && mount(p[1], -1, defmnt, MREPL|MCREATE, "", '9') < 0)
+		sys_close(p[0]);	/* don't deadlock if child fails */
+		if(defmnt && sys_mount(p[1], -1, defmnt, MREPL|MCREATE, "", '9') < 0)
 			error("mount failed");
 	}
 	exits(0);
@@ -799,13 +799,13 @@ io(void)
 	pid = getpid();
 	if(private){
 		snprint(buf, sizeof buf, "/proc/%d/ctl", pid);
-		ctl = open(buf, OWRITE);
+		ctl = sys_open(buf, OWRITE);
 		if(ctl < 0){
 			fprint(2, "can't protect ramfs\n");
 		}else{
 			fprint(ctl, "noswap\n");
 			fprint(ctl, "private\n");
-			close(ctl);
+			sys_close(ctl);
 		}
 	}
 
@@ -852,7 +852,7 @@ io(void)
 		n = convS2M(&rhdr, mdata, messagesize);
 		if(n == 0)
 			error("convS2M error on write");
-		if(write(mfd[1], mdata, n) != n)
+		if(jehanne_write(mfd[1], mdata, n) != n)
 			error("mount write");
 	}
 }

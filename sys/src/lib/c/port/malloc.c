@@ -109,14 +109,14 @@ checkenv(void)
 {
 	int n, fd;
 	char buf[20];
-	fd = open("/env/MALLOCFD", OREAD);
+	fd = sys_open("/env/MALLOCFD", OREAD);
 	if(fd < 0)
 		return -1;
-	if((n = read(fd, buf, sizeof buf)) < 0) {
-		close(fd);
+	if((n = jehanne_read(fd, buf, sizeof buf)) < 0) {
+		sys_close(fd);
 		return -1;
 	}
-	close(fd);
+	sys_close(fd);
 	if(n >= sizeof buf)
 		n = sizeof(buf)-1;
 	buf[n] = 0;
@@ -164,13 +164,13 @@ ppanic(Pool *p, char *fmt, ...)
 	msg = panicbuf;
 	va_start(v, fmt);
 	n = jehanne_vseprint(msg, msg+sizeof panicbuf, fmt, v) - msg;
-	write(2, "panic: ", 7);
-	write(2, msg, n);
-	write(2, "\n", 1);
+	jehanne_write(2, "panic: ", 7);
+	jehanne_write(2, msg, n);
+	jehanne_write(2, "\n", 1);
 	if(pv->printfd != 2){
-		write(pv->printfd, "panic: ", 7);
-		write(pv->printfd, msg, n);
-		write(pv->printfd, "\n", 1);
+		jehanne_write(pv->printfd, "panic: ", 7);
+		jehanne_write(pv->printfd, msg, n);
+		jehanne_write(pv->printfd, "\n", 1);
 	}
 	va_end(v);
 //	jehanne_unlock(&pv->lk);

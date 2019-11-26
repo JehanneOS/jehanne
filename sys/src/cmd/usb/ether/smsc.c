@@ -235,7 +235,7 @@ smscreceive(Dev *ep)
 		b = allocb(Hsburst*512);
 	else
 		b = allocb(Maxpkt+4);
-	if((n = read(ep->dfd, b->wp, b->lim - b->base)) < 0){
+	if((n = jehanne_read(ep->dfd, b->wp, b->lim - b->base)) < 0){
 		freeb(b);
 		return -1;
 	}
@@ -268,7 +268,7 @@ smsctransmit(Dev *ep, Block *b)
 	b->rp -= 8;
 	PUT4(b->rp, n | Txfirst | Txlast);
 	PUT4(b->rp+4, n);
-	write(ep->dfd, b->rp, BLEN(b));
+	jehanne_write(ep->dfd, b->rp, BLEN(b));
 	freeb(b);
 }
 

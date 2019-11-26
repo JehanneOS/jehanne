@@ -54,7 +54,7 @@ devwork(void *v)
 		if(b->op & BWRITE){
 			memset(buf, 0, sizeof(buf));
 			pack(b, buf);
-			if(pwrite(d->fd, buf, BLOCK, b->off*BLOCK) < BLOCK){
+			if(sys_pwrite(d->fd, buf, BLOCK, b->off*BLOCK) < BLOCK){
 				dprint("write: %r\n");
 				b->error = Eio;
 			}
@@ -62,7 +62,7 @@ devwork(void *v)
 			int n, m;
 
 			for(n = 0; n < BLOCK; n += m){
-				m = pread(d->fd, buf+n, BLOCK-n, b->off*BLOCK+n);
+				m = sys_pread(d->fd, buf+n, BLOCK-n, b->off*BLOCK+n);
 				if(m < 0)
 					dprint("read: %r\n");
 				if(m <= 0)
@@ -89,7 +89,7 @@ newdev(char *file)
 	Buf *b;
 	
 	d = emalloc(sizeof(*d));
-	d->fd = open(file, ORDWR);
+	d->fd = sys_open(file, ORDWR);
 	if(d->fd < 0){
 		free(d);
 		return nil;
@@ -97,7 +97,7 @@ newdev(char *file)
 	dir = dirfstat(d->fd);
 	if(dir == nil){
 	error:
-		close(d->fd);
+		sys_close(d->fd);
 		free(d);
 		return nil;
 	}

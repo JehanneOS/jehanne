@@ -23,31 +23,31 @@ jehanne_pushssl(int fd, const char *alg, const char *secin, const char *secout, 
 	char dname[64];
 	int n, data, ctl;
 
-	ctl = open("#D/ssl/clone", ORDWR);
+	ctl = sys_open("#D/ssl/clone", ORDWR);
 	if(ctl < 0)
 		return -1;
-	n = read(ctl, buf, sizeof(buf)-1);
+	n = jehanne_read(ctl, buf, sizeof(buf)-1);
 	if(n < 0)
 		goto error;
 	buf[n] = 0;
 	jehanne_sprint(dname, "#D/ssl/%s/data", buf);
-	data = open(dname, ORDWR);
+	data = sys_open(dname, ORDWR);
 	if(data < 0)
 		goto error;
 	if(jehanne_fprint(ctl, "fd %d", fd) < 0 ||
 	   jehanne_fprint(ctl, "secretin %s", secin) < 0 ||
 	   jehanne_fprint(ctl, "secretout %s", secout) < 0 ||
 	   jehanne_fprint(ctl, "alg %s", alg) < 0){
-		close(data);
+		sys_close(data);
 		goto error;
 	}
-	close(fd);
+	sys_close(fd);
 	if(cfd != 0)
 		*cfd = ctl;
 	else
-		close(ctl);
+		sys_close(ctl);
 	return data;
 error:
-	close(ctl);
+	sys_close(ctl);
 	return -1;
 }

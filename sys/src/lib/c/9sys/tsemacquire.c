@@ -23,8 +23,8 @@ int
 jehanne_tsemacquire(int* addr, long ms)
 {
 	long wkup;
-	wkup = awake(ms);
-	while(semacquire(addr, 1) < 0){
+	wkup = sys_awake(ms);
+	while(sys_semacquire(addr, 1) < 0){
 		if(jehanne_awakened(wkup)){
 			/* copy canlock semantic for return values */
 			return 0;

@@ -86,7 +86,7 @@ writerawimage(int fd, Rawimage *i)
 	data = i->chans[0];
 	sprint(hdr, "compressed\n%11s %11d %11d %11d %11d ",
 		chantostr(buf, desc), r.min.x, r.min.y, r.max.x, r.max.y);
-	if(write(fd, hdr, 11+5*12) != 11+5*12){
+	if(jehanne_write(fd, hdr, 11+5*12) != 11+5*12){
 		werrstr("i/o error writing header");
 		goto ErrOut;
 	}
@@ -195,8 +195,8 @@ writerawimage(int fd, Rawimage *i)
 		}
 		n = loutp-outbuf;
 		sprint(hdr, "%11d %11ld ", r.max.y, n);
-		write(fd, hdr, 2*12);
-		write(fd, outbuf, n);
+		jehanne_write(fd, hdr, 2*12);
+		jehanne_write(fd, outbuf, n);
 		r.min.y = r.max.y;
 	}
 	free(outbuf);

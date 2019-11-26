@@ -185,7 +185,7 @@ main(int argc, char *argv[])
 	if(argc != 0)
 		usage();
 
-	rfork(RFREND|RFNOTEG);
+	sys_rfork(RFREND|RFNOTEG);
 
 	cfg.inside = (*mntpt == '\0' || strcmp(mntpt, "/net") == 0);
 
@@ -225,7 +225,7 @@ main(int argc, char *argv[])
 	 * /srv/dns and /net/dns remain open and valid.
 	 */
 	for (;;) {
-		kid = rfork(RFPROC|RFFDG|RFNOTEG);
+		kid = sys_rfork(RFPROC|RFFDG|RFNOTEG);
 		switch (kid) {
 		case -1:
 			sysfatal("fork failed: %r");
@@ -235,7 +235,7 @@ main(int argc, char *argv[])
 			if(sendnotifies)
 				notifyproc();
 			io();
-			_exits("restart");
+			sys__exits("restart");
 		default:
 			while ((pid = waitpid()) != kid && pid != -1)
 				continue;
@@ -282,26 +282,26 @@ mountinit(char *service, char *mntpt)
 	if((f = ocreate(service, OWRITE|ORCLOSE, 0666)) < 0)
 		sysfatal("create %s failed: %r", service);
 	snprint(buf, sizeof buf, "%d", p[1]);
-	if(write(f, buf, strlen(buf)) != strlen(buf))
+	if(jehanne_write(f, buf, strlen(buf)) != strlen(buf))
 		sysfatal("write %s failed: %r", service);
 
 	/* copy namespace to avoid a deadlock */
-	switch(rfork(RFFDG|RFPROC|RFNAMEG)){
+	switch(sys_rfork(RFFDG|RFPROC|RFNAMEG)){
 	case 0:			/* child: hang around and (re)start main proc */
-		close(p[1]);
+		sys_close(p[1]);
 		procsetname("%s restarter", mntpt);
 		break;
 	case -1:
 		sysfatal("fork failed: %r");
 	default:		/* parent: make /srv/dns, mount it, exit */
-		close(p[0]);
+		sys_close(p[0]);
 
 		/*
 		 *  put ourselves into the file system
 		 */
-		if(mount(p[1], -1, mntpt, MAFTER, "", '9') < 0)
+		if(sys_mount(p[1], -1, mntpt, MAFTER, "", '9') < 0)
 			fprint(2, "dns mount failed: %r\n");
-		_exits(0);
+		sys__exits(0);
 	}
 	mfd[0] = mfd[1] = p[0];
 }
@@ -508,7 +508,7 @@ io(void)
 		 */
 		if(req.isslave){
 			putactivity(0);
-			_exits(0);
+			sys__exits(0);
 		}
 
 		putactivity(0);
@@ -946,7 +946,7 @@ sendmsg(Job *job, char *err)
 	}
 	jehanne_lock(&joblock);
 	if(job->flushed == 0)
-		if(write(mfd[1], mdata, n)!=n)
+		if(jehanne_write(mfd[1], mdata, n)!=n)
 			sysfatal("mount write");
 	jehanne_unlock(&joblock);
 	if(debug)

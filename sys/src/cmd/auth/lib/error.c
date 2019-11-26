@@ -31,6 +31,6 @@ error(char *fmt, ...)
 	s = vseprint(s, buf + sizeof(buf), fmt, arg);
 	va_end(arg);
 	*s++ = '\n';
-	write(2, buf, s - buf);
+	jehanne_write(2, buf, s - buf);
 	exits(buf);
 }

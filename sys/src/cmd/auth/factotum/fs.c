@@ -134,7 +134,7 @@ main(int argc, char **argv)
 	fmtinstall('H', encodefmt);
 
 	ring = emalloc(sizeof(*ring));
-	notify(notifyf);
+	sys_notify(notifyf);
 
 	if(gflag){
 		if(argc != 1)
@@ -181,7 +181,7 @@ main(int argc, char **argv)
 		if(fork() == 0){
 			int fd;
 
-			if((fd = open(smprint("%s/factotum/ctl", mtpt), OWRITE)) < 0)
+			if((fd = sys_open(smprint("%s/factotum/ctl", mtpt), OWRITE)) < 0)
 				sysfatal("can't open factotum: %r");
 			dup(fd, 1);
 			execl("/bin/auth/secstore", "secstore", "-G", "factotum", nil);
@@ -203,7 +203,7 @@ private(void)
 	char buf[64];
 
 	snprint(buf, sizeof(buf), "#p/%d/ctl", getpid());
-	fd = open(buf, OWRITE);
+	fd = sys_open(buf, OWRITE);
 	if(fd < 0){
 		fprint(2, pmsg, argv0);
 		return;
@@ -212,15 +212,15 @@ private(void)
 		fprint(2, pmsg, argv0);
 	if(fprint(fd, "noswap") < 0)
 		fprint(2, smsg, argv0);
-	close(fd);
+	sys_close(fd);
 }
 
 static void
 notifyf(void* _, char *s)
 {
 	if(strncmp(s, "interrupt", 9) == 0 || strncmp(s, "alarm", 5) == 0)
-		noted(NCONT);
-	noted(NDFLT);
+		sys_noted(NCONT);
+	sys_noted(NDFLT);
 }
 
 enum

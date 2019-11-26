@@ -19,7 +19,7 @@
 #include <u.h>
 #include <libc.h>
 
-/* ocreate works like the Plan 9 create(2) syscall, but with different races.
+/* osys_create works like the Plan 9 create(2) syscall, but with different races.
  * In Plan 9 tjere os a race due to the different behaviour between the
  * create syscall and the Tcreate message in 9P2000 when the file already exists:
  * see https://github.com/brho/plan9/blob/master/sys/src/9/port/chan.c#L1564-L1603
@@ -41,11 +41,11 @@ jehanne_ocreate(const char *path, unsigned int omode, unsigned int perm)
 	int fd;
 	Dir *s;
 
-	fd = open(path, omode|OTRUNC);
+	fd = sys_open(path, omode|OTRUNC);
 	if(fd < 0){
-		fd = create(path, omode, perm);
+		fd = sys_create(path, omode, perm);
 		if(fd < 0){
-			fd = open(path, omode|OTRUNC);
+			fd = sys_open(path, omode|OTRUNC);
 			if(fd < 0)
 				goto Done;
 		} else {
@@ -55,7 +55,7 @@ jehanne_ocreate(const char *path, unsigned int omode, unsigned int perm)
 
 	s = jehanne_dirfstat(fd);
 	if(s == nil){
-		close(fd);
+		sys_close(fd);
 		return -1;
 	}
 	if(s->mode != perm){

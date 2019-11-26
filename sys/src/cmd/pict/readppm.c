@@ -130,10 +130,10 @@ Error:
 		free(array[0]);
 	free(array);
 
-	errstr(buf, sizeof buf);
+	sys_errstr(buf, sizeof buf);
 	if(buf[0] == 0)
 		strcpy(buf, e);
-	errstr(buf, sizeof buf);
+	sys_errstr(buf, sizeof buf);
 
 	return nil;
 }
@@ -225,10 +225,10 @@ readppm(Biobuf *b, Rawimage *a)
 	return a;
 
 Error:
-	errstr(buf, sizeof buf);
+	sys_errstr(buf, sizeof buf);
 	if(buf[0] == 0)
 		strcpy(buf, e);
-	errstr(buf, sizeof buf);
+	sys_errstr(buf, sizeof buf);
 
 	for(i=0; i<3; i++)
 		free(a->chans[i]);

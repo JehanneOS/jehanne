@@ -60,7 +60,7 @@ void
 error(char *s)
 {
 	fprint(2, "acme: %s: %r\n", s);
-	remove(acmeerrorfile);
+	sys_remove(acmeerrorfile);
 	abort();
 }
 

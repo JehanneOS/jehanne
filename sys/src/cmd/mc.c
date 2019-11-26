@@ -90,12 +90,12 @@ main(int argc, char *argv[])
 		readbuf(0);
 	else{
 		for(i = 1; i < argc; i++){
-			if((ifd = open(*++argv, OREAD)) == -1)
+			if((ifd = sys_open(*++argv, OREAD)) == -1)
 				fprint(2, "mc: can't open %s (%r)\n", *argv);
 			else{
 				readbuf(ifd);
 				Bflush(&bin);
-				close(ifd);
+				sys_close(ifd);
 			}
 		}
 	}
@@ -270,10 +270,10 @@ getwidth(void)
 	char buf[128], *f[10], *p;
 
 	if(access("/dev/acme", OREAD) >= 0){
-		if((fd = open("/dev/acme/ctl", OREAD)) < 0)
+		if((fd = sys_open("/dev/acme/ctl", OREAD)) < 0)
 			return;
-		n = read(fd, buf, sizeof buf-1);
-		close(fd);
+		n = jehanne_read(fd, buf, sizeof buf-1);
+		sys_close(fd);
 		if(n <= 0)
 			return;
 		buf[n] = 0;
@@ -296,12 +296,12 @@ getwidth(void)
 		return;
 	if((font = openfont(nil, p)) == nil)
 		return;
-	if((fd = open("/dev/window", OREAD)) < 0){
+	if((fd = sys_open("/dev/window", OREAD)) < 0){
 		font = nil;
 		return;
 	}
-	n = read(fd, buf, 5*12);
-	close(fd);
+	n = jehanne_read(fd, buf, 5*12);
+	sys_close(fd);
 	if(n < 5*12){
 		font = nil;
 		return;

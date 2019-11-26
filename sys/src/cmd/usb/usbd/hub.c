@@ -158,8 +158,8 @@ configroothub(Hub *h)
 	d = h->dev;
 	h->nport = 2;
 	h->maxpkt = 8;
-	seek(d->cfd, 0, 0);
-	nr = read(d->cfd, buf, sizeof(buf)-1);
+	sys_seek(d->cfd, 0, 0);
+	nr = jehanne_read(d->cfd, buf, sizeof(buf)-1);
 	if(nr < 0)
 		goto Done;
 	buf[nr] = 0;
@@ -402,8 +402,8 @@ portattach(Hub *h, int p, int sts)
 		fprint(2, "%s: %s: port %d: newdev: %r\n", argv0, d->dir, p);
 		goto Fail;
 	}
-	seek(d->cfd, 0, 0);
-	nr = read(d->cfd, buf, sizeof(buf)-1);
+	sys_seek(d->cfd, 0, 0);
+	nr = jehanne_read(d->cfd, buf, sizeof(buf)-1);
 	if(nr == 0){
 		fprint(2, "%s: %s: port %d: newdev: eof\n", argv0, d->dir, p);
 		goto Fail;
@@ -534,7 +534,7 @@ portresetwanted(Hub *h, int p)
 
 	pp = &h->port[p];
 	nd = pp->dev;
-	if(nd != nil && nd->cfd >= 0 && pread(nd->cfd, buf, 5, 0LL) == 5)
+	if(nd != nil && nd->cfd >= 0 && sys_pread(nd->cfd, buf, 5, 0LL) == 5)
 		return strncmp(buf, "reset", 5) == 0;
 	else
 		return 0;
@@ -583,7 +583,7 @@ portreset(Hub *h, int p)
 			goto Fail;
 	}
 	if(nd->dfd >= 0){
-		close(nd->dfd);
+		sys_close(nd->dfd);
 		nd->dfd = -1;
 	}
 	return;
@@ -681,7 +681,7 @@ work(void)
 	int i;
 
 	hubs = nil;
-	while((fn = rendezvous(work, nil)) != nil){
+	while((fn = sys_rendezvous(work, nil)) != nil){
 		dprint(2, "%s: %s starting\n", argv0, fn);
 		h = newhub(fn, nil);
 		if(h == nil)

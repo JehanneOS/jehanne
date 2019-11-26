@@ -139,13 +139,13 @@ main(int argc, char *argv[])
 					usage();
 				continue;
 			}
-			fd = open(argv[j], OREAD);
+			fd = sys_open(argv[j], OREAD);
 			if(fd < 0)
 				sysfatal("can't open %s: %r", argv[j]);
 			i = readmemimage(fd);
 			if(i == nil)
 				sysfatal("can't readimage %s: %r", argv[j]);
-			close(fd);
+			sys_close(fd);
 			ni = memonechan(i);
 			if(ni == nil)
 				sysfatal("converting image to RGBV: %r");

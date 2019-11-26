@@ -50,7 +50,7 @@ main(void)
 		rsadecrypt(rsa, enc, clr);
 		jehanne_print("clr %B\n", clr);
 		n = mptole(clr, buf, sizeof(buf), nil);
-		write(1, buf, n);
+		jehanne_write(1, buf, n);
 		jehanne_print("> ");
 	}
 }

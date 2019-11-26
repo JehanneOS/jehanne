@@ -70,7 +70,7 @@ threadmain(int argc, char *argv[])
 	Display *d;
 //
 
-	rfork(RFENVG|RFNAMEG);
+	sys_rfork(RFENVG|RFNAMEG);
 
 	ncol = -1;
 
@@ -138,12 +138,12 @@ threadmain(int argc, char *argv[])
 	if(loadfile)
 		rowloadfonts(loadfile);
 	putenv("font", fontnames[0]);
-	snarffd = open("/dev/snarf", OREAD|OCEXEC);
+	snarffd = sys_open("/dev/snarf", OREAD|OCEXEC);
 	if(cputype){
 		sprint(buf, "/arch/%s/aux/acme", cputype);
-		bind(buf, "/cmd", MBEFORE);
+		sys_bind(buf, "/cmd", MBEFORE);
 	}
-	bind("/arch/rc/aux/acme", "/cmd", MBEFORE);
+	sys_bind("/arch/rc/aux/acme", "/cmd", MBEFORE);
 	getwd(wdir, sizeof wdir);
 
 	if(geninitdraw(nil, derror, fontnames[0], "acme", nil, Refnone) < 0){
@@ -307,7 +307,7 @@ killprocs(void)
 
 	for(c=command; c; c=c->next)
 		postnote(PNGROUP, c->pid, "hangup");
-	remove(acmeerrorfile);
+	sys_remove(acmeerrorfile);
 }
 
 static int errorfd;
@@ -320,7 +320,7 @@ acmeerrorproc(void *v)
 
 	threadsetname("acmeerrorproc");
 	buf = emalloc(8192+1);
-	while((n=read(errorfd, buf, 8192)) >= 0){
+	while((n=jehanne_read(errorfd, buf, 8192)) >= 0){
 		buf[n] = '\0';
 		sendp(cerr, estrdup(buf));
 	}
@@ -337,21 +337,21 @@ acmeerrorinit(void)
 	sprint(acmeerrorfile, "/srv/acme.%s.%d", getuser(), mainpid);
 	fd = ocreate(acmeerrorfile, OWRITE, 0666);
 	if(fd < 0){
-		remove(acmeerrorfile);
+		sys_remove(acmeerrorfile);
   		fd = ocreate(acmeerrorfile, OWRITE, 0666);
 		if(fd < 0)
 			error("can't create acmeerror file");
 	}
 	sprint(buf, "%d", pfd[0]);
-	write(fd, buf, strlen(buf));
-	close(fd);
+	jehanne_write(fd, buf, strlen(buf));
+	sys_close(fd);
 	/* reopen pfd[1] close on exec */
 	sprint(buf, "/fd/%d", pfd[1]);
-	errorfd = open(buf, OREAD|OCEXEC);
+	errorfd = sys_open(buf, OREAD|OCEXEC);
 	if(errorfd < 0)
 		error("can't re-open acmeerror file");
-	close(pfd[1]);
-	close(pfd[0]);
+	sys_close(pfd[1]);
+	sys_close(pfd[0]);
 	proccreate(acmeerrorproc, nil, STACK);
 }
 
@@ -935,7 +935,7 @@ putsnarf(void)
 		return;
 	if(snarfbuf.nc > MAXSNARF)
 		return;
-	fd = open("/dev/snarf", OWRITE);
+	fd = sys_open("/dev/snarf", OWRITE);
 	if(fd < 0)
 		return;
 	for(i=0; i<snarfbuf.nc; i+=n){
@@ -946,7 +946,7 @@ putsnarf(void)
 		if(fprint(fd, "%.*S", n, snarfrune) < 0)
 			break;
 	}
-	close(fd);
+	sys_close(fd);
 }
 
 void
@@ -958,7 +958,7 @@ getsnarf()
 		return;
 	if(snarffd < 0)
 		return;
-	seek(snarffd, 0, 0);
+	sys_seek(snarffd, 0, 0);
 	bufreset(&snarfbuf);
 	bufload(&snarfbuf, 0, snarffd, &nulls);
 }

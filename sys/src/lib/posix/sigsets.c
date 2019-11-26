@@ -148,7 +148,7 @@ POSIX_sigpending(int *errnop, PosixSignalMask *set)
 long
 __libposix_sighelper_wait(PosixSignalMask set, PosixSignalInfo *siginfo)
 {
-	return pread(*__libposix_devsignal, siginfo, sizeof(PosixSignalInfo), set);
+	return sys_pread(*__libposix_devsignal, siginfo, sizeof(PosixSignalInfo), set);
 }
 
 int
@@ -204,7 +204,7 @@ LookupPendingSignals:
 	}
 
 	if(ms > 0)
-		wkp = awake(ms);
+		wkp = sys_awake(ms);
 	r = __libposix_sighelper_wait(*set, info);
 	if(r < 0){
 		if(ms > 0 && awakened(wkp)){

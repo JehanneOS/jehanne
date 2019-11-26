@@ -74,7 +74,7 @@ srvproc(void *v)
 static void
 srvfree(Srv *s)
 {
-	close(s->infd);
+	sys_close(s->infd);
 	free(s->addr);
 	free(s);
 }
@@ -87,9 +87,9 @@ getremotesys(char *ndir)
 
 	snprint(buf, sizeof buf, "%s/remote", ndir);
 	sys = nil;
-	fd = open(buf, OREAD);
+	fd = sys_open(buf, OREAD);
 	if(fd >= 0){
-		n = read(fd, buf, sizeof(buf)-1);
+		n = jehanne_read(fd, buf, sizeof(buf)-1);
 		if(n>0){
 			buf[n-1] = 0;
 			serv = strchr(buf, '!');
@@ -97,7 +97,7 @@ getremotesys(char *ndir)
 				*serv = 0;
 			sys = estrdup9p(buf);
 		}
-		close(fd);
+		sys_close(fd);
 	}
 	if(sys == nil)
 		sys = estrdup9p("unknown");

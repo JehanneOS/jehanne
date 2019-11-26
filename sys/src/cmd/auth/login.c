@@ -26,26 +26,26 @@ readln(char *prompt, char *line, int len, int raw)
 	char *p;
 	int fdin, fdout, ctl, n, nr;
 
-	fdin = open("/dev/cons", OREAD);
-	fdout = open("/dev/cons", OWRITE);
+	fdin = sys_open("/dev/cons", OREAD);
+	fdout = sys_open("/dev/cons", OWRITE);
 	fprint(fdout, "%s", prompt);
 	if(raw){
-		ctl = open("/dev/consctl", OWRITE);
+		ctl = sys_open("/dev/consctl", OWRITE);
 		if(ctl < 0){
 			fprint(2, "login: couldn't set raw mode");
 			exits("readln");
 		}
-		write(ctl, "rawon", 5);
+		jehanne_write(ctl, "rawon", 5);
 	} else
 		ctl = -1;
 	nr = 0;
 	p = line;
 	for(;;){
-		n = read(fdin, p, 1);
+		n = jehanne_read(fdin, p, 1);
 		if(n < 0){
-			close(ctl);
-			close(fdin);
-			close(fdout);
+			sys_close(ctl);
+			sys_close(fdin);
+			sys_close(fdout);
 			fprint(2, "login: can't read cons");
 			exits("readln");
 		}
@@ -54,12 +54,12 @@ readln(char *prompt, char *line, int len, int raw)
 		if(n == 0 || *p == '\n' || *p == '\r'){
 			*p = '\0';
 			if(raw){
-				write(ctl, "rawoff", 6);
-				write(fdout, "\n", 1);
+				jehanne_write(ctl, "rawoff", 6);
+				jehanne_write(fdout, "\n", 1);
 			}
-			close(ctl);
-			close(fdin);
-			close(fdout);
+			sys_close(ctl);
+			sys_close(fdin);
+			sys_close(fdout);
 			return;
 		}
 		if(*p == '\b'){
@@ -91,7 +91,7 @@ setenv(char *var, char *val)
 		print("init: can't open %s\n", buf);
 	else{
 		fprint(fd, val);
-		close(fd);
+		sys_close(fd);
 	}
 }
 
@@ -104,11 +104,11 @@ chuid(AuthInfo *ai)
 	int rv, fd;
 
 	/* change uid */
-	fd = open("#¤/capuse", OWRITE);
+	fd = sys_open("#¤/capuse", OWRITE);
 	if(fd < 0)
 		sysfatal("can't change uid: %r");
-	rv = write(fd, ai->cap, strlen(ai->cap));
-	close(fd);
+	rv = jehanne_write(fd, ai->cap, strlen(ai->cap));
+	sys_close(fd);
 	if(rv < 0)
 		sysfatal("can't change uid: %r");
 }
@@ -122,11 +122,11 @@ mountfactotum(char *srvname)
 	int fd;
 
 	/* mount it */
-	fd = open(srvname, ORDWR);
+	fd = sys_open(srvname, ORDWR);
 	if(fd < 0)
 		sysfatal("opening factotum: %r");
-	mount(fd, -1, "/mnt", MBEFORE, "", '9');
-	close(fd);
+	sys_mount(fd, -1, "/mnt", MBEFORE, "", '9');
+	sys_close(fd);
 }
 
 /*
@@ -186,11 +186,11 @@ startfactotum(char *user, char *password, char *srvname)
 	mountfactotum(srvname);
 
 	/* write in new key */
-	fd = open("/mnt/factotum/ctl", ORDWR);
+	fd = sys_open("/mnt/factotum/ctl", ORDWR);
 	if(fd < 0)
 		sysfatal("opening factotum: %r");
 	fprint(fd, "key proto=p9sk1 dom=%s user=%q !password=%q", getauthdom(), user, password);
-	close(fd);
+	sys_close(fd);
 }
 
 void
@@ -222,7 +222,7 @@ main(int argc, char *argv[])
 	if(argc != 1)
 		usage();
 
-	rfork(RFENVG|RFNAMEG);
+	sys_rfork(RFENVG|RFNAMEG);
 
 	service = getenv(ENV_SERVICE);
 	if(strcmp(service, "cpu") == 0)
@@ -257,7 +257,7 @@ main(int argc, char *argv[])
 	cputype = getenv(ENV_CPUTYPE);
 	sysname = getenv(ENV_SYSNAME);
 	tz = getenv("timezone");
-	rfork(RFCENVG);
+	sys_rfork(RFCENVG);
 	setenv(ENV_SERVICE, "con");
 	setenv(ENV_USER, user);
 	snprint(home, sizeof(home), "/usr/%s", user);

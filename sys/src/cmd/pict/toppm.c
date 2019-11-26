@@ -62,13 +62,13 @@ main(int argc, char *argv[])
 		}
 		err = memwriteppm(&bout, i, comment, rflag);
 	}else{
-		fd = open(argv[0], OREAD);
+		fd = sys_open(argv[0], OREAD);
 		if(fd < 0)
 			sysfatal("can't open %s: %r", argv[0]);
 		i = readmemimage(fd);
 		if(i == nil)
 			sysfatal("can't readimage %s: %r", argv[0]);
-		close(fd);
+		sys_close(fd);
 		ni = memmultichan(i);
 		if(ni == nil)
 			sysfatal("converting image to RGB24: %r");

@@ -22,14 +22,14 @@ openmemsubfont(char *name)
 	char hdr[3*12+4+1];
 	uint8_t *p;
 
-	fd = open(name, OREAD);
+	fd = sys_open(name, OREAD);
 	if(fd < 0)
 		return nil;
 	p = nil;
 	i = readmemimage(fd);
 	if(i == nil)
 		goto Err;
-	if(read(fd, hdr, 3*12) != 3*12){
+	if(jehanne_read(fd, hdr, 3*12) != 3*12){
 		jehanne_werrstr("openmemsubfont: header read error: %r");
 		goto Err;
 	}
@@ -37,7 +37,7 @@ openmemsubfont(char *name)
 	p = jehanne_malloc(6*(n+1));
 	if(p == nil)
 		goto Err;
-	if(read(fd, p, 6*(n+1)) != 6*(n+1)){
+	if(jehanne_read(fd, p, 6*(n+1)) != 6*(n+1)){
 		jehanne_werrstr("openmemsubfont: fontchar read error: %r");
 		goto Err;
 	}
@@ -53,7 +53,7 @@ openmemsubfont(char *name)
 	jehanne_free(p);
 	return sf;
 Err:
-	close(fd);
+	sys_close(fd);
 	if (i != nil)
 		freememimage(i);
 	if (p != nil)

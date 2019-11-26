@@ -161,9 +161,9 @@ ding(void* _1, char *msg)
 {
 	if(strstr(msg, "alarm") != nil) {
 		stats.alarms++;
-		noted(NCONT);		/* resume with system call error */
+		sys_noted(NCONT);		/* resume with system call error */
 	} else
-		noted(NDFLT);		/* die */
+		sys_noted(NDFLT);		/* die */
 }
 
 void
@@ -180,7 +180,7 @@ dninit(void)
 	dnvars.names = 0;
 	dnvars.id = truerand();	/* don't start with same id every time */
 
-	notify(ding);
+	sys_notify(ding);
 }
 
 /*
@@ -303,7 +303,7 @@ dnstats(char *file)
 	jehanne_lock(&dnlock);
 	fprint(fd, "\n# domain names %lud target %lud\n", dnvars.names, target);
 	jehanne_unlock(&dnlock);
-	close(fd);
+	sys_close(fd);
 }
 
 /*
@@ -333,7 +333,7 @@ dndump(char *file)
 			}
 		}
 	jehanne_unlock(&dnlock);
-	close(fd);
+	sys_close(fd);
 }
 
 /*
@@ -1490,9 +1490,9 @@ procsetname(char *fmt, ...)
 	if (cmdname == nil)
 		return;
 	snprint(buf, sizeof buf, "#p/%d/args", getpid());
-	if((fd = open(buf, OWRITE)) >= 0){
-		write(fd, cmdname, strlen(cmdname)+1);
-		close(fd);
+	if((fd = sys_open(buf, OWRITE)) >= 0){
+		jehanne_write(fd, cmdname, strlen(cmdname)+1);
+		sys_close(fd);
 	}
 	free(cmdname);
 }
@@ -1533,7 +1533,7 @@ slave(Request *req)
 	 * don't change note group.
 	 */
 	ppid = getpid();
-	switch(rfork(RFPROC|RFMEM|RFNOWAIT)){
+	switch(sys_rfork(RFPROC|RFMEM|RFNOWAIT)){
 	case -1:
 		putactivity(1);
 		break;
@@ -1549,7 +1549,7 @@ slave(Request *req)
 		 * stacks, thus giving us two copies of `req', one in each
 		 * process.
 		 */
-		alarm(0);
+		sys_alarm(0);
 		longjmp(req->mret, 1);
 	}
 }

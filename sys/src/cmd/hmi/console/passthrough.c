@@ -37,20 +37,20 @@ passthrough(int input, int output)
 	do
 	{
 		w = 0;
-		r = read(input, buf, IODATASZ);
-		//debug("%s (%d): read(%d) returns %d\n", name, pid, input, r);
+		r = jehanne_read(input, buf, IODATASZ);
+		//debug("%s (%d): jehanne_read(%d) returns %d\n", name, pid, input, r);
 		if(r > 0){
-			w = write(output, buf, r);
-			//debug("%s (%d): write(%d, buf, %d) returns %d\n", name, pid, output, r, w);
+			w = jehanne_write(output, buf, r);
+			//debug("%s (%d): jehanne_write(%d, buf, %d) returns %d\n", name, pid, output, r, w);
 		}
 		//debug("%s (%d): r = %d, w = %d\n", name, pid, r, w);
 	}
 	while(r > 0 && w == r);
 
-	close(input);
-	debug("%s (%d): close(%d)\n", name, pid, input);
-	close(output);
-	debug("%s (%d): close(%d)\n", name, pid, output);
+	sys_close(input);
+	debug("%s (%d): sys_close(%d)\n", name, pid, input);
+	sys_close(output);
+	debug("%s (%d): sys_close(%d)\n", name, pid, output);
 
 	debug("%s (%d) shut down (r = %d, w = %d)\n", name, pid, r, w);
 	if(r < 0)

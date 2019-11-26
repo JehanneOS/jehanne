@@ -481,7 +481,7 @@ ropen(Req *r, char *error)
 		return;
 	if(chatty9p){
 		snprint(errbuf, sizeof errbuf, "fid mode is 0x%ux\n", r->ifcall.mode);
-		write(2, errbuf, strlen(errbuf));
+		jehanne_write(2, errbuf, strlen(errbuf));
 	}
 	r->fid->omode = r->ifcall.mode;
 	r->fid->qid = r->ofcall.qid;
@@ -910,7 +910,7 @@ if(chatty9p)
 	assert(n > 2);
 	if(r->pool)	/* not a fake */
 		closereq(removereq(r->pool, r->ifcall.tag));
-	m = write(srv->outfd, srv->wbuf, n);
+	m = jehanne_write(srv->outfd, srv->wbuf, n);
 	if(m != n)
 		fprint(2, "lib9p srv: write %d returned %d on fd %d: %r", n, m, srv->outfd);
 	qunlock(&srv->wlock);
@@ -961,7 +961,7 @@ postfd(char *name, int pfd)
 	if(fprint(fd, "%d", pfd) < 0){
 		if(chatty9p)
 			fprint(2, "write fails: %r\n");
-		close(fd);
+		sys_close(fd);
 		return -1;
 	}
 	if(chatty9p)
@@ -976,8 +976,8 @@ sharefd(char *name, char *desc, int pfd)
 	char buf[80];
 
 	snprint(buf, sizeof buf, "#σc/%s", name);
-	if((fd = create(buf, OREAD, 0700|DMDIR)) >= 0)
-		close(fd);
+	if((fd = sys_create(buf, OREAD, 0700|DMDIR)) >= 0)
+		sys_close(fd);
 	snprint(buf, sizeof buf, "#σc/%s/%s", name, desc);
 	if(chatty9p)
 		fprint(2, "sharefd %s\n", buf);
@@ -990,10 +990,10 @@ sharefd(char *name, char *desc, int pfd)
 	if(fprint(fd, "%d\n", pfd) < 0){
 		if(chatty9p)
 			fprint(2, "write fails: %r\n");
-		close(fd);
+		sys_close(fd);
 		return -1;
 	}
-	close(fd);
+	sys_close(fd);
 	if(chatty9p)
 		fprint(2, "sharefd successful\n");
 	return 0;

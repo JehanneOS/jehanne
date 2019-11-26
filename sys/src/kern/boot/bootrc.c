@@ -20,14 +20,14 @@ configrc(Method* m)
 {
 	void configloopback(void);
 	configloopback();
-	bind("#S", "/dev", MAFTER);
+	sys_bind("#S", "/dev", MAFTER);
 	char *argv[] = {"rc", "-m", rcmainPath, "-i", 0,};
 	jehanne_print("Step 1. Run an rc. Set things up.\n");
 	switch(jehanne_fork()){
 	case -1:
 		jehanne_print("configrc: fork failed: %r\n");
 	case 0:
-		exec(rcPath, (const char**)argv);
+		sys_exec(rcPath, (const char**)argv);
 		fatal("can't exec rc");
 	default:
 		break;
@@ -39,7 +39,7 @@ configrc(Method* m)
 	case -1:
 		jehanne_print("configrc: fork failed: %r\n");
 	case 0:
-		exec(rcPath, (const char**)argv);
+		sys_exec(rcPath, (const char**)argv);
 		fatal("can't exec rc");
 	default:
 		break;
@@ -57,7 +57,7 @@ connectrc(void)
 
 	// Later, make this anything.
 	jehanne_snprint(buf, sizeof buf, "/srv/fossil");
-	fd = open("#s/fossil", 2);
+	fd = sys_open("#s/fossil", 2);
 	if (fd < 0)
 		jehanne_werrstr("dial %s: %r", buf);
 	return fd;

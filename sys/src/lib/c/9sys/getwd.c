@@ -32,14 +32,14 @@ jehanne_getwd(char *buf, int nbuf)
 	long n;
 	int fd;
 
-	fd = open("#0/wdir", OREAD);
+	fd = sys_open("#0/wdir", OREAD);
 	if(fd < 0)
 		return 0;
-	n = read(fd, nil, -1);
+	n = jehanne_read(fd, nil, -1);
 	if(n == ~0)	/* an error occurred */
 		return 0;
 	if(nbuf >= ~n)
-		n = read(fd, buf, nbuf);
-	close(fd);
+		n = jehanne_read(fd, buf, nbuf);
+	sys_close(fd);
 	return n;
 }

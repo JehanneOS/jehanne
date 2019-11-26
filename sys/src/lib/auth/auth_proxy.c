@@ -129,7 +129,7 @@ fauth_proxy(int fd, AuthRpc *rpc, AuthGetkey *getkey, char *params)
 	}
 
 	strcpy(oerr, "UNKNOWN AUTH ERROR");
-	errstr(oerr, sizeof oerr);
+	sys_errstr(oerr, sizeof oerr);
 
 	if(dorpc(rpc, "start", params, strlen(params), getkey) != ARok){
 		werrstr("fauth_proxy start: %r");
@@ -145,10 +145,10 @@ fauth_proxy(int fd, AuthRpc *rpc, AuthGetkey *getkey, char *params)
 			free(buf);
 			a = auth_getinfo(rpc);
 			/* no error, restore whatever was there */
-			errstr(oerr, sizeof oerr);
+			sys_errstr(oerr, sizeof oerr);
 			return a;
 		case ARok:
-			if(write(fd, rpc->arg, rpc->narg) != rpc->narg){
+			if(jehanne_write(fd, rpc->arg, rpc->narg) != rpc->narg){
 				werrstr("auth_proxy write fd: %r");
 				goto Error;
 			}
@@ -160,7 +160,7 @@ fauth_proxy(int fd, AuthRpc *rpc, AuthGetkey *getkey, char *params)
 				m = atoi(rpc->arg);
 				if(m <= n || m > AuthRpcMax)
 					break;
-				m = read(fd, buf + n, m - n);
+				m = jehanne_read(fd, buf + n, m - n);
 				if(m <= 0){
 					if(m == 0)
 						werrstr("auth_proxy short read");
@@ -205,7 +205,7 @@ auth_proxy(int fd, AuthGetkey *getkey, char *fmt, ...)
 	}
 
 	ai = nil;
-	afd = open("/mnt/factotum/rpc", ORDWR);
+	afd = sys_open("/mnt/factotum/rpc", ORDWR);
 	if(afd < 0){
 		werrstr("opening /mnt/factotum/rpc: %r");
 		free(p);
@@ -217,7 +217,7 @@ auth_proxy(int fd, AuthGetkey *getkey, char *fmt, ...)
 		ai = fauth_proxy(fd, rpc, getkey, p);
 		auth_freerpc(rpc);
 	}
-	close(afd);
+	sys_close(afd);
 	free(p);
 	return ai;
 }

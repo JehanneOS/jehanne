@@ -16,7 +16,7 @@
 void
 Xasync(void)
 {
-	int null = open("/dev/null", OREAD);
+	int null = sys_open("/dev/null", OREAD);
 	int pid;
 	char npid[10];
 
@@ -25,9 +25,9 @@ Xasync(void)
 		return;
 	}
 	Updenv();
-	switch(pid = rfork(RFFDG|RFPROC|RFNOTEG)){
+	switch(pid = sys_rfork(RFFDG|RFPROC|RFNOTEG)){
 	case -1:
-		close(null);
+		sys_close(null);
 		Xerror("try again");
 		break;
 	case 0:
@@ -38,7 +38,7 @@ Xasync(void)
 		break;
 	default:
 		addwaitpid(pid);
-		close(null);
+		sys_close(null);
 		runq->pc = runq->code[runq->pc].i;
 		inttoascii(npid, pid);
 		setvar(ENV_APID, newword(npid, (word *)0));
@@ -68,13 +68,13 @@ Xpipe(void)
 		clearwaitpids();
 		start(p->code, pc+2, runq->local);
 		runq->ret = 0;
-		close(pfd[PRD]);
+		sys_close(pfd[PRD]);
 		pushredir(ROPEN, pfd[PWR], lfd);
 		break;
 	default:
 		addwaitpid(forkid);
 		start(p->code, p->code[pc].i, runq->local);
-		close(pfd[PWR]);
+		sys_close(pfd[PWR]);
 		pushredir(ROPEN, pfd[PRD], rfd);
 		p->pc = p->code[pc+1].i;
 		p->pid = forkid;
@@ -107,18 +107,18 @@ Xbackq(void)
 	switch(pid = fork()){
 	case -1:
 		Xerror("try again");
-		close(pfd[PRD]);
-		close(pfd[PWR]);
+		sys_close(pfd[PRD]);
+		sys_close(pfd[PWR]);
 		return;
 	case 0:
 		clearwaitpids();
-		close(pfd[PRD]);
+		sys_close(pfd[PRD]);
 		start(runq->code, runq->pc+1, runq->local);
 		pushredir(ROPEN, pfd[PWR], 1);
 		return;
 	default:
 		addwaitpid(pid);
-		close(pfd[PWR]);
+		sys_close(pfd[PWR]);
 		f = openfd(pfd[PRD]);
 		s = wd = ewd = 0;
 		v = 0;
@@ -187,13 +187,13 @@ Xpipefd(void)
 	case 0:
 		clearwaitpids();
 		start(p->code, pc+2, runq->local);
-		close(mainfd);
+		sys_close(mainfd);
 		pushredir(ROPEN, sidefd, p->code[pc].i==READ?1:0);
 		runq->ret = 0;
 		break;
 	default:
 		addwaitpid(pid);
-		close(sidefd);
+		sys_close(sidefd);
 		pushredir(ROPEN, mainfd, mainfd);	/* isn't this a noop? */
 		strcpy(name, Fdprefix);
 		inttoascii(name+strlen(name), mainfd);
@@ -242,7 +242,7 @@ execforkexec(void)
 		execexec();
 		strcpy(buf, "can't exec: ");
 		n = strlen(buf);
-		errstr(buf+n, ERRMAX-n);
+		sys_errstr(buf+n, ERRMAX-n);
 		Exit(buf);
 	}
 	addwaitpid(pid);

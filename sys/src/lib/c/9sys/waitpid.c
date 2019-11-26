@@ -17,7 +17,7 @@ jehanne_waitpid(void)
 	int n;
 	char buf[512], *fld[5];
 
-	n = await(buf, sizeof buf-1);
+	n = sys_await(buf, sizeof buf-1);
 	if(n <= 0)
 		return -1;
 	buf[n] = '\0';

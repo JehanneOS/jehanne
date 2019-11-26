@@ -86,7 +86,7 @@ getfile(SConn *conn, char *id, char *gf)
 	/* send file size */
 	s = emalloc(Maxmsg);
 	snprint(s, Maxmsg, "%s/store/%s/%s", SECSTORE_DIR, id, gf);
-	gd = open(s, OREAD);
+	gd = sys_open(s, OREAD);
 	if(gd < 0){
 		syslog(0, LOG, "can't open %s: %r", s);
 		free(s);
@@ -120,7 +120,7 @@ getfile(SConn *conn, char *id, char *gf)
 
 	/* send file in Maxmsg chunks */
 	while(len > 0){
-		n = read(gd, s, Maxmsg);
+		n = jehanne_read(gd, s, Maxmsg);
 		if(n <= 0){
 			syslog(0, LOG, "read error on %s: %r", gf);
 			free(s);
@@ -129,7 +129,7 @@ getfile(SConn *conn, char *id, char *gf)
 		conn->write(conn, (uint8_t*)s, n);
 		len -= n;
 	}
-	close(gd);
+	sys_close(gd);
 	free(s);
 	return 0;
 }
@@ -168,14 +168,14 @@ putfile(SConn *conn, char *id, char *pf)
 			syslog(0, LOG, "empty file chunk");
 			return -1;
 		}
-		nw = write(pd, s, n);
+		nw = jehanne_write(pd, s, n);
 		if(nw != n){
 			syslog(0, LOG, "write error on %s: %r", pf);
 			return -1;
 		}
 		len -= n;
 	}
-	close(pd);
+	sys_close(pd);
 	return 0;
 
 }
@@ -200,7 +200,7 @@ removefile(SConn *conn, char *id, char *f)
 	}
 
 	free(d);
-	if(remove(buf) < 0){
+	if(sys_remove(buf) < 0){
 		snprint(buf, sizeof buf, "remove failed: %r");
 		writerr(conn, buf);
 		return -1;
@@ -216,15 +216,15 @@ remoteIP(char *ldir)
 	char rp[100], ap[500];
 
 	snprint(rp, sizeof rp, "%s/remote", ldir);
-	fd = open(rp, OREAD);
+	fd = sys_open(rp, OREAD);
 	if(fd < 0)
 		return strdup("?!?");
-	n = read(fd, ap, sizeof ap);
+	n = jehanne_read(fd, ap, sizeof ap);
 	if(n <= 0 || n == sizeof ap){
 		fprint(2, "secstored: error %d reading %s: %r\n", n, rp);
 		return strdup("?!?");
 	}
-	close(fd);
+	sys_close(fd);
 	ap[n--] = 0;
 	if(ap[n] == '\n')
 		ap[n] = 0;
@@ -361,7 +361,7 @@ main(int argc, char **argv)
 	}ARGEND;
 
 	if(!verbose)
-		switch(rfork(RFNOTEG|RFPROC|RFFDG)) {
+		switch(sys_rfork(RFNOTEG|RFPROC|RFFDG)) {
 		case -1:
 			sysfatal("fork: %r");
 		case 0:
@@ -381,7 +381,7 @@ main(int argc, char **argv)
 		switch(fork()){
 		case -1:
 			fprint(2, "secstore forking: %r\n");
-			close(lcfd);
+			sys_close(lcfd);
 			break;
 		case 0:
 			/*
@@ -397,14 +397,14 @@ main(int argc, char **argv)
 			db = ndbcat(db, db2);
 			if((dfd = accept(lcfd, ldir)) < 0)
 				exits("can't accept");
-			alarm(30*60*1000);		/* 30 min */
+			sys_alarm(30*60*1000);		/* 30 min */
 			remote = remoteIP(ldir);
 			syslog(0, LOG, "secstore from %s", remote);
 			free(remote);
 			dologin(dfd, S, forceSTA);
 			exits(nil);
 		default:
-			close(lcfd);
+			sys_close(lcfd);
 			break;
 		}
 	}

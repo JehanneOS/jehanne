@@ -26,10 +26,10 @@ openprocnotes(int pid)
 	int32_t f;
 
 	jehanne_sprint(file, "#p/%d/note", pid);
-	f = open(file, OWRITE);
+	f = sys_open(file, OWRITE);
 	if(f < 0){
 		jehanne_sprint(file, "/proc/%d/note", pid);
-		f = open(file, OWRITE);
+		f = sys_open(file, OWRITE);
 	}
 	if(f < 0)
 		jehanne_werrstr("postnote: cannot open neither #p/%d/note nor /proc/%d/note", pid, pid);
@@ -43,10 +43,10 @@ opengroupnotes(int pid)
 	int32_t f;
 
 	jehanne_sprint(file, "#p/%d/notepg", pid);
-	f = open(file, OWRITE);
+	f = sys_open(file, OWRITE);
 	if(f < 0){
 		jehanne_sprint(file, "/proc/%d/notepg", pid);
-		f = open(file, OWRITE);
+		f = sys_open(file, OWRITE);
 	}
 	if(f < 0)
 		jehanne_werrstr("postnote: cannot open neither #p/%d/notepg nor /proc/%d/notepg", pid, pid);
@@ -73,10 +73,10 @@ jehanne_postnote(int group, int pid, const char *note)
 		return f;
 
 	r = jehanne_strlen(note);
-	if(write(f, note, r) != r) {
-		close(f);
+	if(jehanne_write(f, note, r) != r) {
+		sys_close(f);
 		return -1;
 	}
-	close(f);
+	sys_close(f);
 	return 0;
 }

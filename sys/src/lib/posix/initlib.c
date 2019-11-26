@@ -44,9 +44,9 @@ __libposix_sighelper_open(void)
 {
 	int mypid;
 	if(*__libposix_devsignal >= 0)
-		close(*__libposix_devsignal);
+		sys_close(*__libposix_devsignal);
 	mypid = *__libposix_pid;
-	*__libposix_devsignal = create("/dev/posix/signals", ORDWR|OCEXEC, mypid);
+	*__libposix_devsignal = sys_create("/dev/posix/signals", ORDWR|OCEXEC, mypid);
 	if(*__libposix_devsignal < 0)
 		sysfatal("cannot create /dev/posix/signals: %r");
 }
@@ -147,5 +147,5 @@ __libposix_sighelper_cmd(PosixHelperCommand command, int posix_process_pid)
 	offset.request.command = command;
 	offset.request.target = posix_process_pid;
 
-	return pwrite(*__libposix_devsignal, "", 0, offset.raw);
+	return sys_pwrite(*__libposix_devsignal, "", 0, offset.raw);
 }

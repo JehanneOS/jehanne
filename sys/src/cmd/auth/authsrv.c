@@ -85,7 +85,7 @@ main(int argc, char *argv[])
 	if(argc >= 1)
 		getraddr(argv[argc-1]);
 
-	alarm(10*60*1000);	/* kill a connection after 10 minutes */
+	sys_alarm(10*60*1000);	/* kill a connection after 10 minutes */
 
 	private();
 	initkeyseed();
@@ -151,7 +151,7 @@ pak1(char *u, Keyslot *k)
 		authpak_hash(k, k->id);
 	}
 	authpak_new(&p, k, y, 0);
-	if(write(1, y, PAKYLEN) != PAKYLEN)
+	if(jehanne_write(1, y, PAKYLEN) != PAKYLEN)
 		exits(0);
 	if(readn(0, y, PAKYLEN) != PAKYLEN)
 		exits(0);
@@ -164,7 +164,7 @@ pak(Ticketreq *tr)
 {
 	static uint8_t ok[1] = {AuthOK};
 
-	if(write(1, ok, 1) != 1)
+	if(jehanne_write(1, ok, 1) != 1)
 		exits(0);
 
 	/* invalidate pak keys */
@@ -235,7 +235,7 @@ ticketrequest(Ticketreq *tr)
 	n += convT2M(&t, tbuf+n, sizeof(tbuf)-n, &hkey);
 	t.num = AuthTs;
 	n += convT2M(&t, tbuf+n, sizeof(tbuf)-n, &akey);
-	if(write(1, tbuf, n) != n)
+	if(jehanne_write(1, tbuf, n) != n)
 		exits(0);
 
 	syslog(0, AUTHLOG, "tr-ok %s@%s(%s) -> %s@%s", tr->uid, tr->hostid, raddr, tr->uid, tr->authid);
@@ -272,7 +272,7 @@ challengebox(Ticketreq *tr)
 	buf[0] = AuthOK;
 	chal = nfastrand(MAXNETCHAL);
 	sprint(buf+1, "%lud", chal);
-	if(write(1, buf, NETCHLEN+1) != NETCHLEN+1)
+	if(jehanne_write(1, buf, NETCHLEN+1) != NETCHLEN+1)
 		exits(0);
 	if(readn(0, buf, NETCHLEN) != NETCHLEN)
 		exits(0);
@@ -314,7 +314,7 @@ changepasswd(Ticketreq *tr)
 	n = 0;
 	tbuf[n++] = AuthOK;
 	n += convT2M(&t, tbuf+n, sizeof(tbuf)-n, &ukey);
-	if(write(1, tbuf, n) != n)
+	if(jehanne_write(1, tbuf, n) != n)
 		exits(0);
 
 	/* loop trying passwords out */
@@ -363,7 +363,7 @@ changepasswd(Ticketreq *tr)
 	succeed(tr->uid);
 
 	prbuf[0] = AuthOK;
-	if(write(1, prbuf, 1) != 1)
+	if(jehanne_write(1, prbuf, 1) != 1)
 		exits(0);
 }
 
@@ -540,7 +540,7 @@ vnc(Ticketreq *tr)
 	genrandom(chal+6, VNCchallen);
 	chal[0] = AuthOKvar;
 	sprint((char*)chal+1, "%-5d", VNCchallen);
-	if(write(1, chal, sizeof(chal)) != sizeof(chal))
+	if(jehanne_write(1, chal, sizeof(chal)) != sizeof(chal))
 		exits(0);
 
 	/*
@@ -596,7 +596,7 @@ chap(Ticketreq *tr)
 	 *  Create a challenge and send it.
 	 */
 	genrandom((uint8_t*)chal, sizeof(chal));
-	if(write(1, chal, sizeof(chal)) != sizeof(chal))
+	if(jehanne_write(1, chal, sizeof(chal)) != sizeof(chal))
 		exits(0);
 
 	/*
@@ -701,7 +701,7 @@ mschap(Ticketreq *tr)
 	 *  Create a challenge and send it.
 	 */
 	genrandom(chal, sizeof(chal));
-	if(write(1, chal, sizeof(chal)) != sizeof(chal))
+	if(jehanne_write(1, chal, sizeof(chal)) != sizeof(chal))
 		exits(0);
 
 	/*
@@ -838,7 +838,7 @@ mschap(Ticketreq *tr)
 	sha1(hash2, 16, 0, s);
 	sha1(chal, 8, digest, s);
 
-	if(write(1, digest, 16) != 16)
+	if(jehanne_write(1, digest, 16) != 16)
 		exits(0);
 }
 
@@ -990,7 +990,7 @@ replyerror(char *fmt, ...)
 	va_end(arg);
 	buf[AERRLEN] = 0;
 	buf[0] = AuthErr;
-	write(1, buf, AERRLEN+1);
+	jehanne_write(1, buf, AERRLEN+1);
 	syslog(0, AUTHLOG, buf+1);
 }
 
@@ -1080,7 +1080,7 @@ tickauthreply(Ticketreq *tr, Authkey *key)
 	genrandom(a.rand, NONCELEN);
 	a.num = AuthAc;
 	n += convA2M(&a, buf+n, sizeof(buf)-n, &t);
-	if(write(1, buf, n) != n)
+	if(jehanne_write(1, buf, n) != n)
 		exits(0);
 }
 

@@ -615,7 +615,7 @@ open_file(char *name)
 
 	if ((bp = malloc(sizeof(Biobuf))) == 0)
 		quit("Out of memory");
-	if ((fd = open(name, OWRITE)) < 0 &&
+	if ((fd = sys_open(name, OWRITE)) < 0 &&
 	    (fd = ocreate(name, OWRITE, 0666)) < 0)
 		quit("Cannot create %s", name);
 	Binit(bp, fd, OWRITE);
@@ -1389,7 +1389,7 @@ quit(char *fmt, ...)
 	p = vseprint(p, ep, fmt, arg);
 	va_end(arg);
 	p = seprint(p, ep, "\n");
-	write(2, msg, p - msg);
+	jehanne_write(2, msg, p - msg);
 	errexit();
 }
 

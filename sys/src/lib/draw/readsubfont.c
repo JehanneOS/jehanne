@@ -27,7 +27,7 @@ readsubfonti(Display*d, char *name, int fd, Image *ai, int dolock)
 		if(i == nil)
 			return nil;
 	}
-	if(read(fd, hdr, 3*12) != 3*12){
+	if(jehanne_read(fd, hdr, 3*12) != 3*12){
 		if(ai == nil)
 			freeimage(i);
 		werrstr("rdsubfonfile: header read error: %r");
@@ -37,7 +37,7 @@ readsubfonti(Display*d, char *name, int fd, Image *ai, int dolock)
 	p = malloc(6*(n+1));
 	if(p == nil)
 		goto Err;
-	if(read(fd, p, 6*(n+1)) != 6*(n+1)){
+	if(jehanne_read(fd, p, 6*(n+1)) != 6*(n+1)){
 		werrstr("rdsubfonfile: fontchar read error: %r");
     Err:
 		if(ai == nil)

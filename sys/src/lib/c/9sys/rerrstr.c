@@ -16,7 +16,7 @@ jehanne_rerrstr(char *buf, uint32_t nbuf)
 	char tmp[ERRMAX];
 
 	tmp[0] = 0;
-	errstr(tmp, sizeof tmp);
+	sys_errstr(tmp, sizeof tmp);
 	jehanne_utfecpy(buf, buf+nbuf, tmp);
-	errstr(tmp, sizeof tmp);
+	sys_errstr(tmp, sizeof tmp);
 }

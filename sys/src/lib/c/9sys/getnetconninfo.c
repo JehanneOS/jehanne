@@ -22,9 +22,9 @@ getendpoint(char *dir, char *file, char **sysp, char **servp)
 	sys = serv = 0;
 
 	jehanne_snprint(buf, sizeof buf, "%s/%s", dir, file);
-	fd = open(buf, OREAD);
+	fd = sys_open(buf, OREAD);
 	if(fd >= 0){
-		n = read(fd, buf, sizeof(buf)-1);
+		n = jehanne_read(fd, buf, sizeof(buf)-1);
 		if(n>0){
 			buf[n-1] = 0;
 			serv = jehanne_strchr(buf, '!');
@@ -34,7 +34,7 @@ getendpoint(char *dir, char *file, char **sysp, char **servp)
 			}
 			sys = jehanne_strdup(buf);
 		}
-		close(fd);
+		sys_close(fd);
 	}
 	if(serv == 0)
 		serv = unknown;
@@ -56,7 +56,7 @@ jehanne_getnetconninfo(const char *dir, int fd)
 
 	/* get a directory address via fd */
 	if(dir == nil || *dir == 0){
-		if(fd2path(fd, path, sizeof(path)) < 0)
+		if(sys_fd2path(fd, path, sizeof(path)) < 0)
 			return nil;
 		cp = jehanne_strrchr(path, '/');
 		if(cp == nil)

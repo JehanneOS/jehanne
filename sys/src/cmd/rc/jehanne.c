@@ -101,7 +101,7 @@ execnewpgrp(void)
 		poplist();
 		return;
 	}
-	if(rfork(arg)==-1){
+	if(sys_rfork(arg)==-1){
 		pfmt(err, "rc: %s failed\n", runq->argv->words->word);
 		setstatus("rfork failed");
 	}
@@ -119,7 +119,7 @@ Vinit(void)
 	word *val;
 	Dir *ent;
 
-	dir = open("/env", OREAD);
+	dir = sys_open("/env", OREAD);
 	if(dir<0){
 		pfmt(err, "rc: can't open /env: %r\n");
 		return;
@@ -133,7 +133,7 @@ Vinit(void)
 			len = ent[i].length;
 			if(len && strncmp(ent[i].name, "fn#", 3)!=0){
 				snprint(envname, sizeof envname, "/env/%s", ent[i].name);
-				if((f = open(envname, OREAD))>=0){
+				if((f = sys_open(envname, OREAD))>=0){
 					buf = emalloc(len+1);
 					n = readn(f, buf, len);
 					if (n <= 0)
@@ -160,14 +160,14 @@ Vinit(void)
 					}
 					setvar(ent[i].name, val);
 					vlook(ent[i].name)->changed = 0;
-					close(f);
+					sys_close(f);
 					free(buf);
 				}
 			}
 		}
 		free(ent);
 	}
-	close(dir);
+	sys_close(dir);
 }
 
 void
@@ -176,7 +176,7 @@ Xrdfn(void)
 	if(runq->argv->words == 0)
 		poplist();
 	else {
-		int f = open(runq->argv->words->word, OREAD);
+		int f = sys_open(runq->argv->words->word, OREAD);
 		popword();
 		runq->pc--;
 		if(f >= 0)
@@ -228,7 +228,7 @@ Waitfor(int pid, int n)
 		free(w);
 	}
 
-	errstr(errbuf, sizeof errbuf);
+	sys_errstr(errbuf, sizeof errbuf);
 	if(strcmp(errbuf, "interrupted")==0) return -1;
 	return 0;
 }
@@ -259,15 +259,15 @@ addenv(var *v)
 			if(strcmp(ENV_PATH, v->name) == 0
 			|| strcmp(ENV_CDPATH, v->name) == 0){
 				for(w = v->val; w != nil; w = w->next){
-					write(f, w->word, strlen(w->word));
+					jehanne_write(f, w->word, strlen(w->word));
 					if(w->next)
-						write(f, ":", 1);
+						jehanne_write(f, ":", 1);
 				}
 			} else {
 				for(w = v->val; w != nil; w = w->next)
-					write(f, w->word, strlen(w->word)+1L);
+					jehanne_write(f, w->word, strlen(w->word)+1L);
 			}
-			close(f);
+			sys_close(f);
 		}
 	}
 	if(v->fnchanged){
@@ -331,7 +331,7 @@ Execute(word *args, word *path)
 			file[nc++] = '/';
 		}
 		memmove(file+nc, argv[1], mc);
-		exec(file, argv+1);
+		sys_exec(file, argv+1);
 	}
 	rerrstr(file, sizeof file);
 	setstatus(file);
@@ -369,7 +369,7 @@ Opendir(char *name)
 {
 	Dir *db;
 	int f;
-	f = open(name, OREAD);
+	f = sys_open(name, OREAD);
 	if(f==-1)
 		return f;
 	db = dirfstat(f);
@@ -382,7 +382,7 @@ Opendir(char *name)
 		return f;
 	}
 	free(db);
-	close(f);
+	sys_close(f);
 	return -1;
 }
 
@@ -443,7 +443,7 @@ Closedir(int f)
 		dir[f].n = 0;
 		dir[f].dbuf = 0;
 	}
-	close(f);
+	sys_close(f);
 }
 int interrupted = 0;
 void
@@ -455,7 +455,7 @@ notifyf(void* v, char *s)
 		goto Out;
 	}
 	pfmt(err, "rc: note: %s\n", s);
-	noted(NDFLT);
+	sys_noted(NDFLT);
 	return;
 Out:
 	if(strcmp(s, "interrupt")!=0 || trap[i]==0){
@@ -466,37 +466,37 @@ Out:
 		pfmt(err, "rc: Too many traps (trap %s), aborting\n", s);
 		abort();
 	}
-	noted(NCONT);
+	sys_noted(NCONT);
 }
 
 void
 Trapinit(void)
 {
-	notify(notifyf);
+	sys_notify(notifyf);
 }
 
 void
 Unlink(char *name)
 {
-	remove(name);
+	sys_remove(name);
 }
 
 int
 Write(int fd, void *buf, int cnt)
 {
-	return write(fd, buf, cnt);
+	return jehanne_write(fd, buf, cnt);
 }
 
 int
 Read(int fd, void *buf, int cnt)
 {
-	return read(fd, buf, cnt);
+	return jehanne_read(fd, buf, cnt);
 }
 
 int
 Seek(int fd, int cnt, int whence)
 {
-	return seek(fd, cnt, whence);
+	return sys_seek(fd, cnt, whence);
 }
 
 int
@@ -557,7 +557,7 @@ Isatty(int fd)
 	char buf[64];
 	int l;
 
-	if(fd2path(fd, buf, sizeof buf) != 0)
+	if(sys_fd2path(fd, buf, sizeof buf) != 0)
 		return 0;
 
 	/* might be #c/cons during boot - fixed 22 april 2005, remove this later */

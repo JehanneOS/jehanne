@@ -68,7 +68,7 @@ iprint(char *fmt, ...)
 	n = jehanne_vseprint(buf, buf+sizeof buf, fmt, va) - buf;
 	va_end(va);
 
-	write(1,buf,n);
+	jehanne_write(1,buf,n);
 	return 1;
 }
 

@@ -30,12 +30,12 @@ Bwrite(Biobufhdr *bp, void *ap, int32_t count)
 		if(n == 0) {
 			if(bp->state != Bwactive)
 				return Beof;
-			i = write(bp->fid, bp->bbuf, bp->bsize);
+			i = jehanne_write(bp->fid, bp->bbuf, bp->bsize);
 			if(i != bp->bsize) {
-				errstr(errbuf, sizeof errbuf);
+				sys_errstr(errbuf, sizeof errbuf);
 				if(strstr(errbuf, "interrupt") == nil)
 					bp->state = Binactive;
-				errstr(errbuf, sizeof errbuf);
+				sys_errstr(errbuf, sizeof errbuf);
 				return Beof;
 			}
 			bp->offset += i;

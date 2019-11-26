@@ -24,13 +24,13 @@ readfile(char *file, char *buf, int n)
 {
 	int fd;
 
-	fd = open(file, OREAD);
+	fd = sys_open(file, OREAD);
 	if(fd < 0){
 		werrstr("%s: %r", file);
 		return -1;
 	}
-	n = read(fd, buf, n);
-	close(fd);
+	n = jehanne_read(fd, buf, n);
+	sys_close(fd);
 	return n;
 }
 
@@ -39,11 +39,11 @@ writefile(char *file, char *buf, int n)
 {
 	int fd;
 
-	fd = open(file, OWRITE);
+	fd = sys_open(file, OWRITE);
 	if(fd < 0)
 		return -1;
-	n = write(fd, buf, n);
-	close(fd);
+	n = jehanne_write(fd, buf, n);
+	sys_close(fd);
 	return n;
 }
 

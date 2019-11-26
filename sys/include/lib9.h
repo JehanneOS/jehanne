@@ -309,5 +309,3 @@
 #define sizeD2M jehanne_sizeD2M
 #define dirmodefmt jehanne_dirmodefmt
 #define chartorune jehanne_chartorune
-#define read(fd, buf, size) jehanne_pread(fd, buf, size, -1)
-#define write(fd, buf, size) jehanne_pwrite(fd, buf, size, -1)

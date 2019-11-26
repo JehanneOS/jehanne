@@ -555,7 +555,7 @@ Breadbmp(Biobuf *bp, int colourspace)
 	USED(a);
 	USED(bmp);
 	if (colourspace != CRGB) {
-		errstr(ebuf, sizeof ebuf);	/* throw it away */
+		sys_errstr(ebuf, sizeof ebuf);	/* throw it away */
 		werrstr("ReadRGB: unknown colour space %d", colourspace);
 		return nil;
 	}

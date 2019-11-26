@@ -41,7 +41,7 @@ jehanne_putenv(const char *name, const char *value)
 
 	f = jehanne_ocreate(path, OWRITE, 0664);
 	if(f < 0){
-		/* try with #e, in case of a previous rfork(RFCNAMEG)
+		/* try with #e, in case of a previous sys_rfork(RFCNAMEG)
 		 */
 		jehanne_snprint(path, sizeof path, "#e/%s", name);
 		f = jehanne_ocreate(path, OWRITE, 0664);
@@ -49,11 +49,11 @@ jehanne_putenv(const char *name, const char *value)
 			return -1;
 	}
 	l = jehanne_strlen(value);
-	if(l > 0 && write(f, value, l) != l){
-		close(f);
+	if(l > 0 && jehanne_write(f, value, l) != l){
+		sys_close(f);
 		return -1;
 	}
-	close(f);
+	sys_close(f);
 	return 0;
 
 BadName:

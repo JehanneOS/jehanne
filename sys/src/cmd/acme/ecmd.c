@@ -326,7 +326,7 @@ e_cmd(Text *t, Cmd *cp)
 	samename = runeeq(name, i, t->file->name, t->file->nname);
 	s = runetobyte(name, i);
 	free(name);
-	fd = open(s, OREAD);
+	fd = sys_open(s, OREAD);
 	if(fd < 0){
 		snprint(tmp, sizeof tmp, "can't open %s: %r", s);
 		free(s);
@@ -336,7 +336,7 @@ e_cmd(Text *t, Cmd *cp)
 	isdir = (d!=nil && (d->qid.type&QTDIR));
 	free(d);
 	if(isdir){
-		close(fd);
+		sys_close(fd);
 		snprint(tmp, sizeof tmp, "%s is a directory", s);
 		free(s);
 		editerror(tmp);
@@ -345,7 +345,7 @@ e_cmd(Text *t, Cmd *cp)
 	nulls = 0;
 	loadfile(fd, q1, &nulls, readloader, f);
 	free(s);
-	close(fd);
+	sys_close(fd);
 	if(nulls)
 		warning(nil, "%s: NUL bytes elided\n", s);
 	else if(allreplaced && samename)

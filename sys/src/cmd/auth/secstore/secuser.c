@@ -36,7 +36,7 @@ ensure_exists(char *f, uint32_t perm)
 	fd = ocreate(f, OREAD, perm);
 	if(fd < 0)
 		sysfatal("unable to create %s: %r", f);
-	close(fd);
+	sys_close(fd);
 }
 
 
@@ -214,7 +214,7 @@ main(int argc, char **argv)
 		sysfatal("can't write password file: %r");
 	else{
 		print("change written\n");
-		if(isnew && create(home, OREAD, DMDIR | 0775L) < 0)
+		if(isnew && sys_create(home, OREAD, DMDIR | 0775L) < 0)
 			sysfatal("unable to create %s: %r", home);
 	}
 
@@ -228,7 +228,7 @@ userinput(char *buf, int blen)
 	int n;
 
 	for(;;){
-		n = read(0, buf, blen);
+		n = jehanne_read(0, buf, blen);
 		if(n<=0)
 			exits("read error");
 		if(buf[n-1]=='\n'){

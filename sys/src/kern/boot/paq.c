@@ -24,17 +24,17 @@ configpaq(Method* m)
 	int fd;
 	int i;
 
-	if(bind("#F", "/dev", MAFTER) < 0)
+	if(sys_bind("#F", "/dev", MAFTER) < 0)
 		fatal("bind #c");
-	if(bind("#p", "/proc", MREPL) < 0)
+	if(sys_bind("#p", "/proc", MREPL) < 0)
 		fatal("bind #p");
-	fd = open("/dev/flash/flashctl", OWRITE);
+	fd = sys_open("/dev/flash/flashctl", OWRITE);
 	if(fd < 0)
 		fatal("opening flashctl");
 	for(i = 0; i < nelem(fparts); i++)
 		if(jehanne_fprint(fd, fparts[i]) < 0)
 			fatal(fparts[i]);
-	close(fd);
+	sys_close(fd);
 }
 
 int
@@ -62,15 +62,15 @@ connectpaq(void)
 			fatal("jehanne_dup(p[0], 0)");
 		if(jehanne_dup(p[1], 1) != 1)
 			fatal("jehanne_dup(p[1], 1)");
-		close(p[0]);
-		close(p[1]);
-		exec("/boot/paqfs", (const char**)arg);
+		sys_close(p[0]);
+		sys_close(p[1]);
+		sys_exec("/boot/paqfs", (const char**)arg);
 		fatal("can't exec paqfs");
 	default:
 		break;
 	}
 	jehanne_waitpid();
 
-	close(p[1]);
+	sys_close(p[1]);
 	return p[0];
 }

@@ -41,8 +41,8 @@ static uint8_t*
 hfread(Ndbhf *hf, int32_t off, int len)
 {
 	if(off < hf->off || off + len > hf->off + hf->len){
-		if(seek(hf->fd, off, 0) < 0
-		|| (hf->len = read(hf->fd, hf->buf, sizeof(hf->buf))) < len){
+		if(sys_seek(hf->fd, off, 0) < 0
+		|| (hf->len = jehanne_read(hf->fd, hf->buf, sizeof(hf->buf))) < len){
 			hf->off = -1;
 			return 0;
 		}
@@ -96,7 +96,7 @@ hfopen(Ndb *db, char *attr)
 	/* compare it to the database file */
 	strncpy(hf->attr, attr, sizeof(hf->attr)-1);
 	sprint(buf, "%s.%s", db->file, hf->attr);
-	hf->fd = open(buf, OREAD);
+	hf->fd = sys_open(buf, OREAD);
 	if(hf->fd >= 0){
 		hf->len = 0;
 		hf->off = 0;
@@ -110,7 +110,7 @@ hfopen(Ndb *db, char *attr)
 				return hf;
 			}
 		}
-		close(hf->fd);
+		sys_close(hf->fd);
 	}
 
 	free(hf);

@@ -95,7 +95,7 @@ debugrendezvous(void *tag, void *val)
 	logs[i].addr = __builtin_return_address(0);
 	logs[i].caller = __builtin_return_address(1);
 	logs[i].r = (void*)0xffabcdefffabcdef;
-	logs[i].r = rendezvous(tag, (void*)logs[i].addr);
+	logs[i].r = sys_rendezvous(tag, (void*)logs[i].addr);
 	logs[i].end = jehanne_nsec();
 	return logs[i].r;
 }
@@ -104,7 +104,7 @@ printdebugrendezvouslogs(void)
 {
 	int i;
 	for(i = 0; i < logidx; ++i)
-		jehanne_print("[%d] %#p @ %#p rendezvous(%#p, %#p) -> %#p @ %#p\n", logs[i].pid, logs[i].caller, logs[i].start, logs[i].tag, logs[i].addr, logs[i].r, logs[i].end);
+		jehanne_print("[%d] %#p @ %#p sys_rendezvous(%#p, %#p) -> %#p @ %#p\n", logs[i].pid, logs[i].caller, logs[i].start, logs[i].tag, logs[i].addr, logs[i].r, logs[i].end);
 }
 static void*	(*_rendezvousp)(void*, void*) = debugrendezvous;
 
@@ -113,14 +113,14 @@ static void*	(*_rendezvousp)(void*, void*) = debugrendezvous;
 static void*
 __rendezvous(void* tag, void* val)
 {
-	return rendezvous(tag, val);
+	return sys_rendezvous(tag, val);
 }
 static void*	(*_rendezvousp)(void*, void*) = __rendezvous;
 
 #endif
 
 # define RENDEZVOUS(...) (*_rendezvousp)(__VA_ARGS__)
-//# define RENDEZVOUS(...) rendezvous(__VA_ARGS__)
+//# define RENDEZVOUS(...) sys_rendezvous(__VA_ARGS__)
 //# define RENDEZVOUS(tag, val) __rendezvous(tag, __builtin_return_address(0))
 
 /* this gets called by the thread library ONLY to get us to use its rendezvous */
@@ -252,7 +252,7 @@ jehanne_qlockt(QLock *q, uint32_t ms)
 	jehanne_unlock(&q->lock);
 
 	/* set up awake to interrupt rendezvous */
-	wkup = awake(ms);
+	wkup = sys_awake(ms);
 
 	/* wait */
 	while(RENDEZVOUS(mp, (void*)1) == (void*)~0)
@@ -353,7 +353,7 @@ jehanne_rlockt(RWLock *q, uint32_t ms)
 	jehanne_unlock(&q->lock);
 
 	/* set up awake to interrupt rendezvous */
-	wkup = awake(ms);
+	wkup = sys_awake(ms);
 
 	/* wait in kernel */
 	while(RENDEZVOUS(mp, (void*)1) == (void*)~0)
@@ -500,7 +500,7 @@ jehanne_wlockt(RWLock *q, uint32_t ms)
 	jehanne_unlock(&q->lock);
 
 	/* set up awake to interrupt rendezvous */
-	wkup = awake(ms);
+	wkup = sys_awake(ms);
 
 	/* wait in kernel */
 	while(RENDEZVOUS(mp, (void*)1) == (void*)~0)
@@ -737,7 +737,7 @@ jehanne_rsleept(Rendez *r, uint32_t ms)
 	}
 
 	/* set up awake to interrupt rendezvous */
-	wkup = awake(ms);
+	wkup = sys_awake(ms);
 
 	/* wait for a rwakeup (or a timeout) */
 	while(RENDEZVOUS(me, (void*)1) == (void*)~0)

@@ -256,11 +256,11 @@ sethipri(void)
 	int fd;
 
 	snprint(fn, sizeof(fn), "/proc/%d/ctl", getpid());
-	fd = open(fn, OWRITE);
+	fd = sys_open(fn, OWRITE);
 	if(fd < 0)
 		return;
 	fprint(fd, "pri 13");
-	close(fd);
+	sys_close(fd);
 }
 
 typedef struct Joy Joy;
@@ -353,7 +353,7 @@ joywork(void *a)
 			kbfatal(f, "joy: weird mouse maxpkt");
 
 		memset(p.p, 0, sizeof(p.p));
-		c = read(f->ep->dfd, p.p, f->ep->maxpkt);
+		c = jehanne_read(f->ep->dfd, p.p, f->ep->maxpkt);
 		if(c <= 0){
 			if(c < 0)
 				rerrstr(err, sizeof(err));

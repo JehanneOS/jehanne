@@ -19,5 +19,5 @@ jehanne_werrstr(const char *fmt, ...)
 	va_start(arg, fmt);
 	jehanne_vseprint(buf, buf+ERRMAX, fmt, arg);
 	va_end(arg);
-	errstr(buf, ERRMAX);
+	sys_errstr(buf, ERRMAX);
 }

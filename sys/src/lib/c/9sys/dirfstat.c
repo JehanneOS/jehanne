@@ -29,7 +29,7 @@ jehanne_dirfstat(int fd)
 		if(d == nil)
 			return nil;
 		buf = (uint8_t*)&d[1];
-		n = fstat(fd, buf, BIT16SZ+nd);
+		n = sys_fstat(fd, buf, BIT16SZ+nd);
 		if(n < BIT16SZ){
 			jehanne_free(d);
 			return nil;

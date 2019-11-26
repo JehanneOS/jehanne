@@ -9,7 +9,7 @@ _asgetticket(int fd, Ticketreq *tr, char *tbuf, int tbuflen)
 	int i, n, m, r;
 
 	strcpy(err, "AS protocol botch");
-	errstr(err, ERRMAX);
+	sys_errstr(err, ERRMAX);
 
 	if(_asrequest(fd, tr) < 0)
 		return -1;
@@ -31,7 +31,7 @@ _asgetticket(int fd, Ticketreq *tr, char *tbuf, int tbuflen)
 		tbuflen -= n;
 	}
 
-	errstr(err, ERRMAX);
+	sys_errstr(err, ERRMAX);
 
 	return r;
 }

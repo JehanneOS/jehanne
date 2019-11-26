@@ -207,7 +207,7 @@ main(int argc, char *argv[])
 	if(conv == null && cflag&(LCASE|UCASE))
 		conv = cnull;
 	if(ifile)
-		ibf = open(ifile, OREAD);
+		ibf = sys_open(ifile, OREAD);
 	else
 		ibf = dup(0, -1);
 	if(ibf < 0) {
@@ -218,7 +218,7 @@ main(int argc, char *argv[])
 		if(dotrunc)
 			obf = ocreate(ofile, OWRITE, 0664);
 		else
-			obf = open(ofile, OWRITE);
+			obf = sys_open(ofile, OWRITE);
 		if(obf < 0) {
 			fprint(2, "dd: create %s: %r\n", ofile);
 			exits("create");
@@ -257,14 +257,14 @@ main(int argc, char *argv[])
 	if(signal(SIGINT, SIG_IGN) != SIG_IGN)
 		signal(SIGINT, term);
 */
-	seek(obf, obs*oseekn, 1);
-	seek(ibf, ibs*iseekn, 1);
+	sys_seek(obf, obs*oseekn, 1);
+	sys_seek(ibf, ibs*iseekn, 1);
 	if(iseekb)
-		seek(ibf, iseekb, 0);
+		sys_seek(ibf, iseekb, 0);
 	if(oseekb)
-		seek(obf, oseekb, 0);
+		sys_seek(obf, oseekb, 0);
 	while(skip) {
-		read(ibf, ibuf, ibs);
+		jehanne_read(ibf, ibuf, ibs);
 		skip--;
 	}
 
@@ -276,7 +276,7 @@ loop:
 			if(cflag&(NERR|SYNC))
 			for(ip=ibuf+ibs; ip>ibuf;)
 				*--ip = 0;
-			ibc = read(ibf, ibuf, ibs);
+			ibc = jehanne_read(ibf, ibuf, ibs);
 		}
 		if(ibc == -1) {
 			perror("read");
@@ -288,7 +288,7 @@ loop:
 			for(c=0; c<ibs; c++)
 				if(ibuf[c] != 0)
 					ibc = c+1;
-			seek(ibf, ibs, 1);
+			sys_seek(ibf, ibs, 1);
 			stats();
 		}else if(ibc == 0 && --files<=0) {
 			flsh();
@@ -331,7 +331,7 @@ flsh(void)
 	if(obc) {
 		/* don't perror dregs of previous errors on a short write */
 		werrstr("");
-		c = write(obf, obuf, obc);
+		c = jehanne_write(obf, obuf, obc);
 		if(c != obc) {
 			if(c > 0)
 				++nopr;

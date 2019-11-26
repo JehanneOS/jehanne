@@ -72,20 +72,20 @@ pipecommand(Window *w, char *s)
 		if(w->addr < 0)
 			w->addr = winopenfile(w, "addr");
 		ctlprint(w->ctl, "addr=dot\n");
-		seek(w->addr, 0UL, 0);
-		if(read(w->addr, tmp, 2*12) == 2*12){
+		sys_seek(w->addr, 0UL, 0);
+		if(jehanne_read(w->addr, tmp, 2*12) == 2*12){
 			q0 = atol(tmp+0*12);
 			q1 = atol(tmp+1*12);
 			if(q0 == q1){
 				t = nil;
 				k = 0;
 				if(snarffd > 0){
-					seek(0, snarffd, 0);
+					sys_seek(0, snarffd, 0);
 					for(;;){
 						t = realloc(t, k+8192+2);
 						if(t == nil)
 							error("alloc failed: %r\n");
-						n = read(snarffd, t+k, 8192);
+						n = jehanne_read(snarffd, t+k, 8192);
 						if(n <= 0)
 							break;
 						k += n;
@@ -180,5 +180,5 @@ startpipe(void)
 {
 	newpipechan = chancreate(sizeof(Window*), 0);
 	threadcreate(newpipethread, nil, STACK);
-	snarffd = open("/dev/snarf", OREAD|OCEXEC);
+	snarffd = sys_open("/dev/snarf", OREAD|OCEXEC);
 }

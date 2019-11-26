@@ -26,13 +26,13 @@ wrbio(char *file, Acctbio *a)
 	char buf[1024];
 	int i, fd, n;
 
-	fd = open(file, OWRITE);
+	fd = sys_open(file, OWRITE);
 	if(fd < 0){
 		fd = ocreate(file, OWRITE, 0660);
 		if(fd < 0)
 			error("can't create %s", file);
 	}
-	if(seek(fd, 0, 2) < 0)
+	if(sys_seek(fd, 0, 2) < 0)
 		error("can't seek %s", file);
 
 	if(a->postid == 0)
@@ -54,6 +54,6 @@ wrbio(char *file, Acctbio *a)
 	}
 	n += snprint(buf+n, sizeof(buf)-n, "\n");
 
-	write(fd, buf, n);
-	close(fd);
+	jehanne_write(fd, buf, n);
+	sys_close(fd);
 }

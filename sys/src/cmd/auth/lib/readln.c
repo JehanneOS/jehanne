@@ -80,22 +80,22 @@ readln(char *prompt, char *line, int len, int raw)
 	char *p;
 	int fdin, fdout, ctl, n, nr;
 
-	fdin = open("/dev/cons", OREAD);
-	fdout = open("/dev/cons", OWRITE);
+	fdin = sys_open("/dev/cons", OREAD);
+	fdout = sys_open("/dev/cons", OWRITE);
 	fprint(fdout, "%s", prompt);
 	if(raw){
-		ctl = open("/dev/consctl", OWRITE);
+		ctl = sys_open("/dev/consctl", OWRITE);
 		if(ctl < 0)
 			error("couldn't set raw mode");
-		write(ctl, "rawon", 5);
+		jehanne_write(ctl, "rawon", 5);
 	} else
 		ctl = -1;
 	nr = 0;
 	p = line;
 	for(;;){
-		n = read(fdin, p, 1);
+		n = jehanne_read(fdin, p, 1);
 		if(n < 0){
-			close(ctl);
+			sys_close(ctl);
 			error("can't read cons\n");
 		}
 		if(*p == 0x7f)
@@ -103,10 +103,10 @@ readln(char *prompt, char *line, int len, int raw)
 		if(n == 0 || *p == '\n' || *p == '\r'){
 			*p = '\0';
 			if(raw){
-				write(ctl, "rawoff", 6);
-				write(fdout, "\n", 1);
+				jehanne_write(ctl, "rawoff", 6);
+				jehanne_write(fdout, "\n", 1);
 			}
-			close(ctl);
+			sys_close(ctl);
 			return;
 		}
 		if(*p == '\b'){

@@ -28,11 +28,11 @@ ls(char *p, Dir **dirbuf)
 
 	if((db = dirstat(p)) == nil ||
 		!(db->qid.type & QTDIR) ||
-		(fd = open(p, OREAD)) < 0 )
+		(fd = sys_open(p, OREAD)) < 0 )
 		return -1;
 	free(db);
 	n = dirreadall(fd, dirbuf);
-	close(fd);
+	sys_close(fd);
 	return n;
 }
 
@@ -48,15 +48,15 @@ sha1file(char *pfx, char *nm)
 	len = strlen(pfx)+1+strlen(nm)+1;
 	tmp = emalloc(len);
 	snprint(tmp, len, "%s/%s", pfx, nm);
-	if((fd = open(tmp, OREAD)) < 0){
+	if((fd = sys_open(tmp, OREAD)) < 0){
 		free(tmp);
 		return nil;
 	}
 	free(tmp);
 	s = nil;
-	while((n = read(fd, buf, sizeof buf)) > 0)
+	while((n = jehanne_read(fd, buf, sizeof buf)) > 0)
 		s = sha1(buf, n, nil, s);
-	close(fd);
+	sys_close(fd);
 	sha1(nil, 0, digest, s);
 	return digest;
 }

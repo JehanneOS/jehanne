@@ -328,9 +328,9 @@ catch(void *a, char *msg)
 {
 	USED(a);
 	if(strstr(msg, "alarm"))
-		noted(NCONT);
+		sys_noted(NCONT);
 	else
-		noted(NDFLT);
+		sys_noted(NDFLT);
 }
 
 /*
@@ -351,9 +351,9 @@ procsetname(char *fmt, ...)
 	if (cmdname == nil)
 		return;
 	snprint(buf, sizeof buf, "#p/%d/args", getpid());
-	if((fd = open(buf, OWRITE)) >= 0){
-		write(fd, cmdname, strlen(cmdname)+1);
-		close(fd);
+	if((fd = sys_open(buf, OWRITE)) >= 0){
+		jehanne_write(fd, cmdname, strlen(cmdname)+1);
+		sys_close(fd);
 	}
 	free(cmdname);
 }
@@ -366,17 +366,17 @@ dialicmp(uint8_t *dst, int dport, int *ctlfd)
 	char hdrs[] = "headers";
 
 	snprint(name, sizeof name, "%s/icmpv6/clone", conf.mpoint);
-	cfd = open(name, ORDWR);
+	cfd = sys_open(name, ORDWR);
 	if(cfd < 0)
 		sysfatal("dialicmp: can't open %s: %r", name);
 
 	n = snprint(cmsg, sizeof cmsg, "connect %I!%d!r %d", dst, dport, dport);
-	m = write(cfd, cmsg, n);
+	m = jehanne_write(cfd, cmsg, n);
 	if (m < n)
 		sysfatal("dialicmp: can't write %s to %s: %r", cmsg, name);
 
-	seek(cfd, 0, 0);
-	n = read(cfd, connind, sizeof connind);
+	sys_seek(cfd, 0, 0);
+	n = jehanne_read(cfd, connind, sizeof connind);
 	if (n < 0)
 		connind[0] = 0;
 	else if (n < sizeof connind)
@@ -385,12 +385,12 @@ dialicmp(uint8_t *dst, int dport, int *ctlfd)
 		connind[sizeof connind - 1] = 0;
 
 	snprint(name, sizeof name, "%s/icmpv6/%s/data", conf.mpoint, connind);
-	fd = open(name, ORDWR);
+	fd = sys_open(name, ORDWR);
 	if(fd < 0)
 		sysfatal("dialicmp: can't open %s: %r", name);
 
 	n = sizeof hdrs - 1;
-	if(write(cfd, hdrs, n) < n)
+	if(jehanne_write(cfd, hdrs, n) < n)
 		sysfatal("dialicmp: can't write `%s' to %s: %r", hdrs, name);
 	*ctlfd = cfd;
 	return fd;
@@ -429,7 +429,7 @@ Again:
 			n += snprint(buf+n, sizeof buf-n, " %d", conf.mtu);
 	}
 
-	if(write(conf.cfd, buf, n) < 0){
+	if(jehanne_write(conf.cfd, buf, n) < 0){
 		warning("write(%s): %r", buf);
 		return -1;
 	}
@@ -493,7 +493,7 @@ sendrs(int fd)
 	memmove(rs->src, v6Unspecified, IPaddrlen);
 	rs->type = ICMP6_RS;
 
-	if(write(fd, rs, sizeof buff) < sizeof buff)
+	if(jehanne_write(fd, rs, sizeof buff) < sizeof buff)
 		ralog("sendrs: write failed, pkt size %d", sizeof buff);
 	else
 		ralog("sendrs: sent solicitation to %I from %I on %s",
@@ -522,7 +522,7 @@ ewrite(int fd, char *str)
 	int n;
 
 	n = strlen(str);
-	if (write(fd, str, n) != n)
+	if (jehanne_write(fd, str, n) != n)
 		ralog("write(%s) failed: %r", str);
 }
 
@@ -608,7 +608,7 @@ recvrahost(uint8_t buf[], int pktlen)
 			}
 
 			snprint(abuf, sizeof abuf, "%s/arp", conf.mpoint);
-			arpfd = open(abuf, OWRITE);
+			arpfd = sys_open(abuf, OWRITE);
 			if (arpfd < 0) {
 				ralog("recvrahost: couldn't open %s to write: %r",
 					abuf);
@@ -617,10 +617,10 @@ recvrahost(uint8_t buf[], int pktlen)
 
 			n = snprint(abuf, sizeof abuf, "add ether %I %E",
 				ra->src, llao->lladdr);
-			if (write(arpfd, abuf, n) < n)
+			if (jehanne_write(arpfd, abuf, n) < n)
 				ralog("recvrahost: couldn't write to %s/arp",
 					conf.mpoint);
-			close(arpfd);
+			sys_close(arpfd);
 			break;
 		case V6nd_targlladdr:
 		case V6nd_redirhdr:
@@ -681,10 +681,10 @@ recvra6(void)
 	if (fd < 0)
 		sysfatal("can't open icmp_ra connection: %r");
 
-	notify(catch);
+	sys_notify(catch);
 	sendrscnt = Maxv6rss;
 
-	switch(rfork(RFPROC|RFMEM|RFFDG|RFNOWAIT|RFNOTEG)){
+	switch(sys_rfork(RFPROC|RFMEM|RFFDG|RFNOWAIT|RFNOTEG)){
 	case -1:
 		sysfatal("can't fork: %r");
 	default:
@@ -704,9 +704,9 @@ recvra6(void)
 		 */
 		if (sleepfor < 7000)
 			sleepfor = 7000;
-		alarm(sleepfor);
-		n = read(fd, buf, sizeof buf);
-		alarm(0);
+		sys_alarm(sleepfor);
+		n = jehanne_read(fd, buf, sizeof buf);
+		sys_alarm(0);
 
 		ifc = readipifc(conf.mpoint, ifc, myifc);
 		if (ifc == nil) {
@@ -742,7 +742,7 @@ recvra6(void)
 			break;
 		case IsHostNoRecv:
 			ralog("recvra6: recvra off, quitting on %s", conf.dev);
-			close(fd);
+			sys_close(fd);
 			exits(0);
 		}
 	}
@@ -779,7 +779,7 @@ recvrs(uint8_t *buf, int pktlen, uint8_t *sol)
 		return 0;
 
 	snprint(abuf, sizeof abuf, "%s/arp", conf.mpoint);
-	arpfd = open(abuf, OWRITE);
+	arpfd = sys_open(abuf, OWRITE);
 	if (arpfd < 0) {
 		ralog("recvrs: can't open %s/arp to write: %r", conf.mpoint);
 		return -1;
@@ -787,14 +787,14 @@ recvrs(uint8_t *buf, int pktlen, uint8_t *sol)
 
 	llao = (Lladdropt *)(uint64_t)buf[n];
 	n = snprint(abuf, sizeof abuf, "add ether %I %E", rs->src, llao->lladdr);
-	if (write(arpfd, abuf, n) < n) {
+	if (jehanne_write(arpfd, abuf, n) < n) {
 		ralog("recvrs: can't write to %s/arp: %r", conf.mpoint);
-		close(arpfd);
+		sys_close(arpfd);
 		return -1;
 	}
 
 	memmove(sol, rs->src, IPaddrlen);
-	close(arpfd);
+	sys_close(arpfd);
 	return 1;
 }
 
@@ -869,7 +869,7 @@ sendra(int fd, uint8_t *dst, int rlt, Ipifc *ifc)
 	pktsz += sizeof *llao;
 
 	pkt2str(buf+40, buf+pktsz, abuf, abuf+1024);
-	if(write(fd, buf, pktsz) < pktsz)
+	if(jehanne_write(fd, buf, pktsz) < pktsz)
 		ralog("sendra fail %s: %r", abuf);
 	else if (debug)
 		ralog("sendra succ %s", abuf);
@@ -890,11 +890,11 @@ sendra6(void)
 	if (fd < 0)
 		sysfatal("can't open icmp_rs connection: %r");
 
-	notify(catch);
+	sys_notify(catch);
 	sendracnt = Maxv6initras;
 	nquitmsgs = Maxv6finalras;
 
-	switch(rfork(RFPROC|RFMEM|RFFDG|RFNOWAIT|RFNOTEG)){
+	switch(sys_rfork(RFPROC|RFMEM|RFFDG|RFNOWAIT|RFNOTEG)){
 	case -1:
 		sysfatal("can't fork: %r");
 	default:
@@ -910,9 +910,9 @@ sendra6(void)
 		lastra = time(0);
 		if (sleepfor < 0)
 			sleepfor = 0;
-		alarm(sleepfor);
-		n = read(fd, buf, sizeof buf);
-		alarm(0);
+		sys_alarm(sleepfor);
+		n = jehanne_read(fd, buf, sizeof buf);
+		sys_alarm(0);
 
 		ifc = readipifc(conf.mpoint, ifc, myifc);
 		if (ifc == nil) {
@@ -967,7 +967,7 @@ startra6(void)
 		recvra6();
 
 	if (conf.sendra > 0) {
-		if (write(conf.cfd, routeon, sizeof routeon - 1) < 0) {
+		if (jehanne_write(conf.cfd, routeon, sizeof routeon - 1) < 0) {
 			warning("write (iprouting 1) failed: %r");
 			return;
 		}

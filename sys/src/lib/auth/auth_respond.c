@@ -31,11 +31,11 @@ auth_respond(void *chal, uint32_t nchal, char *user, uint32_t nuser, void *resp,
 	AuthRpc *rpc;
 	Attr *a;
 
-	if((afd = open("/mnt/factotum/rpc", ORDWR)) < 0)
+	if((afd = sys_open("/mnt/factotum/rpc", ORDWR)) < 0)
 		return -1;
 	
 	if((rpc = auth_allocrpc(afd)) == nil){
-		close(afd);
+		sys_close(afd);
 		return -1;
 	}
 
@@ -49,7 +49,7 @@ auth_respond(void *chal, uint32_t nchal, char *user, uint32_t nuser, void *resp,
 	|| dorpc(rpc, "write", chal, nchal, getkey) != ARok
 	|| dorpc(rpc, "read", nil, 0, getkey) != ARok){
 		free(p);
-		close(afd);
+		sys_close(afd);
 		auth_freerpc(rpc);
 		return -1;
 	}
@@ -66,7 +66,7 @@ auth_respond(void *chal, uint32_t nchal, char *user, uint32_t nuser, void *resp,
 		user[0] = '\0';
 
 	_freeattr(a);
-	close(afd);
+	sys_close(afd);
 	auth_freerpc(rpc);
 	return nresp;	
 }

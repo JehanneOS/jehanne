@@ -91,7 +91,7 @@ main(int argc, char *argv[])
 		fd = 0;
 	} else {
 		file = argv[0];
-		if((fd = open(file, OREAD)) < 0)
+		if((fd = sys_open(file, OREAD)) < 0)
 			sysfatal("open %s: %r", file);
 	}
 	if(Binit(&bout, 1, OWRITE) < 0)
@@ -99,7 +99,7 @@ main(int argc, char *argv[])
 	memimageinit();
 	if((i = readmemimage(fd)) == nil)
 		sysfatal("readmemimage %s: %r", file);
-	close(fd);
+	sys_close(fd);
 	if(comp >= 2 && comp <= 4) {
 		chan = GREY1;
 		chanflag = 1;

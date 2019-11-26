@@ -23,6 +23,6 @@ int
 jehanne_getppid(void)
 {
 	int pid;
-	pid = (int)remove("#0/ppid");
+	pid = (int)sys_remove("#0/ppid");
 	return pid;
 }

@@ -407,7 +407,7 @@ rdctlpart(Edit *edit)
 
 	disk = edit->disk;
 	edit->nctlpart = 0;
-	seek(disk->ctlfd, 0, 0);
+	sys_seek(disk->ctlfd, 0, 0);
 	if(readn(disk->ctlfd, buf, sizeof buf) <= 0) {
 		return;
 	}

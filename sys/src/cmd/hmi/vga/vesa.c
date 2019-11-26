@@ -334,9 +334,9 @@ mkvbe(void)
 	Vbe *vbe;
 
 	vbe = alloc(sizeof(Vbe));
-	if((vbe->rmfd = open("/dev/realmode", ORDWR)) < 0)
+	if((vbe->rmfd = sys_open("/dev/realmode", ORDWR)) < 0)
 		return nil;
-	if((vbe->memfd = open("/dev/realmodemem", ORDWR)) < 0)
+	if((vbe->memfd = sys_open("/dev/realmodemem", ORDWR)) < 0)
 		return nil;
 	vbe->mem = alloc(MemSize);
 	vbe->isvalid = alloc(MemSize/PageSize);
@@ -350,7 +350,7 @@ loadpage(Vbe *vbe, int p)
 {
 	if(p >= MemSize/PageSize || vbe->isvalid[p])
 		return;
-	if(pread(vbe->memfd, vbe->mem+p*PageSize, PageSize, p*PageSize) != PageSize)
+	if(sys_pread(vbe->memfd, vbe->mem+p*PageSize, PageSize, p*PageSize) != PageSize)
 		error("read /dev/realmodemem: %r\n");
 	vbe->isvalid[p] = 1;
 }
@@ -387,13 +387,13 @@ int
 vbecall(Vbe *vbe, VGAreg *u)
 {
 	u->trap = 0x10;
-	if(pwrite(vbe->memfd, vbe->buf, PageSize, RealModeBuf) != PageSize)
+	if(sys_pwrite(vbe->memfd, vbe->buf, PageSize, RealModeBuf) != PageSize)
 		error("write /dev/realmodemem: %r\n");
-	if(pwrite(vbe->rmfd, u, sizeof *u, 0) != sizeof *u)
+	if(sys_pwrite(vbe->rmfd, u, sizeof *u, 0) != sizeof *u)
 		error("write /dev/realmode: %r\n");
-	if(pread(vbe->rmfd, u, sizeof *u, 0) != sizeof *u)
+	if(sys_pread(vbe->rmfd, u, sizeof *u, 0) != sizeof *u)
 		error("read /dev/realmode: %r\n");
-	if(pread(vbe->memfd, vbe->buf, PageSize, RealModeBuf) != PageSize)
+	if(sys_pread(vbe->memfd, vbe->buf, PageSize, RealModeBuf) != PageSize)
 		error("read /dev/realmodemem: %r\n");
 	if((u->ax&0xFFFF) != 0x004F){
 		werrstr("VBE error %#.4lux", u->ax&0xFFFF);

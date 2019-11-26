@@ -113,11 +113,11 @@ procgetname(void)
 	char buf[256];
 
 	snprint(buf, sizeof buf, "#p/%d/args", getpid());
-	if((fd = open(buf, OREAD)) < 0)
+	if((fd = sys_open(buf, OREAD)) < 0)
 		return strdup("");
 	*buf = '\0';
-	n = read(fd, buf, sizeof buf-1);
-	close(fd);
+	n = jehanne_read(fd, buf, sizeof buf-1);
+	sys_close(fd);
 	if (n >= 0)
 		buf[n] = '\0';
 	if ((lp = strchr(buf, '[')) == nil ||
@@ -255,10 +255,10 @@ querydestroy(Query *qp)
 		qp->req->aux = qp->prev;
 	/* leave udpfd open */
 	if (qp->tcpfd >= 0)
-		close(qp->tcpfd);
+		sys_close(qp->tcpfd);
 	if (qp->tcpctlfd >= 0) {
 		hangup(qp->tcpctlfd);
-		close(qp->tcpctlfd);
+		sys_close(qp->tcpctlfd);
 	}
 	memset(qp, 0, sizeof *qp);	/* prevent accidents */
 	qp->udpfd = qp->tcpfd = qp->tcpctlfd = -1;
@@ -530,16 +530,16 @@ udpport(char *mtpt)
 	}
 
 	/* turn on header style interface */
-	if(write(ctl, hmsg, strlen(hmsg)) != strlen(hmsg)){
-		close(ctl);
+	if(jehanne_write(ctl, hmsg, strlen(hmsg)) != strlen(hmsg)){
+		sys_close(ctl);
 		warning(hmsg);
 		return -1;
 	}
 
 	/* grab the data file */
 	snprint(ds, sizeof ds, "%s/data", adir);
-	fd = open(ds, ORDWR);
-	close(ctl);
+	fd = sys_open(ds, ORDWR);
+	sys_close(ctl);
 	if(fd < 0)
 		warning("can't open udp port %s: %r", ds);
 	return fd;
@@ -607,13 +607,13 @@ readnet(Query *qp, int medium, uint8_t *ibuf, uint64_t endms, uint8_t **replyp,
 		return -1;		/* taking too int32_t */
 
 	reply = ibuf;
-	alarm(ms);
+	sys_alarm(ms);
 	if (medium == Udp)
 		if (qp->udpfd < 0)
 			dnslog("readnet: qp->udpfd closed");
 		else {
-			len = read(qp->udpfd, ibuf, Udphdrsize+Maxudpin);
-			alarm(0);
+			len = jehanne_read(qp->udpfd, ibuf, Udphdrsize+Maxudpin);
+			sys_alarm(0);
 			notestats(startns, len < 0, qp->type);
 			if (len >= IPaddrlen)
 				memmove(srcip, ibuf, IPaddrlen);
@@ -646,7 +646,7 @@ readnet(Query *qp, int medium, uint8_t *ibuf, uint64_t endms, uint8_t **replyp,
 		}
 		memmove(srcip, qp->tcpip, IPaddrlen);
 	}
-	alarm(0);
+	sys_alarm(0);
 	*replyp = reply;
 	return len;
 }
@@ -955,16 +955,16 @@ mydnsquery(Query *qp, int medium, uint8_t *udppkt, int len)
 		nfd = dup(qp->udpfd, -1);
 		if (nfd < 0) {
 			warning("mydnsquery: qp->udpfd %d: %r", qp->udpfd);
-			close(qp->udpfd);	/* ensure it's closed */
+			sys_close(qp->udpfd);	/* ensure it's closed */
 			qp->udpfd = -1;		/* poison it */
 			break;
 		}
-		close(nfd);
+		sys_close(nfd);
 
 		if (qp->udpfd < 0)
 			dnslog("mydnsquery: qp->udpfd %d closed", qp->udpfd);
 		else {
-			if (write(qp->udpfd, udppkt, len+Udphdrsize) !=
+			if (jehanne_write(qp->udpfd, udppkt, len+Udphdrsize) !=
 			    len+Udphdrsize)
 				warning("sending udp msg: %r");
 			else {
@@ -981,9 +981,9 @@ mydnsquery(Query *qp, int medium, uint8_t *udppkt, int len)
 		snprint(addr, sizeof addr, "%s/tcp!%s!dns",
 				*mntpt ? mntpt : "/net",
 				domain);
-		alarm(10*1000);
+		sys_alarm(10*1000);
 		qp->tcpfd = dial(addr, nil, conndir, &qp->tcpctlfd);
-		alarm(0);
+		sys_alarm(0);
 		if (qp->tcpfd < 0) {
 			dnslog("can't dial %s: %r", addr);
 			break;
@@ -998,8 +998,8 @@ mydnsquery(Query *qp, int medium, uint8_t *udppkt, int len)
 
 		belen[0] = len >> 8;
 		belen[1] = len;
-		if (write(qp->tcpfd, belen, 2) != 2 ||
-		    write(qp->tcpfd, udppkt + Udphdrsize, len) != len)
+		if (jehanne_write(qp->tcpfd, belen, 2) != 2 ||
+		    jehanne_write(qp->tcpfd, udppkt + Udphdrsize, len) != len)
 			warning("sending tcp msg: %r");
 		else
 			rv = 0;
@@ -1325,8 +1325,8 @@ tcpquery(Query *qp, DNSmsg *mp, int depth, uint8_t *ibuf, uint8_t *obuf, int len
 		rv = -1;
 	if (qp->tcpfd >= 0) {
 		hangup(qp->tcpctlfd);
-		close(qp->tcpctlfd);
-		close(qp->tcpfd);
+		sys_close(qp->tcpctlfd);
+		sys_close(qp->tcpfd);
 	}
 	qp->tcpfd = qp->tcpctlfd = -1;
 
@@ -1497,7 +1497,7 @@ udpquery(Query *qp, char *mntpt, int depth, int patient, int inns)
 	qp->udpfd = fd;
 	rv = queryns(qp, depth, ibuf, obuf, wait, inns);
 	qp->udpfd = -1;
-	close(fd);
+	sys_close(fd);
 
 Out:
 	free(obuf);

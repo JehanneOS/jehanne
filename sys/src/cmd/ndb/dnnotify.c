@@ -113,11 +113,11 @@ send_notify(char *slave, RR *soa, Request *req)
 		dnslog("sending %d byte notify to %s/%I.%d about %s", n, slave,
 			up->raddr, nhgets(up->rport), soa->owner->name);
 		memset(&repmsg, 0, sizeof repmsg);
-		if(write(fd, obuf, n) != n)
+		if(jehanne_write(fd, obuf, n) != n)
 			break;
-		alarm(2*1000);
-		len = read(fd, ibuf, sizeof ibuf);
-		alarm(0);
+		sys_alarm(2*1000);
+		len = jehanne_read(fd, ibuf, sizeof ibuf);
+		sys_alarm(0);
 		if(len <= Udphdrsize)
 			continue;
 		err = convM2DNS(&ibuf[Udphdrsize], len, &repmsg, nil);
@@ -130,7 +130,7 @@ send_notify(char *slave, RR *soa, Request *req)
 	}
 	if (i < 3)
 		freeanswers(&repmsg);
-	close(fd);
+	sys_close(fd);
 }
 
 /* send notifies for any updated areas */
@@ -159,7 +159,7 @@ notifyproc(void)
 {
 	Request req;
 
-	switch(rfork(RFPROC|RFNOTEG|RFMEM|RFNOWAIT)){
+	switch(sys_rfork(RFPROC|RFNOTEG|RFMEM|RFNOWAIT)){
 	case -1:
 		return;
 	case 0:

@@ -259,16 +259,16 @@ main(int argc, char *argv[])
 
 	if(debug)
 		fmtinstall('F', fcallfmt);
-	switch(rfork(RFFDG|RFPROC|RFNAMEG|RFNOTEG)){
+	switch(sys_rfork(RFFDG|RFPROC|RFNAMEG|RFNOTEG)){
 	case -1:
 		sysfatal("fork");
 	case 0:
-		close(pfd[0]);
+		sys_close(pfd[0]);
 		io(pfd[1]);
 		break;
 	default:
-		close(pfd[1]);	/* don't deadlock if child fails */
-		if(mnt && mount(pfd[0], -1, mntpoint, MREPL|MCREATE, "", '9') < 0)
+		sys_close(pfd[1]);	/* don't deadlock if child fails */
+		if(mnt && sys_mount(pfd[0], -1, mntpoint, MREPL|MCREATE, "", '9') < 0)
 			sysfatal("mount %s: %r", mntpoint);
 	}
 	exits(0);
@@ -858,7 +858,7 @@ io(int fd)
 		n = convS2M(&thdr, mdata, mesgsize);
 		if(n == 0)
 			sysfatal("convS2M sysfatal on write");
-		if(write(fd, mdata, n) != n)
+		if(jehanne_write(fd, mdata, n) != n)
 			sysfatal("mount write");
 	}
 }

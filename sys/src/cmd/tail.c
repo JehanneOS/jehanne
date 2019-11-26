@@ -99,7 +99,7 @@ main(int argc, char **argv)
 		count--;
 	if(argc > 2)
 		usage();
-	if(argc > 1 && (file=open(argv[1], OREAD)) < 0)
+	if(argc > 1 && (file=sys_open(argv[1], OREAD)) < 0)
 		fatal(argv[1]);
 	seekable = isseekable(file);
 
@@ -316,7 +316,7 @@ reverse(void)
 int64_t
 tseek(int64_t o, int p)
 {
-	o = seek(file, o, p);
+	o = sys_seek(file, o, p);
 	if(o == -1)
 		fatal("");
 	return o;
@@ -325,7 +325,7 @@ tseek(int64_t o, int p)
 int32_t
 tread(char *buf, int32_t n)
 {
-	int r = read(file, buf, n);
+	int r = jehanne_read(file, buf, n);
 	if(r == -1)
 		fatal("");
 	return r;
@@ -362,7 +362,7 @@ fatal(char *s)
 {
 	char buf[ERRMAX];
 
-	errstr(buf, sizeof buf);
+	sys_errstr(buf, sizeof buf);
 	fprint(2, "tail: %s: %s\n", s, buf);
 	exits(s);
 }
@@ -383,7 +383,7 @@ isseekable(int fd)
 {
 	int64_t m;
 
-	m = seek(fd, 0, 1);
+	m = sys_seek(fd, 0, 1);
 	if(m < 0)
 		return 0;
 	return 1;

@@ -319,7 +319,7 @@ rdpart(Edit *edit)
 	Disk *disk;
 
 	disk = edit->disk;
-	seek(disk->fd, disk->secsize, 0);
+	sys_seek(disk->fd, disk->secsize, 0);
 	if(jehanne_readn(disk->fd, osecbuf, disk->secsize) != disk->secsize)
 		return;
 	osecbuf[disk->secsize] = '\0';
@@ -465,12 +465,12 @@ restore(Edit *edit, int ctlfd)
 
 	offset = edit->disk->offset;
 	jehanne_fprint(2, "attempting to restore partitions to previous state\n");
-	if(seek(edit->disk->wfd, edit->disk->secsize, 0) != 0){
+	if(sys_seek(edit->disk->wfd, edit->disk->secsize, 0) != 0){
 		jehanne_fprint(2, "cannot restore: error seeking on disk\n");
 		jehanne_exits("inconsistent");
 	}
 
-	if(write(edit->disk->wfd, osecbuf, edit->disk->secsize) != edit->disk->secsize){
+	if(jehanne_write(edit->disk->wfd, osecbuf, edit->disk->secsize) != edit->disk->secsize){
 		jehanne_fprint(2, "cannot restore: couldn't write old partition table to disk\n");
 		jehanne_exits("inconsistent");
 	}
@@ -502,12 +502,12 @@ wrpart(Edit *edit)
 		n += jehanne_snprint(secbuf+n, disk->secsize-n, "part %s %lld %lld\n", 
 			edit->part[i]->name, edit->part[i]->start, edit->part[i]->end);
 
-	if(seek(disk->wfd, disk->secsize, 0) != disk->secsize){
+	if(sys_seek(disk->wfd, disk->secsize, 0) != disk->secsize){
 		jehanne_fprint(2, "error seeking %d %lld on disk: %r\n", disk->wfd, disk->secsize);
 		jehanne_exits("seek");
 	}
 
-	if(write(disk->wfd, secbuf, disk->secsize) != disk->secsize){
+	if(jehanne_write(disk->wfd, secbuf, disk->secsize) != disk->secsize){
 		jehanne_fprint(2, "error writing partition table to disk\n");
 		restore(edit, -1);
 	}
@@ -526,8 +526,8 @@ checkfat(Disk *disk)
 {
 	uint8_t buf[32];
 
-	if(seek(disk->fd, disk->secsize, 0) < 0
-	|| read(disk->fd, buf, sizeof(buf)) < sizeof(buf))
+	if(sys_seek(disk->fd, disk->secsize, 0) < 0
+	|| jehanne_read(disk->fd, buf, sizeof(buf)) < sizeof(buf))
 		return;
 
 	if(buf[0] != 0xEB || buf[1] != 0x3C || buf[2] != 0x90)

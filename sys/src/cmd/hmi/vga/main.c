@@ -171,18 +171,18 @@ wiremach(void)
 
 	pid = getpid();
 	sprint(file, "#p/%d/ctl", pid);
-	f = open(file, OWRITE);
+	f = sys_open(file, OWRITE);
 	if(f < 0){
 		sprint(file, "/proc/%d/ctl", pid);
-		f = open(file, OWRITE);
+		f = sys_open(file, OWRITE);
 	}
 	if(f < 0)
 		fprint(2, "wiremach: cannot open neither #p/%d/ctl nor /proc/%d/ctl", pid, pid);
-	if(write(f, "wired 0", 7) < 7){
+	if(jehanne_write(f, "wired 0", 7) < 7){
 		fprint(2, "%s: cannot wire to mach 0: %r", argv0);
 		exits("wire");
 	}
-	close(f);
+	sys_close(f);
 }
 
 void
@@ -490,9 +490,9 @@ main(int argc, char** argv)
 				vgactlw("hwgc", vga->hwgc->name);
 
 			/* might as well initialize the cursor */
-			if((fd = open("/dev/cursor", OWRITE)) >= 0){
-				write(fd, buf, 0);
-				close(fd);
+			if((fd = sys_open("/dev/cursor", OWRITE)) >= 0){
+				jehanne_write(fd, buf, 0);
+				sys_close(fd);
 			}
 
 			if(vga->virtx != vga->mode->x || vga->virty != vga->mode->y){

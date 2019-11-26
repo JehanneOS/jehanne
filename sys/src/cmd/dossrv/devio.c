@@ -21,7 +21,7 @@ deverror(char *name, Xfs *xf, int32_t addr, int32_t n, int32_t nret)
 	errno = Eio;
 	if(nret < 0){
 		chat("%s errstr=\"%r\"...", name);
-		close(xf->dev);
+		sys_close(xf->dev);
 		xf->dev = -1;
 		return -1;
 	}
@@ -36,7 +36,7 @@ devread(Xfs *xf, int32_t addr, void *buf, int32_t n)
 
 	if(xf->dev < 0)
 		return -1;
-	nread = pread(xf->dev, buf, n, xf->offset+(int64_t)addr*Sectorsize);
+	nread = sys_pread(xf->dev, buf, n, xf->offset+(int64_t)addr*Sectorsize);
 	if (nread == n)
 		return 0;
 	return deverror("read", xf, addr, n, nread);
@@ -52,7 +52,7 @@ devwrite(Xfs *xf, int32_t addr, void *buf, int32_t n)
 
 	if(xf->dev < 0)
 		return -1;
-	nwrite = pwrite(xf->dev, buf, n, xf->offset+(int64_t)addr*Sectorsize);
+	nwrite = sys_pwrite(xf->dev, buf, n, xf->offset+(int64_t)addr*Sectorsize);
 	if (nwrite == n)
 		return 0;
 	return deverror("write", xf, addr, n, nwrite);
@@ -65,8 +65,8 @@ devcheck(Xfs *xf)
 
 	if(xf->dev < 0)
 		return -1;
-	if(pread(xf->dev, buf, Sectorsize, 0) != Sectorsize){
-		close(xf->dev);
+	if(sys_pread(xf->dev, buf, Sectorsize, 0) != Sectorsize){
+		sys_close(xf->dev);
 		xf->dev = -1;
 		return -1;
 	}

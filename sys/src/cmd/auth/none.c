@@ -40,27 +40,27 @@ main(int argc, char *argv[])
 		usage();
 	}ARGEND
 
-	if (rfork(RFENVG|RFNAMEG) < 0)
+	if (sys_rfork(RFENVG|RFNAMEG) < 0)
 		sysfatal("can't make new pgrp");
 
-	fd = open("#c/user", OWRITE);
+	fd = sys_open("#c/user", OWRITE);
 	if (fd < 0)
 		sysfatal("can't open #c/user");
-	if (write(fd, "none", strlen("none")) < 0)
+	if (jehanne_write(fd, "none", strlen("none")) < 0)
 		sysfatal("can't become none");
-	close(fd);
+	sys_close(fd);
 
 	if (newns("none", namespace) < 0)
 		sysfatal("can't build namespace");
 
 	if (argc > 0) {
 		strecpy(cmd, cmd+sizeof cmd, argv[0]);
-		exec(cmd, &argv[0]);
+		sys_exec(cmd, &argv[0]);
 		if (strncmp(cmd, "/", 1) != 0
 		&& strncmp(cmd, "./", 2) != 0
 		&& strncmp(cmd, "../", 3) != 0) {
 			snprint(cmd, sizeof cmd, "/bin/%s", argv[0]);
-			exec(cmd, &argv[0]);
+			sys_exec(cmd, &argv[0]);
 		}
 	} else {
 		strcpy(cmd, "/bin/rc");

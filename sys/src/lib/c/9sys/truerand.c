@@ -17,10 +17,10 @@ jehanne_truerand(void)
 	static int randfd = -1;
 
 	if(randfd < 0)
-		randfd = open("/dev/random", OREAD|OCEXEC);
+		randfd = sys_open("/dev/random", OREAD|OCEXEC);
 	if(randfd < 0)
 		jehanne_sysfatal("can't open /dev/random");
-	if(read(randfd, &x, sizeof(x)) != sizeof(x))
+	if(jehanne_read(randfd, &x, sizeof(x)) != sizeof(x))
 		jehanne_sysfatal("can't read /dev/random");
 	return x;
 }

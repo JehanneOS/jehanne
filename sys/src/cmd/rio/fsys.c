@@ -110,7 +110,7 @@ post(char *name, char *envname, int srvfd)
 	if(fd < 0)
 		error(name);
 	snprint(buf, sizeof(buf), "%d", srvfd);
-	if(write(fd, buf, strlen(buf)) != strlen(buf))
+	if(jehanne_write(fd, buf, strlen(buf)) != strlen(buf))
 		error("srv write");
 	putenv(envname, name);
 }
@@ -123,11 +123,11 @@ int
 cexecpipe(int *p0, int *p1)
 {
 	/* pipe the hard way to get close on exec */
-	if(bind("#|", "/mnt/temp", MREPL) < 0)
+	if(sys_bind("#|", "/mnt/temp", MREPL) < 0)
 		return -1;
-	*p0 = open("/mnt/temp/data", ORDWR);
-	*p1 = open("/mnt/temp/data1", ORDWR|OCEXEC);
-	unmount(nil, "/mnt/temp");
+	*p0 = sys_open("/mnt/temp/data", ORDWR);
+	*p1 = sys_open("/mnt/temp/data1", ORDWR|OCEXEC);
+	sys_unmount(nil, "/mnt/temp");
 	if(*p0<0 || *p1<0)
 		return -1;
 	return 0;
@@ -145,14 +145,14 @@ filsysinit(Channel *cxfidalloc)
 	if(cexecpipe(&fs->cfd, &fs->sfd) < 0)
 		goto Rescue;
 	fmtinstall('F', fcallfmt);
-	clockfd = open("/dev/time", OREAD|OCEXEC);
-	fd = open("/dev/user", OREAD);
+	clockfd = sys_open("/dev/time", OREAD|OCEXEC);
+	fd = sys_open("/dev/user", OREAD);
 	strcpy(buf, "Jean-Paul_Belmondo");
 	if(fd >= 0){
-		n = read(fd, buf, sizeof buf-1);
+		n = jehanne_read(fd, buf, sizeof buf-1);
 		if(n > 0)
 			buf[n] = 0;
-		close(fd);
+		sys_close(fd);
 	}
 	fs->user = estrdup(buf);
 	fs->csyncflush = chancreate(sizeof(int), 0);
@@ -168,7 +168,7 @@ filsysinit(Channel *cxfidalloc)
 		goto Rescue;
 	snprint(srvwctl, sizeof(srvwctl), "/srv/riowctl.%s.%d", fs->user, pid);
 	post(srvwctl, "wctl", p0);
-	close(p0);
+	sys_close(p0);
 
 	/*
 	 * Start server processes
@@ -252,13 +252,13 @@ filsysmount(Filsys *fs, int id)
 {
 	char buf[32];
 
-	close(fs->sfd);	/* close server end so mount won't hang if exiting */
+	sys_close(fs->sfd);	/* close server end so mount won't hang if exiting */
 	sprint(buf, "%d", id);
-	if(mount(fs->cfd, -1, "/mnt/wsys", MREPL, buf, '9') < 0){
+	if(sys_mount(fs->cfd, -1, "/mnt/wsys", MREPL, buf, '9') < 0){
 		fprint(2, "mount failed: %r\n");
 		return -1;
 	}
-	if(bind("/mnt/wsys", "/dev", MBEFORE) < 0){
+	if(sys_bind("/mnt/wsys", "/dev", MBEFORE) < 0){
 		fprint(2, "bind failed: %r\n");
 		return -1;
 	}
@@ -282,7 +282,7 @@ filsysrespond(Filsys *fs, Xfid *x, Fcall *t, char *err)
 	n = convS2M(t, x->buf, messagesize);
 	if(n <= 0)
 		error("convert error in convS2M");
-	if(write(fs->sfd, x->buf, n) != n)
+	if(jehanne_write(fs->sfd, x->buf, n) != n)
 		error("write error in respond");
 	if(debug)
 		fprint(2, "rio:->%F\n", t);
@@ -714,8 +714,8 @@ getclock(void)
 {
 	char buf[32];
 
-	seek(clockfd, 0, 0);
-	read(clockfd, buf, sizeof buf);
+	sys_seek(clockfd, 0, 0);
+	jehanne_read(clockfd, buf, sizeof buf);
 	return atoi(buf);
 }
 

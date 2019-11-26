@@ -13,7 +13,7 @@ _asgetresp(int fd, Ticket *t, Authenticator *a, Authkey *k)
 		memset(a, 0, sizeof(Authenticator));
 
 	strcpy(err, "AS protocol botch");
-	errstr(err, ERRMAX);
+	sys_errstr(err, ERRMAX);
 
 	if(_asrdresp(fd, buf, 0) < 0)
 		return -1;
@@ -38,7 +38,7 @@ _asgetresp(int fd, Ticket *t, Authenticator *a, Authkey *k)
 		}
 	}
 
-	errstr(err, ERRMAX);
+	sys_errstr(err, ERRMAX);
 
 	return 0;
 }

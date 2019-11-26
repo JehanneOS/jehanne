@@ -29,7 +29,7 @@ Bread(Biobufhdr *bp, void *ap, int32_t count)
 		if(n == 0) {
 			if(bp->state != Bractive)
 				break;
-			i = read(bp->fid, bp->bbuf, bp->bsize);
+			i = jehanne_read(bp->fid, bp->bbuf, bp->bsize);
 			if(i <= 0) {
 				bp->state = Bracteof;
 				if(i < 0)

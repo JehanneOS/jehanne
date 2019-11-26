@@ -229,10 +229,10 @@ loadbuf(Machine *m, int *fd)
 
 	if(*fd < 0)
 		return 0;
-	seek(*fd, 0, 0);
-	n = read(*fd, m->buf, sizeof m->buf);
+	sys_seek(*fd, 0, 0);
+	n = jehanne_read(*fd, m->buf, sizeof m->buf);
 	if(n <= 0){
-		close(*fd);
+		sys_close(*fd);
 		*fd = -1;
 		return 0;
 	}
@@ -520,8 +520,8 @@ pingsend(Machine *m)
 	m->last = r;
 	r->time = nsec();
 	jehanne_unlock(m);
-	if(write(m->pingfd, buf, MSGLEN) < MSGLEN){
-		errstr(err, sizeof err);
+	if(jehanne_write(m->pingfd, buf, MSGLEN) < MSGLEN){
+		sys_errstr(err, sizeof err);
 		if(strstr(err, "unreach")||strstr(err, "exceed"))
 			m->unreachable++;
 	}
@@ -544,7 +544,7 @@ pingrcv(void *arg)
 	ip = (Icmphdr *)(buf + IPV4HDR_LEN);
 	fd = dup(m->pingfd, -1);
 	for(;;){
-		n = read(fd, buf, sizeof(buf));
+		n = jehanne_read(fd, buf, sizeof(buf));
 		now = nsec();
 		if(n <= 0)
 			continue;
@@ -653,7 +653,7 @@ alarmed(void *a, char *s)
 {
 	if(strcmp(s, "alarm") == 0)
 		notejmp(a, catchalarm, 1);
-	noted(NDFLT);
+	sys_noted(NDFLT);
 }
 
 void
@@ -980,7 +980,7 @@ startproc(void (*f)(void*), void *arg)
 {
 	int pid;
 
-	switch(pid = rfork(RFPROC|RFMEM|RFNOWAIT)){
+	switch(pid = sys_rfork(RFPROC|RFMEM|RFNOWAIT)){
 	case -1:
 		fprint(2, "%s: fork failed: %r\n", argv0);
 		killall("fork failed");
@@ -1047,7 +1047,7 @@ main(int argc, char *argv[])
 	}
 	colinit();
 	einit(Emouse);
-	notify(nil);
+	sys_notify(nil);
 	startproc(mouseproc, 0);
 	display->locking = 1;	/* tell library we're using the display lock */
 

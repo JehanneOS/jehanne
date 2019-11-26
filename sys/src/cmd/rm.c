@@ -21,7 +21,7 @@ err(long e, char *f)
 		print("%s %ulld\n", f, e);
 	} else if(!ignerr){
 		errbuf[0] = '\0';
-		errstr(errbuf, sizeof errbuf);
+		sys_errstr(errbuf, sizeof errbuf);
 		fprint(2, "rm: %s: %s\n", f, errbuf);
 	}
 }
@@ -37,13 +37,13 @@ rmdir(char *f)
 	int fd, i, j, n, ndir, nname;
 	Dir *dirbuf;
 
-	fd = open(f, OREAD);
+	fd = sys_open(f, OREAD);
 	if(fd < 0){
 		err(-1, f);
 		return;
 	}
 	n = dirreadall(fd, &dirbuf);
-	close(fd);
+	sys_close(fd);
 	if(n < 0){
 		err(-1, "dirreadall");
 		return;
@@ -59,7 +59,7 @@ rmdir(char *f)
 	ndir = 0;
 	for(i=0; i<n; i++){
 		snprint(name, nname, "%s/%s", f, dirbuf[i].name);
-		if((e = remove(name)) != -1)
+		if((e = sys_remove(name)) != -1)
 			dirbuf[i].qid.type = QTFILE;	/* so we won't recurse */
 		else{
 			if(dirbuf[i].qid.type & QTDIR)
@@ -74,7 +74,7 @@ rmdir(char *f)
 				snprint(name, nname, "%s/%s", f, dirbuf[j].name);
 				rmdir(name);
 			}
-	if((e = remove(f)) == -1)
+	if((e = sys_remove(f)) == -1)
 		err(e, f);
 	free(name);
 	free(dirbuf);
@@ -108,7 +108,7 @@ main(int argc, char *argv[])
 		ignerr = 0;
 	for(i=0; i<argc; i++){
 		f = argv[i];
-		e = remove(f);
+		e = sys_remove(f);
 		if(e != -1 && (!printerr || e == 0))
 			continue;
 		db = nil;

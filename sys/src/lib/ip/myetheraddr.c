@@ -22,12 +22,12 @@ myetheraddr(uint8_t *to, char *dev)
 	else
 		sprint(buf, "/net/%s/addr", dev);
 
-	fd = open(buf, OREAD);
+	fd = sys_open(buf, OREAD);
 	if(fd < 0)
 		return -1;
 
-	n = read(fd, buf, sizeof buf -1 );
-	close(fd);
+	n = jehanne_read(fd, buf, sizeof buf -1 );
+	sys_close(fd);
 	if(n <= 0)
 		return -1;
 	buf[n] = 0;

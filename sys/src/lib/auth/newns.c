@@ -41,7 +41,7 @@ static int
 freecloserpc(AuthRpc *rpc)
 {
 	if(rpc){
-		close(rpc->afd);
+		sys_close(rpc->afd);
 		auth_freerpc(rpc);
 	}
 	return -1;
@@ -58,13 +58,13 @@ buildns(int newns, char *user, char *file)
 
 	rpc = nil;
 	/* try for factotum now because later is impossible */
-	afd = open("/mnt/factotum/rpc", ORDWR);
+	afd = sys_open("/mnt/factotum/rpc", ORDWR);
 	if(afd < 0 && newnsdebug)
 		fprint(2, "open /mnt/factotum/rpc: %r\n");
 	if(afd >= 0){
 		rpc = auth_allocrpc(afd);
 		if(rpc == nil)
-			close(afd);
+			sys_close(afd);
 	}
 	/* rpc != nil iff afd >= 0 */
 
@@ -81,7 +81,7 @@ buildns(int newns, char *user, char *file)
 		return freecloserpc(rpc);
 	}
 	if(newns){
-		rfork(RFENVG|RFCNAMEG);
+		sys_rfork(RFENVG|RFCNAMEG);
 		setenv(ENV_USER, user);
 		snprint(home, sizeof home, "/usr/%s", user);
 		setenv(ENV_HOME, home);
@@ -145,15 +145,15 @@ famount(int fd, AuthRpc *rpc, char *mntpt, int flags, char *aname)
 	AuthInfo *ai;
 	int ret;
 
-	afd = fauth(fd, aname);
+	afd = sys_fauth(fd, aname);
 	if(afd >= 0){
 		ai = fauth_proxy(afd, rpc, amount_getkey, "proto=p9any role=client");
 		if(ai != nil)
 			auth_freeAI(ai);
 	}
-	ret = mount(fd, afd, mntpt, flags, aname, '9');
+	ret = sys_mount(fd, afd, mntpt, flags, aname, '9');
 	if(afd >= 0)
-		close(afd);
+		sys_close(afd);
 	return ret;
 }
 
@@ -196,17 +196,17 @@ nsop(char *fn, int argc, char *argv[], AuthRpc *rpc)
 		cdroot |= nsfile(fn, b, rpc);
 		Bterm(b);
 	}else if(strcmp(argv0, "clear") == 0 && argc == 0)
-		rfork(RFCNAMEG);
+		sys_rfork(RFCNAMEG);
 	else if(strcmp(argv0, "bind") == 0 && argc == 2){
-		if(bind(argv[0], argv[1], flags) < 0 && newnsdebug)
+		if(sys_bind(argv[0], argv[1], flags) < 0 && newnsdebug)
 			fprint(2, "%s: bind: %s %s: %r\n", fn, argv[0], argv[1]);
 	}else if(strcmp(argv0, "unmount") == 0){
 		if(argc == 1)
-			unmount(nil, argv[0]);
+			sys_unmount(nil, argv[0]);
 		else if(argc == 2)
-			unmount(argv[0], argv[1]);
+			sys_unmount(argv[0], argv[1]);
 	}else if(strcmp(argv0, "mount") == 0){
-		fd = open(argv[0], ORDWR);
+		fd = sys_open(argv[0], ORDWR);
 		if(argc == 2){
 			if(famount(fd, rpc, argv[1], flags, "") < 0 && newnsdebug)
 				fprint(2, "%s: mount: %s %s: %r\n", fn, argv[0], argv[1]);
@@ -214,7 +214,7 @@ nsop(char *fn, int argc, char *argv[], AuthRpc *rpc)
 			if(famount(fd, rpc, argv[1], flags, argv[2]) < 0 && newnsdebug)
 				fprint(2, "%s: mount: %s %s %s: %r\n", fn, argv[0], argv[1], argv[2]);
 		}
-		close(fd);
+		sys_close(fd);
 	}else if(strcmp(argv0, "cd") == 0 && argc == 1){
 		if(chdir(argv[0]) == 0 && *argv[0] == '/')
 			cdroot = 1;
@@ -325,9 +325,9 @@ expandarg(char *arg, char *buf)
 		strcpy(env, "#e/");
 		strncpy(env+3, p, len);
 		env[3+len] = '\0';
-		fd = open(env, OREAD);
+		fd = sys_open(env, OREAD);
 		if(fd >= 0){
-			len = read(fd, &buf[n], ANAMELEN - 1);
+			len = jehanne_read(fd, &buf[n], ANAMELEN - 1);
 			/* some singleton environment variables have trailing NULs */
 			/* lists separate entries with NULs; we arbitrarily take the first element */
 			if(len > 0){
@@ -336,7 +336,7 @@ expandarg(char *arg, char *buf)
 					len = x - &buf[n];
 				n += len;
 			}
-			close(fd);
+			sys_close(fd);
 		}
 	}
 	len = strlen(arg);
@@ -358,10 +358,10 @@ setenv(char *name, char *val)
 	if(f < 0)
 		return -1;
 	s = strlen(val);
-	if(write(f, val, s) != s){
-		close(f);
+	if(jehanne_write(f, val, s) != s){
+		sys_close(f);
 		return -1;
 	}
-	close(f);
+	sys_close(f);
 	return 0;
 }

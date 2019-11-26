@@ -153,7 +153,7 @@ mklock(char *file)
 		free(dir);
 
 		/* reopen in case it wasn't a lock file at last open */
-		close(fd);
+		sys_close(fd);
 	}
 	for (try = 0; try < 65 && (fd = openlock(file)) < 0; try++)
 		sleep(10*1000);
@@ -244,8 +244,8 @@ main(int argc, char *argv[])
 					&& j->time.mon & t.mon)
 						rexec(&users[i], j);
 		}
-		seek(lock, 0, 0);
-		write(lock, "x", 1);	/* keep the lock alive */
+		sys_seek(lock, 0, 0);
+		jehanne_write(lock, "x", 1);	/* keep the lock alive */
 		/*
 		 * if we're not at next minute yet, sleep until a second past
 		 * (to allow for sleep intervals being approximate),
@@ -265,13 +265,13 @@ createuser(void)
 
 	user = getuser();
 	snprint(file, sizeof file, "/cron/%s", user);
-	fd = create(file, OREAD, 0755|DMDIR);
+	fd = sys_create(file, OREAD, 0755|DMDIR);
 	if(fd < 0)
 		fatal("couldn't create %s: %r", file);
 	nulldir(&d);
 	d.gid = user;
 	dirfwstat(fd, &d);
-	close(fd);
+	sys_close(fd);
 	snprint(file, sizeof file, "/cron/%s/cron", user);
 	fd = ocreate(file, OREAD, 0644);
 	if(fd < 0)
@@ -279,7 +279,7 @@ createuser(void)
 	nulldir(&d);
 	d.gid = user;
 	dirfwstat(fd, &d);
-	close(fd);
+	sys_close(fd);
 }
 
 void
@@ -290,7 +290,7 @@ readalljobs(void)
 	char file[128];
 	int i, n, fd;
 
-	fd = open("/cron", OREAD);
+	fd = sys_open("/cron", OREAD);
 	if(fd < 0)
 		fatal("can't open /cron: %r");
 	while((n = dirread(fd, &d)) > 0){
@@ -314,7 +314,7 @@ readalljobs(void)
 		}
 		free(d);
 	}
-	close(fd);
+	sys_close(fd);
 }
 
 /*
@@ -441,7 +441,7 @@ getname(char **namep)
 	*namep = strdup(buf);
 	if(*namep == 0){
 		clog("internal error: strdup failure");
-		_exits(0);
+		sys__exits(0);
 	}
 	while(*savec == ' ' || *savec == '\t')
 		savec++;
@@ -553,7 +553,7 @@ rexec(User *user, Job *j)
 {
 	char buf[8*1024];
 
-	switch(rfork(RFPROC|RFNOWAIT|RFNAMEG|RFENVG|RFFDG)){
+	switch(sys_rfork(RFPROC|RFNOWAIT|RFNAMEG|RFENVG|RFFDG)){
 	case 0:
 		break;
 	case -1:
@@ -564,23 +564,23 @@ rexec(User *user, Job *j)
 
 	if(!mkcmd(j->cmd, buf, sizeof buf)){
 		clog("internal error: cmd buffer overflow");
-		_exits(0);
+		sys__exits(0);
 	}
 
 	if(becomeuser(user->name) < 0){
 		clog("%s: can't change uid for %s on %s: %r",
 			user->name, j->cmd, j->host);
-		_exits(0);
+		sys__exits(0);
 	}
 
 	clog("%s: ran '%s' on %s", user->name, j->cmd, j->host);
 
-	close(0);
-	close(1);
-	close(2);
-	open("/dev/null", OREAD);
-	open("/dev/null", OWRITE);
-	open("/dev/null", OWRITE);
+	sys_close(0);
+	sys_close(1);
+	sys_close(2);
+	sys_open("/dev/null", OREAD);
+	sys_open("/dev/null", OWRITE);
+	sys_open("/dev/null", OWRITE);
 
 	if(strcmp(j->host, "local") == 0){
 		putenv(ENV_SERVICE, "rx");
@@ -590,7 +590,7 @@ rexec(User *user, Job *j)
 	}
 
 	clog("%s: exec failed for %s on %s: %r", user->name, j->cmd, j->host);
-	_exits(0);
+	sys__exits(0);
 }
 
 void *
@@ -635,7 +635,7 @@ static int caphashfd;
 void
 initcap(void)
 {
-	caphashfd = open("#¤/caphash", OCEXEC|OWRITE);
+	caphashfd = sys_open("#¤/caphash", OCEXEC|OWRITE);
 	if(caphashfd < 0)
 		fprint(2, "%s: opening #¤/caphash: %r\n", argv0);
 }
@@ -670,7 +670,7 @@ mkcap(char *from, char *to)
 
 	/* give the kernel the hash */
 	key[-1] = '@';
-	if(write(caphashfd, hash, SHA1dlen) < 0){
+	if(jehanne_write(caphashfd, hash, SHA1dlen) < 0){
 		free(cap);
 		return nil;
 	}
@@ -683,11 +683,11 @@ usecap(char *cap)
 {
 	int fd, rv;
 
-	fd = open("#¤/capuse", OWRITE);
+	fd = sys_open("#¤/capuse", OWRITE);
 	if(fd < 0)
 		return -1;
-	rv = write(fd, cap, strlen(cap));
-	close(fd);
+	rv = jehanne_write(fd, cap, strlen(cap));
+	sys_close(fd);
 	return rv;
 }
 

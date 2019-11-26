@@ -66,10 +66,10 @@ readcons(char *prompt, char *def, int raw, char *buf, int nbuf)
 	int fdin, fdout, ctl, n, m;
 	char line[10];
 
-	fdin = open("/dev/cons", OREAD);
+	fdin = sys_open("/dev/cons", OREAD);
 	if(fdin < 0)
 		fdin = 0;
-	fdout = open("/dev/cons", OWRITE);
+	fdout = sys_open("/dev/cons", OWRITE);
 	if(fdout < 0)
 		fdout = 1;
 	if(def != nil)
@@ -77,22 +77,22 @@ readcons(char *prompt, char *def, int raw, char *buf, int nbuf)
 	else
 		fprint(fdout, "%s: ", prompt);
 	if(raw){
-		ctl = open("/dev/consctl", OWRITE);
+		ctl = sys_open("/dev/consctl", OWRITE);
 		if(ctl >= 0)
-			write(ctl, "rawon", 5);
+			jehanne_write(ctl, "rawon", 5);
 	} else
 		ctl = -1;
 
 	m = 0;
 	for(;;){
-		n = read(fdin, line, 1);
+		n = jehanne_read(fdin, line, 1);
 		if(n == 0){
-			close(ctl);
+			sys_close(ctl);
 			werrstr("readcons: EOF");
 			return nil;
 		}
 		if(n < 0){
-			close(ctl);
+			sys_close(ctl);
 			werrstr("can't read cons");
 			return nil;
 		}
@@ -100,9 +100,9 @@ readcons(char *prompt, char *def, int raw, char *buf, int nbuf)
 			exits(0);
 		if(n == 0 || line[0] == '\n' || line[0] == '\r'){
 			if(raw){
-				write(ctl, "rawoff", 6);
-				write(fdout, "\n", 1);
-				close(ctl);
+				jehanne_write(ctl, "rawoff", 6);
+				jehanne_write(fdout, "\n", 1);
+				sys_close(ctl);
 			}
 			buf[m] = '\0';
 			if(buf[0]=='\0' && def)
@@ -192,7 +192,7 @@ authdialfutz(char *dom, char *user, char *proto)
 	fd = authdial(nil, dom);
 	if(fd >= 0){
 		print("\tsuccessfully dialed auth server\n");
-		close(fd);
+		sys_close(fd);
 		authfutz(dom, user, proto);
 		return;
 	}
@@ -215,7 +215,7 @@ authdialfutz(char *dom, char *user, char *proto)
 	fd = dial(addr=netmkaddr("$auth", nil, "ticket"), 0, 0, 0);
 	if(fd >= 0){
 		print("\tdial %s succeeded\n", addr);
-		close(fd);
+		sys_close(fd);
 		return;
 	}
 	print("\tdial %s failed: %r\n", addr);
@@ -236,14 +236,14 @@ getpakkeys(int fd, Ticketreq *tr, Authkey *akey, Authkey *hkey)
 
 	authpak_hash(akey, tr->authid);
 	authpak_new(&p, akey, y, 1);
-	if(write(fd, y, PAKYLEN) != PAKYLEN
+	if(jehanne_write(fd, y, PAKYLEN) != PAKYLEN
 	|| readn(fd, y, PAKYLEN) != PAKYLEN
 	|| authpak_finish(&p, akey, y))
 		goto out;
 
 	authpak_hash(hkey, tr->hostid);
 	authpak_new(&p, hkey, y, 1);
-	if(write(fd, y, PAKYLEN) != PAKYLEN
+	if(jehanne_write(fd, y, PAKYLEN) != PAKYLEN
 	|| readn(fd, y, PAKYLEN) != PAKYLEN
 	|| authpak_finish(&p, hkey, y))
 		goto out;
@@ -287,13 +287,13 @@ authfutz(char *dom, char *user, char *proto)
 
 	if(strcmp(proto, "dp9ik") == 0 && getpakkeys(fd, &tr, &booteskey, &key) < 0){
 		print("\tgetpakkeys failed: %r\n");
-		close(fd);
+		sys_close(fd);
 		return;
 	}
 
 	if((n = _asgetticket(fd, &tr, tbuf, sizeof(tbuf))) < 0){
 		print("\t_asgetticket failed: %r\n");
-		close(fd);
+		sys_close(fd);
 		return;
 	}
 	m = convM2T(tbuf, n, &t, &key);
@@ -337,13 +337,13 @@ authfutz(char *dom, char *user, char *proto)
 
 	if(strcmp(proto, "dp9ik") == 0 && getpakkeys(fd, &tr, &booteskey, &key) < 0){
 		print("\tgetpakkeys failed: %r\n");
-		close(fd);
+		sys_close(fd);
 		return;
 	}
 
 	if((n = _asgetticket(fd, &tr, tbuf, sizeof(tbuf))) < 0){
 		print("\t_asgetticket failed: %r\n");
-		close(fd);
+		sys_close(fd);
 		return;
 	}
 	m = convM2T(tbuf, n, &t, &key);

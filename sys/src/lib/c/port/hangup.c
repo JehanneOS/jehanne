@@ -17,5 +17,5 @@
 int
 jehanne_hangup(int ctl)
 {
-	return write(ctl, "hangup", sizeof("hangup")-1) != sizeof("hangup")-1;
+	return jehanne_write(ctl, "hangup", sizeof("hangup")-1) != sizeof("hangup")-1;
 }

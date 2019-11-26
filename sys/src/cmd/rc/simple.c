@@ -90,14 +90,14 @@ doredir(redir *rp)
 		case ROPEN:
 			if(rp->from!=rp->to){
 				Dup(rp->from, rp->to);
-				close(rp->from);
+				sys_close(rp->from);
 			}
 			break;
 		case RDUP:
 			Dup(rp->from, rp->to);
 			break;
 		case RCLOSE:
-			close(rp->from);
+			sys_close(rp->from);
 			break;
 		}
 	}
@@ -351,7 +351,7 @@ execdot(void)
 		else
 			file = estrdup(zero);
 
-		fd = open(file, OREAD);
+		fd = sys_open(file, OREAD);
 		free(file);
 		if(fd >= 0)
 			break;

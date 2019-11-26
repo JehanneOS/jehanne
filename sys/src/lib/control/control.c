@@ -336,7 +336,7 @@ ctlerror(char *fmt, ...)
 	va_start(arg, fmt);
 	vfprint(2, fmt, arg);
 	va_end(arg);
-	write(2, "\n", 1);
+	jehanne_write(2, "\n", 1);
 	threadexitsall(buf);
 }
 
@@ -511,8 +511,8 @@ _ctlgetsnarf(void)
 		return nil;
 	sn = nil;
 	i = 0;
-	seek(_ctlsnarffd, 0, 0);
-	while((n = read(_ctlsnarffd, buf, sizeof buf)) > 0){
+	sys_seek(_ctlsnarffd, 0, 0);
+	while((n = jehanne_read(_ctlsnarffd, buf, sizeof buf)) > 0){
 		sn = ctlrealloc(sn, i+n+1);
 		memmove(sn+i, buf, n);
 		i += n;
@@ -533,7 +533,7 @@ _ctlputsnarf(Rune *snarf)
 
 	if(_ctlsnarffd<0 || snarf[0]==0)
 		return;
-	fd = open("/dev/snarf", OWRITE);
+	fd = sys_open("/dev/snarf", OWRITE);
 	if(fd < 0)
 		return;
 	nsnarf = runestrlen(snarf);
@@ -545,7 +545,7 @@ _ctlputsnarf(Rune *snarf)
 		if(fprint(fd, "%.*S", n, snarf+i) < 0)
 			break;
 	}
-	close(fd);
+	sys_close(fd);
 }
 
 int
@@ -747,7 +747,7 @@ initcontrols(void)
 		namectlimage(im, coltab[i].name);
 	}
 	namectlfont(font, "font");
-	_ctlsnarffd = open("/dev/snarf", OREAD);
+	_ctlsnarffd = sys_open("/dev/snarf", OREAD);
 }
 
 Controlset*

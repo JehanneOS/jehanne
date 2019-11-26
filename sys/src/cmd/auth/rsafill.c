@@ -56,6 +56,6 @@ main(int argc, char **argv)
 		key->kp, key->kq, key->c2);
 	if(s == nil)
 		sysfatal("smprint: %r");
-	write(1, s, strlen(s));
+	jehanne_write(1, s, strlen(s));
 	exits(nil);
 }

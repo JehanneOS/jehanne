@@ -12,5 +12,5 @@ jehanne_notejmp(void *vr, jmp_buf j, int ret)
 		r->ax = 1;
 	r->ip = j[JMPBUFPC];
 	r->sp = j[JMPBUFSP] + 8;
-	noted(NCONT);
+	sys_noted(NCONT);
 }

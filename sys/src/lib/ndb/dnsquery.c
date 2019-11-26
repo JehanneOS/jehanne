@@ -41,7 +41,7 @@ dnsquery(char *net, char *val, char *type)
 	if(net == nil)
 		net = "/net";
 	snprint(rip, sizeof(rip), "%s/dns", net);
-	fd = open(rip, ORDWR);
+	fd = sys_open(rip, ORDWR);
 	if(fd < 0){
 		if(strcmp(net, "/net") == 0)
 			snprint(rip, sizeof(rip), "/srv/dns");
@@ -50,16 +50,16 @@ dnsquery(char *net, char *val, char *type)
 			p = strrchr(rip, '/');
 			*p = '_';
 		}
-		fd = open(rip, ORDWR);
+		fd = sys_open(rip, ORDWR);
 		if(fd < 0)
 			return nil;
-		if(mount(fd, -1, net, MBEFORE, "", '9') < 0){
-			close(fd);
+		if(sys_mount(fd, -1, net, MBEFORE, "", '9') < 0){
+			sys_close(fd);
 			return nil;
 		}
 		/* fd is now closed */
 		snprint(rip, sizeof(rip), "%s/dns", net);
-		fd = open(rip, ORDWR);
+		fd = sys_open(rip, ORDWR);
 		if(fd < 0)
 			return nil;
 	}
@@ -78,7 +78,7 @@ dnsquery(char *net, char *val, char *type)
 	 * TODO: make fd static and keep it open to reduce 9P traffic
 	 * walking to /net*^/dns.  Must be prepared to re-open it on error.
 	 */
-	close(fd);
+	sys_close(fd);
 	ndbsetmalloctag(t, getcallerpc());
 	return t;
 }
@@ -132,17 +132,17 @@ doquery(int fd, char *dn, char *type)
 	int n;
 	Ndbtuple *t, *first, *last;
 
-	seek(fd, 0, 0);
+	sys_seek(fd, 0, 0);
 	snprint(buf, sizeof(buf), "!%s %s", dn, type);
-	if(write(fd, buf, strlen(buf)) < 0)
+	if(jehanne_write(fd, buf, strlen(buf)) < 0)
 		return nil;
 		
-	seek(fd, 0, 0);
+	sys_seek(fd, 0, 0);
 
 	first = last = nil;
 	
 	for(;;){
-		n = read(fd, buf, sizeof(buf)-2);
+		n = jehanne_read(fd, buf, sizeof(buf)-2);
 		if(n <= 0)
 			break;
 		if(buf[n-1] != '\n')

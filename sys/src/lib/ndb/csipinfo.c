@@ -32,10 +32,10 @@ csipinfo(char *netroot, char *attr, char *val, char **list, int n)
 		snprint(line, sizeof(line), "%s/cs", netroot);
 	else
 		strcpy(line, "/net/cs");
-	fd = open(line, ORDWR);
+	fd = sys_open(line, ORDWR);
 	if(fd < 0)
 		return 0;
-	seek(fd, 0, 0);
+	sys_seek(fd, 0, 0);
 	e = line + sizeof(line);
 	p = seprint(line, e, "!ipinfo %s=%s", attr, val);
 	for(i = 0; i < n; i++){
@@ -44,15 +44,15 @@ csipinfo(char *netroot, char *attr, char *val, char **list, int n)
 		p = seprint(p, e, " %s", *list++);
 	}
 	
-	if(write(fd, line, strlen(line)) < 0){
-		close(fd);
+	if(jehanne_write(fd, line, strlen(line)) < 0){
+		sys_close(fd);
 		return 0;
 	}
-	seek(fd, 0, 0);
+	sys_seek(fd, 0, 0);
 
 	first = last = 0;
 	for(;;){
-		n = read(fd, line, sizeof(line)-2);
+		n = jehanne_read(fd, line, sizeof(line)-2);
 		if(n <= 0)
 			break;
 		line[n] = '\n';
@@ -70,7 +70,7 @@ csipinfo(char *netroot, char *attr, char *val, char **list, int n)
 		while(last->entry)
 			last = last->entry;
 	}
-	close(fd);
+	sys_close(fd);
 
 	ndbsetmalloctag(first, getcallerpc());
 	return first;

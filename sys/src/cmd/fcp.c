@@ -124,7 +124,7 @@ copy(char *from, char *to, int todir)
 		return;
 	}
 	mode &= 0777;
-	fdf=open(from, OREAD);
+	fdf=sys_open(from, OREAD);
 	if(fdf<0){
 		fprint(2, "fcp: can't open %s: %r\n", from);
 		free(dirb);
@@ -134,7 +134,7 @@ copy(char *from, char *to, int todir)
 	fdt=ocreate(to, OWRITE, mode);
 	if(fdt<0){
 		fprint(2, "fcp: can't create %s: %r\n", to);
-		close(fdf);
+		sys_close(fdf);
 		free(dirb);
 		failed = 1;
 		return;
@@ -153,8 +153,8 @@ copy(char *from, char *to, int todir)
 			fprint(2, "fcp: warning: can't wstat %s: %r\n", to);
 	}
 	free(dirb);
-	close(fdf);
-	close(fdt);
+	sys_close(fdf);
+	sys_close(fdt);
 }
 
 int
@@ -166,9 +166,9 @@ copy1(int fdf, int fdt, char *from, char *to)
 	n = 0;
 	off = 0;
 	for(i=0; i<Nwork; i++){
-		switch(pid[n] = rfork(RFPROC|RFMEM)){
+		switch(pid[n] = sys_rfork(RFPROC|RFMEM)){
 		case 0:
-			notify(failure);
+			sys_notify(failure);
 			worker(fdf, fdt, from, to);
 		case -1:
 			break;
@@ -208,14 +208,14 @@ worker(int fdf, int fdt, char *from, char *to)
 	bp = buf;
 	o = nextoff();
 
-	while(n = pread(fdf, bp, len, o)){
+	while(n = sys_pread(fdf, bp, len, o)){
 		if(n < 0){
 			fprint(2, "reading %s at %lld: %r\n", from, o);
-			_exits("bad");
+			sys__exits("bad");
 		}
-		if(pwrite(fdt, buf, n, o) != n){
+		if(sys_pwrite(fdt, buf, n, o) != n){
 			fprint(2, "writing %s: %r\n", to);
-			_exits("bad");
+			sys__exits("bad");
 		}
 		bp += n;
 		o += n;
@@ -226,7 +226,7 @@ worker(int fdf, int fdt, char *from, char *to)
 			o = nextoff();
 		}
 	}
-	_exits(nil);
+	sys__exits(nil);
 }
 
 int64_t
@@ -246,6 +246,6 @@ void
 failure(void *v, char *note)
 {
 	if(strcmp(note, "failure") == 0)
-		_exits(nil);
-	noted(NDFLT);
+		sys__exits(nil);
+	sys_noted(NDFLT);
 }

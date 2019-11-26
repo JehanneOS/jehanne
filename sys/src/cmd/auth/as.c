@@ -118,7 +118,7 @@ static int caphashfd;
 void
 initcap(void)
 {
-	caphashfd = open("#¤/caphash", OCEXEC|OWRITE);
+	caphashfd = sys_open("#¤/caphash", OCEXEC|OWRITE);
 	if(caphashfd < 0)
 		fprint(2, "%s: opening #¤/caphash: %r\n", argv0);
 }
@@ -152,7 +152,7 @@ mkcap(char *from, char *to)
 
 	/* give the kernel the hash */
 	key[-1] = '@';
-	if(write(caphashfd, hash, SHA1dlen) < 0){
+	if(jehanne_write(caphashfd, hash, SHA1dlen) < 0){
 		free(cap);
 		return nil;
 	}
@@ -165,11 +165,11 @@ usecap(char *cap)
 {
 	int fd, rv;
 
-	fd = open("#¤/capuse", OWRITE);
+	fd = sys_open("#¤/capuse", OWRITE);
 	if(fd < 0)
 		return -1;
-	rv = write(fd, cap, strlen(cap));
-	close(fd);
+	rv = jehanne_write(fd, cap, strlen(cap));
+	sys_close(fd);
 	return rv;
 }
 

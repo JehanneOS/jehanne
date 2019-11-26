@@ -113,7 +113,7 @@ ls(char *s, int multi)
 	if((db->qid.type&QTDIR) && dflag==0){
 		free(db);
 		output();
-		fd = open(s, OREAD);
+		fd = sys_open(s, OREAD);
 		if(fd == -1)
 			goto error;
 		n = dirreadall(fd, &db);
@@ -126,7 +126,7 @@ ls(char *s, int multi)
 			dirbuf[ndir+i].prefix = multi? s : 0;
 		}
 		ndir += n;
-		close(fd);
+		sys_close(fd);
 		output();
 	}else{
 		growto(ndir+1);

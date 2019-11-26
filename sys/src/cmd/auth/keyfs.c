@@ -212,16 +212,16 @@ main(int argc, char *argv[])
 		}
 	}
 
-	switch(rfork(RFPROC|RFNAMEG|RFNOTEG|RFNOWAIT|RFENVG|RFFDG)){
+	switch(sys_rfork(RFPROC|RFNAMEG|RFNOTEG|RFNOWAIT|RFENVG|RFFDG)){
 	case 0:
-		close(p[0]);
+		sys_close(p[0]);
 		io(p[1], p[1]);
 		exits(0);
 	case -1:
 		error("fork");
 	default:
-		close(p[1]);
-		if(mount(p[0], -1, mntpt, MREPL|MCREATE, "", '9') < 0)
+		sys_close(p[1]);
+		if(sys_mount(p[0], -1, mntpt, MREPL|MCREATE, "", '9') < 0)
 			error("can't mount: %r");
 		exits(0);
 	}
@@ -788,11 +788,11 @@ writeusers(void)
 		fprint(2, "keyfs: can't write keys file\n");
 		return;
 	}
-	if(write(fd, buf, p - buf) != (p - buf))
+	if(jehanne_write(fd, buf, p - buf) != (p - buf))
 		fprint(2, "keyfs: can't write keys file\n");
 
 	free(buf);
-	close(fd);
+	sys_close(fd);
 
 	newkeys();
 }
@@ -866,17 +866,17 @@ readusers(void)
 	Dir *d;
 
 	/* read file into an array */
-	fd = open(userkeys, OREAD);
+	fd = sys_open(userkeys, OREAD);
 	if(fd < 0)
 		return 0;
 	d = dirfstat(fd);
 	if(d == nil){
-		close(fd);
+		sys_close(fd);
 		return 0;
 	}
 	buf = emalloc(d->length);
 	n = readn(fd, buf, d->length);
-	close(fd);
+	sys_close(fd);
 	free(d);
 	if(n != d->length){
 		free(buf);
@@ -1075,7 +1075,7 @@ io(int in, int out)
 			thdr.ename = err;
 		}
 		n = convS2M(&thdr, mdata, messagesize);
-		if(write(out, mdata, n) != n)
+		if(jehanne_write(out, mdata, n) != n)
 			error("mount write");
 
 		now = time(0);
@@ -1138,13 +1138,13 @@ warning(void)
 	char buf[64];
 
 	snprint(buf, sizeof buf, "-%s", warnarg);
-	switch(rfork(RFPROC|RFNAMEG|RFNOTEG|RFNOWAIT|RFENVG|RFFDG)){
+	switch(sys_rfork(RFPROC|RFNAMEG|RFNOTEG|RFNOWAIT|RFENVG|RFFDG)){
 	case 0:
-		i = open("/sys/log/auth", OWRITE);
+		i = sys_open("/sys/log/auth", OWRITE);
 		if(i >= 0){
 			dup(i, 2);
-			seek(2, 0, 2);
-			close(i);
+			sys_seek(2, 0, 2);
+			sys_close(i);
 		}
 		execl("/bin/auth/warning", "warning", warnarg, nil);
 		error("can't exec warning");

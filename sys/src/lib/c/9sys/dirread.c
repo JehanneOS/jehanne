@@ -70,7 +70,7 @@ jehanne_dirread(int fd, Dir **d)
 	buf = jehanne_malloc(DIRMAX);
 	if(buf == nil)
 		return -1;
-	ts = read(fd, buf, DIRMAX);
+	ts = jehanne_read(fd, buf, DIRMAX);
 	if(ts >= 0)
 		ts = dirpackage(buf, ts, d);
 	jehanne_free(buf);
@@ -92,7 +92,7 @@ jehanne_dirreadall(int fd, Dir **d)
 			return -1;
 		}
 		buf = nbuf;
-		n = read(fd, buf+ts, DIRMAX);
+		n = jehanne_read(fd, buf+ts, DIRMAX);
 		if(n <= 0)
 			break;
 		ts += n;

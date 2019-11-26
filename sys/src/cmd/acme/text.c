@@ -203,7 +203,7 @@ textload(Text *t, uint32_t q0, char *file, int setqid)
 		warning(nil, "empty directory name\n");
 		return 0;
 	}
-	fd = open(file, OREAD);
+	fd = sys_open(file, OREAD);
 	if(fd < 0){
 		warning(nil, "can't open %s: %r\n", file);
 		return 0;
@@ -265,7 +265,7 @@ textload(Text *t, uint32_t q0, char *file, int setqid)
 		t->file->mtime = d->mtime;
 		t->file->qidpath = d->qid.path;
 	}
-	close(fd);
+	sys_close(fd);
 	rp = fbufalloc();
 	for(q=q0; q<q1; q+=n){
 		n = q1-q;
@@ -296,7 +296,7 @@ textload(Text *t, uint32_t q0, char *file, int setqid)
 	return q1-q0;
 
     Rescue:
-	close(fd);
+	sys_close(fd);
 	return 0;
 }
 

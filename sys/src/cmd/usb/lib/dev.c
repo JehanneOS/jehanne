@@ -53,7 +53,7 @@ openep(Dev *d, int id)
 	Usbdev *ud;
 	char name[40];
 
-	if(access("/dev/usb", AEXIST) < 0 && bind("#u", "/dev", MBEFORE) < 0)
+	if(access("/dev/usb", AEXIST) < 0 && sys_bind("#u", "/dev", MBEFORE) < 0)
 		return nil;
 	if(d->cfd < 0 || d->usb == nil){
 		werrstr("device not configured");
@@ -116,7 +116,7 @@ opendev(char *fn)
 	Dev *d;
 	int l;
 
-	if(access("/dev/usb", AEXIST) < 0 && bind("#u", "/dev", MBEFORE) < 0)
+	if(access("/dev/usb", AEXIST) < 0 && sys_bind("#u", "/dev", MBEFORE) < 0)
 		return nil;
 	d = emallocz(sizeof(Dev), 1);
 	incref(&d->ref);
@@ -132,7 +132,7 @@ opendev(char *fn)
 	d->dir = emallocz(l + 30, 0);
 	strcpy(d->dir, fn);
 	strcpy(d->dir+l, "/ctl");
-	d->cfd = open(d->dir, ORDWR|OCEXEC);
+	d->cfd = sys_open(d->dir, ORDWR|OCEXEC);
 	d->dir[l] = 0;
 	d->id = nameid(fn);
 	if(d->cfd < 0){
@@ -152,7 +152,7 @@ opendevdata(Dev *d, int mode)
 	char buf[80]; /* more than enough for a usb path */
 
 	seprint(buf, buf+sizeof(buf), "%s/data", d->dir);
-	d->dfd = open(buf, mode|OCEXEC);
+	d->dfd = sys_open(buf, mode|OCEXEC);
 	return d->dfd;
 }
 
@@ -338,9 +338,9 @@ closedev(Dev *d)
 	if(d->free != nil)
 		d->free(d->aux);
 	if(d->cfd >= 0)
-		close(d->cfd);
+		sys_close(d->cfd);
 	if(d->dfd >= 0)
-		close(d->dfd);
+		sys_close(d->dfd);
 	d->cfd = d->dfd = -1;
 	free(d->dir);
 	d->dir = nil;
@@ -430,7 +430,7 @@ cmdreq(Dev *d, int type, int req, int value, int index, uint8_t *data, int count
 			index, count, ndata+8, hd);
 		free(hd);
 	}
-	n = write(d->dfd, wp, 8+ndata);
+	n = jehanne_write(d->dfd, wp, 8+ndata);
 	if(wp != buf)
 		free(wp);
 	if(n < 0)
@@ -447,7 +447,7 @@ cmdrep(Dev *d, void *buf, int nb)
 {
 	char *hd;
 
-	nb = read(d->dfd, buf, nb);
+	nb = jehanne_read(d->dfd, buf, nb);
 	if(nb >0 && usbdebug > 2){
 		hd = hexstr(buf, nb);
 		fprint(2, "%s: in[%d] %s\n", d->dir, nb, hd);
@@ -528,7 +528,7 @@ devctl(Dev *dev, char *fmt, ...)
 	va_start(arg, fmt);
 	e = vseprint(buf, buf+sizeof(buf), fmt, arg);
 	va_end(arg);
-	return write(dev->cfd, buf, e-buf);
+	return jehanne_write(dev->cfd, buf, e-buf);
 }
 
 Dev *

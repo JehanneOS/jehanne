@@ -310,7 +310,7 @@ main(int argc, char **argv)
 
 	/* put process in background */
 	if(!debug)
-	switch(rfork(RFNOTEG|RFPROC|RFFDG)) {
+	switch(sys_rfork(RFNOTEG|RFPROC|RFFDG)) {
 	case -1:
 		fatal(1, "fork");
 	case 0:
@@ -792,7 +792,7 @@ sendoffer(Req *rp, uint8_t *ip, int offer)
 	 *  send
 	 */
 	n = rp->p - rp->buf;
-	if(!ismuted(rp) && write(rp->fd, rp->buf, n) != n)
+	if(!ismuted(rp) && jehanne_write(rp->fd, rp->buf, n) != n)
 		warning(0, "offer: write failed: %r");
 }
 
@@ -853,7 +853,7 @@ sendack(Req *rp, uint8_t *ip, int offer, int sendlease)
 	 *  send
 	 */
 	n = rp->p - rp->buf;
-	if(!ismuted(rp) && write(rp->fd, rp->buf, n) != n)
+	if(!ismuted(rp) && jehanne_write(rp->fd, rp->buf, n) != n)
 		warning(0, "ack: write failed: %r");
 }
 
@@ -906,7 +906,7 @@ sendnak(Req *rp, char *msg)
 	 *  send nak
 	 */
 	n = rp->p - rp->buf;
-	if(!ismuted(rp) && write(rp->fd, rp->buf, n) != n)
+	if(!ismuted(rp) && jehanne_write(rp->fd, rp->buf, n) != n)
 		warning(0, "nak: write failed: %r");
 }
 
@@ -1046,7 +1046,7 @@ bootp(Req *rp)
 	 *  send
 	 */
 	n = rp->p - rp->buf;
-	if(!ismuted(rp) && write(rp->fd, rp->buf, n) != n)
+	if(!ismuted(rp) && jehanne_write(rp->fd, rp->buf, n) != n)
 		warning(0, "bootp: write failed: %r");
 
 	warning(0, "bootp via %I: file %s xid(%ux)flag(%ux)ci(%V)gi(%V)yi(%V)si(%V) %s",
@@ -1318,7 +1318,7 @@ openlisten(char *net)
 		fatal(1, "can't set header mode");
 
 	sprint(data, "%s/data", devdir);
-	fd = open(data, ORDWR);
+	fd = sys_open(data, ORDWR);
 	if(fd < 0)
 		fatal(1, "open udp data");
 	return fd;
@@ -1367,10 +1367,10 @@ readsysname(void)
 	char *p;
 	int n, fd;
 
-	fd = open("/dev/sysname", OREAD);
+	fd = sys_open("/dev/sysname", OREAD);
 	if(fd >= 0){
-		n = read(fd, name, sizeof(name)-1);
-		close(fd);
+		n = jehanne_read(fd, name, sizeof(name)-1);
+		sys_close(fd);
 		if(n > 0){
 			name[n] = 0;
 			return name;
@@ -1604,13 +1604,13 @@ arpenter(uint8_t *ip, uint8_t *ether)
 	char buf[256];
 
 	sprint(buf, "%s/arp", net);
-	f = open(buf, OWRITE);
+	f = sys_open(buf, OWRITE);
 	if(f < 0){
 		syslog(debug, blog, "open %s: %r", buf);
 		return;
 	}
 	fprint(f, "add ether %I %E", ip, ether);
-	close(f);
+	sys_close(f);
 }
 
 char *dhcpmsgname[] =
@@ -1681,9 +1681,9 @@ void
 ding(void* _, char *msg)
 {
 	if(strstr(msg, "alarm"))
-		noted(NCONT);
+		sys_noted(NCONT);
 	else
-		noted(NDFLT);
+		sys_noted(NDFLT);
 }
 
 int
@@ -1691,13 +1691,13 @@ readlast(int fd, uint8_t *buf, int len)
 {
 	int lastn, n;
 
-	notify(ding);
+	sys_notify(ding);
 
 	lastn = 0;
 	for(;;){
-		alarm(20);
-		n = read(fd, buf, len);
-		alarm(0);
+		sys_alarm(20);
+		n = jehanne_read(fd, buf, len);
+		sys_alarm(0);
 		if(n < 0){
 			if(lastn > 0)
 				return lastn;
@@ -1705,5 +1705,5 @@ readlast(int fd, uint8_t *buf, int len)
 		}
 		lastn = n;
 	}
-	return read(fd, buf, len);
+	return jehanne_read(fd, buf, len);
 }

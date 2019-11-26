@@ -177,16 +177,16 @@ rpc(char *dest, Secret *shared, Packet *req)
 		 * increased timeout from 4sec to 15sec because
 		 * corporate server really takes that int32_t.
 		 */
-		alarm(15000);
-		m = write(fd, buf, n);
+		sys_alarm(15000);
+		m = jehanne_write(fd, buf, n);
 		if(m != n){
 			syslog(0, AUTHLOG, "%s: rpc write err %d %d: %r",
 				dest, m, n);
 			m = -1;
 			break;
 		}
-		m = read(fd, buf2, sizeof buf2);
-		alarm(0);
+		m = jehanne_read(fd, buf2, sizeof buf2);
+		sys_alarm(0);
 		if(m < 0){
 			syslog(0, AUTHLOG, "%s rpc read err %d: %r", dest, m);
 			break;			/* failure */
@@ -199,7 +199,7 @@ rpc(char *dest, Secret *shared, Packet *req)
 			break;
 		syslog(0, AUTHLOG, "%s bad rpc chksum", dest);
 	}
-	close(fd);
+	sys_close(fd);
 	if(m <= 0)
 		return nil;
 

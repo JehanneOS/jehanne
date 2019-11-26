@@ -131,7 +131,7 @@ rcvchar(void){
 	static int i, nleft = 0;
 
 	if(nleft <= 0){
-		nleft = read(0, (char *)buf, sizeof buf);
+		nleft = jehanne_read(0, (char *)buf, sizeof buf);
 		if(nleft <= 0)
 			return -1;
 		i = 0;
@@ -822,7 +822,7 @@ outsend(void)
 	outmsg = outp;
 	if(!outbuffered){
 		outcount = outmsg-outdata;
-		if (write(1, (char*) outdata, outcount) != outcount)
+		if (jehanne_write(1, (char*) outdata, outcount) != outcount)
 			rescue();
 		outmsg = outdata;
 		return;

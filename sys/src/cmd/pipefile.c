@@ -22,19 +22,19 @@ usage(void)
 void
 connect(char *cmd, int fd0, int fd1)
 {
-	switch(rfork(RFPROC|RFFDG|RFREND|RFNOWAIT)){
+	switch(sys_rfork(RFPROC|RFFDG|RFREND|RFNOWAIT)){
 	case -1:
 		sysfatal("fork %s: %r", cmd);
 		break;
 	default:
-		close(fd0);
-		close(fd1);
+		sys_close(fd0);
+		sys_close(fd1);
 		return;
 	case 0:
 		dup(fd0, 0);
 		dup(fd1, 1);
-		close(fd0);
-		close(fd1);
+		sys_close(fd0);
+		sys_close(fd1);
 		execl("/cmd/rc", "rc", "-c", cmd, nil);
 		sysfatal("exec %s: %r", cmd);
 		break;
@@ -48,7 +48,7 @@ main(int argc, char *argv[])
 	char *rcmd, *wcmd;
 	int fd0, fd1, ifd0, ifd1, dupflag;
 
-	rfork(RFNOTEG);
+	sys_rfork(RFNOTEG);
 	dupflag = 0;
 	rcmd = wcmd = nil;
 	ARGBEGIN{
@@ -74,32 +74,32 @@ main(int argc, char *argv[])
 
 	file = argv[0];
 	if(dupflag){
-		ifd0 = open(file, ORDWR);
+		ifd0 = sys_open(file, ORDWR);
 		if(ifd0 < 0)
 			sysfatal("open %s: %r", file);
 		ifd1 = dup(ifd0, -1);
 	}else{
-		ifd0 = open(file, OREAD);
+		ifd0 = sys_open(file, OREAD);
 		if(ifd0 < 0)
 			sysfatal("open %s: %r", file);
-		ifd1 = open(file, OWRITE);
+		ifd1 = sys_open(file, OWRITE);
 		if(ifd1 < 0)
 			sysfatal("open %s: %r", file);
 	}
 
-	if(bind("#|", TEMP, MREPL) < 0)
+	if(sys_bind("#|", TEMP, MREPL) < 0)
 		sysfatal("bind pipe %s: %r", TEMP);
-	if(bind(TEMP "/data", file, MREPL) < 0)
+	if(sys_bind(TEMP "/data", file, MREPL) < 0)
 		sysfatal("bind %s %s: %r", TEMP "/data", file);
 
-	fd0 = open(TEMP "/data1", OREAD);
+	fd0 = sys_open(TEMP "/data1", OREAD);
 	if(fd0 < 0)
 		sysfatal("open %s: %r", TEMP "/data1");
 	connect(wcmd, fd0, ifd1);
-	fd1 = open(TEMP "/data1", OWRITE);
+	fd1 = sys_open(TEMP "/data1", OWRITE);
 	if(fd1 < 0)
 		sysfatal("open %s: %r", TEMP "/data1");
 	connect(rcmd, ifd0, fd1);
-	unmount(nil, TEMP);
+	sys_unmount(nil, TEMP);
 	exits(nil);
 }

@@ -21,7 +21,7 @@ Bflush(Biobufhdr *bp)
 		n = bp->bsize+bp->ocount;
 		if(n == 0)
 			return 0;
-		c = write(bp->fid, bp->bbuf, n);
+		c = jehanne_write(bp->fid, bp->bbuf, n);
 		if(n == c) {
 			bp->offset += n;
 			bp->ocount = -bp->bsize;

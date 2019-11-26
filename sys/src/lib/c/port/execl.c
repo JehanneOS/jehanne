@@ -35,5 +35,5 @@ jehanne_execl(const char *f, ...)
 	va_end(va);
 	va_end(va2);
 
-	return exec(f, (const char**)args);
+	return sys_exec(f, (const char**)args);
 }

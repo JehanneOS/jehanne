@@ -107,13 +107,13 @@ main(int argc, char *argv[])
 		err = show(0, "<stdin>");
 	else{
 		for(i=0; i<argc; i++){
-			fd = open(argv[i], OREAD);
+			fd = sys_open(argv[i], OREAD);
 			if(fd < 0){
 				fprint(2, "tga: can't open %s: %r\n", argv[i]);
 				err = "open";
 			}else{
 				err = show(fd, argv[i]);
-				close(fd);
+				sys_close(fd);
 			}
 			if((nineflag || cflag) && argc>1 && err==nil){
 				fprint(2, "tga: exiting after one file\n");
@@ -200,7 +200,7 @@ show(int fd, char *name)
 		chantostr(buf, outchan);
 		print("%11s %11d %11d %11d %11d ", buf,
 			c->r.min.x, c->r.min.y, c->r.max.x, c->r.max.y);
-		if(write(1, c->chans[0], c->chanlen) != c->chanlen){
+		if(jehanne_write(1, c->chans[0], c->chanlen) != c->chanlen){
 			fprint(2, "tga: %s: write error %r\n", name);
 			return "write";
 		}

@@ -124,8 +124,8 @@ wepwrite(Fsstate *fss, void *va, uint32_t n)
 		goto out;
 	rv = RpcOk;
 out:
-	close(fd);
-	close(cfd);
+	sys_close(fd);
+	sys_close(cfd);
 	return rv;
 }
 

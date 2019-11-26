@@ -51,8 +51,8 @@ void
 ding(void * _1, char *msg)
 {
 	if(strstr(msg, "alarm") != nil)
-		noted(NCONT);
-	noted(NDFLT);
+		sys_noted(NCONT);
+	sys_noted(NDFLT);
 }
 
 int
@@ -211,19 +211,19 @@ main(int argc, char *argv[])
 	pmem(&p, addr, IPv4addrlen);	/* v4 address */
 
 	len = p - buf;
-	if(write(fd, buf, len) != len)
+	if(jehanne_write(fd, buf, len) != len)
 		sysfatal("write failed: %r");
 
-	notify(ding);
-	alarm(3000);
+	sys_notify(ding);
+	sys_alarm(3000);
 	do{
-		if(read(fd, buf, sizeof buf) < 0)
+		if(jehanne_read(fd, buf, sizeof buf) < 0)
 			sysfatal("timeout");
 		p = buf;
 	}while(g16(&p) != txid);
-	alarm(0);
+	sys_alarm(0);
 
-	close(fd);
+	sys_close(fd);
 
 	err = g16(&p) & 7;
 	if(err != 0 && err != 7)	/* err==7 is just a "yes, I know" warning */

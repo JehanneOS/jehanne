@@ -173,7 +173,7 @@ __libposix_translate_errstr(uintptr_t caller)
 	char err[ERRMAX];
 	int ret;
 
-	if(errstr(err, ERRMAX) < 0)
+	if(sys_errstr(err, ERRMAX) < 0)
 		return __libposix_get_errno(PosixEINVAL);
 
 	handler = custom_handlers;
@@ -189,6 +189,6 @@ __libposix_translate_errstr(uintptr_t caller)
 	if(perr == 0)
 		perr = libposix_translate_kernel_errors(err);
 	ret = __libposix_get_errno(perr);
-	errstr(err, ERRMAX);
+	sys_errstr(err, ERRMAX);
 	return ret;
 }

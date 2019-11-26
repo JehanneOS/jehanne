@@ -15,23 +15,23 @@ getpasswd(char *p, int len)
 	char c;
 	int i, n, fd;
 
-	fd = open("#c/consctl", OWRITE);
+	fd = sys_open("#c/consctl", OWRITE);
 	if(fd < 0)
 		fatal("can't open consctl; please reboot");
-	write(fd, "rawon", 5);
+	jehanne_write(fd, "rawon", 5);
  Prompt:
 	jehanne_print("password: ");
 	n = 0;
 	for(;;){
 		do{
-			i = read(0, &c, 1);
+			i = jehanne_read(0, &c, 1);
 			if(i < 0)
 				fatal("can't read cons; please reboot");
 		}while(i == 0);
 		switch(c){
 		case '\n':
 			p[n] = '\0';
-			close(fd);
+			sys_close(fd);
 			jehanne_print("\n");
 			return;
 		case '\b':

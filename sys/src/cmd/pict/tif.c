@@ -130,13 +130,13 @@ main(int argc, char *argv[])
 		exits(show(0, "<stdin>", outchan));
 	err = nil;
 	for(i = 0; i < argc; i++) {
-		if((fd = open(argv[i], OREAD)) < 0) {
+		if((fd = sys_open(argv[i], OREAD)) < 0) {
 			fprint(2, "%s: open %s: %r\n",
 				argv0, argv[i]);
 			err = "open";
 		} else {
 			err = show(fd, argv[i], outchan);
-			close(fd);
+			sys_close(fd);
 		}
 		if((nineflag || cflag) && argc > 1 && err == nil) {
 			fprint(2, "%s: exiting after one file\n",
@@ -233,7 +233,7 @@ show(int fd, char *name, int outchan)
 		print("%11s %11d %11d %11d %11d ", buf,
 			c->r.min.x, c->r.min.y,
 			c->r.max.x, c->r.max.y);
-		if(write(1, c->chans[0], c->chanlen) !=
+		if(jehanne_write(1, c->chans[0], c->chanlen) !=
 			c->chanlen) {
 			fprint(2, "%s: %s: write error: %r\n",
 				argv0, name);

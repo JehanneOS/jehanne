@@ -13,5 +13,5 @@
 int
 jehanne_fork(void)
 {
-	return rfork(RFPROC|RFFDG|RFREND);
+	return sys_rfork(RFPROC|RFFDG|RFREND);
 }

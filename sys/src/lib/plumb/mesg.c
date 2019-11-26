@@ -20,7 +20,7 @@ plumbopen(char *name, int omode)
 	char buf[128], err[ERRMAX];
 
 	if(name[0] == '/')
-		return open(name, omode);
+		return sys_open(name, omode);
 
 	/* find elusive plumber */
 	if(access("/mnt/plumb/send", AWRITE) >= 0)
@@ -33,12 +33,12 @@ plumbopen(char *name, int omode)
 		s = getenv("plumbsrv");
 		if(s == nil)
 			return -1;
-		f = open(s, ORDWR);
+		f = sys_open(s, ORDWR);
 		free(s);
 		if(f < 0)
 			return -1;
-		if(mount(f, -1, "/mnt/plumb", MREPL, "", '9') < 0){
-			close(f);
+		if(sys_mount(f, -1, "/mnt/plumb", MREPL, "", '9') < 0){
+			sys_close(f);
 			return -1;
 		}
 		if(access("/mnt/plumb/send", AWRITE) < 0)
@@ -46,7 +46,7 @@ plumbopen(char *name, int omode)
 	}
 
 	snprint(buf, sizeof buf, "%s/%s", plumber, name);
-	fd = open(buf, omode);
+	fd = sys_open(buf, omode);
 	if(fd >= 0)
 		return fd;
 
@@ -55,7 +55,7 @@ plumbopen(char *name, int omode)
 	fd = ocreate(buf, omode, 0600);
 	if(fd >= 0)
 		return fd;
-	errstr(err, sizeof err);
+	sys_errstr(err, sizeof err);
 
 	return -1;
 }
@@ -197,7 +197,7 @@ plumbsend(int fd, Plumbmsg *m)
 	buf = plumbpack(m, &n);
 	if(buf == nil)
 		return -1;
-	n = write(fd, buf, n);
+	n = jehanne_write(fd, buf, n);
 	free(buf);
 	return n;
 }
@@ -429,7 +429,7 @@ plumbrecv(int fd)
 	buf = malloc(8192);
 	if(buf == nil)
 		return nil;
-	n = read(fd, buf, 8192);
+	n = jehanne_read(fd, buf, 8192);
 	m = nil;
 	if(n > 0){
 		m = plumbunpackpartial(buf, n, &more);

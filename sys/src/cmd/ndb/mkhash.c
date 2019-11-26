@@ -32,7 +32,7 @@ syserr(void)
 {
 	static char buf[ERRMAX];
 
-	errstr(buf, sizeof buf);
+	sys_errstr(buf, sizeof buf);
 	return buf;
 }
 
@@ -147,22 +147,22 @@ main(int argc, char **argv)
 	}
 	NDBPUTUL(db->mtime, buf);
 	NDBPUTUL(hlen, buf+NDBULLEN);
-	if(write(fd, buf, NDBHLEN) != NDBHLEN){
+	if(jehanne_write(fd, buf, NDBHLEN) != NDBHLEN){
 		fprint(2, "mkhash: writing %s\n", file);
 		exits(syserr());
 	}
-	if(write(fd, ht, nextchain) != nextchain){
+	if(jehanne_write(fd, ht, nextchain) != nextchain){
 		fprint(2, "mkhash: writing %s\n", file);
 		exits(syserr());
 	}
-	close(fd);
+	sys_close(fd);
 
 	/* make sure file didn't change while we were making the hash */
 	d = dirstat(argv[1]);
 	if(d == nil || d->qid.path != db->qid.path
 	   || d->qid.vers != db->qid.vers){
 		fprint(2, "mkhash: %s changed underfoot\n", argv[1]);
-		remove(file);
+		sys_remove(file);
 		exits("changed");
 	}
 

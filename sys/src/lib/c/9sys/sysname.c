@@ -19,12 +19,12 @@ jehanne_sysname(void)
 	if(b[0])
 		return b;
 
-	f = open("#c/sysname", OREAD);
+	f = sys_open("#c/sysname", OREAD);
 	if(f >= 0) {
-		n = read(f, b, sizeof(b)-1);
+		n = jehanne_read(f, b, sizeof(b)-1);
 		if(n > 0)
 			b[n] = 0;
-		close(f);
+		sys_close(f);
 	}
 	return b;
 }

@@ -118,7 +118,7 @@ copy(char *from, char *to, int todir)
 		return;
 	}
 	mode &= 0777;
-	fdf=open(from, OREAD);
+	fdf=sys_open(from, OREAD);
 	if(fdf<0){
 		fprint(2, "cp: can't open %s: %r\n", from);
 		free(dirb);
@@ -128,7 +128,7 @@ copy(char *from, char *to, int todir)
 	fdt=ocreate(to, OWRITE, mode);
 	if(fdt<0){
 		fprint(2, "cp: can't create %s: %r\n", to);
-		close(fdf);
+		sys_close(fdf);
 		free(dirb);
 		failed = 1;
 		return;
@@ -147,8 +147,8 @@ copy(char *from, char *to, int todir)
 			fprint(2, "cp: warning: can't wstat %s: %r\n", to);
 	}
 	free(dirb);
-	close(fdf);
-	close(fdt);
+	sys_close(fdf);
+	sys_close(fdt);
 }
 
 int
@@ -162,13 +162,13 @@ copy1(int fdf, int fdt, char *from, char *to)
 	buf = malloc(DEFB);
 	/* clear any residual error */
 	err[0] = '\0';
-	errstr(err, ERRMAX);
+	sys_errstr(err, ERRMAX);
 	rv = 0;
 	for(rcount=0;; rcount++) {
-		n = read(fdf, buf, DEFB);
+		n = jehanne_read(fdf, buf, DEFB);
 		if(n <= 0)
 			break;
-		n1 = write(fdt, buf, n);
+		n1 = jehanne_write(fdt, buf, n);
 		if(n1 != n) {
 			fprint(2, "cp: error writing %s: %r\n", to);
 			failed = 1;

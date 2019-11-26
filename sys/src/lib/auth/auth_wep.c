@@ -22,7 +22,7 @@ auth_wep(char *dev, char *fmt, ...)
 		return rv;
 	}
 
-	fd = open("/mnt/factotum/rpc", ORDWR);
+	fd = sys_open("/mnt/factotum/rpc", ORDWR);
 	if(fd < 0)
 		return rv;
 
@@ -44,7 +44,7 @@ auth_wep(char *dev, char *fmt, ...)
 		}
 		auth_freerpc(rpc);
 	}
-	close(fd);
+	sys_close(fd);
 		
 	return rv;
 }

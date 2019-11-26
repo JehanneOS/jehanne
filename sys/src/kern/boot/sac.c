@@ -25,23 +25,23 @@ configsac(Method *mp)
 	/*
 	 *  create the name space, mount the root fs
 	 */
-	if(bind("/", "/", MREPL) < 0)
+	if(sys_bind("/", "/", MREPL) < 0)
 		fatal("bind /");
-	if(bind("#C", "/", MAFTER) < 0)
+	if(sys_bind("#C", "/", MAFTER) < 0)
 		fatal("bind /");
 
 	/* fixed sysname - enables correct namespace file */
-	fd = open("#c/sysname", OWRITE);
+	fd = sys_open("#c/sysname", OWRITE);
 	if(fd < 0)
 		fatal("open sysname");
-	write(fd, "brick", 5);
-	close(fd);
+	jehanne_write(fd, "brick", 5);
+	sys_close(fd);
 
-	fd = open("#c/hostowner", OWRITE);
+	fd = sys_open("#c/hostowner", OWRITE);
 	if(fd < 0)
 		fatal("open sysname");
-	write(fd, "brick", 5);
-	close(fd);
+	jehanne_write(fd, "brick", 5);
+	sys_close(fd);
 
 	jehanne_sprint(cmd, "/arch/%s/init", cputype);
 	jehanne_print("starting %s\n", cmd);

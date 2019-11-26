@@ -19,14 +19,14 @@ openfont(Display *d, char *name)
 	char *buf;
 	Dir *dir;
 
-	fd = open(name, OREAD);
+	fd = sys_open(name, OREAD);
 	if(fd < 0)
 		return 0;
 
 	dir = dirfstat(fd);
 	if(dir == nil){
     Err0:
-		close(fd);
+		sys_close(fd);
 		return 0;
 	}
 	n = dir->length;
@@ -35,8 +35,8 @@ openfont(Display *d, char *name)
 	if(buf == 0)
 		goto Err0;
 	buf[n] = 0;
-	i = read(fd, buf, n);
-	close(fd);
+	i = jehanne_read(fd, buf, n);
+	sys_close(fd);
 	if(i != n){
 		free(buf);
 		return 0;

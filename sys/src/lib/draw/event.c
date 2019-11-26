@@ -167,12 +167,12 @@ estartfn(uint32_t key, int fd, int n, int (*fn)(int, Event*, uint8_t*, int))
 		return 1<<i;
 	}
 	buf[0] = i - MAXSLAVE;
-	while((r = read(fd, buf+1, n))>0)
-		if(write(epipe[1], buf, r+1)!=r+1)
+	while((r = jehanne_read(fd, buf+1, n))>0)
+		if(jehanne_write(epipe[1], buf, r+1)!=r+1)
 			break;
 	buf[0] = MAXSLAVE;
-	write(epipe[1], buf, 1);
-	_exits(0);
+	jehanne_write(epipe[1], buf, 1);
+	sys__exits(0);
 	return 0;
 }
 
@@ -197,10 +197,10 @@ etimer(uint32_t key, int n)
 	t[0] = t[1] = Stimer - MAXSLAVE;
 	do
 		sleep(n);
-	while(write(epipe[1], t, 2) == 2);
+	while(jehanne_write(epipe[1], t, 2) == 2);
 	t[0] = MAXSLAVE;
-	write(epipe[1], t, 1);
-	_exits(0);
+	jehanne_write(epipe[1], t, 1);
+	sys__exits(0);
 	return 0;
 }
 
@@ -217,7 +217,7 @@ ekeyslave(int fd)
 	t[0] = Skeyboard;
 	for(;;){
 		while(!fullrune(k, kn)){
-			kr = read(fd, k+kn, sizeof k - kn);
+			kr = jehanne_read(fd, k+kn, sizeof k - kn);
 			if(kr <= 0)
 				goto breakout;
 			kn += kr;
@@ -227,13 +227,13 @@ ekeyslave(int fd)
 		memmove(k, &k[w], kn);
 		t[1] = r;
 		t[2] = r>>8;
-		if(write(epipe[1], t, 3) != 3)
+		if(jehanne_write(epipe[1], t, 3) != 3)
 			break;
 	}
 breakout:;
 	t[0] = MAXSLAVE;
-	write(epipe[1], t, 1);
-	_exits(0);
+	jehanne_write(epipe[1], t, 1);
+	sys__exits(0);
 }
 
 void
@@ -248,28 +248,28 @@ einit(uint32_t keys)
 	atexit(ekill);
 	atnotify(enote, 1);
 	snprint(buf, sizeof buf, "%s/mouse", display->devdir);
-	mousefd = open(buf, ORDWR|OCEXEC);
+	mousefd = sys_open(buf, ORDWR|OCEXEC);
 	if(mousefd < 0)
 		drawerror(display, "einit: can't open mouse\n");
 	snprint(buf, sizeof buf, "%s/cursor", display->devdir);
-	cursorfd = open(buf, ORDWR|OCEXEC);
+	cursorfd = sys_open(buf, ORDWR|OCEXEC);
 	if(cursorfd < 0)
 		drawerror(display, "einit: can't open cursor\n");
 	if(keys&Ekeyboard){
 		snprint(buf, sizeof buf, "%s/cons", display->devdir);
-		fd = open(buf, OREAD);
+		fd = sys_open(buf, OREAD);
 		if(fd < 0)
 			drawerror(display, "events: can't open console");
 		snprint(buf, sizeof buf, "%s/consctl", display->devdir);
-		ctl = open("/dev/consctl", OWRITE|OCEXEC);
+		ctl = sys_open("/dev/consctl", OWRITE|OCEXEC);
 		if(ctl < 0)
 			drawerror(display, "events: can't open consctl");
-		write(ctl, "rawon", 5);
+		jehanne_write(ctl, "rawon", 5);
 		for(Skeyboard=0; Ekeyboard & ~(1<<Skeyboard); Skeyboard++)
 			;
 		ekeyslave(fd);
 		if (ctl > 0) {
-			close(ctl);
+			sys_close(ctl);
 		}
 	}
 	if(keys&Emouse){
@@ -301,14 +301,14 @@ extract(void)
 		if(display->bufp > display->buf)
 			flushimage(display, 1);
 loop:
-	if((n=read(epipe[0], ebuf, EMAXMSG+1)) < 0
+	if((n=jehanne_read(epipe[0], ebuf, EMAXMSG+1)) < 0
 	|| ebuf[0] >= MAXSLAVE)
 		drawerror(display, "eof on event pipe");
 	if(n == 0)
 		goto loop;
 	i = ebuf[0];
 	if(i >= nslave || n <= 1)
-		drawerror(display, "events: protocol error: short read");
+		drawerror(display, "events: protocol error: short jehanne_read");
 	s = &eslave[i];
 	if(i == Stimer){
 		s->head = (Ebuf *)1;
@@ -353,7 +353,7 @@ eforkslave(uint32_t key)
 			 * share the file descriptors so the last child
 			 * out closes all connections to the window server.
 			 */
-			switch(pid = rfork(RFPROC)){
+			switch(pid = sys_rfork(RFPROC)){
 			case 0:
 				return MAXSLAVE+i;
 			case -1:
@@ -380,15 +380,15 @@ enote(void *v, char *s)
 		for(i=0; i<nslave; i++){
 			if(pid == eslave[i].pid){
 				t[0] = MAXSLAVE;
-				write(epipe[1], t, 1);
+				jehanne_write(epipe[1], t, 1);
 				break;
 			}
 		}
 		return 0;
 	}
-	close(epipe[0]);
+	sys_close(epipe[0]);
 	epipe[0] = -1;
-	close(epipe[1]);
+	sys_close(epipe[1]);
 	epipe[1] = -1;
 	for(i=0; i<nslave; i++){
 		if(pid == eslave[i].pid)
@@ -447,7 +447,7 @@ emoveto(Point pt)
 	int n;
 
 	n = sprint(buf, "m%d %d", pt.x, pt.y);
-	write(mousefd, buf, n);
+	jehanne_write(mousefd, buf, n);
 }
 
 void
@@ -456,12 +456,12 @@ esetcursor(Cursor *c)
 	uint8_t curs[2*4+2*2*16];
 
 	if(c == 0)
-		write(cursorfd, curs, 0);
+		jehanne_write(cursorfd, curs, 0);
 	else{
 		BPLONG(curs+0*4, c->offset.x);
 		BPLONG(curs+1*4, c->offset.y);
 		memmove(curs+2*4, c->clr, 2*2*16);
-		write(cursorfd, curs, sizeof curs);
+		jehanne_write(cursorfd, curs, sizeof curs);
 	}
 }
 
@@ -472,7 +472,7 @@ ereadmouse(Mouse *m)
 	char buf[128];
 
 	do{
-		n = read(mousefd, buf, sizeof(buf));
+		n = jehanne_read(mousefd, buf, sizeof(buf));
 		if(n < 0)	/* probably interrupted */
 			return -1;
 		n = eatomouse(m, buf, n);

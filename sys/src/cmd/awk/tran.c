@@ -121,7 +121,7 @@ void envinit(void)	/* set up ENVIRON variable */
 	Dir	*buf;
 
 	ENVtab = makesymtab(NSYMTAB);
-	if ((fd = open("/env", OREAD)) < 0)
+	if ((fd = sys_open("/env", OREAD)) < 0)
 		return;
 
 	buf = nil;
@@ -142,7 +142,7 @@ void envinit(void)	/* set up ENVIRON variable */
 		buf = nil;
 	}
 
-	close(fd);
+	sys_close(fd);
 }
 
 Array *makesymtab(int n)	/* make a new symbol table */

@@ -102,7 +102,7 @@ inputc(void)
 			terminp = termoutp = termline;
 	}else{
    		do{
-			n = read(0, buf+nbuf, 1);
+			n = jehanne_read(0, buf+nbuf, 1);
 			if(n <= 0)
 				return -1;
 			nbuf += n;

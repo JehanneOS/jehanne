@@ -31,16 +31,16 @@ setup(int argc, char **argv)
 		mtpt = argv[0];
 	}
 
-	fd = open(dns, ORDWR);
+	fd = sys_open(dns, ORDWR);
 	if(fd < 0){
 		if(domount == 0)
 			sysfatal("can't open %s: %r", dns);
-		fd = open(srv, ORDWR);
+		fd = sys_open(srv, ORDWR);
 		if(fd < 0)
 			sysfatal("can't open %s: %r", srv);
-		if(mount(fd, -1, mtpt, MBEFORE, "", '9') < 0)
-			sysfatal("can't mount(%s, %s): %r", srv, mtpt);
-		fd = open(dns, ORDWR);
+		if(sys_mount(fd, -1, mtpt, MBEFORE, "", '9') < 0)
+			sysfatal("can't sys_mount(%s, %s): %r", srv, mtpt);
+		fd = sys_open(dns, ORDWR);
 		if(fd < 0)
 			sysfatal("can't open %s: %r", dns);
 	}
@@ -52,14 +52,14 @@ querydns(int fd, char *line, int n)
 {
 	char buf[1024];
 
-	seek(fd, 0, 0);
-	if(write(fd, line, n) != n) {
+	sys_seek(fd, 0, 0);
+	if(jehanne_write(fd, line, n) != n) {
 		print("!%r\n");
 		return;
 	}
-	seek(fd, 0, 0);
+	sys_seek(fd, 0, 0);
 	buf[0] = '\0';
-	while((n = read(fd, buf, sizeof(buf))) > 0){
+	while((n = jehanne_read(fd, buf, sizeof(buf))) > 0){
 		buf[n] = '\0';
 		print("%s\n", buf);
 	}

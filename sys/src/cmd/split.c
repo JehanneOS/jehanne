@@ -161,7 +161,7 @@ openf(void)
 	Bflush(output);
 	Bterm(output);
 	if(fd > 0)
-		close(fd);
+		sys_close(fd);
 	fd = ocreate(name,OWRITE,0666);
 	if(fd < 0) {
 		fprint(2, "grep: can't create %s: %r\n", name);

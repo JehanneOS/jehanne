@@ -238,7 +238,7 @@ userssave(Fs *fs, Chan *ch)
 		}
 		*p++ = '\n';
 		if(ch == nil)
-			write(2, buf, p - buf);
+			jehanne_write(2, buf, p - buf);
 		else if(chanwrite(ch, buf, p - buf, off) < p - buf)
 			goto err;
 		off += p - buf;

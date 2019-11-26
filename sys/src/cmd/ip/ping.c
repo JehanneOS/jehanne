@@ -87,11 +87,11 @@ catch(void *a, char *msg)
 {
 	USED(a);
 	if(strstr(msg, "alarm"))
-		noted(NCONT);
+		sys_noted(NCONT);
 	else if(strstr(msg, "die"))
 		exits("errors");
 	else
-		noted(NDFLT);
+		sys_noted(NDFLT);
 }
 
 static void
@@ -299,7 +299,7 @@ sender(int fd, int msglen, int interval, int n)
 		last = r;
 		jehanne_unlock(&listlock);
 		r->time = nsec();
-		if(write(fd, buf, msglen) < msglen){
+		if(jehanne_write(fd, buf, msglen) < msglen){
 			fprint(2, "%s: write failed: %r\n", argv0);
 			return;
 		}
@@ -320,9 +320,9 @@ rcvr(int fd, int msglen, int interval, int nmsg)
 
 	sum = 0;
 	while(lostmsgs+rcvdmsgs < nmsg){
-		alarm((nmsg-lostmsgs-rcvdmsgs)*interval+waittime);
-		n = read(fd, buf, sizeof buf);
-		alarm(0);
+		sys_alarm((nmsg-lostmsgs-rcvdmsgs)*interval+waittime);
+		n = jehanne_read(fd, buf, sizeof buf);
+		sys_alarm(0);
 		now = nsec();
 		if(n <= 0){	/* read interrupted - time to go */
 			clean(0, now+MINUTE, nil);
@@ -565,7 +565,7 @@ main(int argc, char **argv)
 	if(argc < 1)
 		usage();
 
-	notify(catch);
+	sys_notify(catch);
 
 	if (!isv4name(argv[0]))
 		proto = &v6pr;
@@ -580,7 +580,7 @@ main(int argc, char **argv)
 		print("sending %d %d byte messages %d ms apart to %s\n",
 			nmsg, msglen, interval, ds);
 
-	switch(rfork(RFPROC|RFMEM|RFFDG)){
+	switch(sys_rfork(RFPROC|RFMEM|RFFDG)){
 	case -1:
 		fprint(2, "%s: can't fork: %r\n", argv0);
 		/* fallthrough */

@@ -214,7 +214,7 @@ fatal(char *fmt, ...)
 	va_end(arg);
 	fprint(2, "format: %s\n", err);
 	if(fflag && file)
-		remove(file);
+		sys_remove(file);
 	exits(err);
 }
 
@@ -279,7 +279,7 @@ main(int argc, char **argv)
 		if(fflag) {
 			if((fd = ocreate(argv[0], ORDWR, 0666)) >= 0) {
 				file = argv[0];
-				close(fd);
+				sys_close(fd);
 				disk = opendisk(argv[0], 0, 0);
 			}
 		}
@@ -296,8 +296,8 @@ main(int argc, char **argv)
 			type = "3½HD";
 			break;
 		case Tfloppy:
-			seek(disk->ctlfd, 0, 0);
-			n = read(disk->ctlfd, buf, 10);
+			sys_seek(disk->ctlfd, 0, 0);
+			n = jehanne_read(disk->ctlfd, buf, 10);
 			if(n <= 0 || n >= 10)
 				fatal("reading floppy type");
 			buf[n] = 0;
@@ -347,8 +347,8 @@ sanitycheck(Disk *disk)
 		return;
 
 	bad = 0;
-	if(dos && nresrv < 2 && seek(disk->fd, disk->secsize, 0) == disk->secsize
-	&& read(disk->fd, buf, sizeof(buf)) >= 5 && strncmp(buf, "part ", 5) == 0) {
+	if(dos && nresrv < 2 && sys_seek(disk->fd, disk->secsize, 0) == disk->secsize
+	&& jehanne_read(disk->fd, buf, sizeof(buf)) >= 5 && strncmp(buf, "part ", 5) == 0) {
 		fprint(2,
 			"there's a plan9 partition on the disk\n"
 			"and you didn't specify -r 2 (or greater).\n"
@@ -381,7 +381,7 @@ getdriveno(Disk *disk)
 	if(disk->type != Tsd)
 		return 0x80;	/* first hard disk */
 
-	if(fd2path(disk->fd, buf, sizeof(buf)) < 0)
+	if(sys_fd2path(disk->fd, buf, sizeof(buf)) < 0)
 		return 0x80;
 
 	/*
@@ -411,7 +411,7 @@ writen(int fd, void *buf, int32_t n)
 		m = n - tot;
 		if(m > 8192)
 			m = 8192;
-		if(write(fd, (uint8_t*)buf+tot, m) != m)
+		if(jehanne_write(fd, (uint8_t*)buf+tot, m) != m)
 			break;
 	}
 	return tot;
@@ -484,10 +484,10 @@ dosfs(int dofat, int dopbs, Disk *disk, char *label, int argc, char *argv[], int
 		if((d = dirfstat(disk->wfd)) == nil)
 			fatal("fstat disk: %r");
 		if(commit && d->length < disk->size) {
-			if(seek(disk->wfd, disk->size-1, 0) < 0)
+			if(sys_seek(disk->wfd, disk->size-1, 0) < 0)
 				fatal("seek to 9: %r");
-			if(write(disk->wfd, "9", 1) < 0)
-				fatal("writing 9: @%lld %r", seek(disk->wfd, 0LL, 1));
+			if(jehanne_write(disk->wfd, "9", 1) < 0)
+				fatal("writing 9: @%lld %r", sys_seek(disk->wfd, 0LL, 1));
 		}
 		free(d);
 	}
@@ -495,9 +495,9 @@ dosfs(int dofat, int dopbs, Disk *disk, char *label, int argc, char *argv[], int
 	/*
 	 * Start with initial sector from disk
 	 */
-	if(seek(disk->fd, 0, 0) < 0)
+	if(sys_seek(disk->fd, 0, 0) < 0)
 		fatal("seek to boot sector: %r\n");
-	if(commit && read(disk->fd, buf, secsize) != secsize)
+	if(commit && jehanne_read(disk->fd, buf, secsize) != secsize)
 		fatal("reading boot sector: %r");
 
 	if(dofat)
@@ -523,15 +523,15 @@ dosfs(int dofat, int dopbs, Disk *disk, char *label, int argc, char *argv[], int
 			fatal("out of memory");
 
 		if(pbs){
-			if((sysfd = open(pbs, OREAD)) < 0)
+			if((sysfd = sys_open(pbs, OREAD)) < 0)
 				fatal("open %s: %r", pbs);
-			if((npbs = read(sysfd, pbsbuf, secsize)) < 0)
+			if((npbs = jehanne_read(sysfd, pbsbuf, secsize)) < 0)
 				fatal("read %s: %r", pbs);
 
 			if(npbs > secsize-2)
 				fatal("boot block too large");
 
-			close(sysfd);
+			sys_close(sysfd);
 		}
 		else {
 			memmove(pbsbuf, bootprog, sizeof(bootprog));
@@ -662,9 +662,9 @@ if(chatty) print("try %d fatbits => %d clusters of %d\n", fatbits, clusters, clu
 	buf[secsize-1] = 0xAA;
 
 	if(commit) {
-		if(seek(disk->wfd, 0, 0) < 0)
+		if(sys_seek(disk->wfd, 0, 0) < 0)
 			fatal("seek to boot sector: %r\n");
-		if(write(disk->wfd, buf, secsize) != secsize)
+		if(jehanne_write(disk->wfd, buf, secsize) != secsize)
 			fatal("writing boot sector: %r");
 	}
 
@@ -679,9 +679,9 @@ if(chatty) print("try %d fatbits => %d clusters of %d\n", fatbits, clusters, clu
 	/*
 	 *  allocate an in memory fat
 	 */
-	if(seek(disk->wfd, nresrv*secsize, 0) < 0)
+	if(sys_seek(disk->wfd, nresrv*secsize, 0) < 0)
 		fatal("seek to fat: %r\n");
-if(chatty) print("fat @%lluX\n", seek(disk->wfd, 0, 1));
+if(chatty) print("fat @%lluX\n", sys_seek(disk->wfd, 0, 1));
 	fat = malloc(fatsecs*secsize);
 	if(fat == 0)
 		fatal("out of memory");
@@ -698,9 +698,9 @@ if(chatty) print("fat @%lluX\n", seek(disk->wfd, 0, 1));
 		fat[7] = 0xff;
 	}
 	fatlast = 1;
-	if(seek(disk->wfd, 2*fatsecs*secsize, 1) < 0)	/* 2 fats */
+	if(sys_seek(disk->wfd, 2*fatsecs*secsize, 1) < 0)	/* 2 fats */
 		fatal("seek to root: %r");
-if(chatty) print("root @%lluX\n", seek(disk->wfd, 0LL, 1));
+if(chatty) print("root @%lluX\n", sys_seek(disk->wfd, 0LL, 1));
 
 	if(fatbits == 32){
 		/*
@@ -723,9 +723,9 @@ if(chatty) print("root @%lluX\n", seek(disk->wfd, 0LL, 1));
 	if(root == 0)
 		fatal("out of memory");
 	memset(root, 0, rootsecs*secsize);
-	if(seek(disk->wfd, rootsecs*secsize, 1) < 0)	/* rootsecs */
+	if(sys_seek(disk->wfd, rootsecs*secsize, 1) < 0)	/* rootsecs */
 		fatal("seek to files: %r");
-if(chatty) print("files @%lluX\n", seek(disk->wfd, 0LL, 1));
+if(chatty) print("files @%lluX\n", sys_seek(disk->wfd, 0LL, 1));
 
 	/*
 	 * Now positioned at the Files Area.
@@ -738,7 +738,7 @@ if(chatty) print("files @%lluX\n", seek(disk->wfd, 0LL, 1));
 		/*
 		 * Open the file and get its length.
 		 */
-		if((sysfd = open(*argv, OREAD)) < 0)
+		if((sysfd = sys_open(*argv, OREAD)) < 0)
 			fatal("open %s: %r", *argv);
 		if((d = dirfstat(sysfd)) == nil)
 			fatal("stat %s: %r", *argv);
@@ -764,12 +764,12 @@ if(chatty) print("files @%lluX\n", seek(disk->wfd, 0LL, 1));
 			if(readn(sysfd, buf, d->length) != d->length)
 				fatal("read %s: %r", *argv);
 			memset(buf+d->length, 0, length-d->length);
-if(chatty) print("%s @%lluX\n", d->name, seek(disk->wfd, 0LL, 1));
+if(chatty) print("%s @%lluX\n", d->name, sys_seek(disk->wfd, 0LL, 1));
 			if(commit && writen(disk->wfd, buf, length) != length)
 				fatal("write %s: %r", *argv);
 			free(buf);
 
-			close(sysfd);
+			sys_close(sysfd);
 
 			/*
 			 * Allocate the FAT clusters.
@@ -812,19 +812,19 @@ fprint(2, "add %s at clust %lux\n", d->name, x);
 			PUTLONG(fi->freeclust, clusters - fatlast);
 			PUTLONG(fi->nextfree, fatlast);
 
-			if(seek(disk->wfd, (nresrv-1)*secsize, 0) < 0)
+			if(sys_seek(disk->wfd, (nresrv-1)*secsize, 0) < 0)
 				fatal("seek to fatinfo: %r\n");
-			if(write(disk->wfd, fi, secsize) < 0)
+			if(jehanne_write(disk->wfd, fi, secsize) < 0)
 				fatal("writing fat #1: %r");
 			free(fi);
 		}
-		if(seek(disk->wfd, nresrv*secsize, 0) < 0)
+		if(sys_seek(disk->wfd, nresrv*secsize, 0) < 0)
 			fatal("seek to fat #1: %r");
-		if(write(disk->wfd, fat, fatsecs*secsize) < 0)
+		if(jehanne_write(disk->wfd, fat, fatsecs*secsize) < 0)
 			fatal("writing fat #1: %r");
-		if(write(disk->wfd, fat, fatsecs*secsize) < 0)
+		if(jehanne_write(disk->wfd, fat, fatsecs*secsize) < 0)
 			fatal("writing fat #2: %r");
-		if(write(disk->wfd, root, rootsecs*secsize) < 0)
+		if(jehanne_write(disk->wfd, root, rootsecs*secsize) < 0)
 			fatal("writing root: %r");
 	}
 

@@ -958,9 +958,9 @@ osc(void)
 				}
 			}
 			buf[i] = 0;
-			if((fd = open("/dev/label", OWRITE)) >= 0) {
+			if((fd = sys_open("/dev/label", OWRITE)) >= 0) {
 				fprint(fd, "%S", buf);
-				close(fd);
+				sys_close(fd);
 			}
 			break;
 		}

@@ -23,8 +23,8 @@ unsigned long
 jehanne_nsec(void)
 {
 	long r;
-	r = remove("/dev/time");
+	r = sys_remove("/dev/time");
 	if(r == -1)
-		r = remove("#c/time");
+		r = sys_remove("#c/time");
 	return r;
 }

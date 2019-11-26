@@ -187,7 +187,7 @@ cope(char *name, int fd, void *buf, int32_t len, Off off)
 	/* pretend we read len bytes of zeroes */
 	memset(buf, 0, len);
 	if (off >= 0)			/* seekable? */
-		seek(fd, off + len, 0);
+		sys_seek(fd, off + len, 0);
 	return len;
 }
 
@@ -197,8 +197,8 @@ eread(char *name, int fd, void *buf, int32_t len)
 	int rd;
 	Off off;
 
-	off = seek(fd, 0, 1);		/* for coping with errors */
-	rd = read(fd, buf, len);
+	off = sys_seek(fd, 0, 1);		/* for coping with errors */
+	rd = jehanne_read(fd, buf, len);
 	if (rd < 0)
 		rd = cope(name, fd, buf, len, off);
 	return rd;
@@ -210,7 +210,7 @@ ereadn(char *name, int fd, void *buf, int32_t len)
 	int rd;
 	Off off;
 
-	off = seek(fd, 0, 1);
+	off = sys_seek(fd, 0, 1);
 	rd = readn(fd, buf, len);
 	if (rd < 0)
 		rd = cope(name, fd, buf, len, off);
@@ -223,7 +223,7 @@ ewrite(char *name, int fd, void *buf, int32_t len)
 	int rd;
 
 	werrstr("");
-	rd = write(fd, buf, len);
+	rd = jehanne_write(fd, buf, len);
 	if (rd != len)
 		sysfatal("error writing %s: %r", name);
 	return rd;
@@ -275,7 +275,7 @@ push(int fd, char *cmd, int input, Pushstate *ps)
 			dup(pifds[Wr], Stdout);
 		else
 			dup(pifds[Rd], Stdin);
-		close(pifds[input? Rd: Wr]);
+		sys_close(pifds[input? Rd: Wr]);
 		dup(fd, (input? Stdin: Stdout));
 		s = s_new();
 		if (cmd[0] != '/')
@@ -285,7 +285,7 @@ push(int fd, char *cmd, int input, Pushstate *ps)
 		sysfatal("can't exec %s: %r", cmd);
 	default:
 		nfd = pifds[input? Rd: Wr];
-		close(pifds[input? Wr: Rd]);
+		sys_close(pifds[input? Wr: Rd]);
 		break;
 	}
 	ps->rfd = nfd;
@@ -300,7 +300,7 @@ pushclose(Pushstate *ps)
 
 	if (ps->fd < 0 || ps->rfd < 0 || !ps->open)
 		return "not open";
-	close(ps->rfd);
+	sys_close(ps->rfd);
 	ps->rfd = -1;
 	ps->open = 0;
 	while ((wm = wait()) != nil && wm->pid != ps->kid)
@@ -335,7 +335,7 @@ refill(int ar, char *bufs, int justhdr)
 	if (done)
 		return nil;
 
-	blkoff = seek(ar, 0, 1);		/* note position for `tar r' */
+	blkoff = sys_seek(ar, 0, 1);		/* note position for `tar r' */
 	if (first)
 		seekable = blkoff >= 0;
 	/* try to size non-pipe input at first read */
@@ -355,7 +355,7 @@ refill(int ar, char *bufs, int justhdr)
 		}
 	} else if (justhdr && seekable && nexthdr - blkoff >= bytes) {
 		/* optimisation for huge archive members on seekable media */
-		if (seek(ar, bytes, 1) < 0)
+		if (sys_seek(ar, bytes, 1) < 0)
 			sysfatal("can't seek on archive %s: %r", arname);
 		n = bytes;
 	} else
@@ -782,7 +782,7 @@ addtreetoar(int ar, char *file, char *shortf, int fd)
 	n = dirreadall(fd, &dirents);
 	if (n < 0)
 		fprint(2, "%s: dirreadall %s: %r\n", argv0, file);
-	close(fd);
+	sys_close(fd);
 	if (n <= 0)
 		return;
 
@@ -832,7 +832,7 @@ addtoar(int ar, char *file, char *shortf)
 
 	if (Debug)
 		fprint(2, "opening %s	# %s\n", shortf, file);
-	fd = open(shortf, OREAD);
+	fd = sys_open(shortf, OREAD);
 	if (fd < 0) {
 		fprint(2, "%s: can't open %s: %r\n", argv0, file);
 		if (name)
@@ -848,7 +848,7 @@ addtoar(int ar, char *file, char *shortf)
 	if (mkhdr(hbp, dir, file) < 0) {
 		putbackblk(ar);
 		free(dir);
-		close(fd);
+		sys_close(fd);
 		if (name)
 			s_free(name);
 		return;
@@ -876,7 +876,7 @@ addtoar(int ar, char *file, char *shortf)
 				memset(hbp->data + n, 0, bytes - n);
 			putblkmany(ar, blksread);
 		}
-		close(fd);
+		sys_close(fd);
 		if (verbose)
 			fprint(2, "%s\n", file);
 	}
@@ -897,7 +897,7 @@ replace(char **argv)
 	if (usefile && docreate)
 		ar = ocreate(usefile, OWRITE, 0666);
 	else if (usefile)
-		ar = open(usefile, ORDWR);
+		ar = sys_open(usefile, ORDWR);
 	else
 		ar = Stdout;
 	if (docreate && docompress) {
@@ -924,7 +924,7 @@ replace(char **argv)
 		 * now seek back over the (big) archive block containing it,
 		 * and back up curblk ptr over end-of-archive Tblock in memory.
 		 */
-		if (seek(ar, blkoff, 0) < 0)
+		if (sys_seek(ar, blkoff, 0) < 0)
 			sysfatal("can't seek back over end-of-archive in %s: %r",
 				arname);
 		curblk--;
@@ -944,7 +944,7 @@ replace(char **argv)
 	if (comp)
 		return pushclose(&ps);
 	if (ar > Stderr)
-		close(ar);
+		sys_close(ar);
 	return nil;
 }
 
@@ -1018,9 +1018,9 @@ makedir(char *s)
 
 	if (access(s, AEXIST) == 0)
 		return -1;
-	f = create(s, OREAD, DMDIR | 0777);
+	f = sys_create(s, OREAD, DMDIR | 0777);
 	if (f >= 0)
-		close(f);
+		sys_close(f);
 	else
 		cantcreate(s, DMDIR);
 	return f;
@@ -1050,9 +1050,9 @@ xaccess(char *name, int mode)
 	int rv;
 
 	err[0] = 0;
-	errstr(err, sizeof err);
+	sys_errstr(err, sizeof err);
 	rv = access(name, mode);
-	errstr(err, sizeof err);
+	sys_errstr(err, sizeof err);
 	return rv;
 }
 
@@ -1203,7 +1203,7 @@ extract1(int ar, Hdr *hp, char *fname)
 		 */
 		if (settime)
 			wrmeta(fd, hp, mtime, mode);
-		close(fd);
+		sys_close(fd);
 	}
 }
 
@@ -1274,7 +1274,7 @@ extract(char **argv)
 	Pushstate ps;
 
 	if (usefile)
-		ar = open(usefile, OREAD);
+		ar = sys_open(usefile, OREAD);
 	else
 		ar = Stdin;
 	comp = compmethod(usefile);
@@ -1296,7 +1296,7 @@ extract(char **argv)
 	if (comp)
 		return pushclose(&ps);
 	if (ar > Stderr)
-		close(ar);
+		sys_close(ar);
 	return nil;
 }
 

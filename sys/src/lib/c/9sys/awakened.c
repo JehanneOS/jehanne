@@ -23,13 +23,13 @@ int
 jehanne_awakened(int64_t wakeup)
 {
 	/* awake returns the ticks of the scheduled wakeup in negative,
-	 * thus a wakeup is in the past iff (-awake(0)) >= (-wakeup)
+	 * thus a wakeup is in the past iff (-sys_awake(0)) >= (-wakeup)
 	 *
-	 * NOTE: this is not a macro so that we can change the awake()
+	 * NOTE: this is not a macro so that we can change the sys_awake()
 	 * implementation in the future, without affecting the client code.
 	 */
 	assert(wakeup < 0);
-	return wakeup >= awake(0);
+	return wakeup >= sys_awake(0);
 }
 
 int
@@ -38,13 +38,13 @@ jehanne_forgivewkp(int64_t wakeup)
 	/* awake returns the ticks of the scheduled wakeup in negative,
 	 * and is able to remove a wakeup provided such value.
 	 *
-	 * jehanne_forgivewkp() is just a wrapper to hide awake()'s details that
+	 * jehanne_forgivewkp() is just a wrapper to hide sys_awake()'s details that
 	 * could change in the future and make client code easier to
 	 * read.
 	 *
-	 * NOTE: this is not a macro so that we can change the awake()
+	 * NOTE: this is not a macro so that we can change the sys_awake()
 	 * implementation in the future, without affecting the client code.
 	 */
 	assert(wakeup < 0);
-	return awake(wakeup);
+	return sys_awake(wakeup);
 }

@@ -39,14 +39,14 @@ getcodes(void)
 		return;
 	}
 
-	if((d = dirstat(codefile)) == nil || (fd = open(codefile, OREAD)) < 0) {
+	if((d = dirstat(codefile)) == nil || (fd = sys_open(codefile, OREAD)) < 0) {
 		qunlock(&codeqlock);
 		return;
 	}
 
 	codes = malloc(1+d->length+1);
 	if(codes == nil) {
-		close(fd);
+		sys_close(fd);
 		qunlock(&codeqlock);
 		free(d);
 		return;
@@ -54,7 +54,7 @@ getcodes(void)
 
 	codes[0] = '\n';	/* for searches */
 	n = readn(fd, codes+1, d->length);
-	close(fd);
+	sys_close(fd);
 	free(d);
 
 	if(n < 0) {
@@ -110,7 +110,7 @@ _scsicmd(Scsi *s, uint8_t *cmd, int ccount, void *data, int dcount, int io, int 
 
 	if(dolock)
 		qlock(&s->ql);
-	if(write(s->rawfd, cmd, ccount) != ccount) {
+	if(jehanne_write(s->rawfd, cmd, ccount) != ccount) {
 		werrstr("cmd write: %r");
 		if(dolock)
 			qunlock(&s->ql);
@@ -119,27 +119,27 @@ _scsicmd(Scsi *s, uint8_t *cmd, int ccount, void *data, int dcount, int io, int 
 
 	switch(io){
 	case Sread:
-		n = read(s->rawfd, data, dcount);
+		n = jehanne_read(s->rawfd, data, dcount);
 		/* read toc errors are frequent and not very interesting */
 		if(n < 0 && (scsiverbose == 1 ||
 		    scsiverbose == 2 && cmd[0] != Readtoc))
 			fprint(2, "dat read: %r: cmd 0x%2.2uX\n", cmd[0]);
 		break;
 	case Swrite:
-		n = write(s->rawfd, data, dcount);
+		n = jehanne_write(s->rawfd, data, dcount);
 		if(n != dcount && scsiverbose)
 			fprint(2, "dat write: %r: cmd 0x%2.2uX\n", cmd[0]);
 		break;
 	default:
 	case Snone:
-		n = write(s->rawfd, resp, 0);
+		n = jehanne_write(s->rawfd, resp, 0);
 		if(n != 0 && scsiverbose)
 			fprint(2, "none write: %r: cmd 0x%2.2uX\n", cmd[0]);
 		break;
 	}
 
 	memset(resp, 0, sizeof(resp));
-	if(read(s->rawfd, resp, sizeof(resp)) < 0) {
+	if(jehanne_read(s->rawfd, resp, sizeof(resp)) < 0) {
 		werrstr("resp read: %r\n");
 		if(dolock)
 			qunlock(&s->ql);
@@ -174,13 +174,13 @@ _scsiready(Scsi *s, int dolock)
 	for(i=0; i<3; i++) {
 		memset(cmd, 0, sizeof(cmd));
 		cmd[0] = 0x00;	/* unit ready */
-		if(write(s->rawfd, cmd, sizeof(cmd)) != sizeof(cmd)) {
+		if(jehanne_write(s->rawfd, cmd, sizeof(cmd)) != sizeof(cmd)) {
 			if(scsiverbose)
 				fprint(2, "ur cmd write: %r\n");
 			goto bad;
 		}
-		write(s->rawfd, resp, 0);
-		if(read(s->rawfd, resp, sizeof(resp)) < 0) {
+		jehanne_write(s->rawfd, resp, 0);
+		if(jehanne_read(s->rawfd, resp, sizeof(resp)) < 0) {
 			if(scsiverbose)
 				fprint(2, "ur resp read: %r\n");
 			goto bad;
@@ -290,22 +290,22 @@ openscsi(char *dev)
 		return nil;
 
 	snprint(name, l, "%s/raw", dev);
-	if((rawfd = open(name, ORDWR)) < 0) {
+	if((rawfd = sys_open(name, ORDWR)) < 0) {
 		free(name);
 		return nil;
 	}
 
 	snprint(name, l, "%s/ctl", dev);
-	if((ctlfd = open(name, ORDWR)) < 0) {
+	if((ctlfd = sys_open(name, ORDWR)) < 0) {
 		free(name);
 	Error:
-		close(rawfd);
+		sys_close(rawfd);
 		return nil;
 	}
 	free(name);
 
 	n = readn(ctlfd, buf, sizeof buf);
-	close(ctlfd);
+	sys_close(ctlfd);
 	if(n <= 0)
 		goto Error;
 
@@ -336,7 +336,7 @@ openscsi(char *dev)
 void
 closescsi(Scsi *s)
 {
-	close(s->rawfd);
+	sys_close(s->rawfd);
 	free(s->inquire);
 	free(s);
 }

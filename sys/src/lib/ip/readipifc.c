@@ -74,14 +74,14 @@ _readipifc(char *file, Ipifc **l, int index)
 	Iplifc *lifc, **ll;
 
 	/* read the file */
-	fd = open(file, OREAD);
+	fd = sys_open(file, OREAD);
 	if(fd < 0)
 		return l;
 	n = 0;
-	while((i = read(fd, buf+n, sizeof(buf)-1-n)) > 0 && n < sizeof(buf) - 1)
+	while((i = jehanne_read(fd, buf+n, sizeof(buf)-1-n)) > 0 && n < sizeof(buf) - 1)
 		n += i;
 	buf[n] = 0;
-	close(fd);
+	sys_close(fd);
 
 	if(strncmp(buf, "device", 6) != 0)
 		return _readoldipifc(buf, l, index);
@@ -189,11 +189,11 @@ readipifc(char *net, Ipifc *ifc, int index)
 		snprint(buf, sizeof(buf), "%s/%d/status", directory, index);
 		_readipifc(buf, l, index);
 	} else {
-		fd = open(directory, OREAD);
+		fd = sys_open(directory, OREAD);
 		if(fd < 0)
 			return nil;
 		n = dirreadall(fd, &dir);
-		close(fd);
+		sys_close(fd);
 
 		for(i = 0; i < n; i++){
 			if(strcmp(dir[i].name, "clone") == 0)

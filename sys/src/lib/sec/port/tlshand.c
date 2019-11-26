@@ -473,20 +473,20 @@ tlsServer(int fd, TLSconn *conn)
 
 	if(conn == nil)
 		return -1;
-	ctl = open("#a/tls/clone", ORDWR);
+	ctl = sys_open("#a/tls/clone", ORDWR);
 	if(ctl < 0)
 		return -1;
-	n = read(ctl, buf, sizeof(buf)-1);
+	n = jehanne_read(ctl, buf, sizeof(buf)-1);
 	if(n < 0){
-		close(ctl);
+		sys_close(ctl);
 		return -1;
 	}
 	buf[n] = 0;
 	jehanne_snprint(conn->dir, sizeof(conn->dir), "#a/tls/%s", buf);
 	jehanne_snprint(dname, sizeof(dname), "#a/tls/%s/hand", buf);
-	hand = open(dname, ORDWR);
+	hand = sys_open(dname, ORDWR);
 	if(hand < 0){
-		close(ctl);
+		sys_close(ctl);
 		return -1;
 	}
 	data = -1;
@@ -497,10 +497,10 @@ tlsServer(int fd, TLSconn *conn)
 		conn->trace, conn->chain);
 	if(tls != nil){
 		jehanne_snprint(dname, sizeof(dname), "#a/tls/%s/data", buf);
-		data = open(dname, ORDWR);
+		data = sys_open(dname, ORDWR);
 	}
-	close(hand);
-	close(ctl);
+	sys_close(hand);
+	sys_close(ctl);
 	if(data < 0){
 		tlsConnectionFree(tls);
 		return -1;
@@ -520,7 +520,7 @@ tlsServer(int fd, TLSconn *conn)
 			tls->sec->crandom, RandomSize,
 			tls->sec->srandom, RandomSize);
 	tlsConnectionFree(tls);
-	close(fd);
+	sys_close(fd);
 	return data;
 }
 
@@ -606,27 +606,27 @@ tlsClient(int fd, TLSconn *conn)
 
 	if(conn == nil)
 		return -1;
-	ctl = open("#a/tls/clone", ORDWR);
+	ctl = sys_open("#a/tls/clone", ORDWR);
 	if(ctl < 0)
 		return -1;
-	n = read(ctl, buf, sizeof(buf)-1);
+	n = jehanne_read(ctl, buf, sizeof(buf)-1);
 	if(n < 0){
-		close(ctl);
+		sys_close(ctl);
 		return -1;
 	}
 	buf[n] = 0;
 	jehanne_snprint(conn->dir, sizeof(conn->dir), "#a/tls/%s", buf);
 	jehanne_snprint(dname, sizeof(dname), "#a/tls/%s/hand", buf);
-	hand = open(dname, ORDWR);
+	hand = sys_open(dname, ORDWR);
 	if(hand < 0){
-		close(ctl);
+		sys_close(ctl);
 		return -1;
 	}
 	jehanne_snprint(dname, sizeof(dname), "#a/tls/%s/data", buf);
-	data = open(dname, ORDWR);
+	data = sys_open(dname, ORDWR);
 	if(data < 0){
-		close(hand);
-		close(ctl);
+		sys_close(hand);
+		sys_close(ctl);
 		return -1;
 	}
 	jehanne_fprint(ctl, "fd %d 0x%x", fd, ProtocolVersion);
@@ -636,10 +636,10 @@ tlsClient(int fd, TLSconn *conn)
 		conn->pskID, conn->psk, conn->psklen,
 		ext, n, conn->trace);
 	jehanne_free(ext);
-	close(hand);
-	close(ctl);
+	sys_close(hand);
+	sys_close(ctl);
 	if(tls == nil){
-		close(data);
+		sys_close(data);
 		return -1;
 	}
 	jehanne_free(conn->cert);
@@ -663,7 +663,7 @@ tlsClient(int fd, TLSconn *conn)
 			tls->sec->crandom, RandomSize,
 			tls->sec->srandom, RandomSize);
 	tlsConnectionFree(tls);
-	close(fd);
+	sys_close(fd);
 	return data;
 }
 
@@ -1432,7 +1432,7 @@ msgSend(TlsConnection *c, Msg *m, int act)
 	c->sendp = p;
 	if(act == AFlush){
 		c->sendp = c->sendbuf;
-		if(write(c->hand, c->sendbuf, p - c->sendbuf) < 0){
+		if(jehanne_write(c->hand, c->sendbuf, p - c->sendbuf) < 0){
 			jehanne_fprint(2, "write error: %r\n");
 			goto Err;
 		}
@@ -1458,7 +1458,7 @@ tlsReadN(TlsConnection *c, int n)
 			c->ep = &c->recvbuf[nn];
 		}
 		for(; nn < n; nn += nr) {
-			nr = read(c->hand, &c->rp[nn], n - nn);
+			nr = jehanne_read(c->hand, &c->rp[nn], n - nn);
 			if(nr <= 0)
 				return nil;
 			c->ep += nr;
@@ -2043,7 +2043,7 @@ tlsError(TlsConnection *c, int err, char *fmt, ...)
 	if(c->erred)
 		jehanne_fprint(2, "double error: %r, %s", msg);
 	else
-		errstr(msg, sizeof(msg));
+		sys_errstr(msg, sizeof(msg));
 	c->erred = 1;
 	jehanne_fprint(c->ctl, "alert %d", err);
 }
@@ -2224,13 +2224,13 @@ initCiphers(void)
 		jehanne_unlock(&ciphLock);
 		return nciphers;
 	}
-	j = open("#a/tls/encalgs", OREAD);
+	j = sys_open("#a/tls/encalgs", OREAD);
 	if(j < 0){
 		jehanne_werrstr("can't open #a/tls/encalgs: %r");
 		goto out;
 	}
-	n = read(j, s, MaxAlgF-1);
-	close(j);
+	n = jehanne_read(j, s, MaxAlgF-1);
+	sys_close(j);
 	if(n <= 0){
 		jehanne_werrstr("nothing in #a/tls/encalgs: %r");
 		goto out;
@@ -2248,13 +2248,13 @@ initCiphers(void)
 		cipherAlgs[i].ok = ok;
 	}
 
-	j = open("#a/tls/hashalgs", OREAD);
+	j = sys_open("#a/tls/hashalgs", OREAD);
 	if(j < 0){
 		jehanne_werrstr("can't open #a/tls/hashalgs: %r");
 		goto out;
 	}
-	n = read(j, s, MaxAlgF-1);
-	close(j);
+	n = jehanne_read(j, s, MaxAlgF-1);
+	sys_close(j);
 	if(n <= 0){
 		jehanne_werrstr("nothing in #a/tls/hashalgs: %r");
 		goto out;
@@ -2307,10 +2307,10 @@ factotum_rsa_open(RSApub *rsapub)
 	AuthRpc *rpc;
 
 	// start talking to factotum
-	if((afd = open("/mnt/factotum/rpc", ORDWR)) < 0)
+	if((afd = sys_open("/mnt/factotum/rpc", ORDWR)) < 0)
 		return nil;
 	if((rpc = auth_allocrpc(afd)) == nil){
-		close(afd);
+		sys_close(afd);
 		return nil;
 	}
 	s = "proto=rsa service=tls role=client";
@@ -2352,7 +2352,7 @@ factotum_rsa_close(AuthRpc *rpc)
 {
 	if(rpc == nil)
 		return;
-	close(rpc->afd);
+	sys_close(rpc->afd);
 	auth_freerpc(rpc);
 }
 

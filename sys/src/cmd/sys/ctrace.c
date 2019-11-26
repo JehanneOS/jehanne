@@ -58,16 +58,16 @@ die(Reader *r)
 	s->pid = r->pid;
 	sendp(quit, s);
 	if(r->tfd >= 0)
-		close(r->tfd);
+		sys_close(r->tfd);
 	if(r->cfd >= 0)
-		close(r->cfd);
+		sys_close(r->cfd);
 	threadexits(nil);
 }
 
 void
 cwrite(Reader *r, char *cmd, int ignore_errors)
 {
-	if (write(r->cfd, cmd, strlen(cmd)) < 0 && !ignore_errors)
+	if (jehanne_write(r->cfd, cmd, strlen(cmd)) < 0 && !ignore_errors)
 		die(r);
 }
 
@@ -85,18 +85,18 @@ reader(void *v)
 
 	r.msg = s = mallocz(sizeof(Msg), 1);
 	snprint(s->buf, sizeof(s->buf), "/proc/%d/ctl", r.pid);
-	if ((r.cfd = open(s->buf, OWRITE)) < 0)
+	if ((r.cfd = sys_open(s->buf, OWRITE)) < 0)
 		die(&r);
 	snprint(s->buf, sizeof(s->buf), "/proc/%d/syscall", r.pid);
-	if ((r.tfd = open(s->buf, OREAD)) < 0)
+	if ((r.tfd = sys_open(s->buf, OREAD)) < 0)
 		die(&r);
 
 StartReading:
 	cwrite(&r, "stop", 0);
 	cwrite(&r, "startsyscall", 0);
 
-	wakeup = awake(750);
-	while((n = pread(r.tfd, s->buf, sizeof(s->buf)-1, 0)) > 0){
+	wakeup = sys_awake(750);
+	while((n = sys_pread(r.tfd, s->buf, sizeof(s->buf)-1, 0)) > 0){
 		forgivewkp(wakeup);
 		if(strstr(s->buf, " rfork ") != nil){
 			rf = strdup(s->buf);
@@ -118,7 +118,7 @@ StartReading:
 
 		r.msg = s = mallocz(sizeof(Msg), 1);
 		cwrite(&r, "startsyscall", 1);
-		wakeup = awake(500);
+		wakeup = sys_awake(500);
 	}
 	if(awakened(wakeup)){
 		rf = smprint("/proc/%d/status", r.pid);
@@ -159,14 +159,14 @@ writer(int lastpid)
 				lastpid = s->pid;
 				if(lastc != '\n'){
 					lastc = '\n';
-					write(output, &lastc, 1);
+					jehanne_write(output, &lastc, 1);
 				}
 				if(s->buf[1] == '=')
 					fprint(output, "%d ...", lastpid);
 			}
 			n = strlen(s->buf);
 			if(n > 0){
-				write(output, s->buf, n);
+				jehanne_write(output, s->buf, n);
 				lastc = s->buf[n-1];
 			}
 			free(s);
@@ -235,10 +235,10 @@ ParseArguments:
 		if (pid < 0)
 			sysfatal("fork failed: %r");
 		if(pid == 0) {
-			write(open(smprint("/proc/%d/ctl", getpid()), OWRITE|OCEXEC), "hang", 4);
-			exec(cmd, args);
+			jehanne_write(sys_open(smprint("/proc/%d/ctl", getpid()), OWRITE|OCEXEC), "hang", 4);
+			sys_exec(cmd, args);
 			if(cmd[0] != '/')
-				exec(smprint("/cmd/%s", cmd), args);
+				sys_exec(smprint("/cmd/%s", cmd), args);
 			sysfatal("exec %s failed: %r", cmd);
 		}
 	} else {

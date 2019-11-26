@@ -47,7 +47,7 @@ typedef struct PCMmap	PCMmap;
 #pragma incomplete BIOS32si
 #pragma incomplete Ureg
 
-#define MAXSYSARG	6	/* for mount(fd, afd, mpt, flag, arg, dc) */
+#define MAXSYSARG	6	/* for sys_mount(fd, afd, mpt, flag, arg, dc) */
 
 /*
  *  parameters for sysproc.c

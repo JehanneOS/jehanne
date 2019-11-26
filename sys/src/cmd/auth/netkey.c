@@ -52,7 +52,7 @@ main(int argc, char *argv[])
 
 	for(;;){
 		print("challenge: ");
-		n = read(0, buf, sizeof buf - 1);
+		n = jehanne_read(0, buf, sizeof buf - 1);
 		if(n <= 0)
 			exits(0);
 		buf[n] = '\0';

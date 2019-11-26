@@ -315,12 +315,12 @@ synbad(char *s1, char *s2)
 {
 	int len;
 
-	write(2, "test: ", 6);
+	jehanne_write(2, "test: ", 6);
 	if ((len = strlen(s1)) != 0)
-		write(2, s1, len);
+		jehanne_write(2, s1, len);
 	if ((len = strlen(s2)) != 0)
-		write(2, s2, len);
-	write(2, "\n", 1);
+		jehanne_write(2, s2, len);
+	jehanne_write(2, "\n", 1);
 	exits("bad syntax");
 }
 

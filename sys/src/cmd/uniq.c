@@ -58,7 +58,7 @@ main(int argc, char *argv[])
 			argv++;
 			continue;
 		}
-		f = open(argv[1], OREAD);
+		f = sys_open(argv[1], OREAD);
 		if(f < 0)
 			sysfatal("cannot open %s", argv[1]);
 		break;

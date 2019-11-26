@@ -154,7 +154,7 @@ main(int argc, char *argv[])
 	char *s;
 	Biobuf bbuf;
 
-	notify(notifyf);	/**/
+	sys_notify(notifyf);	/**/
 	doargs(argc, argv);
 	if(args.vflag)
 		printargs();
@@ -169,7 +169,7 @@ main(int argc, char *argv[])
 			Bterm(&bbuf);
 			continue;
 		}
-		f = open(s, OREAD);
+		f = sys_open(s, OREAD);
 		if(f < 0) {
 			fprint(2, "sort: open %s: %r\n", s);
 			done("open");
@@ -177,7 +177,7 @@ main(int argc, char *argv[])
 		Binit(&bbuf, f, OREAD);
 		dofile(&bbuf);
 		Bterm(&bbuf);
-		close(f);
+		sys_close(f);
 	}
 	if(args.nfile == 0) {
 		Binit(&bbuf, 0, OREAD);
@@ -350,7 +350,7 @@ tempout(void)
 	}
 	args.nline = 0;
 	Bterm(&tb);
-	close(f);
+	sys_close(f);
 }
 
 void
@@ -359,7 +359,7 @@ done(char *xs)
 	int i;
 
 	for(i=0; i<args.ntemp; i++)
-		remove(tempfile(i));
+		sys_remove(tempfile(i));
 	exits(xs);
 }
 
@@ -421,7 +421,7 @@ mergeout(Biobuf *b)
 			mergefiles(i, n, &tb);
 
 			Bterm(&tb);
-			close(f);
+			sys_close(f);
 		} else
 			mergefiles(i, n, b);
 	}
@@ -445,7 +445,7 @@ mergefiles(int t, int n, Biobuf *b)
 	m = mp;
 	for(i=0; i<n; i++,m++) {
 		tf = tempfile(t+i);
-		f = open(tf, OREAD);
+		f = sys_open(tf, OREAD);
 		if(f < 0) {
 			fprint(2, "sort: reopen %s: %r\n", tf);
 			done("open");
@@ -499,7 +499,7 @@ mergefiles(int t, int n, Biobuf *b)
 	m = mp;
 	for(i=0; i<n; i++,m++) {
 		Bterm(&m->b);
-		close(m->fd);
+		sys_close(m->fd);
 	}
 
 	free(mp);
@@ -1462,7 +1462,7 @@ buildkey(Line *l)
 	k->klen = cl;
 
 	if(args.vflag) {
-		if(write(2, l->line, l->llen) != l->llen)
+		if(jehanne_write(2, l->line, l->llen) != l->llen)
 			exits("write");
 		for(i=0; i<k->klen; i++) {
 			fprint(2, " %.2x", k->key[i]);

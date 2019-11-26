@@ -27,7 +27,7 @@ readarg(int fd, char *arg, int len)
 
 	i = 0;
 	memset(arg, 0, len);
-	while(read(fd, buf, 1) == 1){
+	while(jehanne_read(fd, buf, 1) == 1){
 		if(i < len - 1)
 			arg[i++] = *buf;
 		if(*buf == '\0'){

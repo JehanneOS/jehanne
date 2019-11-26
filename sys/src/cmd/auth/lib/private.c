@@ -30,7 +30,7 @@ private(void)
 	char buf[64];
 
 	snprint(buf, sizeof(buf), "#p/%d/ctl", getpid());
-	fd = open(buf, OWRITE);
+	fd = sys_open(buf, OWRITE);
 	if(fd < 0){
 		fprint(2, pmsg, argv0);
 		return;
@@ -39,5 +39,5 @@ private(void)
 		fprint(2, pmsg, argv0);
 	if(fprint(fd, "noswap") < 0)
 		fprint(2, smsg, argv0);
-	close(fd);
+	sys_close(fd);
 }

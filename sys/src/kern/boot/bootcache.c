@@ -22,7 +22,7 @@ cache(int fd)
 
 	*partition = 0;
 
-	bind("#S", "/dev", MAFTER);
+	sys_bind("#S", "/dev", MAFTER);
 	readfile("#e/cfs", buf, sizeof(buf));
 	if(*buf){
 		argc = jehanne_tokenize(buf, argv, 4);
@@ -67,21 +67,21 @@ cache(int fd)
 	case -1:
 		fatal("fork");
 	case 0:
-		close(p[1]);
+		sys_close(p[1]);
 		if(jehanne_dup(fd, 0) != 0)
 			fatal("jehanne_dup(fd, 0)");
-		close(fd);
+		sys_close(fd);
 		if(jehanne_dup(p[0], 1) != 1)
 			fatal("jehanne_dup(p[0], 1)");
-		close(p[0]);
+		sys_close(p[0]);
 		if(fflag)
 			jehanne_execl("/boot/cfs", "bootcfs", "-rs", "-f", partition, 0);
 		else
 			jehanne_execl("/boot/cfs", "bootcfs", "-s", "-f", partition, 0);
 		break;
 	default:
-		close(p[0]);
-		close(fd);
+		sys_close(p[0]);
+		sys_close(fd);
 		fd = p[1];
 		break;
 	}

@@ -7,14 +7,14 @@
 static void
 rforker(void (*fn)(void*), void *arg, int flag)
 {
-	switch(rfork(RFPROC|RFMEM|RFNOWAIT|flag)){
+	switch(sys_rfork(RFPROC|RFMEM|RFNOWAIT|flag)){
 	case -1:
 		sysfatal("rfork: %r");
 	default:
 		return;
 	case 0:
 		fn(arg);
-		_exits(0);
+		sys__exits(0);
 	}
 }
 

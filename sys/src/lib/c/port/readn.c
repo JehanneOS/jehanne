@@ -19,7 +19,7 @@ jehanne_readn(int f, void *av, int32_t n)
 	a = av;
 	t = 0;
 	while(t < n){
-		m = read(f, a+t, n-t);
+		m = jehanne_read(f, a+t, n-t);
 		if(m <= 0){
 			if(t == 0)
 				return m;

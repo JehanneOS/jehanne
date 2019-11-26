@@ -191,10 +191,10 @@ threadmain(int argc, char *argv[])
 	s = getenv(ENV_CPUTYPE);
 	if(s){
 		snprint(buf, sizeof(buf), "/arch/%s/aux/rio", s);
-		bind(buf, "/cmd", MBEFORE);
+		sys_bind(buf, "/cmd", MBEFORE);
 		free(s);
 	}
-	bind("/arch/rc/aux/rio", "/cmd", MBEFORE);
+	sys_bind("/arch/rc/aux/rio", "/cmd", MBEFORE);
 
 	/* check font before barging ahead */
 	if(access(fontname, 0) < 0){
@@ -203,7 +203,7 @@ threadmain(int argc, char *argv[])
 	}
 	putenv("font", fontname);
 
-	snarffd = open("/dev/snarf", OREAD|OCEXEC);
+	snarffd = sys_open("/dev/snarf", OREAD|OCEXEC);
 	gotscreen = access("/dev/screen", AEXIST)==0;
 
 	if(geninitdraw(nil, derror, nil, "rio", nil, Refnone) < 0){
@@ -271,7 +271,7 @@ putsnarf(void)
 
 	if(snarffd<0 || nsnarf==0)
 		return;
-	fd = open("/dev/snarf", OWRITE);
+	fd = sys_open("/dev/snarf", OWRITE);
 	if(fd < 0)
 		return;
 	/* snarf buffer could be huge, so fprint will truncate; do it in blocks */
@@ -282,7 +282,7 @@ putsnarf(void)
 		if(fprint(fd, "%.*S", n, snarf+i) < 0)
 			break;
 	}
-	close(fd);
+	sys_close(fd);
 }
 
 void
@@ -295,14 +295,14 @@ getsnarf(void)
 		return;
 	sn = nil;
 	i = 0;
-	seek(snarffd, 0, 0);
+	sys_seek(snarffd, 0, 0);
 	for(;;){
 		if(i > MAXSNARF)
 			break;
 		if((s = realloc(sn, i+1024+1)) == nil)
 			break;
 		sn = s;
-		if((n = read(snarffd, sn+i, 1024)) <= 0)
+		if((n = jehanne_read(snarffd, sn+i, 1024)) <= 0)
 			break;
 		i += n;
 	}
@@ -320,7 +320,7 @@ initcmd(void *arg)
 	char *cmd;
 
 	cmd = arg;
-	rfork(RFENVG|RFFDG|RFNOTEG|RFNAMEG);
+	sys_rfork(RFENVG|RFFDG|RFNOTEG|RFNAMEG);
 	procexecl(nil, "/cmd/rc", "rc", "-c", cmd, nil);
 	fprint(2, "rio: exec failed: %r\n");
 	exits("exec");
@@ -360,7 +360,7 @@ killprocs(void)
 
 	for(i=0; i<nwindow; i++)
 		if(window[i]->notefd >= 0)
-			write(window[i]->notefd, "hangup", 6);
+			jehanne_write(window[i]->notefd, "hangup", 6);
 }
 
 void
@@ -1257,11 +1257,11 @@ kbdproc(void *arg)
 
 	threadsetname("kbdproc");
 
-	if((fd = open("/dev/cons", OREAD)) < 0){
+	if((fd = sys_open("/dev/cons", OREAD)) < 0){
 		chanprint(c, "%r");
 		return;
 	}
-	if((cfd = open("/dev/consctl", OWRITE)) < 0){
+	if((cfd = sys_open("/dev/consctl", OWRITE)) < 0){
 		chanprint(c, "%r");
 		return;
 	}
@@ -1270,14 +1270,14 @@ kbdproc(void *arg)
 	if(sendp(c, nil) <= 0)
 		return;
 
-	if((kfd = open("/dev/kbd", OREAD)) >= 0){
-		close(fd);
+	if((kfd = sys_open("/dev/kbd", OREAD)) >= 0){
+		sys_close(fd);
 
 		/* only serve a kbd file per window when we got one */
 		servekbd = 1;
 
 		/* read kbd state */
-		while((n = read(kfd, buf, sizeof(buf)-1)) > 0){
+		while((n = jehanne_read(kfd, buf, sizeof(buf)-1)) > 0){
 			e = buf+n;
 			e[-1] = 0;
 			e[0] = 0;
@@ -1291,7 +1291,7 @@ kbdproc(void *arg)
 			Rune r;
 
 			e = buf + sizeof(buf);
-			if((n = read(fd, p, e-p)) <= 0)
+			if((n = jehanne_read(fd, p, e-p)) <= 0)
 				break;
 			e = p + n;
 			while(p < e && fullrune(p, e - p)){

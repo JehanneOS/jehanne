@@ -35,11 +35,11 @@ opencom(char *file)
 {
 	int fd;
 
-	if((fd = open(file, ORDWR)) <= 0)
+	if((fd = sys_open(file, ORDWR)) <= 0)
 		sysfatal("open: %r");
 	dup(fd, 0);
 	dup(fd, 1);
-	close(fd);
+	sys_close(fd);
 }
 void
 main(int argc, char *argv[])
@@ -76,19 +76,19 @@ main(int argc, char *argv[])
 		exits(0);
 	} else {
 		debug("%s %d: mounting cons for %s\n", argv0, getpid(), argv[0]);
-		if(mount(fd, -1, "/dev", MBEFORE, "", devmnt) == -1)
+		if(sys_mount(fd, -1, "/dev", MBEFORE, "", devmnt) == -1)
 			sysfatal("mount (%s): %r", argv[0]);
 
-		debug("%s (%d): all services started, ready to exec(%s)\n", argv0, getpid(), argv[0]);
+		debug("%s (%d): all services started, ready to sys_exec(%s)\n", argv0, getpid(), argv[0]);
 
 		/* become the requested program */
-		rfork(RFNOTEG|RFREND|RFCFDG);
+		sys_rfork(RFNOTEG|RFREND|RFCFDG);
 
-		fd = open("/dev/cons", OREAD);
-		fd = open("/dev/cons", OWRITE);
+		fd = sys_open("/dev/cons", OREAD);
+		fd = sys_open("/dev/cons", OWRITE);
 		if(dup(fd, 2) != 2)
 			sysfatal("bad FDs: %r");
-		exec(argv[1], argv+1);
+		sys_exec(argv[1], argv+1);
 		sysfatal("exec %s: %r", argv[1]);
 	}
 }

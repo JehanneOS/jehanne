@@ -226,14 +226,14 @@ readtimezone(void)
 	int i;
 
 	jehanne_memset(buf, 0, sizeof(buf));
-	i = open("/env/timezone", OREAD);
+	i = sys_open("/env/timezone", OREAD);
 	if(i < 0)
 		goto error;
-	if(read(i, buf, sizeof(buf)) >= sizeof(buf)){
-		close(i);
+	if(jehanne_read(i, buf, sizeof(buf)) >= sizeof(buf)){
+		sys_close(i);
 		goto error;
 	}
-	close(i);
+	sys_close(i);
 	p = buf;
 	if(rd_name(&p, timezone.stname))
 		goto error;

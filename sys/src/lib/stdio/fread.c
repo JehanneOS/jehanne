@@ -29,7 +29,7 @@ int32_t fread(void *p, int32_t recl, int32_t nrec, FILE *f){
 			f->rp+=d;
 		}else{
 			if(n >= BIGN && f->state==RD && !(f->flags&STRING) && f->buf!=f->unbuf){
-				d=read(f->fd, s, n);
+				d=jehanne_read(f->fd, s, n);
 				if(d<=0){
 					f->state=(d==0)?END:ERR;
 					goto ret;

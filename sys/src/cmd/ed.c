@@ -134,7 +134,7 @@ static Rune la;
 static Rune lr;
 
 #undef read
-extern int read(int, void*, int);
+extern int jehanne_read(int, void*, int);
 
 void
 main(int argc, char *argv[])
@@ -144,7 +144,7 @@ main(int argc, char *argv[])
 	chartorune(&la, "a");
 	chartorune(&lr, "r");
 	Binit(&bcons, 0, OREAD);
-	notify(notifyf);
+	sys_notify(notifyf);
 	ARGBEGIN {
 	case 'o':
 		oflag = 1;
@@ -327,7 +327,7 @@ commands(void)
 		case 'r':
 			filename(c);
 		caseread:
-			if((io=open(file, OREAD)) < 0) {
+			if((io=sys_open(file, OREAD)) < 0) {
 				lastc = '\n';
 				error(file);
 			}
@@ -380,8 +380,8 @@ commands(void)
 			}
 			filename(c);
 			if(!wrapp ||
-			  ((io = open(file, OWRITE)) == -1) ||
-			  ((seek(io, 0L, 2)) == -1))
+			  ((io = sys_open(file, OWRITE)) == -1) ||
+			  ((sys_seek(io, 0L, 2)) == -1))
 				if((io = ocreate(file, OWRITE, 0666)) < 0)
 					error(file);
 			Binit(&iobuf, io, OWRITE);
@@ -630,7 +630,7 @@ exfile(int om)
 	if(om == OWRITE)
 		if(Bflush(&iobuf) < 0)
 			error(Q);
-	close(io);
+	sys_close(io);
 	io = -1;
 	if(vflag) {
 		putd();
@@ -647,7 +647,7 @@ error1(char *s)
 	listf = 0;
 	listn = 0;
 	count = 0;
-	seek(0, 0, 2);
+	sys_seek(0, 0, 2);
 	pflag = 0;
 	if(globp)
 		lastc = '\n';
@@ -660,7 +660,7 @@ error1(char *s)
 				break;
 		}
 	if(io > 0) {
-		close(io);
+		sys_close(io);
 		io = -1;
 	}
 	putchr(L'?');
@@ -696,7 +696,7 @@ notifyf(void *a, char *s)
 {
 	if(strcmp(s, "interrupt") == 0){
 		if(rescuing || waiting)
-			noted(NCONT);
+			sys_noted(NCONT);
 		putchr(L'\n');
 		lastc = '\n';
 		error1(Q);
@@ -704,7 +704,7 @@ notifyf(void *a, char *s)
 	}
 	if(strcmp(s, "hangup") == 0){
 		if(rescuing)
-			noted(NDFLT);
+			sys_noted(NDFLT);
 		rescue();
 	}
 	fprint(2, "ed: note: %s\n", s);
@@ -942,7 +942,7 @@ quit(void)
 		fchange = 0;
 		error(Q);
 	}
-	remove(tfname);
+	sys_remove(tfname);
 	exits(0);
 }
 
@@ -1048,7 +1048,7 @@ putline(void)
 void
 blkio(int b, uint8_t *buf, int32_t (*iofcn)(int, void *, int32_t))
 {
-	seek(tfile, b*BLKSIZE, 0);
+	sys_seek(tfile, b*BLKSIZE, 0);
 	if((*iofcn)(tfile, buf, BLKSIZE) != BLKSIZE) {
 		error(T);
 	}
@@ -1057,7 +1057,7 @@ blkio(int b, uint8_t *buf, int32_t (*iofcn)(int, void *, int32_t))
 static int32_t
 writewrap(int a, void *b, int32_t c)
 {
-	return write(a, (const void *)b, c);
+	return jehanne_write(a, (const void *)b, c);
 }
 
 Rune*
@@ -1087,7 +1087,7 @@ getblock(int atl, int iof)
 			blkio(iblock, ibuff, writewrap);
 		ichanged = 0;
 		iblock = bno;
-		blkio(bno, ibuff, read);
+		blkio(bno, ibuff, jehanne_read);
 		return (Rune*)(ibuff+off);
 	}
 	if(oblock >= 0)
@@ -1101,7 +1101,7 @@ init(void)
 {
 	int *markp;
 
-	close(tfile);
+	sys_close(tfile);
 	tline = 2;
 	for(markp = names; markp < &names[26]; )
 		*markp++ = 0;
@@ -1569,7 +1569,7 @@ putchr(int ac)
 
 	if(c == '\n' || lp >= &line[sizeof(line)-5]) {
 		linp = line;
-		write(oflag? 2: 1, line, lp-line);
+		jehanne_write(oflag? 2: 1, line, lp-line);
 		return;
 	}
 	linp = lp;

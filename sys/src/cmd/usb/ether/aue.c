@@ -190,7 +190,7 @@ auereceive(Dev *ep)
 	int n;
 
 	b = allocb(Maxpkt+4);
-	if((n = read(ep->dfd, b->wp, b->lim - b->base)) < 0){
+	if((n = jehanne_read(ep->dfd, b->wp, b->lim - b->base)) < 0){
 		freeb(b);
 		return -1;
 	}
@@ -218,7 +218,7 @@ auetransmit(Dev *ep, Block *b)
 	n = BLEN(b);
 	b->rp -= 2;
 	PUT2(b->rp, n);
-	write(ep->dfd, b->rp, BLEN(b));
+	jehanne_write(ep->dfd, b->rp, BLEN(b));
 	freeb(b);
 }
 

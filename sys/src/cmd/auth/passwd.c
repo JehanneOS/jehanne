@@ -71,7 +71,7 @@ main(int argc, char **argv)
 	if(_asgetpakkey(fd, &tr, &key) < 0){
 Retry:
 		try++;
-		close(fd);
+		sys_close(fd);
 		fd = authdial(nil, s);
 		if(fd < 0)
 			error("authdial: %r");
@@ -121,13 +121,13 @@ Retry:
 		}
 		pr.num = AuthPass;
 		n = convPR2M(&pr, buf, sizeof(buf), &t);
-		if(write(fd, buf, n) != n)
+		if(jehanne_write(fd, buf, n) != n)
 			error("AS protocol botch: %r");
 		if(_asrdresp(fd, buf, 0) == 0)
 			break;
 		fprint(2, "passwd: refused: %r\n");
 	}
-	close(fd);
+	sys_close(fd);
 
 	exits(0);
 }

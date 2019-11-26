@@ -60,21 +60,21 @@ main(int argc, char **argv)
 		exits("usage");
 	}
 
-	switch(rfork(RFREND|RFNOTEG|RFFDG|RFPROC|RFNAMEG)){
+	switch(sys_rfork(RFREND|RFNOTEG|RFFDG|RFPROC|RFNAMEG)){
 	case 0:
-		close(0);
-		close(1);
+		sys_close(0);
+		sys_close(1);
 		break;
 	case -1:
 		abort(); /* "fork failed\n" */;
 	default:
-		_exits(0);
+		sys__exits(0);
 	}
 
 	for(i = 0; i < argc; i++)
 		hogrange(argv[i]);
 
-	close(2);
+	sys_close(2);
 	for(;;)
 		sleep(10000);
 }

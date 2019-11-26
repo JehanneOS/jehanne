@@ -818,7 +818,7 @@ xfidread(Xfid *x)
 		}
 		if(n < 0){
 			buf[0] = 0;
-			errstr(buf, sizeof buf);
+			sys_errstr(buf, sizeof buf);
 			filsysrespond(x->fs, x, &fc, buf);
 		}else{
 			fc.count = n;

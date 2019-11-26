@@ -51,6 +51,6 @@ main(int argc, char **argv)
 		mpsignif(key->pub.n), key->pub.ek, key->pub.n);
 	if(s == nil)
 		sysfatal("smprint: %r");
-	write(1, s, strlen(s));
+	jehanne_write(1, s, strlen(s));
 	exits(nil);
 }

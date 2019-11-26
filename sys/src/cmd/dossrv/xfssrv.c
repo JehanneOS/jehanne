@@ -100,27 +100,27 @@ main(int argc, char **argv)
 		pipefd[0] = 0;
 		pipefd[1] = 1;
 	}else{
-		close(0);
-		close(1);
-		open("/dev/null", OREAD);
-		open("/dev/null", OWRITE);
+		sys_close(0);
+		sys_close(1);
+		sys_open("/dev/null", OREAD);
+		sys_open("/dev/null", OWRITE);
 		if(jehanne_pipe(pipefd) < 0)
 			panic("pipe");
 		srvfd = jehanne_ocreate(srvfile, OWRITE|ORCLOSE, 0600);
 		if(srvfd < 0)
 			panic(srvfile);
 		jehanne_fprint(srvfd, "%d", pipefd[0]);
-		close(pipefd[0]);
+		sys_close(pipefd[0]);
 		jehanne_atexit(rmservice);
 		jehanne_fprint(2, "%s: serving %s\n", argv0, srvfile);
 	}
 	srvfd = pipefd[1];
 
-	switch(rfork(RFNOWAIT|RFNOTEG|RFFDG|RFPROC|RFNAMEG)){
+	switch(sys_rfork(RFNOWAIT|RFNOTEG|RFFDG|RFPROC|RFNAMEG)){
 	case -1:
 		panic("fork");
 	default:
-		_exits(0);
+		sys__exits(0);
 	case 0:
 		break;
 	}
@@ -128,8 +128,8 @@ main(int argc, char **argv)
 	iotrack_init();
 
 	if(!chatty){
-		close(2);
-		open("#c/cons", OWRITE);
+		sys_close(2);
+		sys_open("#c/cons", OWRITE);
 	}
 
 	io(srvfd);
@@ -182,7 +182,7 @@ io(int srvfd)
 		n = convS2M(rep, mdata, sizeof mdata);
 		if(n == 0)
 			panic("convS2M error on write");
-		if(write(srvfd, mdata, n) != n)
+		if(jehanne_write(srvfd, mdata, n) != n)
 			panic("mount write");
 	}
 	chat("server shut down");
@@ -191,7 +191,7 @@ io(int srvfd)
 void
 rmservice(void)
 {
-	remove(srvfile);
+	sys_remove(srvfile);
 }
 
 char *
@@ -200,7 +200,7 @@ xerrstr(int e)
 	if (e < 0 || e >= sizeof errmsg/sizeof errmsg[0])
 		return "no such error";
 	if(e == Eerrstr){
-		errstr(errbuf, sizeof errbuf);
+		sys_errstr(errbuf, sizeof errbuf);
 		return errbuf;
 	}
 	return errmsg[e];

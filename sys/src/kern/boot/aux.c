@@ -15,7 +15,7 @@ sendmsg(int fd, char *msg)
 	int n;
 
 	n = jehanne_strlen(msg);
-	if(write(fd, msg, n) != n)
+	if(jehanne_write(fd, msg, n) != n)
 		return -1;
 	return 0;
 }
@@ -26,7 +26,7 @@ savelogsproc(void)
 	int in, out, r, w;
 	char buf[1024];
 
-	out = open("/sys/log/kernel", OWRITE);
+	out = sys_open("/sys/log/kernel", OWRITE);
 	if(out < 0){
 		out = jehanne_ocreate("/sys/log/kernel", OWRITE, 0600);
 		if(out < 0){
@@ -35,29 +35,29 @@ savelogsproc(void)
 		}
 	}
 
-	in = open("/dev/kmesg", OREAD);
-	while((r = read(in, buf, sizeof buf)) > 0){
-		w = write(out, buf, r);
+	in = sys_open("/dev/kmesg", OREAD);
+	while((r = jehanne_read(in, buf, sizeof buf)) > 0){
+		w = jehanne_write(out, buf, r);
 		if(w <= 0){
 			jehanne_fprint(2, "savelogs: error writing logs: %r\n");
 			return;
 		}
 	}
-	close(in);
+	sys_close(in);
 
-	in = open("/dev/kprint", OREAD);
-	while((r = read(in, buf, sizeof buf)) > 0){
-		w = write(out, buf, r);
+	in = sys_open("/dev/kprint", OREAD);
+	while((r = jehanne_read(in, buf, sizeof buf)) > 0){
+		w = jehanne_write(out, buf, r);
 		if(w <= 0){
 			jehanne_fprint(2, "savelogs: error writing logs: %r\n");
 			return;
 		}
 	}
-	close(in);
+	sys_close(in);
 
 	jehanne_fprint(2, "savelogs: /dev/kprint closed: %r\n");
 
-	close(out);
+	sys_close(out);
 }
 
 void
@@ -68,7 +68,7 @@ savelogs(void)
 		return;
 	}
 
-	switch(rfork(RFPROC|RFNOWAIT|RFNOTEG|RFREND|RFFDG)){
+	switch(sys_rfork(RFPROC|RFNOWAIT|RFNOTEG|RFREND|RFFDG)){
 	case -1:
 		jehanne_print("boot: savelogs: fork failed: %r\n");
 	case 0:
@@ -84,7 +84,7 @@ warning(char *s)
 	char buf[ERRMAX];
 
 	buf[0] = '\0';
-	errstr(buf, sizeof buf);
+	sys_errstr(buf, sizeof buf);
 	jehanne_fprint(2, "boot: %s: %s\n", s, buf);
 }
 
@@ -94,7 +94,7 @@ fatal(char *s)
 	char buf[ERRMAX];
 
 	buf[0] = '\0';
-	errstr(buf, sizeof buf);
+	sys_errstr(buf, sizeof buf);
 	jehanne_fprint(2, "boot: %s: %s\n", s, buf);
 	jehanne_exits(0);
 }
@@ -105,15 +105,15 @@ readfile(char *name, char *buf, int len)
 	int f, n;
 
 	buf[0] = 0;
-	f = open(name, OREAD);
+	f = sys_open(name, OREAD);
 	if(f < 0){
 		jehanne_fprint(2, "readfile: cannot open %s (%r)\n", name);
 		return -1;
 	}
-	n = read(f, buf, len-1);
+	n = jehanne_read(f, buf, len-1);
 	if(n >= 0)
 		buf[n] = 0;
-	close(f);
+	sys_close(f);
 	return 0;
 }
 
@@ -122,11 +122,11 @@ writefile(char *name, char *buf, int len)
 {
 	int f, n;
 
-	f = open(name, OWRITE);
+	f = sys_open(name, OWRITE);
 	if(f < 0)
 		return -1;
-	n = write(f, buf, len);
-	close(f);
+	n = jehanne_write(f, buf, len);
+	sys_close(f);
 	return (n != len) ? -1 : 0;
 }
 
@@ -142,8 +142,8 @@ setenv(char *name, char *val)
 		jehanne_fprint(2, "create %s: %r\n", ename);
 		return;
 	}
-	write(f, val, jehanne_strlen(val));
-	close(f);
+	jehanne_write(f, val, jehanne_strlen(val));
+	sys_close(f);
 }
 
 void
@@ -164,9 +164,9 @@ srvcreate(char *name, int fd)
 	if(f < 0)
 		fatal(buf);
 	jehanne_sprint(buf, "%d", fd);
-	if(write(f, buf, jehanne_strlen(buf)) != jehanne_strlen(buf))
+	if(jehanne_write(f, buf, jehanne_strlen(buf)) != jehanne_strlen(buf))
 		fatal("write");
-	close(f);
+	sys_close(f);
 }
 
 void
@@ -174,8 +174,8 @@ catchint(void *a, char *note)
 {
 	USED(a);
 	if(jehanne_strcmp(note, "alarm") == 0)
-		noted(NCONT);
-	noted(NDFLT);
+		sys_noted(NCONT);
+	sys_noted(NDFLT);
 }
 
 int
@@ -188,16 +188,16 @@ outin(char *prompt, char *def, int len)
 		len = sizeof(buf)-1;
 
 	if(cpuflag){
-		notify(catchint);
-		alarm(15*1000);
+		sys_notify(catchint);
+		sys_alarm(15*1000);
 	}
 	jehanne_print("%s[%s]: ", prompt, *def ? def : "no default");
 	jehanne_memset(buf, 0, sizeof buf);
-	n = read(0, buf, len);
+	n = jehanne_read(0, buf, len);
 
 	if(cpuflag){
-		alarm(0);
-		notify(0);
+		sys_alarm(0);
+		sys_notify(0);
 	}
 
 	if(n < 0){
@@ -222,7 +222,7 @@ void shell(char *c, char *d)
 	case -1:
 		jehanne_print("configrc: fork failed: %r\n");
 	case 0:
-		exec(rcPath, (const char**)argv);
+		sys_exec(rcPath, (const char**)argv);
 		fatal("can't exec rc");
 	default:
 		break;

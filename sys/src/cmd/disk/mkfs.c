@@ -181,7 +181,7 @@ copy(Dir *d)
 	int64_t tot, len;
 	Dir nd;
 
-	f = open(oldfile, OREAD);
+	f = sys_open(oldfile, OREAD);
 	if(f < 0){
 		warn("can't open %q: %r", oldfile);
 		return;
@@ -198,7 +198,7 @@ copy(Dir *d)
 		t = ocreate(cptmp, OWRITE, 0666);
 		if(t < 0){
 			warn("can't create %q: %r", newfile);
-			close(f);
+			sys_close(f);
 			return;
 		}
 	}
@@ -209,7 +209,7 @@ copy(Dir *d)
 		/* don't read beyond d->length */
 		if (len > buflen)
 			len = buflen;
-		n = read(f, buf, len);
+		n = jehanne_read(f, buf, len);
 		if(n <= 0) {
 			if(n < 0 && nowarnyet) {
 				warn("can't read %q: %r", oldfile);
@@ -226,18 +226,18 @@ copy(Dir *d)
 			if(Bwrite(&bout, buf, n) != n)
 				error("write error: %r");
 		}else if(memcmp(buf, zbuf, n) == 0){
-			if(seek(t, n, 1) < 0)
+			if(sys_seek(t, n, 1) < 0)
 				error("can't write zeros to %q: %r", newfile);
 			needwrite = 1;
 		}else{
-			if(write(t, buf, n) < n)
+			if(jehanne_write(t, buf, n) < n)
 				error("can't write %q: %r", newfile);
 			needwrite = 0;
 		}
 	}
-	close(f);
+	sys_close(f);
 	if(needwrite){
-		if(seek(t, -1, 1) < 0 || write(t, zbuf, 1) != 1)
+		if(sys_seek(t, -1, 1) < 0 || jehanne_write(t, zbuf, 1) != 1)
 			error("can't write zero at end of %q: %r", newfile);
 	}
 	if(tot != d->length){
@@ -252,7 +252,7 @@ copy(Dir *d)
 	}
 	if(fskind == Archive)
 		return;
-	remove(newfile);
+	sys_remove(newfile);
 	nulldir(&nd);
 	nd.mode = d->mode;
 	nd.gid = d->gid;
@@ -263,7 +263,7 @@ copy(Dir *d)
 	nulldir(&nd);
 	nd.uid = d->uid;
 	dirfwstat(t, &nd);
-	close(t);
+	sys_close(t);
 }
 
 void
@@ -300,7 +300,7 @@ mkdir(Dir *d)
 	nulldir(&nd);
 	nd.uid = d->uid;
 	dirfwstat(fd, &nd);
-	close(fd);
+	sys_close(fd);
 }
 
 void

@@ -20,6 +20,6 @@ jehanne_exits(const char *s)
 	if(_jehanne_onexit != nil)
 		(*_jehanne_onexit)();
 	_fini();
-	_exits(s);
+	sys__exits(s);
 	__builtin_unreachable();
 }

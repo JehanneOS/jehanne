@@ -94,7 +94,7 @@ SC_read(SConn *conn, uint8_t *buf, int n)
 	uint8_t count[2], digest[SHA1dlen];
 	int len, nr;
 
-	if(read(ss->fd, count, 2) != 2 || (count[0]&0x80) == 0){
+	if(jehanne_read(ss->fd, count, 2) != 2 || (count[0]&0x80) == 0){
 		snprint((char*)buf,n,"!SC_read invalid count");
 		return -1;
 	}
@@ -145,7 +145,7 @@ SC_write(SConn *conn, uint8_t *buf, int n)
 		len += SHA1dlen;
 	count[0] = 0x80 | len>>8;
 	count[1] = len;
-	if(write(ss->fd, count, 2) != 2){
+	if(jehanne_write(ss->fd, count, 2) != 2){
 		werrstr("!SC_write invalid count");
 		return -1;
 	}
@@ -154,13 +154,13 @@ SC_write(SConn *conn, uint8_t *buf, int n)
 		rc4(&ss->out.rc4, digest, SHA1dlen);
 		memcpy(enc, buf, n);
 		rc4(&ss->out.rc4, enc, n);
-		if(write(ss->fd, digest, SHA1dlen) != SHA1dlen ||
+		if(jehanne_write(ss->fd, digest, SHA1dlen) != SHA1dlen ||
 				write(ss->fd, enc, n) != n){
 			werrstr("!SC_write error on send");
 			return -1;
 		}
 	}else{
-		if(write(ss->fd, buf, n) != n){
+		if(jehanne_write(ss->fd, buf, n) != n){
 			werrstr("!SC_write error on send");
 			return -1;
 		}

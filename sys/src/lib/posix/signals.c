@@ -99,7 +99,7 @@
  *
  * TIMERS
  * ------
- * The functions alarm() and setitimer() generate SIGALRM, SIGPROF
+ * The functions sys_alarm() and setitimer() generate SIGALRM, SIGPROF
  * or SIGVTALRM for the current process. We want timers to be able to
  * expire in a signal handler (interrupting a blocking syscall) but
  * without giving up the simplicity of notes.
@@ -190,19 +190,19 @@ __libposix_send_control_msg(int pid, char *msg)
 	n = snprint(buf, sizeof(buf), "/proc/%d/ctl", pid);
 	if(n < 0)
 		goto ErrorBeforeOpen;
-	fd = open(buf, OWRITE);
+	fd = sys_open(buf, OWRITE);
 	if(fd < 0)
 		goto ErrorBeforeOpen;
 	n = snprint(buf, sizeof(buf), "%s", msg);
 	if(n < 0)
 		goto ErrorAfterOpen;
-	if(write(fd, buf, n) < n)
+	if(jehanne_write(fd, buf, n) < n)
 		goto ErrorAfterOpen;
-	close(fd);
+	sys_close(fd);
 	return 1;
 
 ErrorAfterOpen:
-	close(fd);
+	sys_close(fd);
 ErrorBeforeOpen:
 	return 0;
 }
@@ -362,7 +362,7 @@ __libposix_sighelper_signal(PosixHelperCommand command, int posix_process_pid, P
 
 	memcpy(buf, siginfo, sizeof(buf));
 
-	return pwrite(*__libposix_devsignal, buf, sizeof(buf), offset.raw);
+	return sys_pwrite(*__libposix_devsignal, buf, sizeof(buf), offset.raw);
 }
 
 long
@@ -382,7 +382,7 @@ __libposix_sighelper_set(PosixHelperCommand command, PosixSignalMask signal_set)
 
 	buffer.mask = signal_set;
 
-	return pwrite(*__libposix_devsignal, buffer.raw, sizeof(buffer.raw), offset.raw);
+	return sys_pwrite(*__libposix_devsignal, buffer.raw, sizeof(buffer.raw), offset.raw);
 }
 
 PosixError

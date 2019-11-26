@@ -52,7 +52,7 @@ unloadimage(Image *i, Rectangle r, uint8_t *data, int ndata)
 		BPLONG(a+17, r.min.y+dy);
 		if(flushimage(d, 0) < 0)
 			return -1;
-		n = read(d->fd, data+ntot, ndata-ntot);
+		n = jehanne_read(d->fd, data+ntot, ndata-ntot);
 		if(n < 0)
 			return n;
 		ntot += n;

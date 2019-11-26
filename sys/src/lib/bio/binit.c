@@ -130,7 +130,7 @@ Bopen(char *name, int mode)
 		fprint(2, "Bopen: unknown mode %#x\n", mode);
 		return 0;
 	case OREAD:
-		f = open(name, mode);
+		f = sys_open(name, mode);
 		break;
 	case OWRITE:
 		f = ocreate(name, mode, 0666);
@@ -153,7 +153,7 @@ Bterm(Biobufhdr *bp)
 	r = Bflush(bp);
 	if(bp->flag == Bmagic) {
 		bp->flag = 0;
-		close(bp->fid);
+		sys_close(bp->fid);
 		bp->fid = -1;			/* prevent accidents */
 		free(bp);
 	}

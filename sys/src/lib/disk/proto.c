@@ -183,7 +183,7 @@ mktree(Mkaux *mkaux, File *me, int rec)
 	Dir *d;
 	int i, n, fd;
 
-	fd = open(mkaux->oldfile.s, OREAD);
+	fd = sys_open(mkaux->oldfile.s, OREAD);
 	if(fd < 0){
 		warn(mkaux, "can't open %s: %r", mkaux->oldfile.s);
 		return;
@@ -211,7 +211,7 @@ mktree(Mkaux *mkaux, File *me, int rec)
 		}
 		free(d);
 	}
-	close(fd);
+	sys_close(fd);
 }
 
 static int

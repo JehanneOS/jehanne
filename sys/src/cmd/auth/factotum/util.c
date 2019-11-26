@@ -23,13 +23,13 @@ bindnetcs(void)
 	int srvfd;
 
 	if(access("/net/tcp", AEXIST) < 0)
-		bind("#I", "/net", MBEFORE);
+		sys_bind("#I", "/net", MBEFORE);
 
 	if(access("/net/cs", AEXIST) < 0){
-		if((srvfd = open("#s/cs", ORDWR)) >= 0){
-			if(mount(srvfd, -1, "/net", MBEFORE, "", '9') >= 0)
+		if((srvfd = sys_open("#s/cs", ORDWR)) >= 0){
+			if(sys_mount(srvfd, -1, "/net", MBEFORE, "", '9') >= 0)
 				return 0;
-			close(srvfd);
+			sys_close(srvfd);
 		}
 		return -1;
 	}
@@ -44,7 +44,7 @@ netndbauthaddr(void)
 	char *b, *p, *e;
 	int fd, n, m, i;
 
-	if((fd = open("/net/ndb", OREAD)) < 0)
+	if((fd = sys_open("/net/ndb", OREAD)) < 0)
 		return;
 	m = 0;
 	b = nil;
@@ -52,11 +52,11 @@ netndbauthaddr(void)
 		if((p = realloc(b, m+CHUNK+1)) == nil)
 			break;
 		b = p;
-		if((n = read(fd, b+m, CHUNK)) <= 0)
+		if((n = jehanne_read(fd, b+m, CHUNK)) <= 0)
 			break;
 		m += n;
 	}
-	close(fd);
+	sys_close(fd);
 	if(b == nil)
 		return;
 	b[m] = '\0';
@@ -90,7 +90,7 @@ _authdial(char *authdom)
 {
 	int i, fd;
 
-	alarm(30*1000);
+	sys_alarm(30*1000);
 	if(bindnetcs()>=0)
 		fd = authdial(nil, authdom);
 	else {
@@ -115,7 +115,7 @@ _authdial(char *authdom)
 				fd = dial(netmkaddr(authaddr[i], "il", "566"), 0, 0, 0);
 		}
 	}
-	alarm(0);
+	sys_alarm(0);
 	return fd;
 }
 
@@ -127,20 +127,20 @@ _authreq(Ticketreq *tr, Authkey *k)
 	fd = _authdial(tr->authdom);
 	if(fd < 0)
 		return -1;
-	alarm(30*1000);
+	sys_alarm(30*1000);
 	if(tsmemcmp(k->aes, zeros, AESKEYLEN) != 0){
 		if(_asgetpakkey(fd, tr, k) < 0){
-			alarm(0);
-			close(fd);
+			sys_alarm(0);
+			sys_close(fd);
 			return -1;
 		}
 	}
 	if(_asrequest(fd, tr) < 0){
-		alarm(0);
-		close(fd);
+		sys_alarm(0);
+		sys_close(fd);
 		return -1;
 	}
-	alarm(0);
+	sys_alarm(0);
 	return fd;
 }
 
@@ -155,7 +155,7 @@ promptforkey(char *params)
 	Attr *a, *attr;
 	char *def;
 
-	fd = open("/dev/cons", ORDWR);
+	fd = sys_open("/dev/cons", ORDWR);
 	if(fd < 0)
 		sysfatal("opening /dev/cons: %r");
 
@@ -191,7 +191,7 @@ promptforkey(char *params)
 		a->type = AttrNameval;
 	}
 	fprint(fd, "!\n");
-	close(fd);
+	sys_close(fd);
 	return attr;
 }
 
@@ -204,12 +204,12 @@ sendkey(Attr *attr)
 	int fd, rv;
 	char buf[1024];
 
-	fd = open("/mnt/factotum/ctl", ORDWR);
+	fd = sys_open("/mnt/factotum/ctl", ORDWR);
 	if(fd < 0)
 		sysfatal("opening /mnt/factotum/ctl: %r");
 	rv = fprint(fd, "key %A\n", attr);
-	read(fd, buf, sizeof buf);
-	close(fd);
+	jehanne_read(fd, buf, sizeof buf);
+	sys_close(fd);
 	return rv;
 }
 
@@ -329,7 +329,7 @@ failure(Fsstate *s, char *fmt, ...)
 		vsnprint(e, sizeof e, fmt, arg);
 		va_end(arg);
 		strecpy(s->err, s->err+sizeof(s->err), e);
-		errstr(e, sizeof e);
+		sys_errstr(e, sizeof e);
 	}
 	flog("%d: failure %s", s->seqnum, s->err);
 	return RpcFailure;
@@ -630,7 +630,7 @@ static int caphashfd;
 void
 initcap(void)
 {
-	caphashfd = open("#¤/caphash", OWRITE);
+	caphashfd = sys_open("#¤/caphash", OWRITE);
 //	if(caphashfd < 0)
 //		fprint(2, "%s: opening #¤/caphash: %r\n", argv0);
 }
@@ -664,7 +664,7 @@ mkcap(char *from, char *to)
 
 	/* give the kernel the hash */
 	key[-1] = '@';
-	if(write(caphashfd, hash, SHA1dlen) < 0){
+	if(jehanne_write(caphashfd, hash, SHA1dlen) < 0){
 		free(cap);
 		return nil;
 	}
@@ -767,10 +767,10 @@ readcons(char *prompt, char *def, int raw)
 	char line[10];
 	char *s;
 
-	fdin = open("/dev/cons", OREAD);
+	fdin = sys_open("/dev/cons", OREAD);
 	if(fdin < 0)
 		fdin = 0;
-	fdout = open("/dev/cons", OWRITE);
+	fdout = sys_open("/dev/cons", OWRITE);
 	if(fdout < 0)
 		fdout = 1;
 	if(def != nil)
@@ -778,20 +778,20 @@ readcons(char *prompt, char *def, int raw)
 	else
 		fprint(fdout, "%s: ", prompt);
 	if(raw){
-		ctl = open("/dev/consctl", OWRITE);
+		ctl = sys_open("/dev/consctl", OWRITE);
 		if(ctl >= 0)
-			write(ctl, "rawon", 5);
+			jehanne_write(ctl, "rawon", 5);
 	} else
 		ctl = -1;
 	s = estrdup("");
 	for(;;){
-		n = read(fdin, line, 1);
+		n = jehanne_read(fdin, line, 1);
 		if(n == 0){
 		Error:
-			close(fdin);
-			close(fdout);
+			sys_close(fdin);
+			sys_close(fdout);
 			if(ctl >= 0)
-				close(ctl);
+				sys_close(ctl);
 			free(s);
 			return nil;
 		}
@@ -801,12 +801,12 @@ readcons(char *prompt, char *def, int raw)
 			goto Error;
 		if(n == 0 || line[0] == '\n' || line[0] == '\r'){
 			if(raw){
-				write(ctl, "rawoff", 6);
-				write(fdout, "\n", 1);
+				jehanne_write(ctl, "rawoff", 6);
+				jehanne_write(fdout, "\n", 1);
 			}
-			close(ctl);
-			close(fdin);
-			close(fdout);
+			sys_close(ctl);
+			sys_close(fdin);
+			sys_close(fdout);
 			if(*s == 0 && def != nil)
 				s = estrappend(s, "%s", def);
 			return s;
@@ -1006,12 +1006,12 @@ writehostowner(char *owner)
 
 	if((s = strchr(owner,'@')) != nil)
 		*s = 0;
-	fd = open("#c/hostowner", OWRITE);
+	fd = sys_open("#c/hostowner", OWRITE);
 	if(fd >= 0){
 		if(fprint(fd, "%s", owner) < 0)
 			fprint(2, "factotum: setting #c/hostowner to %q: %r\n",
 				owner);
-		close(fd);
+		sys_close(fd);
 	}
 }
 

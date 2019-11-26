@@ -100,7 +100,7 @@ readio(File *f, int *nulls, int setdate, int toterm)
 		if(toterm)
 			raspload(f);
 	}else
-		for(nt = 0; (n = read(io, buf+b, BLOCKSIZE-b))>0; nt+=(r-genbuf)){
+		for(nt = 0; (n = jehanne_read(io, buf+b, BLOCKSIZE-b))>0; nt+=(r-genbuf)){
 			n += b;
 			b = 0;
 			r = genbuf;
@@ -175,7 +175,7 @@ writeio(File *f)
 void
 closeio(Posn p)
 {
-	close(io);
+	sys_close(io);
 	io = 0;
 	if(p >= 0)
 		dprint("#%lud\n", p);
@@ -192,13 +192,13 @@ bootterm(char *machine, char **argv)
 	if(machine){
 		dup(remotefd0, 0);
 		dup(remotefd1, 1);
-		close(remotefd0);
-		close(remotefd1);
+		sys_close(remotefd0);
+		sys_close(remotefd1);
 		argv[0] = "samterm";
-		exec(samterm, argv);
+		sys_exec(samterm, argv);
 		fprint(2, "can't exec: ");
 		perror(samterm);
-		_exits("damn");
+		sys__exits("damn");
 	}
 	if(pipe(ph2t)==-1 || pipe(pt2h)==-1)
 		panic("pipe");
@@ -206,24 +206,24 @@ bootterm(char *machine, char **argv)
 	case 0:
 		dup(ph2t[0], 0);
 		dup(pt2h[1], 1);
-		close(ph2t[0]);
-		close(ph2t[1]);
-		close(pt2h[0]);
-		close(pt2h[1]);
+		sys_close(ph2t[0]);
+		sys_close(ph2t[1]);
+		sys_close(pt2h[0]);
+		sys_close(pt2h[1]);
 		argv[0] = "samterm";
-		exec(samterm, argv);
+		sys_exec(samterm, argv);
 		fprint(2, "can't exec: ");
 		perror(samterm);
-		_exits("damn");
+		sys__exits("damn");
 	case -1:
 		panic("can't fork samterm");
 	}
 	dup(pt2h[0], 0);
 	dup(ph2t[1], 1);
-	close(ph2t[0]);
-	close(ph2t[1]);
-	close(pt2h[0]);
-	close(pt2h[1]);
+	sys_close(ph2t[0]);
+	sys_close(ph2t[1]);
+	sys_close(pt2h[0]);
+	sys_close(pt2h[1]);
 }
 
 void
@@ -259,11 +259,11 @@ connectto(char *machine, char **argv)
 	case 0:
 		dup(p2[0], 0);
 		dup(p1[1], 1);
-		close(p1[0]);
-		close(p1[1]);
-		close(p2[0]);
-		close(p2[1]);
-		exec(RXPATH, av);
+		sys_close(p1[0]);
+		sys_close(p1[1]);
+		sys_close(p2[0]);
+		sys_close(p2[1]);
+		sys_exec(RXPATH, av);
 		dprint("can't exec %s\n", RXPATH);
 		exits("exec");
 
@@ -272,8 +272,8 @@ connectto(char *machine, char **argv)
 		exits("fork");
 	}
 	free(av);
-	close(p1[1]);
-	close(p2[0]);
+	sys_close(p1[1]);
+	sys_close(p2[0]);
 }
 
 void

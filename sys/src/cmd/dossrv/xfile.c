@@ -71,11 +71,11 @@ getxfs(char *user, char *name)
 		omode = OREAD;
 	else
 		omode = ORDWR;
-	fd = open(name, omode);
+	fd = sys_open(name, omode);
 
 	if(fd < 0 && omode==ORDWR){
 		omode = OREAD;
-		fd = open(name, omode);
+		fd = sys_open(name, omode);
 	}
 
 	if(fd < 0){
@@ -86,7 +86,7 @@ getxfs(char *user, char *name)
 	dir = jehanne_dirfstat(fd);
 	if(dir == nil){
 		errno = Eio;
-		close(fd);
+		sys_close(fd);
 		return 0;
 	}
 
@@ -110,14 +110,14 @@ getxfs(char *user, char *name)
 		chat("incref \"%s\", dev=%d...", xf->name, xf->dev);
 		++xf->ref;
 		unmlock(&xlock);
-		close(fd);
+		sys_close(fd);
 		return xf;
 	}
 	if(fxf == nil){
 		fxf = jehanne_malloc(sizeof(Xfs));
 		if(fxf == nil){
 			unmlock(&xlock);
-			close(fd);
+			sys_close(fd);
 			errno = Enomem;
 			return nil;
 		}
@@ -149,7 +149,7 @@ refxfs(Xfs *xf, int delta)
 		jehanne_free(xf->ptr);
 		purgebuf(xf);
 		if(xf->dev >= 0){
-			close(xf->dev);
+			sys_close(xf->dev);
 			xf->dev = -1;
 		}
 	}

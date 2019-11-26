@@ -316,8 +316,8 @@ readkeyboard(int src, int consreads)
 	{
 		produced = 0;
 		w = 0;
-		r = read(src, ibuf, KeyboardBufferSize);
-		debug("readkeyboard %d: read(%d) returns %d\n", pid, src, r);
+		r = jehanne_read(src, ibuf, KeyboardBufferSize);
+		debug("readkeyboard %d: jehanne_read(%d) returns %d\n", pid, src, r);
 		for(i = 0; i < r; ++i){
 			scan = keybscan(ibuf[i], obuf+produced, ScreenBufferSize-produced);
 			if(scan == -1){
@@ -330,17 +330,17 @@ readkeyboard(int src, int consreads)
 			}
 		}
 		if(produced){
-			w = write(consreads, obuf, produced);
-			debug("readkeyboard %d: write(consreads) returns %d\n", pid, w);
+			w = jehanne_write(consreads, obuf, produced);
+			debug("readkeyboard %d: jehanne_write(consreads) returns %d\n", pid, w);
 		}
 	}
 	while(r > 0 && w == produced);
 
 	debug("readkeyboard %d: shut down (r = %d, w = %d)\n", pid, r, w);
-	close(src);
-	debug("readkeyboard %d: close(%d)\n", pid, src);
-	close(consreads);
-	debug("readkeyboard %d: close(%d)\n", pid, consreads);
+	sys_close(src);
+	debug("readkeyboard %d: sys_close(%d)\n", pid, src);
+	sys_close(consreads);
+	debug("readkeyboard %d: sys_close(%d)\n", pid, consreads);
 
 	if(r < 0)
 		exits("read");

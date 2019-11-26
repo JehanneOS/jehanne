@@ -18,7 +18,7 @@ jehanne_wait(void)
 	char buf[512], *fld[5];
 	Waitmsg *w;
 
-	n = await(buf, sizeof buf-1);
+	n = sys_await(buf, sizeof buf-1);
 	if(n < 0)
 		return nil;
 	buf[n] = '\0';

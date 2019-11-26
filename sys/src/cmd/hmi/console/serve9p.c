@@ -123,7 +123,7 @@ struct Fid
 
 static Fid *fids;
 static Fid **ftail;
-static Fid *external;	/* attach fid of the last mount() in gconsole.c */
+static Fid *external;	/* attach fid of the last sys_mount() in gconsole.c */
 static Fid *inputfid;	/* from Topen(Qinput) */
 static Fid *outputfid;	/* from Topen(Qoutput) */
 
@@ -186,7 +186,7 @@ sendmessage(int fd, Fcall *rep)
 		debug("sendmessage: convS2M error\n");
 		return 0;
 	}
-	if(write(fd, repdata, n) != n) {
+	if(jehanne_write(fd, repdata, n) != n) {
 		debug("sendmessage: write\n");
 		return 0;
 	}
@@ -542,14 +542,14 @@ gethostowner(void)
 	res = (char*)malloc(256);
 	if(res == nil)
 		sysfatal("out of memory");
-	f = open("#c/hostowner", OREAD);
+	f = sys_open("#c/hostowner", OREAD);
 	if(f < 0)
-		sysfatal("open(#c/hostowner) %r");
-	r = read(f, res, 255);
+		sysfatal("sys_open(#c/hostowner) %r");
+	r = jehanne_read(f, res, 255);
 	if(r < 0)
 		sysfatal("read(#c/hostowner)");
 	res[r] = '\0';
-	close(f);
+	sys_close(f);
 	return res;
 }
 static int
@@ -1103,8 +1103,8 @@ fsserve(int connection)
 	if(w < 0)
 		sysfatal("serve9p: sendmessage");
 
-	close(connection);
-	debug("serve9p %d: close(%d)\n", fspid, connection);
+	sys_close(connection);
+	debug("serve9p %d: sys_close(%d)\n", fspid, connection);
 
 	debug("serve9p %d: shut down\n", fspid);
 

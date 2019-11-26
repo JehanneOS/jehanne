@@ -42,7 +42,7 @@ main(int argc, char *argv[])
 	int fd;
 
 	closefds();
-	alarm(0);
+	sys_alarm(0);
 
 	service = "cpu";
 	manual = 0;
@@ -61,9 +61,9 @@ main(int argc, char *argv[])
 
 	fd = procopen(getpid(), "ctl", OWRITE);
 	if(fd >= 0){
-		if(write(fd, "pri 10", 6) != 6)
+		if(jehanne_write(fd, "pri 10", 6) != 6)
 			fprint(2, "init: warning: can't set priority: %r\n");
-		close(fd);
+		sys_close(fd);
 	}
 
 	cpu = readenv(ENV_CPUTYPE);
@@ -98,14 +98,14 @@ printfile(int fd)
 	int n;
 	char buf[256];
 	if(fd >= 0){
-		n = fd2path(fd, buf, 256);
+		n = sys_fd2path(fd, buf, 256);
 		if(n < 0){
 			fprint(2, "printfile(%d): fd2path: %r\n", fd);
 			return;
 		}
 		print("%s:\n", buf);
-		while((n = read(fd, buf, 256)) > 0){
-			write(1, buf, n);
+		while((n = jehanne_read(fd, buf, 256)) > 0){
+			jehanne_write(1, buf, n);
 			sleep(500);
 		}
 		print("\n");
@@ -119,7 +119,7 @@ pinhead(void *c, char *msg)
 {
 	gotnote = 1;
 	fprint(2, "init got note '%s'\n", msg);
-	noted(NCONT);
+	sys_noted(NCONT);
 }
 
 void
@@ -130,7 +130,7 @@ fexec(void (*execfn)(void))
 
 	switch(pid=fork()){
 	case 0:
-		rfork(RFNOTEG);
+		sys_rfork(RFNOTEG);
 		(*execfn)();
 		print("init: exec error: %r\n");
 		exits("exec");
@@ -139,7 +139,7 @@ fexec(void (*execfn)(void))
 		exits("fork");
 	default:
 	casedefault:
-		notify(pinhead);
+		sys_notify(pinhead);
 		gotnote = 0;
 		w = wait();
 		if(w == nil){
@@ -192,7 +192,7 @@ readfile(char *name)
 	Dir *d;
 	char *val;
 
-	f = open(name, OREAD);
+	f = sys_open(name, OREAD);
 	if(f < 0){
 		print("init: can't open %s: %r\n", name);
 		return nil;
@@ -200,7 +200,7 @@ readfile(char *name)
 	d = dirfstat(f);
 	if(d == nil){
 		print("init: can't stat %s: %r\n", name);
-		close(f);
+		sys_close(f);
 		return nil;
 	}
 	len = d->length;
@@ -210,11 +210,11 @@ readfile(char *name)
 	val = malloc(len+1);
 	if(val == nil){
 		print("init: can't malloc %s: %r\n", name);
-		close(f);
+		sys_close(f);
 		return nil;
 	}
-	len = read(f, val, len);
-	close(f);
+	len = jehanne_read(f, val, len);
+	sys_close(f);
 	if(len < 0){
 		print("init: can't read %s: %r\n", name);
 		return nil;
@@ -247,8 +247,8 @@ setenv(char *name, char *val)
 	if(fd < 0)
 		fprint(2, "init: can't create %s: %r\n", buf);
 	else{
-		write(fd, val, strlen(val));
-		close(fd);
+		jehanne_write(fd, val, strlen(val));
+		sys_close(fd);
 	}
 }
 
@@ -273,7 +273,7 @@ closefds(void)
 	int i;
 
 	for(i = 3; i < 30; i++)
-		close(i);
+		sys_close(i);
 }
 
 int
@@ -283,7 +283,7 @@ procopen(int pid, char *name, int mode)
 	int fd;
 
 	snprint(buf, sizeof(buf), "#p/%d/%s", pid, name);
-	fd = open(buf, mode);
+	fd = sys_open(buf, mode);
 	if(fd < 0)
 		fprint(2, "init: warning: can't open %s: %r\n", name);
 	return fd;

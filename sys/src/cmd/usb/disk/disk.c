@@ -233,8 +233,8 @@ static void
 ding(void * _, char *msg)
 {
 	if(strstr(msg, "alarm") != nil)
-		noted(NCONT);
-	noted(NDFLT);
+		sys_noted(NCONT);
+	sys_noted(NDFLT);
 }
 #endif
 
@@ -429,7 +429,7 @@ umsrequest(Umsc *umsc, ScsiPtr *cmd, ScsiPtr *data, int *status)
 	}
 
 	/* issue tunnelled scsi command */
-	if(write(ums->epout->dfd, &cbw, CbwLen) != CbwLen){
+	if(jehanne_write(ums->epout->dfd, &cbw, CbwLen) != CbwLen){
 		fprint(2, "disk: cmd: %r\n");
 		goto Fail;
 	}
@@ -438,9 +438,9 @@ umsrequest(Umsc *umsc, ScsiPtr *cmd, ScsiPtr *data, int *status)
 	nio = data->count;
 	if(nio != 0){
 		if(data->write)
-			n = write(ums->epout->dfd, data->p, nio);
+			n = jehanne_write(ums->epout->dfd, data->p, nio);
 		else{
-			n = read(ums->epin->dfd, data->p, nio);
+			n = jehanne_read(ums->epin->dfd, data->p, nio);
 			left = nio - n;
 			if (n >= 0 && left > 0)	/* didn't fill data->p? */
 				memset(data->p + n, 0, left);
@@ -457,11 +457,11 @@ umsrequest(Umsc *umsc, ScsiPtr *cmd, ScsiPtr *data, int *status)
 	}
 
 	/* read the transfer's status */
-	n = read(ums->epin->dfd, &csw, CswLen);
+	n = jehanne_read(ums->epin->dfd, &csw, CswLen);
 	if(n <= 0){
 		/* n == 0 means "stalled" */
 		unstall(dev, ums->epin, Ein);
-		n = read(ums->epin->dfd, &csw, CswLen);
+		n = jehanne_read(ums->epin->dfd, &csw, CswLen);
 	}
 
 	if(n != CswLen || strncmp(csw.signature, "USBS", 4) != 0){

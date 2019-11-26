@@ -55,10 +55,10 @@ getpassm(char *prompt)
 	static int cons, consctl; /* closing & reopening fails in ssh environment */
 
 	if(cons == 0){			/* first time? */
-		cons = open("/dev/cons", ORDWR);
+		cons = sys_open("/dev/cons", ORDWR);
 		if(cons < 0)
 			sysfatal("couldn't open cons");
-		consctl = open("/dev/consctl", OWRITE);
+		consctl = sys_open("/dev/consctl", OWRITE);
 		if(consctl < 0)
 			sysfatal("couldn't set raw mode via consctl");
 	}
@@ -67,7 +67,7 @@ getpassm(char *prompt)
 	nr = 0;
 	p = line;
 	for(;;){
-		n = read(cons, p, 1);
+		n = jehanne_read(cons, p, 1);
 		if(n < 0){
 			fprint(consctl, "rawoff");
 			fprint(cons, "\n");

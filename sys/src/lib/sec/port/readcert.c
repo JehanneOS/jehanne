@@ -8,21 +8,21 @@ readfile(char *name)
 	char *s;
 	Dir *d;
 
-	fd = open(name, OREAD);
+	fd = sys_open(name, OREAD);
 	if(fd < 0)
 		return nil;
 	if((d = jehanne_dirfstat(fd)) == nil) {
-		close(fd);
+		sys_close(fd);
 		return nil;
 	}
 	s = jehanne_malloc(d->length + 1);
 	if(s == nil || jehanne_readn(fd, s, d->length) != d->length){
 		jehanne_free(s);
 		jehanne_free(d);
-		close(fd);
+		sys_close(fd);
 		return nil;
 	}
-	close(fd);
+	sys_close(fd);
 	s[d->length] = '\0';
 	jehanne_free(d);
 	return s;

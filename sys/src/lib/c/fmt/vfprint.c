@@ -21,7 +21,7 @@ _fmtFdFlush(Fmt *f)
 	int n;
 
 	n = (char*)f->to - (char*)f->start;
-	if(n && write((int)(uintptr_t)f->farg, f->start, n) != n)
+	if(n && jehanne_write((int)(uintptr_t)f->farg, f->start, n) != n)
 		return 0;
 	f->to = f->start;
 	return 1;

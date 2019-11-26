@@ -89,7 +89,7 @@ void main(int argc, char *argv[])
 		home = "/";
 	if(!dflag)
 		startup(machine, Rflag, termargs, argv);
-	notify(notifyf);
+	sys_notify(notifyf);
 	getcurwd();
 	if(argc>0){
 		for(i=0; i<argc; i++){
@@ -185,7 +185,7 @@ hiccough(char *s)
 	resetxec();
 	resetsys();
 	if(io > 0)
-		close(io);
+		sys_close(io);
 
 	/*
 	 * back out any logged changes & restore old sequences
@@ -343,7 +343,7 @@ edit(File *f, int cmd)
 		addr.r.p2 = f->Buffer.nc;
 	}else if(f->Buffer.nc!=0 || (f->name.s[0] && Strcmp(&genstr, &f->name)!=0))
 		empty = FALSE;
-	if((io = open(genc, OREAD))<0) {
+	if((io = sys_open(genc, OREAD))<0) {
 		if (curfile && curfile->unread)
 			curfile->unread = FALSE;
 		error_r(Eopen, genc);
@@ -517,9 +517,9 @@ cd(String *str)
 		s = home;
 	if(chdir(s))
 		syserror("chdir");
-	fd = open("/dev/wdir", OWRITE);
+	fd = sys_open("/dev/wdir", OWRITE);
 	if(fd > 0)
-		write(fd, s, strlen(s));
+		jehanne_write(fd, s, strlen(s));
 	dprint("!\n");
 	Strinit(&owd);
 	Strduplstr(&owd, &curwd);

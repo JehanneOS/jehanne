@@ -535,7 +535,7 @@ wctlproc(void *v)
 	eofs = 0;
 	for(;;){
 		buf = emalloc(messagesize);
-		n = read(wctlfd, buf, messagesize-1);	/* room for \0 */
+		n = jehanne_read(wctlfd, buf, messagesize-1);	/* room for \0 */
 		if(n < 0)
 			break;
 		if(n == 0){

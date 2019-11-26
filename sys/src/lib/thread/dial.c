@@ -65,7 +65,7 @@ _threaddial(const char *dest, const char *local, char *dir, int *cfdp)
 	if(rv >= 0)
 		return rv;
 	err[0] = '\0';
-	errstr(err, sizeof err);
+	sys_errstr(err, sizeof err);
 	if(jehanne_strstr(err, "refused") != 0){
 		jehanne_werrstr("%s", err);
 		return rv;
@@ -76,7 +76,7 @@ _threaddial(const char *dest, const char *local, char *dir, int *cfdp)
 		return rv;
 
 	alterr[0] = 0;
-	errstr(alterr, sizeof alterr);
+	sys_errstr(alterr, sizeof alterr);
 	if(jehanne_strstr(alterr, "translate") || jehanne_strstr(alterr, "does not exist"))
 		jehanne_werrstr("%s", err);
 	else
@@ -94,7 +94,7 @@ csdial(DS *ds)
 	 *  open connection server
 	 */
 	jehanne_snprint(buf, sizeof(buf), "%s/cs", ds->netdir);
-	fd = open(buf, ORDWR);
+	fd = sys_open(buf, ORDWR);
 	if(fd < 0){
 		/* no connection server, don't translate */
 		jehanne_snprint(clone, sizeof(clone), "%s/%s/clone", ds->netdir, ds->proto);
@@ -105,8 +105,8 @@ csdial(DS *ds)
 	 *  ask connection server to translate
 	 */
 	jehanne_snprint(buf, sizeof(buf), "%s!%s", ds->proto, ds->rem);
-	if(write(fd, buf, jehanne_strlen(buf)) < 0){
-		close(fd);
+	if(jehanne_write(fd, buf, jehanne_strlen(buf)) < 0){
+		sys_close(fd);
 		return -1;
 	}
 
@@ -116,8 +116,8 @@ csdial(DS *ds)
 	 */
 	*besterr = 0;
 	rv = -1;
-	seek(fd, 0, 0);
-	while((n = read(fd, buf, sizeof(buf) - 1)) > 0){
+	sys_seek(fd, 0, 0);
+	while((n = jehanne_read(fd, buf, sizeof(buf) - 1)) > 0){
 		buf[n] = 0;
 		p = jehanne_strchr(buf, ' ');
 		if(p == 0)
@@ -127,11 +127,11 @@ csdial(DS *ds)
 		if(rv >= 0)
 			break;
 		err[0] = '\0';
-		errstr(err, sizeof err);
+		sys_errstr(err, sizeof err);
 		if(jehanne_strstr(err, "does not exist") == 0)
 			jehanne_strcpy(besterr, err);
 	}
-	close(fd);
+	sys_close(fd);
 
 	if(rv < 0 && *besterr)
 		jehanne_werrstr("%s", besterr);
@@ -157,14 +157,14 @@ call(char *clone, char *dest, DS *ds)
 		p = clone;
 	jehanne_snprint(cname, sizeof cname, "%s/%s", ds->netdir, p);
 
-	cfd = open(cname, ORDWR);
+	cfd = sys_open(cname, ORDWR);
 	if(cfd < 0)
 		return -1;
 
 	/* get directory name */
-	n = read(cfd, name, sizeof(name)-1);
+	n = jehanne_read(cfd, name, sizeof(name)-1);
 	if(n < 0){
-		close(cfd);
+		sys_close(cfd);
 		return -1;
 	}
 	name[n] = 0;
@@ -182,21 +182,21 @@ call(char *clone, char *dest, DS *ds)
 		jehanne_snprint(name, sizeof(name), "connect %s %s", dest, ds->local);
 	else
 		jehanne_snprint(name, sizeof(name), "connect %s", dest);
-	if(write(cfd, name, jehanne_strlen(name)) < 0){
-		close(cfd);
+	if(jehanne_write(cfd, name, jehanne_strlen(name)) < 0){
+		sys_close(cfd);
 		return -1;
 	}
 
 	/* open data connection */
-	fd = open(data, ORDWR);
+	fd = sys_open(data, ORDWR);
 	if(fd < 0){
-		close(cfd);
+		sys_close(cfd);
 		return -1;
 	}
 	if(ds->cfdp)
 		*ds->cfdp = cfd;
 	else
-		close(cfd);
+		sys_close(cfd);
 	return fd;
 }
 

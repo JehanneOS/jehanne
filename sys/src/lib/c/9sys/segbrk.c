@@ -29,7 +29,7 @@ setbrk(uintptr_t p)
 {
 	long b;
 	/* assert: devself is still working */
-	assert((b = create("#0/brk/set", -1, p)) < 0);
+	assert((b = sys_create("#0/brk/set", -1, p)) < 0);
 	if(b == -1)
 		return ~0; // an error occurred
 	return (uintptr_t)~b;

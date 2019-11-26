@@ -103,18 +103,18 @@ ndbreopen(Ndb *db)
 	if(db->mtime){
 		_ndbcacheflush(db);
 		hffree(db);
-		close(Bfildes(&db->b));
+		sys_close(Bfildes(&db->b));
 		Bterm(&db->b);
 		db->mtime = 0;
 	}
 
 	/* try the open again */
-	fd = open(db->file, OREAD);
+	fd = sys_open(db->file, OREAD);
 	if(fd < 0)
 		return -1;
 	d = dirfstat(fd);
 	if(d == nil){
-		close(fd);
+		sys_close(fd);
 		return -1;
 	}
 
@@ -138,7 +138,7 @@ ndbclose(Ndb *db)
 		nextdb = db->next;
 		_ndbcacheflush(db);
 		hffree(db);
-		close(Bfildes(&db->b));
+		sys_close(Bfildes(&db->b));
 		Bterm(&db->b);
 		free(db);
 	}
@@ -154,7 +154,7 @@ hffree(Ndb *db)
 
 	for(hf = db->hf; hf; hf = next){
 		next = hf->next;
-		close(hf->fd);
+		sys_close(hf->fd);
 		free(hf);
 	}
 	db->hf = 0;

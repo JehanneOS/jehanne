@@ -12,7 +12,7 @@
  */
 #include "iolib.h"
 int32_t ftell(FILE *f){
-	int32_t seekp=seek(f->fd, 0L, 1);
+	int32_t seekp=sys_seek(f->fd, 0L, 1);
 	if(seekp<0) return -1;		/* enter error state? */
 	switch(f->state){
 	default:

@@ -30,13 +30,13 @@ makedir(char *s)
 		e = "error";
 		return -1;
 	}
-	f = create(s, OREAD, DMDIR | mode);
+	f = sys_create(s, OREAD, DMDIR | mode);
 	if(f < 0){
 		fprint(2, "mkdir: can't create %s: %r\n", s);
 		e = "error";
 		return -1;
 	}
-	close(f);
+	sys_close(f);
 	return 0;
 }
 

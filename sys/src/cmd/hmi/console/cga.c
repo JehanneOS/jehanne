@@ -97,10 +97,10 @@ cgaflush(int device)
 	w = 1;	/* 0 must mean eof, thus this is the default */
 	if((dirp = dirfstat(device)) != nil){
 		if(dirp->length == 0)
-			w = pwrite(device, CGA, Width*Height, 0);
+			w = sys_pwrite(device, CGA, Width*Height, 0);
 		free(dirp);
 	} else {
-		w = pwrite(device, CGA, Width*Height, 0);
+		w = sys_pwrite(device, CGA, Width*Height, 0);
 	}
 	return w;
 }
@@ -117,8 +117,8 @@ writecga(int conswrites, int device)
 	debug("writecga %d: started\n", pid);
 	do
 	{
-		r = read(conswrites, buf, ScreenBufferSize);
-		debug("writecga %d: read(conswrites) returns %d\n", pid, r);
+		r = jehanne_read(conswrites, buf, ScreenBufferSize);
+		debug("writecga %d: jehanne_read(conswrites) returns %d\n", pid, r);
 		for(i = 0; i < r; i++)
 			cgaputc(buf[i]);
 		w = cgaflush(device);
@@ -126,10 +126,10 @@ writecga(int conswrites, int device)
 	}
 	while(r > 0 && w > 0);
 
-	close(conswrites);
-	debug("writecga %d: close(%d)\n", pid, conswrites);
-	close(device);
-	debug("writecga %d: close(%d)\n", pid, device);
+	sys_close(conswrites);
+	debug("writecga %d: sys_close(%d)\n", pid, conswrites);
+	sys_close(device);
+	debug("writecga %d: sys_close(%d)\n", pid, device);
 
 	debug("writecga %d: shut down (r = %d, w = %d)\n", pid, r, w);
 	if(r < 0)

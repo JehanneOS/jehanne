@@ -58,7 +58,7 @@ namedimage(Display *d, char *name)
 	if(flushimage(d, 0) < 0)
 		goto Error;
 
-	if(pread(d->ctlfd, buf, sizeof buf, 0) < 12*12)
+	if(sys_pread(d->ctlfd, buf, sizeof buf, 0) < 12*12)
 		goto Error;
 	buf[12*12] = '\0';
 

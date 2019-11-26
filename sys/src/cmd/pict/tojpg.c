@@ -44,7 +44,7 @@ main(int argc, char *argv[])
 		fd = 0;
 	} else {
 		file = argv[0];
-		if((fd = open(file, OREAD)) < 0)
+		if((fd = sys_open(file, OREAD)) < 0)
 			sysfatal("open %s: %r", file);
 	}
 
@@ -54,7 +54,7 @@ main(int argc, char *argv[])
 
 	if((i = readmemimage(fd)) == nil)
 		sysfatal("readimage %s: %r", file);
-	close(fd);
+	sys_close(fd);
 	if((ni = memmultichan(i)) == nil)
 		sysfatal("converting image to RGB24: %r");
 	if(i != ni) {

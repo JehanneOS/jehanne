@@ -36,16 +36,16 @@ main(int argc, char *argv[])
 	else
 		snprint(wdir, sizeof wdir, "%s/-win", wdir);
 
-	if((fd = open("/dev/wnew", ORDWR)) < 0)
+	if((fd = sys_open("/dev/wnew", ORDWR)) < 0)
 		sysfatal("wnew: can't open /dev/wnew: %r");
 
 	if(fprint(fd, "%d %s", pid, wdir+dflag) < 0)
 		sysfatal("wnew: can't create window: %r");
 
-	if(seek(fd, 0, 0) != 0)
+	if(sys_seek(fd, 0, 0) != 0)
 		sysfatal("wnew: can't seek: %r");
 
-	if((n=read(fd, wdir, sizeof wdir-1)) < 0)
+	if((n=jehanne_read(fd, wdir, sizeof wdir-1)) < 0)
 		sysfatal("wnew: can't read window id: %r");
 	wdir[n] = '\0';
 

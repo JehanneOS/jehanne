@@ -61,14 +61,14 @@ geninitdraw(char *devdir, void(*error)(Display*, char*),
 		return -1;
 	}
 	if(fontname == nil){
-		fd = open("/env/font", OREAD);
+		fd = sys_open("/env/font", OREAD);
 		if(fd >= 0){
-			n = read(fd, buf, sizeof(buf));
+			n = jehanne_read(fd, buf, sizeof(buf));
 			if(n>0 && n<sizeof buf-1){
 				buf[n] = 0;
 				fontname = buf;
 			}
-			close(fd);
+			sys_close(fd);
 		}
 	}
 	/*
@@ -98,14 +98,14 @@ geninitdraw(char *devdir, void(*error)(Display*, char*),
 	 */
 	if(label){
 		snprint(buf, sizeof buf, "%s/label", display->windir);
-		fd = open(buf, OREAD);
+		fd = sys_open(buf, OREAD);
 		if(fd >= 0){
-			read(fd, display->oldlabel, (sizeof display->oldlabel)-1);
-			close(fd);
+			jehanne_read(fd, display->oldlabel, (sizeof display->oldlabel)-1);
+			sys_close(fd);
 			fd = ocreate(buf, OWRITE, 0666);
 			if(fd >= 0){
-				write(fd, label, strlen(label));
-				close(fd);
+				jehanne_write(fd, label, strlen(label));
+				sys_close(fd);
 			}
 		}
 	}
@@ -124,7 +124,7 @@ initdraw(void(*error)(Display*, char*), char *fontname , char *label)
 {
 	char *dev = "/dev";
 
-	if(access("/dev/draw/new", AEXIST)<0 && bind("#i", "/dev", MAFTER)<0){
+	if(access("/dev/draw/new", AEXIST)<0 && sys_bind("#i", "/dev", MAFTER)<0){
 		fprint(2, "imageinit: can't bind /dev/draw: %r\n");
 		return -1;
 	}
@@ -144,8 +144,8 @@ gengetwindow(Display *d, char *winname, Image **winp, Screen **scrp,
 	Image *image;
 	Rectangle r;
 
-	fd = open(winname, OREAD);
-	if(fd<0 || (n=read(fd, buf, sizeof buf-1))<=0){
+	fd = sys_open(winname, OREAD);
+	if(fd<0 || (n=jehanne_read(fd, buf, sizeof buf-1))<=0){
 		if((image=d->image) == nil){
 			fprint(2, "gengetwindow: %r\n");
 			*winp = nil;
@@ -154,7 +154,7 @@ gengetwindow(Display *d, char *winname, Image **winp, Screen **scrp,
 		}
 		strcpy(buf, "noborder");
 	}else{
-		close(fd);
+		sys_close(fd);
 		buf[n] = '\0';
 		if(*winp != nil){
 			_freeimage1(*winp);
@@ -232,21 +232,21 @@ initdisplay(char *dev, char *win, void(*error)(Display*, char*))
 		return nil;
 
 	sprint(buf, "%s/draw/new", dev);
-	ctlfd = open(buf, ORDWR|OCEXEC);
+	ctlfd = sys_open(buf, ORDWR|OCEXEC);
 	if(ctlfd < 0){
-		if(bind("#i", dev, MAFTER) < 0){
+		if(sys_bind("#i", dev, MAFTER) < 0){
     Error1:
 			free(t);
 			werrstr("initdisplay: %s: %r", buf);
 			return 0;
 		}
-		ctlfd = open(buf, ORDWR|OCEXEC);
+		ctlfd = sys_open(buf, ORDWR|OCEXEC);
 	}
 	if(ctlfd < 0)
 		goto Error1;
-	if((n=read(ctlfd, info, sizeof info)) < 12){
+	if((n=jehanne_read(ctlfd, info, sizeof info)) < 12){
     Error2:
-		close(ctlfd);
+		sys_close(ctlfd);
 		goto Error1;
 	}
 	if(n==NINFO+1)
@@ -256,20 +256,20 @@ initdisplay(char *dev, char *win, void(*error)(Display*, char*))
 	if(n < NINFO)	/* this will do for now, we need something better here */
 		isnew = 1;
 	sprint(buf, "%s/draw/%d/data", dev, atoi(info+0*12));
-	datafd = open(buf, ORDWR|OCEXEC);
+	datafd = sys_open(buf, ORDWR|OCEXEC);
 	if(datafd < 0)
 		goto Error2;
 	sprint(buf, "%s/draw/%d/refresh", dev, atoi(info+0*12));
-	reffd = open(buf, OREAD|OCEXEC);
+	reffd = sys_open(buf, OREAD|OCEXEC);
 	if(reffd < 0){
     Error3:
-		close(datafd);
+		sys_close(datafd);
 		goto Error2;
 	}
 	disp = mallocz(sizeof(Display), 1);
 	if(disp == 0){
     Error4:
-		close(reffd);
+		sys_close(reffd);
 		goto Error3;
 	}
 	image = nil;
@@ -364,10 +364,10 @@ _closedisplay(Display *disp, int isshutdown)
 		display = nil;
 	if(disp->oldlabel[0]){
 		snprint(buf, sizeof buf, "%s/label", disp->windir);
-		fd = open(buf, OWRITE);
+		fd = sys_open(buf, OWRITE);
 		if(fd >= 0){
-			write(fd, disp->oldlabel, strlen(disp->oldlabel));
-			close(fd);
+			jehanne_write(fd, disp->oldlabel, strlen(disp->oldlabel));
+			sys_close(fd);
 		}
 	}
 
@@ -384,10 +384,10 @@ _closedisplay(Display *disp, int isshutdown)
 	free(disp->windir);
 	freeimage(disp->white);
 	freeimage(disp->black);
-	close(disp->fd);
-	close(disp->ctlfd);
+	sys_close(disp->fd);
+	sys_close(disp->ctlfd);
 	/* should cause refresh slave to shut down */
-	close(disp->reffd);
+	sys_close(disp->reffd);
 	qunlock(&disp->qlock);
 	free(disp);
 }
@@ -419,7 +419,7 @@ drawerror(Display *d, char *s)
 	if(d && d->error)
 		d->error(d, s);
 	else{
-		errstr(err, sizeof err);
+		sys_errstr(err, sizeof err);
 		fprint(2, "draw: %s: %s\n", s, err);
 		exits(s);
 	}
@@ -435,7 +435,7 @@ doflush(Display *d)
 	if(n <= 0)
 		return 1;
 
-	if((nn=write(d->fd, d->buf, n)) != n){
+	if((nn=jehanne_write(d->fd, d->buf, n)) != n){
 		if(_drawdebug)
 			fprint(2, "flushimage fail: d=%p: n=%d nn=%d %r\n", d, n, nn); /**/
 		d->bufp = d->buf;	/* might as well; chance of continuing */

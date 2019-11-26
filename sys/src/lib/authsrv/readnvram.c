@@ -53,10 +53,10 @@ readcons(char *prompt, char *def, int raw, char *buf, int nbuf)
 	int fdin, fdout, ctl, n, m;
 	char line[10];
 
-	fdin = open("/dev/cons", OREAD);
+	fdin = sys_open("/dev/cons", OREAD);
 	if(fdin < 0)
 		fdin = 0;
-	fdout = open("/dev/cons", OWRITE);
+	fdout = sys_open("/dev/cons", OWRITE);
 	if(fdout < 0)
 		fdout = 1;
 	if(def != nil)
@@ -64,22 +64,22 @@ readcons(char *prompt, char *def, int raw, char *buf, int nbuf)
 	else
 		fprint(fdout, "%s: ", prompt);
 	if(raw){
-		ctl = open("/dev/consctl", OWRITE);
+		ctl = sys_open("/dev/consctl", OWRITE);
 		if(ctl >= 0)
-			write(ctl, "rawon", 5);
+			jehanne_write(ctl, "rawon", 5);
 	} else
 		ctl = -1;
 
 	m = 0;
 	for(;;){
-		n = read(fdin, line, 1);
+		n = jehanne_read(fdin, line, 1);
 		if(n == 0){
-			close(ctl);
+			sys_close(ctl);
 			werrstr("readcons: EOF");
 			return nil;
 		}
 		if(n < 0){
-			close(ctl);
+			sys_close(ctl);
 			werrstr("can't read cons");
 			return nil;
 		}
@@ -87,9 +87,9 @@ readcons(char *prompt, char *def, int raw, char *buf, int nbuf)
 			exits(0);
 		if(n == 0 || line[0] == '\n' || line[0] == '\r'){
 			if(raw){
-				write(ctl, "rawoff", 6);
-				write(fdout, "\n", 1);
-				close(ctl);
+				jehanne_write(ctl, "rawoff", 6);
+				jehanne_write(fdout, "\n", 1);
+				sys_close(ctl);
 			}
 			buf[m] = '\0';
 			if(buf[0]=='\0' && def)
@@ -157,9 +157,9 @@ findnvram(Nvrwhere *locp)
 			v[0] = "";
 			v[1] = nil;
 		}
-		fd = open(v[0], ORDWR);
+		fd = sys_open(v[0], ORDWR);
 		if (fd < 0)
-			fd = open(v[0], OREAD);
+			fd = sys_open(v[0], OREAD);
 		safelen = sizeof(Nvrsafe);
 		if(strstr(v[0], "/9fat") == nil)
 			safeoff = 0;
@@ -176,7 +176,7 @@ findnvram(Nvrwhere *locp)
 			safelen = 512;
 			safeoff = finddosfile(fd, i == 2? v[1]: "plan9.nvr");
 			if(safeoff < 0){	/* didn't find plan9.nvr? */
-				close(fd);
+				sys_close(fd);
 				fd = -1;
 			}
 		}
@@ -186,14 +186,14 @@ findnvram(Nvrwhere *locp)
 		for(i=0; i<nelem(nvtab); i++){
 			if(strcmp(cputype, nvtab[i].cputype) != 0)
 				continue;
-			if((fd = open(nvtab[i].file, ORDWR)) < 0)
+			if((fd = sys_open(nvtab[i].file, ORDWR)) < 0)
 				continue;
 			safeoff = nvtab[i].off;
 			safelen = nvtab[i].len;
 			if(safeoff == -1){
 				safeoff = finddosfile(fd, "plan9.nvr");
 				if(safeoff < 0){  /* didn't find plan9.nvr? */
-					close(fd);
+					sys_close(fd);
 					fd = -1;
 					continue;
 				}
@@ -241,13 +241,13 @@ readnvram(Nvrsafe *safep, int flag)
 	else {
 		memset(safep, 0, sizeof(*safep));
 		if(loc.fd < 0
-		|| seek(loc.fd, loc.safeoff, 0) < 0
-		|| read(loc.fd, buf, loc.safelen) != loc.safelen){
+		|| sys_seek(loc.fd, loc.safeoff, 0) < 0
+		|| jehanne_read(loc.fd, buf, loc.safelen) != loc.safelen){
 			err = 1;
 			if(flag&(NVwrite|NVwriteonerr))
 				if(loc.fd < 0)
 					fprint(2, "can't open %s: %r\n", nvrfile);
-				else if (seek(loc.fd, loc.safeoff, 0) < 0)
+				else if (sys_seek(loc.fd, loc.safeoff, 0) < 0)
 					fprint(2, "can't seek %s to %lld: %r\n",
 						nvrfile, loc.safeoff);
 				else
@@ -315,8 +315,8 @@ readnvram(Nvrsafe *safep, int flag)
 
 		*(Nvrsafe*)buf = *safe;
 		if(loc.fd < 0
-		|| seek(loc.fd, loc.safeoff, 0) < 0
-		|| write(loc.fd, buf, loc.safelen) != loc.safelen){
+		|| sys_seek(loc.fd, loc.safeoff, 0) < 0
+		|| jehanne_write(loc.fd, buf, loc.safelen) != loc.safelen){
 			fprint(2, "can't write key to nvram: %r\n");
 			err = 1;
 		}else
@@ -324,7 +324,7 @@ readnvram(Nvrsafe *safep, int flag)
 	}
 Out:
 	if (loc.fd >= 0)
-		close(loc.fd);
+		sys_close(loc.fd);
 	return err? -1: 0;
 }
 
@@ -419,7 +419,7 @@ finddosfile(int fd, char *file)
 
 	/* read boot block, check for sanity */
 	b = (Dosboot*)secbuf;
-	if(read(fd, secbuf, sizeof(secbuf)) != sizeof(secbuf))
+	if(jehanne_read(fd, secbuf, sizeof(secbuf)) != sizeof(secbuf))
 		return -1;
 	if(b->magic[0] != 0xEB || b->magic[1] != 0x3C || b->magic[2] != 0x90)
 		return -1;
@@ -427,7 +427,7 @@ finddosfile(int fd, char *file)
 	if(sectsize != 512)
 		return -1;
 	rootoff = (GETSHORT(b->nresrv) + b->nfats*GETSHORT(b->fatsize)) * sectsize;
-	if(seek(fd, rootoff, 0) < 0)
+	if(sys_seek(fd, rootoff, 0) < 0)
 		return -1;
 	nroot = GETSHORT(b->rootsize);
 	rootsects = (nroot*sizeof(Dosdir)+sectsize-1)/sectsize;
@@ -439,7 +439,7 @@ finddosfile(int fd, char *file)
 	 *  this easier
 	 */
 	root = malloc(rootsects*sectsize);
-	if(read(fd, root, rootsects*sectsize) != rootsects*sectsize)
+	if(jehanne_read(fd, root, rootsects*sectsize) != rootsects*sectsize)
 		return -1;
 	n = -1;
 	for(dp = root; dp < &root[nroot]; dp++)

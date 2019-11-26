@@ -65,7 +65,7 @@ main(int argc, char **argv)
 	if(s == nil)
 		sysfatal("smprint: %r");
 
-	if(write(1, s, strlen(s)) != strlen(s))
+	if(jehanne_write(1, s, strlen(s)) != strlen(s))
 		sysfatal("write: %r");
 	
 	exits(nil);

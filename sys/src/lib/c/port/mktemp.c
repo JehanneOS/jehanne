@@ -35,6 +35,6 @@ jehanne_mktemp(char *as)
 		*s = i++;
 	}
 	err[0] = '\0';
-	errstr(err, sizeof err);	/* clear the error */
+	sys_errstr(err, sizeof err);	/* clear the error */
 	return as;
 }

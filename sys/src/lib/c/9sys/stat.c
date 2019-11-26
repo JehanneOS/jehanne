@@ -24,13 +24,13 @@ jehanne_stat(const char* name, uint8_t* edir, int nedir)
 {
 	int fd, statsz;
 
-	fd = open(name, OSTAT);
+	fd = sys_open(name, OSTAT);
 	if(fd < 0){
 		jehanne_werrstr("stat: %r");
 		return fd;
 	}
-	statsz = fstat(fd, edir, nedir);
-	close(fd);
+	statsz = sys_fstat(fd, edir, nedir);
+	sys_close(fd);
 	return statsz;
 }
 
@@ -39,12 +39,12 @@ jehanne_wstat(const char* name, uint8_t* edir, int nedir)
 {
 	int fd, statsz;
 
-	fd = open(name, OSTAT);
+	fd = sys_open(name, OSTAT);
 	if(fd < 0){
 		jehanne_werrstr("wstat: %r");
 		return fd;
 	}
-	statsz = fwstat(fd, edir, nedir);
-	close(fd);
+	statsz = sys_fwstat(fd, edir, nedir);
+	sys_close(fd);
 	return statsz;
 }

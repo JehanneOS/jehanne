@@ -112,11 +112,11 @@ Xattach(Fsrpc *t)
 		sprint(buf, "/mnt/exportfs/%d", i);
 		nfd = dup(srvfd, -1);
 		if(amount(nfd, buf, MREPL|MCREATE, t->work.aname) < 0){
-			errstr(buf, sizeof buf);
+			sys_errstr(buf, sizeof buf);
 			reply(&t->work, &rhdr, buf);
 			t->busy = 0;
 			freefid(t->work.fid);
-			close(nfd);
+			sys_close(nfd);
 			return;
 		}
 		psmap[i] = 1;
@@ -142,7 +142,7 @@ clonefid(Fid *f, int new)
 		if(n == 0)
 			fatal("inconsistent fids");
 		if(n->fid >= 0)
-			close(n->fid);
+			sys_close(n->fid);
 		freefid(new);
 		n = newfid(new);
 		if(n == 0)
@@ -195,7 +195,7 @@ Xwalk(Fsrpc *t)
 
 		wf = file(f->f, t->work.wname[i]);
 		if(wf == 0){
-			errstr(err, sizeof err);
+			sys_errstr(err, sizeof err);
 			e = err;
 			break;
 		}
@@ -228,7 +228,7 @@ Xclunk(Fsrpc *t)
 	}
 
 	if(f->fid >= 0)
-		close(f->fid);
+		sys_close(f->fid);
 
 	freefid(t->work.fid);
 	reply(&t->work, &rhdr, 0);
@@ -260,7 +260,7 @@ Xstat(Fsrpc *t)
 	}
 
 	if(d == nil) {
-		errstr(err, sizeof err);
+		sys_errstr(err, sizeof err);
 		reply(&t->work, &rhdr, err);
 		t->busy = 0;
 		return;
@@ -314,7 +314,7 @@ Xcreate(Fsrpc *t)
 	f->fid = ocreate(path, t->work.mode, t->work.perm);
 	free(path);
 	if(f->fid < 0) {
-		errstr(err, sizeof err);
+		sys_errstr(err, sizeof err);
 		reply(&t->work, &rhdr, err);
 		t->busy = 0;
 		return;
@@ -322,7 +322,7 @@ Xcreate(Fsrpc *t)
 
 	nf = file(f->f, t->work.name);
 	if(nf == 0) {
-		errstr(err, sizeof err);
+		sys_errstr(err, sizeof err);
 		reply(&t->work, &rhdr, err);
 		t->busy = 0;
 		return;
@@ -358,9 +358,9 @@ Xremove(Fsrpc *t)
 
 	path = makepath(f->f, "");
 	DEBUG(DFD, "\tremove: %s\n", path);
-	if(remove(path) < 0) {
+	if(sys_remove(path) < 0) {
 		free(path);
-		errstr(err, sizeof err);
+		sys_errstr(err, sizeof err);
 		reply(&t->work, &rhdr, err);
 		t->busy = 0;
 		return;
@@ -369,7 +369,7 @@ Xremove(Fsrpc *t)
 
 	f->f->inval = 1;
 	if(f->fid >= 0)
-		close(f->fid);
+		sys_close(f->fid);
 	freefid(t->work.fid);
 
 	reply(&t->work, &rhdr, 0);
@@ -447,9 +447,9 @@ procsetname(char *fmt, ...)
 	if (cmdname == nil)
 		return;
 	snprint(buf, sizeof buf, "#p/%d/args", getpid());
-	if((fd = open(buf, OWRITE)) >= 0){
-		write(fd, cmdname, strlen(cmdname)+1);
-		close(fd);
+	if((fd = sys_open(buf, OWRITE)) >= 0){
+		jehanne_write(fd, cmdname, strlen(cmdname)+1);
+		sys_close(fd);
 	}
 	free(cmdname);
 }
@@ -481,7 +481,7 @@ slave(Fsrpc *f)
 			if(p->busy == 0) {
 				f->pid = p->pid;
 				p->busy = 1;
-				pid = (uintptr_t)rendezvous((void*)p->pid, f);
+				pid = (uintptr_t)sys_rendezvous((void*)p->pid, f);
 				if(pid != p->pid)
 					fatal("rendezvous sync fail");
 				return;
@@ -491,7 +491,7 @@ slave(Fsrpc *f)
 		if(++nproc > MAXPROC)
 			fatal("too many procs");
 
-		pid = rfork(RFPROC|RFMEM);
+		pid = sys_rfork(RFPROC|RFMEM);
 		switch(pid) {
 		case -1:
 			fatal("rfork");
@@ -516,7 +516,7 @@ slave(Fsrpc *f)
 			p->next = Proclist;
 			Proclist = p;
 
-			rendezvous((void*)pid, p);
+			sys_rendezvous((void*)pid, p);
 		}
 	}
 }
@@ -529,14 +529,14 @@ blockingslave(void)
 	Proc *m;
 	uintptr_t pid;
 
-	notify(flushaction);
+	sys_notify(flushaction);
 
 	pid = getpid();
 
-	m = rendezvous((void*)pid, 0);
+	m = sys_rendezvous((void*)pid, 0);
 
 	for(;;) {
-		p = rendezvous((void*)pid, (void*)pid);
+		p = sys_rendezvous((void*)pid, (void*)pid);
 		if(p == (void*)~0)			/* Interrupted */
 			continue;
 
@@ -580,20 +580,20 @@ openmount(int sfd)
 	if(pipe(p) < 0)
 		return -1;
 
-	switch(rfork(RFPROC|RFMEM|RFNOWAIT|RFNAMEG|RFFDG)){
+	switch(sys_rfork(RFPROC|RFMEM|RFNOWAIT|RFNAMEG|RFFDG)){
 	case -1:
 		return -1;
 
 	default:
-		close(sfd);
-		close(p[0]);
+		sys_close(sfd);
+		sys_close(p[0]);
 		return p[1];
 
 	case 0:
 		break;
 	}
 
-	close(p[1]);
+	sys_close(p[1]);
 
 	arg[0] = "exportfs";
 	snprint(fdbuf, sizeof fdbuf, "-S/fd/%d", sfd);
@@ -602,12 +602,12 @@ openmount(int sfd)
 	arg[2] = mbuf;
 	arg[3] = nil;
 
-	close(0);
-	close(1);
+	sys_close(0);
+	sys_close(1);
 	dup(p[0], 0);
 	dup(p[0], 1);
-	exec("/cmd/exportfs", arg);
-	_exits("whoops: exec failed");
+	sys_exec("/cmd/exportfs", arg);
+	sys__exits("whoops: exec failed");
 	return -1;
 }
 
@@ -627,7 +627,7 @@ slaveopen(Fsrpc *p)
 		return;
 	}
 	if(f->fid >= 0) {
-		close(f->fid);
+		sys_close(f->fid);
 		f->fid = -1;
 	}
 
@@ -640,12 +640,12 @@ slaveopen(Fsrpc *p)
 		return;
 	}
 	/* There is a race here I ignore because there are no locks */
-	f->fid = open(path, work->mode);
+	f->fid = sys_open(path, work->mode);
 	free(path);
 	p->canint = 0;
 	if(f->fid < 0 || (d = dirfstat(f->fid)) == nil) {
 	Error:
-		errstr(err, sizeof err);
+		sys_errstr(err, sizeof err);
 		reply(work, &rhdr, err);
 		return;
 	}
@@ -693,11 +693,11 @@ slaveread(Fsrpc *p)
 	if(patternfile != nil && (f->f->qid.type&QTDIR))
 		r = preaddir(f, (uint8_t*)data, n, work->offset);
 	else
-		r = pread(f->fid, data, n, work->offset);
+		r = sys_pread(f->fid, data, n, work->offset);
 	p->canint = 0;
 	if(r < 0) {
 		free(data);
-		errstr(err, sizeof err);
+		sys_errstr(err, sizeof err);
 		reply(work, &rhdr, err);
 		return;
 	}
@@ -730,10 +730,10 @@ slavewrite(Fsrpc *p)
 	p->canint = 1;
 	if(p->flushtag != NOTAG)
 		return;
-	n = pwrite(f->fid, work->data, n, work->offset);
+	n = sys_pwrite(f->fid, work->data, n, work->offset);
 	p->canint = 0;
 	if(n < 0) {
-		errstr(err, sizeof err);
+		sys_errstr(err, sizeof err);
 		reply(work, &rhdr, err);
 		return;
 	}
@@ -760,7 +760,7 @@ flushaction(void *a, char *cause)
 		exits("noted");
 	}
 	if(strncmp(cause, "kill", 4) == 0)
-		noted(NDFLT);
+		sys_noted(NDFLT);
 
-	noted(NCONT);
+	sys_noted(NCONT);
 }

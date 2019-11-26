@@ -33,21 +33,21 @@ main(int argc, char *argv[])
 	case -1:
 		error("fork");
 	case 0:
-		exec(argv[1], &argv[1]);
+		sys_exec(argv[1], &argv[1]);
 		if(argv[1][0] != '/' && jehanne_strncmp(argv[1], "./", 2) &&
 		   jehanne_strncmp(argv[1], "../", 3)){
 			jehanne_sprint(output, "/cmd/%s", argv[1]);
-			exec(output, &argv[1]);
+			sys_exec(output, &argv[1]);
 		}
 		error(argv[1]);
 	}
 
-	notify(notifyf);
+	sys_notify(notifyf);
 
     loop:
 	w = jehanne_wait();
 	if(w == nil){
-		errstr(err, sizeof err);
+		sys_errstr(err, sizeof err);
 		if(jehanne_strcmp(err, "interrupted") == 0)
 			goto loop;
 		error("wait");
@@ -105,6 +105,6 @@ notifyf(void *a, char *s)
 {
 	USED(a);
 	if(jehanne_strcmp(s, "interrupt") == 0)
-		noted(NCONT);
-	noted(NDFLT);
+		sys_noted(NCONT);
+	sys_noted(NDFLT);
 }

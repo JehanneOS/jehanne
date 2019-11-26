@@ -22,7 +22,7 @@ jehanne_dirfwstat(int fd, Dir *d)
 	if(buf == nil)
 		return -1;
 	jehanne_convD2M(d, buf, r);
-	r = fwstat(fd, buf, r);
+	r = sys_fwstat(fd, buf, r);
 	jehanne_free(buf);
 	return r;
 }

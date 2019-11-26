@@ -27,12 +27,12 @@ jehanne_pexec(const char *f, char *args[])
 	int n, i;
 
 	if(f[0] == '/' || (epath = jehanne_getenv(ENV_PATH)) == nil)
-		return exec(f, (const char**)args);
+		return sys_exec(f, (const char**)args);
 
 	n = jehanne_getfields(epath, entries, nelem(entries), 1, ":");
 	for(i = 0; i < n; ++i){
 		path = jehanne_smprint("%s/%s", entries[i], f);
-		exec(path, args);
+		sys_exec(path, args);
 		jehanne_free(path);
 	}
 

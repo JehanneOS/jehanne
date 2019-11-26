@@ -366,7 +366,7 @@ moreinput(void)
 		/* leave fd around; file will be removed on exit */
 		/* the following looks weird but is required for unix version */
 		bin = &b;
-		seek(fd, 0, 0);
+		sys_seek(fd, 0, 0);
 		Binit(bin, fd, OREAD);
 	} else {
 		bin=Bopen(infile, OREAD);

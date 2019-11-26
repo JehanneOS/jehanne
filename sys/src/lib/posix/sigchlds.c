@@ -33,9 +33,9 @@ open_sighelper_nanny(void)
 {
 	int mypid;
 	if(*__libposix_devsignal >= 0)
-		close(*__libposix_devsignal);
+		sys_close(*__libposix_devsignal);
 	mypid = *__libposix_pid;
-	*__libposix_devsignal = create("/dev/posix/nanny", OWRITE|OCEXEC, mypid);
+	*__libposix_devsignal = sys_create("/dev/posix/nanny", OWRITE|OCEXEC, mypid);
 	if(*__libposix_devsignal < 0)
 		sysfatal("cannot create /dev/posix/nanny: %r");
 }
@@ -45,7 +45,7 @@ exit_on_SA_NOCLDWAIT(char *msg){
 	/* we share the father's memory, we can inspect its configuration */
 	if(__libposix_signals[PosixSIGCHLD-1].sa_nochildwait){
 		/* the parent does not care about us*/
-		rfork(RFNOWAIT);
+		sys_rfork(RFNOWAIT);
 		exits(msg);
 	}
 }
@@ -60,15 +60,15 @@ forward_wait_msg(int father, int child)
 	mypid = *__libposix_pid;
 	name = smprint("signal proxy %d <> %d", father, child);
 	snprint(buf, sizeof(buf), "/proc/%d/args", mypid);
-	n = open(buf, OWRITE);
-	write(n, name, strlen(name)+1);
-	close(n);
+	n = sys_open(buf, OWRITE);
+	jehanne_write(n, name, strlen(name)+1);
+	sys_close(n);
 
-	rfork(RFCNAMEG|RFCENVG|RFNOMNT);
+	sys_rfork(RFCNAMEG|RFCENVG|RFNOMNT);
 
 	n = 0;
 WaitInterrupted:
-	n = await(buf, sizeof buf-1);
+	n = sys_await(buf, sizeof buf-1);
 	if(n < 0){
 		rerrstr(err, ERRMAX);
 		if(strstr(err, "no living children") == nil)
@@ -133,7 +133,7 @@ fork_with_sigchld(int *errnop)
 	 */
 	father = getpid();
 
-	switch(proxy = rfork(RFPROC|RFMEM|RFFDG)){
+	switch(proxy = sys_rfork(RFPROC|RFMEM|RFFDG)){
 	case -1:
 		return -1;
 	case 0:
@@ -143,28 +143,28 @@ fork_with_sigchld(int *errnop)
 		 */
 		*__libposix_pid = getpid();
 		open_sighelper_nanny();
-		switch(child = rfork(RFPROC|RFFDG)){
+		switch(child = sys_rfork(RFPROC|RFFDG)){
 		case -1:
 			rend = *__libposix_pid;
-			while(rendezvous((void*)rend, "e") == (void*)-1)
+			while(sys_rendezvous((void*)rend, "e") == (void*)-1)
 				sleep(100);
-			rfork(RFNOWAIT);
+			sys_rfork(RFNOWAIT);
 			exits("rfork (child)");
 		case 0:
 			/* Beloved child here
 			 */
 			__libposix_setup_new_process();
 			rend = *__libposix_pid;
-			while(rendezvous((void*)rend, "d") == (void*)-1)
+			while(sys_rendezvous((void*)rend, "d") == (void*)-1)
 				sleep(100);
-			rfork(RFREND);
+			sys_rfork(RFREND);
 			return 0;
 		default:
 			rend = child;
-			while((buf = rendezvous((void*)rend, "")) == (void*)-1)
+			while((buf = sys_rendezvous((void*)rend, "")) == (void*)-1)
 				sleep(100);
 			rend = *__libposix_pid;
-			while(rendezvous((void*)rend, "d") == (void*)-1)
+			while(sys_rendezvous((void*)rend, "d") == (void*)-1)
 				sleep(100);
 
 			/* we share the memory of the parent but we do
@@ -176,7 +176,7 @@ fork_with_sigchld(int *errnop)
 		}
 	default:
 		rend = proxy;
-		while((buf = rendezvous((void*)rend, "")) == (void*)-1)
+		while((buf = sys_rendezvous((void*)rend, "")) == (void*)-1)
 			sleep(100);
 		if(buf[0] == 'e')
 			return -1;

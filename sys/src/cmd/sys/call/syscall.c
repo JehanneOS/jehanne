@@ -99,20 +99,20 @@ main(int argc, char *argv[])
 	}
 	for(i=1; i<argc; i++)
 		arg[i-1] = parse(argv[i]);
-	notify(catch);
+	sys_notify(catch);
 	for(i=0; tab[i].name; i++)
 		if(strcmp(tab[i].name, argv[0])==0){
 			/* special case for seek, pread, pwrite; vlongs are problematic */
 			if(strcmp(argv[0], "seek") == 0)
-				r=seek(arg[0], strtoll(argv[2], 0, 0), arg[2]);
+				r=sys_seek(arg[0], strtoll(argv[2], 0, 0), arg[2]);
 			else if(strcmp(argv[0], "pread") == 0)
-				r=pread(arg[0], (void*)arg[1], arg[2], strtoll(argv[4], 0, 0));
+				r=sys_pread(arg[0], (void*)arg[1], arg[2], strtoll(argv[4], 0, 0));
 			else if(strcmp(argv[0], "pwrite") == 0)
-				r=pwrite(arg[0], (void*)arg[1], arg[2], strtoll(argv[4], 0, 0));
+				r=sys_pwrite(arg[0], (void*)arg[1], arg[2], strtoll(argv[4], 0, 0));
 			else
 				r=(*tab[i].func)(arg[0], arg[1], arg[2], arg[3], arg[4]);
 			if(r == -1){
-				errstr(ebuf, sizeof ebuf);
+				sys_errstr(ebuf, sizeof ebuf);
 				fprint(2, "syscall: return %lld, error:%s\n", r, ebuf);
 			}else{
 				ebuf[0] = 0;
@@ -175,5 +175,5 @@ void
 catch(void *v, char *msg)
 {
 	fprint(2, "syscall: received note='%s'\n", msg);
-	noted(NDFLT);
+	sys_noted(NDFLT);
 }

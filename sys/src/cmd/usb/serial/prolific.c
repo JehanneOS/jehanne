@@ -558,7 +558,7 @@ plreadstatus(Serialport *p)
 	qlock(&ser->ql);
 	dfd = p->epintr->dfd;
 	qunlock(&ser->ql);
-	nr = read(dfd, buf, sizeof buf);
+	nr = jehanne_read(dfd, buf, sizeof buf);
 	qlock(&ser->ql);
 	rerrstr(err, sizeof err);
 	if(nr < 0 && strstr(err, "timed out") == nil){

@@ -26,7 +26,7 @@ amount0(int fd, char *mntpt, int flags, char *aname, char *keyspec)
 	int rv, afd;
 	AuthInfo *ai;
 
-	afd = fauth(fd, aname);
+	afd = sys_fauth(fd, aname);
 	if(afd >= 0){
 		ai = auth_proxy(afd, amount_getkey, "proto=p9any role=client %s", keyspec);
 		if(ai != nil)
@@ -34,9 +34,9 @@ amount0(int fd, char *mntpt, int flags, char *aname, char *keyspec)
 		else
 			fprint(2, "%s: auth_proxy: %r\n", argv0);
 	}
-	rv = mount(fd, afd, mntpt, flags, aname, mntdevice);
+	rv = sys_mount(fd, afd, mntpt, flags, aname, mntdevice);
 	if(afd >= 0)
-		close(afd);
+		sys_close(afd);
 	return rv;
 }
 
@@ -98,7 +98,7 @@ main(int argc, char *argv[])
 	if((flag&MAFTER)&&(flag&MBEFORE))
 		usage();
 
-	fd = open(argv[0], ORDWR);
+	fd = sys_open(argv[0], ORDWR);
 	if(fd < 0){
 		if(qflag)
 			exits(0);
@@ -106,9 +106,9 @@ main(int argc, char *argv[])
 		exits("open");
 	}
 
-	notify(catch);
+	sys_notify(catch);
 	if(noauth)
-		rv = mount(fd, -1, argv[1], flag, spec, mntdevice);
+		rv = sys_mount(fd, -1, argv[1], flag, spec, mntdevice);
 	else
 		rv = amount0(fd, argv[1], flag, spec, keyspec);
 	if(rv < 0){

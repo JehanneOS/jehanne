@@ -23,13 +23,13 @@ static int
 setlocaltime(char* timebuf, int s){
 	int n, f, t;
 	t=0;
-	f = open("#r/rtc", ORDWR);
+	f = sys_open("#r/rtc", ORDWR);
 	if(f >= 0){
-		if((n = read(f, timebuf, s-1)) > 0){
+		if((n = jehanne_read(f, timebuf, s-1)) > 0){
 			timebuf[n] = '\0';
 			t = 1;
 		}
-		close(f);
+		sys_close(f);
 	}else do{
 		jehanne_strcpy(timebuf, "yymmddhhmm[ss]");
 		outin("\ndate/time ", timebuf, s);
@@ -58,31 +58,31 @@ settime(int islocal, int afd, char *rp)
 		/*
 		 *  set the time from the access time of the root
 		 */
-		f = open(timeserver, ORDWR);
+		f = sys_open(timeserver, ORDWR);
 		if(f < 0)
 			return;
-		if(mount(f, afd, "/tmp", MREPL, rp, '9') < 0){
+		if(sys_mount(f, afd, "/tmp", MREPL, rp, '9') < 0){
 			warning("settime mount");
-			close(f);
+			sys_close(f);
 			if((!islocal) && (setlocaltime(timebuf, sizeof(timebuf)) == 0))
 				return;
 		} else {
-			close(f);
+			sys_close(f);
 			if(jehanne_stat("/tmp", statbuf, sizeof statbuf) < 0)
 				fatal("stat");
 			jehanne_convM2D(statbuf, sizeof statbuf, &dir[0], (char*)&dir[1]);
 			jehanne_sprint(timebuf, "%ld", dir[0].atime);
-			unmount(0, "/tmp");
+			sys_unmount(0, "/tmp");
 		}
 	}
 
 	if((!islocal) && (jehanne_strcmp(timebuf,"0")==0))
 		setlocaltime(timebuf, sizeof(timebuf));
 
-	f = open("#c/time", OWRITE);
-	if(write(f, timebuf, jehanne_strlen(timebuf)) < 0)
+	f = sys_open("#c/time", OWRITE);
+	if(jehanne_write(f, timebuf, jehanne_strlen(timebuf)) < 0)
 		warning("can't set #c/time");
-	close(f);
+	sys_close(f);
 	jehanne_print("\n");
 }
 

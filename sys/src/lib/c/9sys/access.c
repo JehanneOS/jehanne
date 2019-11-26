@@ -36,9 +36,9 @@ jehanne_access(const char *name, int mode)
 	};
 
 	reqmode = omode[mode&AMASK];
-	fd = open(name, reqmode);
+	fd = sys_open(name, reqmode);
 	if(fd >= 0){
-		close(fd);
+		sys_close(fd);
 		return 0;
 	}
 

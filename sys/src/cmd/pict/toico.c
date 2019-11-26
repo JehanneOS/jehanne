@@ -147,14 +147,14 @@ readicon(char *file)
 	int fd;
 	Icon *icon;
 
-	fd = open(file, OREAD);
+	fd = sys_open(file, OREAD);
 	if(fd < 0)
 		sysfatal("opening %s: %r", file);
 	icon = emalloc(sizeof(Icon));
 	icon->img = readimage(display, fd, 0);
 	if(icon->img == nil)
 		sysfatal("reading image %s: %r", file);
-	close(fd);
+	sys_close(fd);
 
 	if(h.first)
 		h.last->next = icon;

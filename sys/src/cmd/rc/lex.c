@@ -104,10 +104,10 @@ pprompt(void)
 		if(newwdir){
 			char dir[4096];
 			int fd;
-			if((fd=open("/dev/wdir", OWRITE))>=0){
+			if((fd=sys_open("/dev/wdir", OWRITE))>=0){
 				getwd(dir, sizeof(dir));
-				write(fd, dir, strlen(dir));
-				close(fd);
+				jehanne_write(fd, dir, strlen(dir));
+				sys_close(fd);
 			}
 			newwdir = 0;
 		}

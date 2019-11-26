@@ -48,8 +48,8 @@ catch(void *a, char *msg)
 {
 	USED(a); USED(msg);
 	if(strstr(msg, "alarm"))
-		noted(NCONT);
-	noted(NDFLT);
+		sys_noted(NCONT);
+	sys_noted(NDFLT);
 }
 
 static void
@@ -66,9 +66,9 @@ timedwrite(int fd, void *p, int n)
 {
 	int32_t rv;
 
-	alarm(TIMEOUT);
-	rv = write(fd, p, n);
-	alarm(0);
+	sys_alarm(TIMEOUT);
+	rv = jehanne_write(fd, p, n);
+	sys_alarm(0);
 	if(rv < 0){
 		fprint(2, "%s: timed out\n", argv0);
 		exits("timeout");
@@ -82,16 +82,16 @@ readbyte(int fd)
 	uint8_t c;
 	char buf[ERRMAX];
 
-	alarm(200);
-	if(read(fd, &c, sizeof(c)) == -1){
-		alarm(0);
-		errstr(buf, sizeof buf);
+	sys_alarm(200);
+	if(jehanne_read(fd, &c, sizeof(c)) == -1){
+		sys_alarm(0);
+		sys_errstr(buf, sizeof buf);
 		if(strcmp(buf, "interrupted") == 0)
 			return -1;
 		fprint(2, "%s: readbyte failed - %s\n", argv0, buf);
 		exits("read");
 	}
-	alarm(0);
+	sys_alarm(0);
 	return c;
 }
 
@@ -130,7 +130,7 @@ toggleRTS(int fd)
 static void
 setupeia(int fd, char *baud, char *bits)
 {
-	alarm(TIMEOUT);
+	sys_alarm(TIMEOUT);
 	/*
 	 * set the speed to 1200/2400/4800/9600 baud,
 	 * 7/8-bit data, one stop bit and no parity
@@ -141,7 +141,7 @@ setupeia(int fd, char *baud, char *bits)
 	timedwrite(fd, "s1", 2);
 	timedwrite(fd, "pn", 2);
 	timedwrite(fd, "i1", 2);
-	alarm(0);
+	sys_alarm(0);
 }
 
 /*
@@ -324,14 +324,14 @@ main(int argc, char *argv[])
 	if(argc)
 		p = *argv;
 
-	if((conf = open("/dev/mousectl", OWRITE)) == -1){
+	if((conf = sys_open("/dev/mousectl", OWRITE)) == -1){
 		fprint(2, "%s: can't open /dev/mousectl - %r\n", argv0);
 		if(dontset == 0)
 			exits("open /dev/mousectl");
 	}
 
 	if(strncmp(p, "ps2", 3) == 0){
-		if(write(conf, p, strlen(p)) < 0){
+		if(jehanne_write(conf, p, strlen(p)) < 0){
 			fprint(2, "%s: error setting mouse type - %r\n", argv0);
 			exits("write conf");
 		}
@@ -343,17 +343,17 @@ main(int argc, char *argv[])
 		if(tries)
 			fprint(2, "%s: Unknown mouse type, retrying...\n", argv0);
 		sprint(buf, "#t/eia%sctl", p);
-		if((ctl = open(buf, ORDWR)) == -1){
+		if((ctl = sys_open(buf, ORDWR)) == -1){
 			fprint(2, "%s: can't open %s - %r\n", argv0, buf);
 			exits("open ctl");
 		}
 		sprint(buf, "#t/eia%s", p);
-		if((data = open(buf, ORDWR)) == -1){
+		if((data = sys_open(buf, ORDWR)) == -1){
 			fprint(2, "%s: can't open %s - %r\n", argv0, buf);
 			exits("open data");
 		}
 	
-		notify(catch);
+		sys_notify(catch);
 	
 		type = MorW(ctl, data);
 		if(type == 0)
@@ -378,8 +378,8 @@ main(int argc, char *argv[])
 		sprint(buf, "serial %s", p);
 		switch(type){
 		case 0:
-			close(data);
-			close(ctl);
+			sys_close(data);
+			sys_close(ctl);
 			continue;
 		case 'C':
 			DEBUG print("Logitech 5 byte mouse\n");
@@ -402,7 +402,7 @@ main(int argc, char *argv[])
 	}
 
 	DEBUG fprint(2, "mouse configured as '%s'\n", buf);
-	if(dontset == 0 && write(conf, buf, strlen(buf)) < 0){
+	if(dontset == 0 && jehanne_write(conf, buf, strlen(buf)) < 0){
 		fprint(2, "%s: error setting mouse type - %r\n", argv0);
 		exits("write conf");
 	}

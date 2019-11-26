@@ -23,7 +23,7 @@ auth_challenge(char *fmt, ...)
 		return nil;
 	}
 
-	if((c->afd = open("/mnt/factotum/rpc", ORDWR)) < 0){
+	if((c->afd = sys_open("/mnt/factotum/rpc", ORDWR)) < 0){
 	Error:
 		auth_freechal(c);
 		free(p);
@@ -93,7 +93,7 @@ auth_response(Chalstate *c)
 	}
 
 Out:
-	close(c->afd);
+	sys_close(c->afd);
 	auth_freerpc(c->rpc);
 	c->afd = -1;
 	c->rpc = nil;
@@ -107,7 +107,7 @@ auth_freechal(Chalstate *c)
 		return;
 
 	if(c->afd >= 0)
-		close(c->afd);
+		sys_close(c->afd);
 	if(c->rpc != nil)
 		auth_freerpc(c->rpc);
 

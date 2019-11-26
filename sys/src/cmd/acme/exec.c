@@ -616,7 +616,7 @@ putfile(File *f, int q0, int q1, Rune *namer, int nname)
 			n = (BUFSIZE-1)/UTFmax;
 		bufread(f, q, r, n);
 		m = snprint(s, BUFSIZE, "%.*S", n, r);
-		if(write(fd, s, m) != m){
+		if(jehanne_write(fd, s, m) != m){
 			warning(nil, "can't write file %s: %r\n", name);
 			goto Rescue2;
 		}
@@ -665,14 +665,14 @@ putfile(File *f, int q0, int q1, Rune *namer, int nname)
 	free(d);
 	free(namer);
 	free(name);
-	close(fd);
+	sys_close(fd);
 	winsettag(w);
 	return;
 
     Rescue2:
 	fbuffree(s);
 	fbuffree(r);
-	close(fd);
+	sys_close(fd);
 	/* fall through */
 
     Rescue1:
@@ -1267,7 +1267,7 @@ runproc(void *argvp)
 			if(activewin)
 				winid = activewin->id;
 		}
-		rfork(RFNAMEG|RFENVG|RFFDG|RFNOTEG);
+		sys_rfork(RFNAMEG|RFENVG|RFFDG|RFNOTEG);
 		sprint(buf, "%d", winid);
 		putenv("winid", buf);
 
@@ -1280,13 +1280,13 @@ runproc(void *argvp)
 			fprint(2, "child: can't mount /dev/cons: %r\n");
 			threadexits("mount");
 		}
-		close(0);
+		sys_close(0);
 		if(winid>0 && (pipechar=='|' || pipechar=='>')){
 			sprint(buf, "/mnt/acme/%d/rdsel", winid);
-			open(buf, OREAD);
+			sys_open(buf, OREAD);
 		}else
-			open("/dev/null", OREAD);
-		close(1);
+			sys_open("/dev/null", OREAD);
+		sys_close(1);
 		if((winid>0 || iseditcmd) && (pipechar=='|' || pipechar=='<')){
 			if(iseditcmd){
 				if(winid > 0)
@@ -1295,20 +1295,20 @@ runproc(void *argvp)
 					sprint(buf, "/mnt/acme/editout");
 			}else
 				sprint(buf, "/mnt/acme/%d/wrsel", winid);
-			open(buf, OWRITE);
-			close(2);
-			open("/dev/cons", OWRITE);
+			sys_open(buf, OWRITE);
+			sys_close(2);
+			sys_open("/dev/cons", OWRITE);
 		}else{
-			open("/dev/cons", OWRITE);
+			sys_open("/dev/cons", OWRITE);
 			dup(1, 2);
 		}
 	}else{
-		rfork(RFFDG|RFNOTEG);
+		sys_rfork(RFFDG|RFNOTEG);
 		fsysclose();
-		close(0);
-		open("/dev/null", OREAD);
-		close(1);
-		open(acmeerrorfile, OWRITE);
+		sys_close(0);
+		sys_open("/dev/null", OREAD);
+		sys_close(1);
+		sys_open(acmeerrorfile, OWRITE);
 		dup(1, 2);
 	}
 
@@ -1437,7 +1437,7 @@ run(Window *win, char *s, Rune *rdir, int ndir, int newns,
 	arg[8] = cpid;
 	arg[9] = (void*)(uintptr_t)iseditcmd;
 	proccreate(runproc, arg, STACK);
-	/* mustn't block here because must be ready to answer mount() call in run() */
+	/* mustn't block here because must be ready to answer sys_mount() call in run() */
 	arg = emalloc(2*sizeof(void*));
 	arg[0] = c;
 	arg[1] = cpid;

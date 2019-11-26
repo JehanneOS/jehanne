@@ -22,14 +22,14 @@ rpc(int fd, int type)
 	hdr.type = type;
 	hdr.tag = NOTAG;
 	n = convS2M(&hdr, buf);
-	if(write(fd, buf, n) != n)
+	if(jehanne_write(fd, buf, n) != n)
 		fatal("write rpc");
 
 	jehanne_print("...");
 	p = buf;
 	l = 0;
 	while(l < 3) {
-		n = read(fd, p, 3);
+		n = jehanne_read(fd, p, 3);
 		if(n <= 0)
 			fatal("read rpc");
 		if(n == 2 && l == 0 && buf[0] == 'O' && buf[1] == 'K')

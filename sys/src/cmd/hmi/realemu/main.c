@@ -158,7 +158,7 @@ rrealmem(void *aux, unsigned long off, int len)
 	print_func_entry();
 	unsigned char data[4];
 
-	if(pread(realmemfd, data, len, off) != len){
+	if(sys_pread(realmemfd, data, len, off) != len){
 		fprint(2, "bad real mem read %.5lux: %r\n", off);
 		trap(&cpu, EMEM);
 	}
@@ -173,7 +173,7 @@ wrealmem(void *aux, unsigned long off, unsigned long w, int len)
 	unsigned char data[4];
 
 	pw[len](data, w);
-	if(pwrite(realmemfd, data, len, off) != len){
+	if(sys_pwrite(realmemfd, data, len, off) != len){
 		fprint(2, "bad real mem write %.5lux: %r\n", off);
 		trap(&cpu, EMEM);
 	}
@@ -241,7 +241,7 @@ rport(void *aux, unsigned long p, int len)
 		w = 0;
 		break;
 	default:
-		if(pread(portfd[len], data, len, p) != len){
+		if(sys_pread(portfd[len], data, len, p) != len){
 			fprint(2, "bad %d bit port read %.4lux: %r\n", len*8, p);
 			trap(&cpu, EIO);
 		}
@@ -308,7 +308,7 @@ wport(void *aux, unsigned long p, unsigned long w, int len)
 	
 	default:
 		pw[len](data, w);
-		if(pwrite(portfd[len], data, len, p) != len){
+		if(sys_pwrite(portfd[len], data, len, p) != len){
 			fprint(2, "bad %d bit port write %.4lux: %r\n", len*8, p);
 			trap(&cpu, EIO);
 		}
@@ -349,14 +349,14 @@ cpuinit(void)
 	fmtinstall('J', flagfmt);
 	fmtinstall('C', cpufmt);
 
-	if((portfd[1] = open("#P/iob", ORDWR)) < 0)
+	if((portfd[1] = sys_open("#P/iob", ORDWR)) < 0)
 		sysfatal("open iob: %r");
-	if((portfd[2] = open("#P/iow", ORDWR)) < 0)
+	if((portfd[2] = sys_open("#P/iow", ORDWR)) < 0)
 		sysfatal("open iow: %r");
-	if((portfd[4] = open("#P/iol", ORDWR)) < 0)
+	if((portfd[4] = sys_open("#P/iol", ORDWR)) < 0)
 		sysfatal("open iol: %r");
 
-	if((realmemfd = open("#P/realmodemem", ORDWR)) < 0)
+	if((realmemfd = sys_open("#P/realmodemem", ORDWR)) < 0)
 		sysfatal("open realmodemem: %r");
 
 	for(i=0; i<nelem(memio); i++){
@@ -366,7 +366,7 @@ cpuinit(void)
 			continue;
 
 		off = (unsigned long)i << 16;
-		seek(realmemfd, off, 0);
+		sys_seek(realmemfd, off, 0);
 		if(readn(realmemfd, memory + off, 0x10000) != 0x10000)
 			sysfatal("read real mem %lux: %r\n", off);
 	}

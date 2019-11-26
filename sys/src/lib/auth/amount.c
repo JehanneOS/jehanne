@@ -25,14 +25,14 @@ amount(int fd, char *mntpt, int flags, char *aname)
 	int rv, afd;
 	AuthInfo *ai;
 
-	afd = fauth(fd, aname);
+	afd = sys_fauth(fd, aname);
 	if(afd >= 0){
 		ai = auth_proxy(afd, amount_getkey, "proto=p9any role=client");
 		if(ai != nil)
 			auth_freeAI(ai);
 	}
-	rv = mount(fd, afd, mntpt, flags, aname, '9');
+	rv = sys_mount(fd, afd, mntpt, flags, aname, '9');
 	if(afd >= 0)
-		close(afd);
+		sys_close(afd);
 	return rv;
 }

@@ -18,7 +18,7 @@ jehanne_lock(Lock *l)
 	if(jehanne_ainc(&l->key) == 1)
 		return;	/* changed from 0 -> 1: we hold lock */
 	/* otherwise wait in kernel */
-	while(semacquire(&l->sem, 1) < 0){
+	while(sys_semacquire(&l->sem, 1) < 0){
 		/* interrupted; try again */
 	}
 }
@@ -28,7 +28,7 @@ jehanne_unlock(Lock *l)
 {
 	if(jehanne_adec(&l->key) == 0)
 		return;	/* changed from 1 -> 0: no contention */
-	semrelease(&l->sem, 1);
+	sys_semrelease(&l->sem, 1);
 }
 
 int
@@ -39,7 +39,7 @@ jehanne_canlock(Lock *l)
 	/* Undo increment (but don't miss wakeup) */
 	if(jehanne_adec(&l->key) == 0)
 		return 0;	/* changed from 1 -> 0: no contention */
-	semrelease(&l->sem, 1);
+	sys_semrelease(&l->sem, 1);
 	return 0;
 }
 

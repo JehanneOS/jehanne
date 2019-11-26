@@ -188,17 +188,17 @@ dirval(Dir *d, int64_t size)
 void
 readfile(char *name)
 {
-	int n, fd = open(name, OREAD);
+	int n, fd = sys_open(name, OREAD);
 
 	if(fd < 0) {
 		warn(name);
 		return;
 	}
-	while ((n = read(fd, readbuf, blocksize)) > 0)
+	while ((n = jehanne_read(fd, readbuf, blocksize)) > 0)
 		continue;
 	if (n < 0)
 		warn(name);
-	close(fd);
+	sys_close(fd);
 }
 
 int64_t
@@ -234,7 +234,7 @@ du(char *name, Dir *dir)
 	if((dir->qid.type&QTDIR) == 0)
 		return dirval(dir, blkmultiple(dir->length));
 
-	fd = open(name, OREAD);
+	fd = sys_open(name, OREAD);
 	if(fd < 0)
 		return warn(name);
 	nk = 0;
@@ -267,7 +267,7 @@ du(char *name, Dir *dir)
 	}
 	if(n < 0)
 		warn(name);
-	close(fd);
+	sys_close(fd);
 	return dirval(dir, nk);
 }
 

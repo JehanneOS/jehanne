@@ -378,7 +378,7 @@ putle32(void* v, uint32_t i)
 static void
 diskread(Disk *disk, void *data, int ndata, uint32_t sec, uint32_t off)
 {
-	if(seek(disk->fd, (int64_t)sec*disk->secsize+off, 0) != (int64_t)sec*disk->secsize+off)
+	if(sys_seek(disk->fd, (int64_t)sec*disk->secsize+off, 0) != (int64_t)sec*disk->secsize+off)
 		sysfatal("diskread seek %lud.%lud: %r", (uint32_t)sec,
 		         (uint32_t)off);
 	if(readn(disk->fd, data, ndata) != ndata)
@@ -390,9 +390,9 @@ static int
 diskwrite(Disk *disk, void *data, int ndata, uint32_t sec, uint32_t off)
 {
 	written = 1;
-	if(seek(disk->wfd, (int64_t)sec*disk->secsize+off, 0) != (int64_t)sec*disk->secsize+off)
+	if(sys_seek(disk->wfd, (int64_t)sec*disk->secsize+off, 0) != (int64_t)sec*disk->secsize+off)
 		goto Error;
-	if(write(disk->wfd, data, ndata) != ndata)
+	if(jehanne_write(disk->wfd, data, ndata) != ndata)
 		goto Error;
 	return 0;
 

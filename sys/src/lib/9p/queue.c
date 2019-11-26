@@ -14,17 +14,17 @@ _reqqueueproc(void *v)
 	char *buf;
 
 	q = v;
-	rfork(RFNOTEG);
+	sys_rfork(RFNOTEG);
 
 	buf = smprint("/proc/%d/ctl", getpid());
-	fd = open(buf, OWRITE);
+	fd = sys_open(buf, OWRITE);
 	free(buf);
 	
 	for(;;){
 		qlock(&q->ql);
 		q->flush = 0;
 		if(fd >= 0)
-			write(fd, "nointerrupt", 11);
+			jehanne_write(fd, "nointerrupt", 11);
 		q->cur = nil;
 		while(q->next == (Queueelem *)q)
 			rsleep(&q->r);

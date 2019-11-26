@@ -33,7 +33,7 @@ FILE *fdopen(const int fd, const char *mode){
 	}
 	f->fd=fd;
 	if(mode[0]=='a')
-		seek(f->fd, 0L, 2);
+		sys_seek(f->fd, 0L, 2);
 	if(f->fd==-1) return NULL;
 	f->flags=0;
 	f->state=OPEN;

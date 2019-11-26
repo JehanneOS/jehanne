@@ -40,7 +40,7 @@ main(int argc, char *argv[])
 	if(!nflag)
 		*p++ = '\n';
 
-	if(write(1, buf, p-buf) < 0){
+	if(jehanne_write(1, buf, p-buf) < 0){
 		fprint(2, "echo: write error: %r\n");
 		exits("write error");
 	}

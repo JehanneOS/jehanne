@@ -377,11 +377,11 @@ finddev(char *dir, char *name, char *dev)
 	int fd, i, nd;
 	Dir *d;
 
-	fd = open(dir, OREAD);
+	fd = sys_open(dir, OREAD);
 	if(fd >= 0){
 		d = nil;
 		nd = dirreadall(fd, &d);
-		close(fd);
+		sys_close(fd);
 		for(i=0; i<nd; i++){
 			if(strncmp(d[i].name, name, strlen(name)))
 				continue;
@@ -694,7 +694,7 @@ doremove(void)
 
 			snprint(file, sizeof file, "%s/ipifc/%d/ctl",
 				conf.mpoint, nifc->index);
-			cfd = open(file, ORDWR);
+			cfd = sys_open(file, ORDWR);
 			if(cfd < 0){
 				warning("can't open %s: %r", conf.mpoint);
 				continue;
@@ -718,7 +718,7 @@ dounbind(void)
 		if(strcmp(nifc->dev, conf.dev) == 0){
 			snprint(file, sizeof file, "%s/ipifc/%d/ctl",
 				conf.mpoint, nifc->index);
-			cfd = open(file, ORDWR);
+			cfd = sys_open(file, ORDWR);
 			if(cfd < 0){
 				warning("can't open %s: %r", conf.mpoint);
 				break;
@@ -738,7 +738,7 @@ adddefroute(char *mpoint, uint8_t *gaddr)
 	int cfd;
 
 	sprint(buf, "%s/iproute", mpoint);
-	cfd = open(buf, ORDWR);
+	cfd = sys_open(buf, ORDWR);
 	if(cfd < 0)
 		return;
 
@@ -746,7 +746,7 @@ adddefroute(char *mpoint, uint8_t *gaddr)
 		fprint(cfd, "add 0 0 %I", gaddr);
 	else
 		fprint(cfd, "add :: /0 %I", gaddr);
-	close(cfd);
+	sys_close(cfd);
 }
 
 /* create a client id */
@@ -793,16 +793,16 @@ controldevice(void)
 		return;
 
 	snprint(ctlfile, sizeof ctlfile, "%s/clone", conf.dev);
-	fd = open(ctlfile, ORDWR);
+	fd = sys_open(ctlfile, ORDWR);
 	if(fd < 0)
 		sysfatal("can't open %s", ctlfile);
 
 	for(cp = firstctl; cp != nil; cp = cp->next){
-		if(write(fd, cp->ctl, strlen(cp->ctl)) < 0)
+		if(jehanne_write(fd, cp->ctl, strlen(cp->ctl)) < 0)
 			sysfatal("ctl message %s: %r", cp->ctl);
-		seek(fd, 0, 0);
+		sys_seek(fd, 0, 0);
 	}
-//	close(fd);		/* or does it need to be left hanging? */
+//	sys_close(fd);		/* or does it need to be left hanging? */
 }
 
 /* bind an ip stack to a device, leave the control channel open */
@@ -816,7 +816,7 @@ binddevice(void)
 	else if(myifc < 0){
 		/* get a new ip interface */
 		snprint(buf, sizeof buf, "%s/ipifc/clone", conf.mpoint);
-		conf.cfd = open(buf, ORDWR);
+		conf.cfd = sys_open(buf, ORDWR);
 		if(conf.cfd < 0)
 			sysfatal("opening %s/ipifc/clone: %r", conf.mpoint);
 
@@ -826,7 +826,7 @@ binddevice(void)
 	} else {
 		/* open the old interface */
 		snprint(buf, sizeof buf, "%s/ipifc/%d/ctl", conf.mpoint, myifc);
-		conf.cfd = open(buf, ORDWR);
+		conf.cfd = sys_open(buf, ORDWR);
 		if(conf.cfd < 0)
 			sysfatal("open %s: %r", buf);
 	}
@@ -856,7 +856,7 @@ ip4cfg(void)
 			n += snprint(buf+n, sizeof buf-n, " %d", conf.mtu);
 	}
 
-	if(write(conf.cfd, buf, n) < 0){
+	if(jehanne_write(conf.cfd, buf, n) < 0){
 		warning("write(%s): %r", buf);
 		return -1;
 	}
@@ -884,7 +884,7 @@ ipunconfig(void)
 		ipmove(conf.mask, defmask(conf.laddr));
 	n += snprint(buf+n, sizeof buf-n, " %I", conf.mask);
 
-	write(conf.cfd, buf, n);
+	jehanne_write(conf.cfd, buf, n);
 
 	ipmove(conf.laddr, IPnoaddr);
 	ipmove(conf.raddr, IPnoaddr);
@@ -895,8 +895,8 @@ void
 ding(void* _, char *msg)
 {
 	if(strstr(msg, "alarm"))
-		noted(NCONT);
-	noted(NDFLT);
+		sys_noted(NCONT);
+	sys_noted(NDFLT);
 }
 
 void
@@ -910,7 +910,7 @@ dhcpquery(int needconfig, int startstate)
 		conf.state = Sinit;
 		return;
 	}
-	notify(ding);
+	sys_notify(ding);
 
 	conf.xid = lrand();
 	conf.starttime = time(0);
@@ -933,7 +933,7 @@ dhcpquery(int needconfig, int startstate)
 		dhcprecv();
 		dhcptimer();
 	}
-	close(conf.fd);
+	sys_close(conf.fd);
 
 	if(needconfig)
 		fprint(conf.cfd, "remove %I %I", IPnoaddr, IPnoaddr);
@@ -956,7 +956,7 @@ dhcpwatch(int needconfig)
 	if(nodhcpwatch)
 		return;
 
-	switch(rfork(RFPROC|RFFDG|RFNOWAIT|RFNOTEG)){
+	switch(sys_rfork(RFPROC|RFFDG|RFNOWAIT|RFNOTEG)){
 	default:
 		return;
 	case 0:
@@ -1134,7 +1134,7 @@ dhcpsend(int type)
 	 *  same size, so if the request is too short the reply
 	 *  is truncated.
 	 */
-	if(write(conf.fd, &bp, sizeof bp) != sizeof bp)
+	if(jehanne_write(conf.fd, &bp, sizeof bp) != sizeof bp)
 		warning("dhcpsend: write failed: %r");
 }
 
@@ -1148,9 +1148,9 @@ dhcprecv(void)
 	Bootp *bp;
 
 	memset(buf, 0, sizeof buf);
-	alarm(1000);
-	n = read(conf.fd, buf, sizeof buf);
-	alarm(0);
+	sys_alarm(1000);
+	n = jehanne_read(conf.fd, buf, sizeof buf);
+	sys_alarm(0);
 
 	if(n < 0){
 		rerrstr(err, sizeof err);
@@ -1357,10 +1357,10 @@ openlisten(void)
 		sysfatal("can't set header mode: %r");
 
 	sprint(data, "%s/data", devdir);
-	fd = open(data, ORDWR);
+	fd = sys_open(data, ORDWR);
 	if(fd < 0)
 		sysfatal("open %s: %r", data);
-	close(cfd);
+	sys_close(cfd);
 	return fd;
 }
 
@@ -1711,20 +1711,20 @@ putndb(void)
 		ndbclose(db);
 	}
 
-	if((fd = open(file, OWRITE|OTRUNC)) < 0)
+	if((fd = sys_open(file, OWRITE|OTRUNC)) < 0)
 		return;
-	write(fd, buf, p-buf);
-	close(fd);
+	jehanne_write(fd, buf, p-buf);
+	sys_close(fd);
 
 	snprint(file, sizeof file, "%s/cs", conf.mpoint);
-	if((fd = open(file, OWRITE)) >= 0){
-		write(fd, "refresh", 7);
-		close(fd);
+	if((fd = sys_open(file, OWRITE)) >= 0){
+		jehanne_write(fd, "refresh", 7);
+		sys_close(fd);
 	}
 	snprint(file, sizeof file, "%s/dns", conf.mpoint);
-	if((fd = open(file, OWRITE)) >= 0){
-		write(fd, "refresh", 7);
-		close(fd);
+	if((fd = sys_open(file, OWRITE)) >= 0){
+		jehanne_write(fd, "refresh", 7);
+		sys_close(fd);
 	}
 }
 

@@ -373,9 +373,9 @@ static void
 hdfree(Hiddev *f)
 {
 	if(f->kinfd >= 0)
-		close(f->kinfd);
+		sys_close(f->kinfd);
 	if(f->minfd >= 0)
-		close(f->minfd);
+		sys_close(f->minfd);
 	if(f->ep != nil)
 		closedev(f->ep);
 	if(f->dev != nil)
@@ -404,7 +404,7 @@ hdrecover(Hiddev *f)
 	int i;
 
 	if(canqlock(&l)){
-		close(f->dev->dfd);
+		sys_close(f->dev->dfd);
 		devctl(f->dev, "reset");
 		for(i=0; i<4; i++){
 			sleep(500);
@@ -434,9 +434,9 @@ putscan(Hiddev *f, uint8_t sc, uint8_t up)
 		return;
 	s[1] = up | sc&Keymask;
 	if(isext(sc))
-		write(f->kinfd, s, 2);
+		jehanne_write(f->kinfd, s, 2);
 	else
-		write(f->kinfd, s+1, 1);
+		jehanne_write(f->kinfd, s+1, 1);
 }
 
 static void
@@ -610,11 +610,11 @@ sethipri(void)
 	int fd;
 
 	snprint(fn, sizeof(fn), "/proc/%d/ctl", getpid());
-	fd = open(fn, OWRITE);
+	fd = sys_open(fn, OWRITE);
 	if(fd < 0)
 		return;
 	fprint(fd, "pri 13");
-	close(fd);
+	sys_close(fd);
 }
 
 static void
@@ -639,7 +639,7 @@ readerproc(void* a)
 			hdfatal(f, "hid: weird maxpkt");
 
 		memset(p.p, 0, sizeof(p.p));
-		c = read(f->ep->dfd, p.p, f->ep->maxpkt);
+		c = jehanne_read(f->ep->dfd, p.p, f->ep->maxpkt);
 		if(c <= 0){
 			if(c < 0)
 				rerrstr(err, sizeof(err));
@@ -667,7 +667,7 @@ readerproc(void* a)
 			}
 
 			if(f->kinfd < 0){
-				f->kinfd = open("/dev/kbin", OWRITE);
+				f->kinfd = sys_open("/dev/kbin", OWRITE);
 				if(f->kinfd < 0)
 					hdfatal(f, "open /dev/kbin");
 
@@ -713,13 +713,13 @@ readerproc(void* a)
 				fprint(2, "ptr: b=%x m=%x x=%d y=%d z=%d\n", p.b, p.m, p.x, p.y, p.z);
 
 			if(f->minfd < 0){
-				f->minfd = open("/dev/mousein", OWRITE);
+				f->minfd = sys_open("/dev/mousein", OWRITE);
 				if(f->minfd < 0)
 					hdfatal(f, "open /dev/mousein");
 			}
 
 			seprint(mbuf, mbuf+sizeof(mbuf), "m%11d %11d %11d", p.x, p.y, b);
-			write(f->minfd, mbuf, strlen(mbuf));
+			jehanne_write(f->minfd, mbuf, strlen(mbuf));
 
 			lastb = b;
 		}

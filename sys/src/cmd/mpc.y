@@ -445,14 +445,14 @@ cprint(char *fmt, ...)
 	p = buf;
 	while((x = strchr(p, '\n')) != nil){
 		x++;
-		write(1, p, x-p);
+		jehanne_write(1, p, x-p);
 		p = &tabs[sizeof(tabs)-1 - clevel];
 		if(*p != '\0')
-			write(1, p, strlen(p));
+			jehanne_write(1, p, strlen(p));
 		p = x;
 	}
 	if(*p != '\0')
-		write(1, p, strlen(p));
+		jehanne_write(1, p, strlen(p));
 }
 
 Node*
@@ -1131,12 +1131,12 @@ main(int argc, char *argv[])
 	while(*argv != nil){
 		int fd;
 
-		if((fd = open(*argv, OREAD)) < 0){
+		if((fd = sys_open(*argv, OREAD)) < 0){
 			fprint(2, "%s: %r\n", *argv);
 			exits("error");
 		}
 		parse(fd, *argv);
-		close(fd);
+		sys_close(fd);
 		argv++;
 	}
 	exits(nil);

@@ -583,7 +583,7 @@ request(int fd, ScsiPtr *cmd, ScsiPtr *data, int *status)
 	*status = STok;
 
 	/* send SCSI command */
-	if(write(fd, cmd->p, cmd->count) != cmd->count){
+	if(jehanne_write(fd, cmd->p, cmd->count) != cmd->count){
 		fprint(2, "scsireq: write cmd: %r\n");
 		*status = Status_SW;
 		return -1;
@@ -591,17 +591,17 @@ request(int fd, ScsiPtr *cmd, ScsiPtr *data, int *status)
 
 	/* read or write actual data */
 	werrstr("");
-//	alarm(5*1000);
+//	sys_alarm(5*1000);
 	if(data->write)
-		n = write(fd, data->p, data->count);
+		n = jehanne_write(fd, data->p, data->count);
 	else {
-		n = read(fd, data->p, data->count);
+		n = jehanne_read(fd, data->p, data->count);
 		if (n < 0)
 			memset(data->p, 0, data->count);
 		else if (n < data->count)
 			memset(data->p + n, 0, data->count - n);
 	}
-//	alarm(0);
+//	sys_alarm(0);
 	if (n != data->count && n <= 0) {
 		if (debug)
 			fprint(2,
@@ -614,7 +614,7 @@ request(int fd, ScsiPtr *cmd, ScsiPtr *data, int *status)
 
 	/* read status */
 	buf[0] = '\0';
-	r = read(fd, buf, sizeof buf-1);
+	r = jehanne_read(fd, buf, sizeof buf-1);
 	if(exabyte && r <= 0 || !exabyte && r < 0){
 		fprint(2, "scsireq: read status: %r\n");
 		*status = Status_SW;
@@ -826,7 +826,7 @@ SRclose(ScsiReq *rp)
 		rp->status = Status_BADARG;
 		return -1;
 	}
-	close(rp->fd);
+	sys_close(rp->fd);
 	rp->flags = 0;
 	return 0;
 }
@@ -951,7 +951,7 @@ SRopenraw(ScsiReq *rp, char *unit)
 	rp->unit = unit;
 
 	snprint(name, sizeof name, "%s/raw", unit);
-	if((rp->fd = open(name, ORDWR)) == -1){
+	if((rp->fd = sys_open(name, ORDWR)) == -1){
 		rp->status = STtimeout;
 		return -1;
 	}

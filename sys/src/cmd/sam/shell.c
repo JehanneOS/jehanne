@@ -33,7 +33,7 @@ plan9(File *f, int type, String *s, int nest)
 		Strduplstr(&plan9cmd, s);
 	if(downloaded){
 		samerr(errfile);
-		remove(errfile);
+		sys_remove(errfile);
 	}
 	if(type!='!' && pipe(pipe1)==-1)
 		error(Epipe);
@@ -45,15 +45,15 @@ plan9(File *f, int type, String *s, int nest)
 			if(fd < 0)
 				fd = ocreate("/dev/null", OWRITE, 0666L);
 			dup(fd, 2);
-			close(fd);
+			sys_close(fd);
 			/* 2 now points at err file */
 			if(type == '>')
 				dup(2, 1);
 			else if(type=='!'){
 				dup(2, 1);
-				fd = open("/dev/null", OREAD);
+				fd = sys_open("/dev/null", OREAD);
 				dup(fd, 0);
-				close(fd);
+				sys_close(fd);
 			}
 		}
 		if(type != '!') {
@@ -61,8 +61,8 @@ plan9(File *f, int type, String *s, int nest)
 				dup(pipe1[1], 1);
 			else if(type == '>')
 				dup(pipe1[0], 0);
-			close(pipe1[0]);
-			close(pipe1[1]);
+			sys_close(pipe1[0]);
+			sys_close(pipe1[1]);
 		}
 		if(type == '|'){
 			if(pipe(pipe2) == -1)
@@ -71,7 +71,7 @@ plan9(File *f, int type, String *s, int nest)
 				/*
 				 * It's ok if we get SIGPIPE here
 				 */
-				close(pipe2[0]);
+				sys_close(pipe2[0]);
 				io = pipe2[1];
 				if(retcode=!setjmp(mainloop)){	/* assignment = */
 					char *c;
@@ -93,12 +93,12 @@ plan9(File *f, int type, String *s, int nest)
 				exits("fork");
 			}
 			dup(pipe2[0], 0);
-			close(pipe2[0]);
-			close(pipe2[1]);
+			sys_close(pipe2[0]);
+			sys_close(pipe2[1]);
 		}
 		if(type=='<'){
-			close(0);	/* so it won't read from terminal */
-			open("/dev/null", OREAD);
+			sys_close(0);	/* so it won't read from terminal */
+			sys_open("/dev/null", OREAD);
 		}
 		execl(SHPATH, SH, "-c", Strtoc(&plan9cmd), nil);
 		exits("exec");
@@ -111,14 +111,14 @@ plan9(File *f, int type, String *s, int nest)
 			outTl(Hsnarflen, addr.r.p2-addr.r.p1);
 		snarf(f, addr.r.p1, addr.r.p2, &snarfbuf, 0);
 		logdelete(f, addr.r.p1, addr.r.p2);
-		close(pipe1[1]);
+		sys_close(pipe1[1]);
 		io = pipe1[0];
 		f->tdot.p1 = -1;
 		f->ndot.r.p2 = addr.r.p2+readio(f, &nulls, 0, FALSE);
 		f->ndot.r.p1 = addr.r.p2;
 		closeio((Posn)-1);
 	}else if(type=='>'){
-		close(pipe1[0]);
+		sys_close(pipe1[0]);
 		io = pipe1[1];
 		bpipeok = 1;
 		writeio(f);
@@ -145,8 +145,8 @@ checkerrs(void)
 	long l;
 
 	if(statfile(errfile, 0, 0, 0, &l, 0) > 0 && l != 0){
-		if((f=open((char *)errfile, OREAD)) != -1){
-			if((n=read(f, buf, sizeof buf-1)) > 0){
+		if((f=sys_open((char *)errfile, OREAD)) != -1){
+			if((n=jehanne_read(f, buf, sizeof buf-1)) > 0){
 				for(nl=0,p=buf; nl<3 && p<&buf[n]; p++)
 					if(*p=='\n')
 						nl++;
@@ -155,8 +155,8 @@ checkerrs(void)
 				if(p-buf < l-1)
 					dprint("(sam: more in %s)\n", errfile);
 			}
-			close(f);
+			sys_close(f);
 		}
 	}else
-		remove((char *)errfile);
+		sys_remove((char *)errfile);
 }

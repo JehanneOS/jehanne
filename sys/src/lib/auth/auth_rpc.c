@@ -72,13 +72,13 @@ auth_rpc(AuthRpc *rpc, char *verb, void *a, int na)
 	memmove(rpc->obuf, verb, l);
 	rpc->obuf[l] = ' ';
 	memmove(rpc->obuf+l+1, a, na);
-	if((n=write(rpc->afd, rpc->obuf, l+1+na)) != l+1+na){
+	if((n=jehanne_write(rpc->afd, rpc->obuf, l+1+na)) != l+1+na){
 		if(n >= 0)
 			werrstr("auth_rpc short write");
 		return ARrpcfailure;
 	}
 
-	if((n=read(rpc->afd, rpc->ibuf, AuthRpcMax)) < 0)
+	if((n=jehanne_read(rpc->afd, rpc->ibuf, AuthRpcMax)) < 0)
 		return ARrpcfailure;
 	rpc->ibuf[n] = '\0';
 

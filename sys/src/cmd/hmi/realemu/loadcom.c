@@ -18,12 +18,12 @@ main(int argc, char *argv[])
 		fprint(2, "usage:\t%s file.com\n", argv0);
 		exits("usage");
 	}
-	if((fd = open(*argv, OREAD)) < 0)
+	if((fd = sys_open(*argv, OREAD)) < 0)
 		sysfatal("open: %r");
 
-	if((rreg = open("/dev/realmode", OWRITE)) < 0)
+	if((rreg = sys_open("/dev/realmode", OWRITE)) < 0)
 		sysfatal("open realmode: %r");
-	if((rmem = open("/dev/realmodemem", OWRITE)) < 0)
+	if((rmem = sys_open("/dev/realmodemem", OWRITE)) < 0)
 		sysfatal("open realmodemem: %r");
 	if((len = readn(fd, buf, sizeof buf)) < 2)
 		sysfatal("file too small");
@@ -34,10 +34,10 @@ main(int argc, char *argv[])
 	u.sp = 0xfffe;
 	u.ip = 0x0100;
 
-	seek(rmem, (u.cs<<4) + u.ip, 0);
-	if(write(rmem, buf, len) != len)
+	sys_seek(rmem, (u.cs<<4) + u.ip, 0);
+	if(jehanne_write(rmem, buf, len) != len)
 		sysfatal("write mem: %r");
 
-	if(write(rreg, &u, sizeof u) != sizeof u)
+	if(jehanne_write(rreg, &u, sizeof u) != sizeof u)
 		sysfatal("write reg: %r");
 }

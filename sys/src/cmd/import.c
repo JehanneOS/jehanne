@@ -66,9 +66,9 @@ procsetname(char *fmt, ...)
 	if (cmdname == nil)
 		return;
 	snprint(buf, sizeof buf, "#p/%d/args", getpid());
-	if((fd = open(buf, OWRITE)) >= 0){
-		write(fd, cmdname, strlen(cmdname)+1);
-		close(fd);
+	if((fd = sys_open(buf, OWRITE)) >= 0){
+		jehanne_write(fd, cmdname, strlen(cmdname)+1);
+		sys_close(fd);
 	}
 	free(cmdname);
 }
@@ -83,9 +83,9 @@ post(char *name, char *envname, int srvfd)
 	if(fd < 0)
 		return;
 	sprint(buf, "%d",srvfd);
-	if(write(fd, buf, strlen(buf)) != strlen(buf))
+	if(jehanne_write(fd, buf, strlen(buf)) != strlen(buf))
 		sysfatal("srv write: %r");
-	close(fd);
+	sys_close(fd);
 	putenv(envname, name);
 }
 
@@ -189,8 +189,8 @@ main(int argc, char **argv)
 	if (encproto == Enctls)
 		sysfatal("%s: tls has not yet been implemented", argv[0]);
 
-	notify(catcher);
-	alarm(60*1000);
+	sys_notify(catcher);
+	sys_alarm(60*1000);
 
 	if(backwards)
 		fd = passive();
@@ -216,7 +216,7 @@ main(int argc, char **argv)
 		srand(truerand());
 		for(i = 0; i < 4; i++)
 			key[i] = rand();
-		if(write(fd, key, 4) != 4)
+		if(jehanne_write(fd, key, 4) != 4)
 			sysfatal("can't write key part: %r");
 		if(readn(fd, key+12, 4) != 4)
 			sysfatal("can't read key part: %r");
@@ -240,16 +240,16 @@ main(int argc, char **argv)
 
 	if(srvpost){
 		sprint(srvfile, "/srv/%s", srvpost);
-		remove(srvfile);
+		sys_remove(srvfile);
 		post(srvfile, srvpost, fd);
 	}
 	procsetname("mount on %s", mntpt);
-	if(mount(fd, -1, mntpt, mntflags, "", '9') < 0)
+	if(sys_mount(fd, -1, mntpt, mntflags, "", '9') < 0)
 		sysfatal("can't mount %s: %r", argv[1]);
-	alarm(0);
+	sys_alarm(0);
 
 	if(backwards && argc > 1){
-		exec(argv[1], &argv[1]);
+		sys_exec(argv[1], &argv[1]);
 		sysfatal("exec: %r");
 	}
 	exits(0);
@@ -260,8 +260,8 @@ catcher(void *v, char *msg)
 {
 	timedout = 1;
 	if(strcmp(msg, "alarm") == 0)
-		noted(NCONT);
-	noted(NDFLT);
+		sys_noted(NCONT);
+	sys_noted(NDFLT);
 }
 
 int
@@ -273,32 +273,32 @@ old9p(int fd)
 	if(pipe(p) < 0)
 		sysfatal("pipe: %r");
 
-	switch(rfork(RFPROC|RFFDG|RFNAMEG)) {
+	switch(sys_rfork(RFPROC|RFFDG|RFNAMEG)) {
 	case -1:
 		sysfatal("rfork srvold9p: %r");
 	case 0:
 		if(fd != 1){
 			dup(fd, 1);
-			close(fd);
+			sys_close(fd);
 		}
 		if(p[0] != 0){
 			dup(p[0], 0);
-			close(p[0]);
+			sys_close(p[0]);
 		}
-		close(p[1]);
+		sys_close(p[1]);
 		if(0){
-			fd = open("/sys/log/cpu", OWRITE);
+			fd = sys_open("/sys/log/cpu", OWRITE);
 			if(fd != 2){
 				dup(fd, 2);
-				close(fd);
+				sys_close(fd);
 			}
 			execl("/cmd/srvold9p", "srvold9p", "-ds", nil);
 		} else
 			execl("/cmd/srvold9p", "srvold9p", "-s", nil);
 		sysfatal("exec srvold9p: %r");
 	default:
-		close(fd);
-		close(p[0]);
+		sys_close(fd);
+		sys_close(p[0]);
 	}
 	return p[1];
 }
@@ -331,14 +331,14 @@ connect(char *system, char *tree, int oldserver)
 
 	if(tree != nil){
 		procsetname("writing tree name %s", tree);
-		n = write(fd, tree, strlen(tree));
+		n = jehanne_write(fd, tree, strlen(tree));
 		if(n < 0)
 			sysfatal("can't write tree: %r");
 
 		strcpy(buf, "can't read tree");
 
 		procsetname("awaiting OK for %s", tree);
-		n = read(fd, buf, sizeof buf - 1);
+		n = jehanne_read(fd, buf, sizeof buf - 1);
 		if(n!=2 || buf[0]!='O' || buf[1]!='K'){
 			if (timedout)
 				sysfatal("timed out connecting to %s", na);
@@ -370,10 +370,10 @@ passive(void)
 	putenv(ENV_SERVICE, "import");
 
 	fd = dup(0, -1);
-	close(0);
-	open("/dev/null", ORDWR);
-	close(1);
-	open("/dev/null", ORDWR);
+	sys_close(0);
+	sys_open("/dev/null", ORDWR);
+	sys_close(1);
+	sys_open("/dev/null", ORDWR);
 
 	return fd;
 }
@@ -394,7 +394,7 @@ filter(int fd, char *cmd, char *host)
 	char newport[256], buf[256], *s;
 	char *argv[16], *file, *pbuf;
 
-	if ((len = read(fd, newport, sizeof newport - 1)) < 0)
+	if ((len = jehanne_read(fd, newport, sizeof newport - 1)) < 0)
 		sysfatal("filter: cannot write port; %r");
 	newport[len] = '\0';
 
@@ -421,19 +421,19 @@ filter(int fd, char *cmd, char *host)
 	if(pipe(p) < 0)
 		sysfatal("pipe: %r");
 
-	switch(rfork(RFNOWAIT|RFPROC|RFFDG)) {
+	switch(sys_rfork(RFNOWAIT|RFPROC|RFFDG)) {
 	case -1:
 		sysfatal("rfork record module: %r");
 	case 0:
 		dup(p[0], 1);
 		dup(p[0], 0);
-		close(p[0]);
-		close(p[1]);
-		exec(file, argv);
+		sys_close(p[0]);
+		sys_close(p[1]);
+		sys_exec(file, argv);
 		sysfatal("exec record module: %r");
 	default:
-		close(fd);
-		close(p[0]);
+		sys_close(fd);
+		sys_close(p[0]);
 	}
 	return p[1];
 }

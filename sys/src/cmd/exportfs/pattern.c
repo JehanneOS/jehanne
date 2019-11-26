@@ -112,7 +112,7 @@ preaddir(Fid *f, uint8_t *data, int n, int64_t offset)
 
 	DEBUG(DFD, "\tpreaddir n=%d wo=%lld fo=%lld\n", n, offset, f->offset);
 	if(offset == 0 && f->offset != 0){
-		if(seek(f->fid, 0, 0) != 0)
+		if(sys_seek(f->fid, 0, 0) != 0)
 			return -1;
 		f->offset = f->cdir = f->ndir = 0;
 		free(f->dir);

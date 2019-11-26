@@ -47,7 +47,7 @@ main(int argc, char **argv)
 	else
 		file = "#d/0";
 
-	if((fd = open(file, OREAD)) < 0)
+	if((fd = sys_open(file, OREAD)) < 0)
 		sysfatal("open %s: %r", file);
 	buf = nil;
 	tot = 0;
@@ -55,7 +55,7 @@ main(int argc, char **argv)
 		buf = realloc(buf, tot+8192);
 		if(buf == nil)
 			sysfatal("realloc: %r");
-		if((n = read(fd, buf+tot, 8192)) < 0)
+		if((n = jehanne_read(fd, buf+tot, 8192)) < 0)
 			sysfatal("read: %r");
 		if(n == 0)
 			break;
@@ -65,7 +65,7 @@ main(int argc, char **argv)
 	bin = decodePEM(buf, tag, &len, nil);
 	if(bin == nil)
 		sysfatal("cannot extract section '%s' from pem", tag);
-	if((n=write(1, bin, len)) != len)
+	if((n=jehanne_write(1, bin, len)) != len)
 		sysfatal("writing %d bytes got %ld: %r", len, n);
 	exits(0);
 }

@@ -27,10 +27,10 @@ becomenone(void)
 {
 	int fd;
 
-	fd = open("#c/user", OWRITE);
-	if(fd < 0 || write(fd, "none", strlen("none")) < 0)
+	fd = sys_open("#c/user", OWRITE);
+	if(fd < 0 || jehanne_write(fd, "none", strlen("none")) < 0)
 		sysfatal("can't become none: %r");
-	close(fd);
+	sys_close(fd);
 	if(newns("none", nil) < 0)
 		sysfatal("can't build namespace: %r");
 }
@@ -43,11 +43,11 @@ remoteaddr(char *dir)
 	int n, fd;
 
 	snprint(buf, sizeof buf, "%s/remote", dir);
-	fd = open(buf, OREAD);
+	fd = sys_open(buf, OREAD);
 	if(fd < 0)
 		return "";
-	n = read(fd, buf, sizeof(buf));
-	close(fd);
+	n = jehanne_read(fd, buf, sizeof(buf));
+	sys_close(fd);
 	if(n > 0){
 		buf[n] = 0;
 		p = strchr(buf, '!');
@@ -79,11 +79,11 @@ main(int argc, char **argv)
 		usage();
 
 	if(!verbose){
-		close(1);
-		fd = open("/dev/null", OWRITE);
+		sys_close(1);
+		fd = sys_open("/dev/null", OWRITE);
 		if(fd != 1){
 			dup(fd, 1);
-			close(fd);
+			sys_close(fd);
 		}
 	}
 
@@ -100,37 +100,37 @@ main(int argc, char **argv)
 		if(nctl < 0)
 			sysfatal("listen %s: %r", argv[0]);
 
-		switch(rfork(RFFDG|RFPROC|RFNOWAIT|RFENVG|RFNAMEG|RFNOTEG)){
+		switch(sys_rfork(RFFDG|RFPROC|RFNOWAIT|RFENVG|RFNAMEG|RFNOTEG)){
 		case -1:
 			reject(nctl, ndir, "host overloaded");
-			close(nctl);
+			sys_close(nctl);
 			continue;
 		case 0:
 			fd = accept(nctl, ndir);
 			if(fd < 0){
 				fprint(2, "accept %s: can't open  %s/data: %r\n",
 					argv[0], ndir);
-				_exits(0);
+				sys__exits(0);
 			}
 			print("incoming call for %s from %s in %s\n", argv[0],
 				remoteaddr(ndir), ndir);
 			fprint(nctl, "keepalive");
-			close(ctl);
-			close(nctl);
+			sys_close(ctl);
+			sys_close(nctl);
 			putenv("net", ndir);
 			snprint(data, sizeof data, "%s/data", ndir);
-			bind(data, "/dev/cons", MREPL);
+			sys_bind(data, "/dev/cons", MREPL);
 			dup(fd, 0);
 			dup(fd, 1);
 			dup(fd, 2);
-			close(fd);
-			exec(argv[1], argv+1);
+			sys_close(fd);
+			sys_exec(argv[1], argv+1);
 			if(argv[1][0] != '/')
-				exec(smprint("/cmd/%s", argv[1]), argv+1);
+				sys_exec(smprint("/cmd/%s", argv[1]), argv+1);
 			fprint(2, "%s: exec: %r\n", argv0);
 			exits(nil);
 		default:
-			close(nctl);
+			sys_close(nctl);
 			break;
 		}
 	}

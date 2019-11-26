@@ -107,11 +107,11 @@ procgetname(void)
 	char buf[256];
 
 	snprint(buf, sizeof buf, "#p/%d/args", getpid());
-	if((fd = open(buf, OREAD)) < 0)
+	if((fd = sys_open(buf, OREAD)) < 0)
 		return strdup("");
 	*buf = '\0';
-	n = read(fd, buf, sizeof buf-1);
-	close(fd);
+	n = jehanne_read(fd, buf, sizeof buf-1);
+	sys_close(fd);
 	if (n >= 0)
 		buf[n] = '\0';
 	if ((lp = strchr(buf, '[')) == nil || (rp = strrchr(buf, ']')) == nil) {
@@ -143,9 +143,9 @@ procsetname(char *fmt, ...)
 	if (cmdname == nil)
 		return;
 	snprint(buf, sizeof buf, "#p/%d/args", getpid());
-	if((fd = open(buf, OWRITE)) >= 0){
-		write(fd, cmdname, strlen(cmdname)+1);
-		close(fd);
+	if((fd = sys_open(buf, OWRITE)) >= 0){
+		jehanne_write(fd, cmdname, strlen(cmdname)+1);
+		sys_close(fd);
 	}
 	free(cmdname);
 }
@@ -160,17 +160,17 @@ main(int argc, char **argv)
 	quotefmtinstall();
 	origargs = procgetname();
 	/* see if we should use a larger message size */
-	fd = open("/dev/draw", OREAD);
+	fd = sys_open("/dev/draw", OREAD);
 	if(fd > 0){
 		ms = iounit(fd);
 		if(msgsize < ms+IOHDRSZ)
 			msgsize = ms+IOHDRSZ;
-		close(fd);
+		sys_close(fd);
 	}
 
 	user = getuser();
 	if(user == nil)
-		fatal(1, "can't read user name");
+		fatal(1, "can't jehanne_read user name");
 	ARGBEGIN{
 	case 'a':
 		p = EARGF(usage());
@@ -259,9 +259,9 @@ main(int argc, char **argv)
 	}
 
 	/* Begin serving the gnot namespace */
-	close(0);
+	sys_close(0);
 	dup(data, 0);
-	close(data);
+	sys_close(data);
 
 	sprint(buf, "%d", msgsize);
 	ac = 0;
@@ -275,7 +275,7 @@ main(int argc, char **argv)
 		av[ac++] = patternfile;
 	}
 	av[ac] = nil;
-	exec(exportfs, av);
+	sys_exec(exportfs, av);
 	fatal(1, "starting exportfs");
 }
 
@@ -308,7 +308,7 @@ remoteside(int old)
 	char user[MaxStr], home[MaxStr], buf[MaxStr], xdir[MaxStr], cmd[MaxStr];
 	int i, n, fd, badchdir, gotcmd;
 
-	rfork(RFENVG);
+	sys_rfork(RFENVG);
 	putenv(ENV_SERVICE, "cpu");
 	fd = 0;
 
@@ -356,28 +356,28 @@ remoteside(int old)
 	writestr(fd, "FS", "FS", 0);
 	writestr(fd, "/", "exportfs dir", 0);
 
-	n = read(fd, buf, sizeof(buf));
+	n = jehanne_read(fd, buf, sizeof(buf));
 	if(n != 2 || buf[0] != 'O' || buf[1] != 'K')
 		exits("remote tree");
 
 	/* make sure buffers are big by doing fversion explicitly; pick a huge number; other side will trim */
 	strcpy(buf, VERSION9P);
-	if(fversion(fd, 64*1024, buf, sizeof buf) < 0)
+	if(sys_fversion(fd, 64*1024, buf, sizeof buf) < 0)
 		exits("fversion failed");
-	if(mount(fd, -1, "/mnt/term", MCREATE|MREPL, "", '9') < 0)
+	if(sys_mount(fd, -1, "/mnt/term", MCREATE|MREPL, "", '9') < 0)
 		exits("mount failed");
 
-	close(fd);
+	sys_close(fd);
 
 	/* the remote noteproc uses the mount so it must follow it */
 	rmtnoteproc();
 
 	for(i = 0; i < 3; i++)
-		close(i);
+		sys_close(i);
 
-	if(open("/mnt/term/dev/cons", OREAD) != 0)
+	if(sys_open("/mnt/term/dev/cons", OREAD) != 0)
 		exits("open stdin");
-	if(open("/mnt/term/dev/cons", OWRITE) != 1)
+	if(sys_open("/mnt/term/dev/cons", OWRITE) != 1)
 		exits("open stdout");
 	dup(1, 2);
 
@@ -435,7 +435,7 @@ writestr(int fd, char *str, char *thing, int ignore)
 	int l, n;
 
 	l = strlen(str);
-	n = write(fd, str, l+1);
+	n = jehanne_write(fd, str, l+1);
 	if(!ignore && n < 0)
 		fatal(1, "writing network: %s", thing);
 }
@@ -446,7 +446,7 @@ readstr(int fd, char *str, int len)
 	int n;
 
 	while(len) {
-		n = read(fd, str, 1);
+		n = jehanne_read(fd, str, 1);
 		if(n < 0)
 			return -1;
 		if(*str == '\0')
@@ -466,7 +466,7 @@ readln(char *buf, int n)
 	n--;	/* room for \0 */
 	p = buf;
 	for(i=0; i<n; i++){
-		if(read(0, p, 1) != 1)
+		if(jehanne_read(0, p, 1) != 1)
 			break;
 		if(*p == '\n' || *p == '\r')
 			break;
@@ -574,7 +574,7 @@ p9auth(int fd)
 	for(i = 0; i < 4; i++)
 		key[i] = rand();
 	procsetname("writing p9 key");
-	if(write(fd, key, 4) != 4)
+	if(jehanne_write(fd, key, 4) != 4)
 		return -1;
 	procsetname("reading p9 key");
 	if(readn(fd, key+12, 4) != 4)
@@ -647,7 +647,7 @@ srvp9auth(int fd, char *user)
 		key[i+12] = rand();
 	if(readn(fd, key, 4) != 4)
 		return -1;
-	if(write(fd, key+12, 4) != 4)
+	if(jehanne_write(fd, key+12, 4) != 4)
 		return -1;
 
 	/* scramble into two secrets */
@@ -700,7 +700,7 @@ rmtnoteproc(void)
 	char buf[256];
 
 	/* new proc returns to start shell */
-	pid = rfork(RFPROC|RFFDG|RFNOTEG|RFNAMEG|RFMEM);
+	pid = sys_rfork(RFPROC|RFFDG|RFNOTEG|RFNAMEG|RFMEM);
 	switch(pid){
 	case -1:
 		syslog(0, "cpu", "cpu -R: can't start noteproc: %r");
@@ -710,22 +710,22 @@ rmtnoteproc(void)
 	}
 
 	/* new proc reads notes from other side and posts them to shell */
-	switch(notepid = rfork(RFPROC|RFFDG|RFMEM)){
+	switch(notepid = sys_rfork(RFPROC|RFFDG|RFMEM)){
 	case -1:
 		syslog(0, "cpu", "cpu -R: can't start wait proc: %r");
-		_exits(0);
+		sys__exits(0);
 	case 0:
-		fd = open(rmtnotefile, OREAD);
+		fd = sys_open(rmtnotefile, OREAD);
 		if(fd < 0){
 			syslog(0, "cpu", "cpu -R: can't open %s", rmtnotefile);
-			_exits(0);
+			sys__exits(0);
 		}
 
 		for(;;){
-			n = read(fd, buf, sizeof(buf)-1);
+			n = jehanne_read(fd, buf, sizeof(buf)-1);
 			if(n <= 0){
 				postnote(PNGROUP, pid, "hangup");
-				_exits(0);
+				sys__exits(0);
 			}
 			buf[n] = 0;
 			postnote(PNGROUP, pid, buf);
@@ -739,7 +739,7 @@ rmtnoteproc(void)
 			break;
 	}
 	postnote(PNPROC, notepid, "kill");
-	_exits(0);
+	sys__exits(0);
 }
 
 enum
@@ -799,15 +799,15 @@ fsreply(int fd, Fcall *f)
 		fprint(2, "notefs: <-%F\n", f);
 	n = convS2M(f, buf, sizeof buf);
 	if(n > 0){
-		if(write(fd, buf, n) != n){
-			close(fd);
+		if(jehanne_write(fd, buf, n) != n){
+			sys_close(fd);
 			return -1;
 		}
 	}
 	return 0;
 }
 
-/* match a note read request with a note, reply to the request */
+/* match a note jehanne_read request with a note, reply to the request */
 int
 kick(int fd)
 {
@@ -950,7 +950,7 @@ notefs(int fd)
 	Fid *fid, *nfid;
 	int doreply;
 
-	rfork(RFNOTEG);
+	sys_rfork(RFNOTEG);
 	fmtinstall('F', fcallfmt);
 
 	for(n = 0; n < Nfid; n++){
@@ -1086,7 +1086,7 @@ err:
 	postnote(PNGROUP, exportpid, "kill");
 	if(dbg)
 		fprint(2, "postnote PNGROUP %d: %r\n", exportpid);
-	close(fd);
+	sys_close(fd);
 }
 
 char 	notebuf[ERRMAX];
@@ -1101,11 +1101,11 @@ catcher(void *v, char *text)
 		n = sizeof(notebuf)-1;
 	memmove(notebuf, text, n);
 	notebuf[n] = '\0';
-	noted(NCONT);
+	sys_noted(NCONT);
 }
 
 /*
- *  mount in /dev a note file for the remote side to read.
+ *  mount in /dev a note file for the remote side to jehanne_read.
  */
 void
 lclnoteproc(int netfd)
@@ -1121,7 +1121,7 @@ lclnoteproc(int netfd)
 	}
 
 	/* new proc mounts and returns to start exportfs */
-	switch(pid = rfork(RFPROC|RFNAMEG|RFFDG|RFMEM)){
+	switch(pid = sys_rfork(RFPROC|RFNAMEG|RFFDG|RFMEM)){
 	default:
 		exportpid = pid;
 		break;
@@ -1129,28 +1129,28 @@ lclnoteproc(int netfd)
 		fprint(2, "cpu: can't start note proc: rfork: %r\n");
 		return;
 	case 0:
-		close(pfd[0]);
-		if(mount(pfd[1], -1, "/dev", MBEFORE, "", '9') < 0)
+		sys_close(pfd[0]);
+		if(sys_mount(pfd[1], -1, "/dev", MBEFORE, "", '9') < 0)
 			fprint(2, "cpu: can't mount note proc: %r\n");
-		close(pfd[1]);
+		sys_close(pfd[1]);
 		return;
 	}
 
-	close(netfd);
-	close(pfd[1]);
+	sys_close(netfd);
+	sys_close(pfd[1]);
 
 	/* new proc listens for note file system rpc's */
-	switch(rfork(RFPROC|RFNAMEG|RFMEM)){
+	switch(sys_rfork(RFPROC|RFNAMEG|RFMEM)){
 	case -1:
 		fprint(2, "cpu: can't start note proc: rfork1: %r\n");
-		_exits(0);
+		sys__exits(0);
 	case 0:
 		notefs(pfd[0]);
-		_exits(0);
+		sys__exits(0);
 	}
 
 	/* original proc waits for notes */
-	notify(catcher);
+	sys_notify(catcher);
 	w = nil;
 	for(;;) {
 		*notebuf = 0;

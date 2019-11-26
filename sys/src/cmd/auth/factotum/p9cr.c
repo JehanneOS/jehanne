@@ -73,7 +73,7 @@ p9crclose(Fsstate *fss)
 
 	s = fss->ps;
 	if(s->asfd >= 0){
-		close(s->asfd);
+		sys_close(s->asfd);
 		s->asfd = -1;
 	}
 	free(s);
@@ -293,14 +293,14 @@ p9crwrite(Fsstate *fss, void *va, uint32_t n)
 		memset(resp, 0, sizeof resp);
 		memmove(resp, data, n);
 
-		alarm(30*1000);
-		if(write(s->asfd, resp, s->challen) != s->challen){
-			alarm(0);
+		sys_alarm(30*1000);
+		if(jehanne_write(s->asfd, resp, s->challen) != s->challen){
+			sys_alarm(0);
 			return failure(fss, Easproto);
 		}
 		/* get ticket plus authenticator from auth server */
 		ret = _asgetresp(s->asfd, &s->t, &a, &s->k);
-		alarm(0);
+		sys_alarm(0);
 
 		if(ret < 0)
 			return failure(fss, nil);
@@ -341,9 +341,9 @@ getchal(State *s, Fsstate *fss)
 	s->asfd = _authreq(&s->tr, &s->k);
 	if(s->asfd < 0)
 		return failure(fss, Easproto);
-	alarm(30*1000);
+	sys_alarm(30*1000);
 	n = _asrdresp(s->asfd, s->chal, s->challen);
-	alarm(0);
+	sys_alarm(0);
 	if(n <= 0){
 		if(n == 0)
 			werrstr("_asrdresp short read");

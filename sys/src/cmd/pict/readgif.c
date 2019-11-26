@@ -119,7 +119,7 @@ readgif(int fd, int colorspace, int justone)
 	}
 	memset(h, 0, sizeof(Header));
 	h->fd = &b;
-	errstr(buf, sizeof buf);	/* throw it away */
+	sys_errstr(buf, sizeof buf);	/* throw it away */
 	if(setjmp(h->errlab))
 		a = nil;
 	else

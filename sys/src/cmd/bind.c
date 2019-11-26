@@ -38,7 +38,7 @@ main(int argc, char *argv[])
 	if(argc != 2 || (flag&MAFTER)&&(flag&MBEFORE))
 		usage();
 
-	if(bind(argv[0], argv[1], flag) < 0){
+	if(sys_bind(argv[0], argv[1], flag) < 0){
 		if(qflag)
 			exits(0);
 		/* try to give a less confusing error than the default */

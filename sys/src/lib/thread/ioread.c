@@ -22,7 +22,7 @@ _ioread(va_list *arg)
 	fd = va_arg(*arg, int);
 	a = va_arg(*arg, void*);
 	n = va_arg(*arg, int32_t);
-	return read(fd, a, n);
+	return jehanne_read(fd, a, n);
 }
 
 int32_t

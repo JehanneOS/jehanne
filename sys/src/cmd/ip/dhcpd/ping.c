@@ -23,9 +23,9 @@ catch(void *a, char *msg)
 {
 	USED(a);
 	if(strstr(msg, "alarm"))
-		noted(NCONT);
+		sys_noted(NCONT);
 	else
-		noted(NDFLT);
+		sys_noted(NDFLT);
 }
 
 #define MSG "dhcp probe"
@@ -54,7 +54,7 @@ icmpecho(uint8_t *a)
 	sseq = getpid()*time(0);
 
 	ip = (Icmphdr *)(buf + IPV4HDR_LEN);
-	notify(catch);
+	sys_notify(catch);
 	for(i = 0; i < 3; i++){
 		ip->type = EchoRequest;
 		ip->code = 0;
@@ -64,13 +64,13 @@ icmpecho(uint8_t *a)
 		len = IPV4HDR_LEN + ICMP_HDRSIZE + sizeof(MSG);
 
 		/* send a request */
-		if(write(fd, buf, len) < len)
+		if(jehanne_write(fd, buf, len) < len)
 			break;
 
 		/* wait 1/10th second for a reply and try again */
-		alarm(100);
-		n = read(fd, buf, sizeof(buf));
-		alarm(0);
+		sys_alarm(100);
+		n = jehanne_read(fd, buf, sizeof(buf));
+		sys_alarm(0);
 		if(n <= 0)
 			continue;
 
@@ -82,6 +82,6 @@ icmpecho(uint8_t *a)
 			break;
 		}
 	}
-	close(fd);
+	sys_close(fd);
 	return rv;
 }

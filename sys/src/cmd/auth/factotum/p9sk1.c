@@ -555,15 +555,15 @@ getastickets(State *s, Ticketreq *tr, uint8_t *y, char *tbuf, int tbuflen)
 	asfd = _authdial(dom);
 	if(asfd < 0)
 		return -1;
-	alarm(30*1000);
+	sys_alarm(30*1000);
 	if(y != nil){
 		rv = -1;
 		s->tr.type = AuthPAK;
-		if(_asrequest(asfd, tr) != 0 || write(asfd, y, PAKYLEN) != PAKYLEN)
+		if(_asrequest(asfd, tr) != 0 || jehanne_write(asfd, y, PAKYLEN) != PAKYLEN)
 			goto Out;
 
 		authpak_new(&s->p, &s->k, (uint8_t*)tbuf, 1);
-		if(write(asfd, tbuf, PAKYLEN) != PAKYLEN)
+		if(jehanne_write(asfd, tbuf, PAKYLEN) != PAKYLEN)
 			goto Out;
 
 		if(_asrdresp(asfd, tbuf, 2*PAKYLEN) != 2*PAKYLEN)
@@ -576,8 +576,8 @@ getastickets(State *s, Ticketreq *tr, uint8_t *y, char *tbuf, int tbuflen)
 	s->tr.type = AuthTreq;
 	rv = _asgetticket(asfd, tr, tbuf, tbuflen);
 Out:
-	alarm(0);
-	close(asfd);
+	sys_alarm(0);
+	sys_close(asfd);
 	return rv;
 }
 

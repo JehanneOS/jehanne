@@ -109,13 +109,13 @@ main(int argc, char *argv[])
 		err = show(0, "<stdin>");
 	else{
 		for(i=0; i<argc; i++){
-			fd = open(argv[i], OREAD);
+			fd = sys_open(argv[i], OREAD);
 			if(fd < 0){
 				fprint(2, "gif: can't open %s: %r\n", argv[i]);
 				err = "open";
 			}else{
 				err = show(fd, argv[i]);
-				close(fd);
+				sys_close(fd);
 			}
 			if(output && argc>1 && err==nil){
 				fprint(2, "gif: exiting after one file\n");
@@ -404,7 +404,7 @@ show(int fd, char *name)
 		chantostr(buf, outchan);
 		print("%11s %11d %11d %11d %11d ", buf,
 			rgbv[0]->r.min.x, rgbv[0]->r.min.y, rgbv[0]->r.max.x, rgbv[0]->r.max.y);
-		if(write(1, rgbv[0]->chans[0], rgbv[0]->chanlen) != rgbv[0]->chanlen){
+		if(jehanne_write(1, rgbv[0]->chans[0], rgbv[0]->chanlen) != rgbv[0]->chanlen){
 			fprint(2, "gif: %s: write error %r\n", name);
 			return "write";
 		}

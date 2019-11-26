@@ -140,7 +140,7 @@ debug(const char *fmt, ...)
 		debug_prefix = smprint("posix.%s.%d[%d]: ", user, sid, fspid);
 		debug_prefix_len = strlen(debug_prefix);
 	}
-	write(debugging, debug_prefix, debug_prefix_len);
+	jehanne_write(debugging, debug_prefix, debug_prefix_len);
 	va_start(arg, fmt);
 	vfprint(debugging, fmt, arg);
 	va_end(arg);
@@ -196,7 +196,7 @@ proc_noteid(int pid)
 	long n;
 	char buf[32];
 	sprint(buf, "/proc/%d/noteid", pid);
-	n = remove(buf);
+	n = sys_remove(buf);
 	DEBUG("proc_noteid(%d) = %lld\n", pid, n);
 	if(n == -1)
 		return -1;
@@ -212,12 +212,12 @@ proc_set_noteid(int pid, int noteid)
 	assert(noteid != 0);
 
 	sprint(buf, "/proc/%d/noteid", pid);
-	f = open(buf, OWRITE);
+	f = sys_open(buf, OWRITE);
 	if(f < 0)
 		return 0;
 	n = sprint(buf, "%d", noteid);
-	n = write(f, buf, n);
-	close(f);
+	n = jehanne_write(f, buf, n);
+	sys_close(f);
 	if(n < 0)
 		return 0;
 	return 1;
@@ -228,7 +228,7 @@ proc_ppid(int pid)
 	long n;
 	char buf[32];
 	sprint(buf, "/proc/%d/ppid", pid);
-	n = remove(buf);
+	n = sys_remove(buf);
 	DEBUG("proc_ppid(%d) = %lld\n", pid, n);
 	if(n == -1)
 		return -1;
@@ -523,13 +523,13 @@ process_free_nannies(Process *parent, Process **list)
 			*list = p->next;
 			DEBUG("process_free_nannies(%d): killing pid %d\n", parent->pid, p->pid);
 			snprint(buf, sizeof(buf), "/proc/%d/ctl", p->pid);
-			fd = open(buf, OWRITE);
+			fd = sys_open(buf, OWRITE);
 			if(fd < 0){
 				DEBUG("process_free_nannies(%d): cannot open '%s': %r\n", parent, buf);
 			} else {
-				write(fd, "kill", 5);
+				jehanne_write(fd, "kill", 5);
 			}
-			close(fd);
+			sys_close(fd);
 			if(p->child)
 				p->child->parent = nil;
 			free(p);
@@ -819,16 +819,16 @@ static struct Qtab {
 		0,
 
 	"control",
-		0222,	/* write to send signals */
+		0222,	/* jehanne_write to send signals */
 		0,
 		0,
 
-	"signals",	/* read/write to control signal management */
+	"signals",	/* read/jehanne_write to control signal management */
 		0666,
 		0,
 		0,
 
-	"nanny",	/* write to send SIGCHLD */
+	"nanny",	/* jehanne_write to send SIGCHLD */
 		0222,
 		0,
 		0,
@@ -847,7 +847,7 @@ static struct Qtab {
 
 static Fid *fids;
 static Fid **ftail;
-static Fid *external;	/* attach fid of the mount() */
+static Fid *external;	/* attach fid of the sys_mount() */
 static Fid *control_fid;
 
 
@@ -1204,7 +1204,7 @@ fs_read(Fcall *req, Fcall *rep)
 	Waiter *waiter;
 
 	if(req->count < 0)
-		return fs_error(rep, "bad read/write count");
+		return fs_error(rep, "bad read/jehanne_write count");
 
 	f = fid_find(req->fid);
 	if(f == nil){
@@ -1261,7 +1261,7 @@ fs_read(Fcall *req, Fcall *rep)
 static int
 fs_write(Fcall *req, Fcall *rep)
 {
-	/* write are always sincronous */
+	/* jehanne_write are always sincronous */
 	LongConverter offset;
 	union
 	{
@@ -1276,7 +1276,7 @@ fs_write(Fcall *req, Fcall *rep)
 	Signal *s;
 
 	if(req->count < 0)
-		return fs_error(rep, "bad read/write count");
+		return fs_error(rep, "bad read/jehanne_write count");
 
 	f = fid_find(req->fid);
 	if(f == nil)
@@ -1655,8 +1655,8 @@ sendmessage(int fd, Fcall *rep)
 		DEBUG("sendmessage: convS2M error\n");
 		return 0;
 	}
-	if(write(fd, repdata, n) != n) {
-		DEBUG("sendmessage: write\n");
+	if(jehanne_write(fd, repdata, n) != n) {
+		DEBUG("sendmessage: jehanne_write\n");
 		return 0;
 	}
 	DEBUG("fs_serve: ->%F\n", rep);
@@ -1752,8 +1752,8 @@ FSLoopExit:
 		sysfatal("fs_serve: sendmessage");
 	}
 
-	close(connection);
-	DEBUG("close(%d)\n", connection);
+	sys_close(connection);
+	DEBUG("sys_close(%d)\n", connection);
 
 	DEBUG("shut down\n");
 }
@@ -1765,27 +1765,27 @@ tty_from_cons(int fd, int mode)
 	int tmp;
 	char buf[256];
 
-	if(fd2path(fd, buf, sizeof(buf)) < 0)
+	if(sys_fd2path(fd, buf, sizeof(buf)) < 0)
 		sysfatal("fd2path: %d", fd);
 	tmp = strlen(buf);
 	if(tmp < 9 || strcmp(buf+tmp-9, "/dev/cons") != 0)
 		return;
-	tmp = open("/dev/tty", mode);
+	tmp = sys_open("/dev/tty", mode);
 	dup(tmp, fd);
-	close(tmp);
+	sys_close(tmp);
 }
 static void
 unmount_dev(void)
 {
 	char name[256];
 	snprint(name, sizeof(name), "#s/posixly.%s.%d", user, sid);
-	unmount(name, "/dev");
-	remove(name);
+	sys_unmount(name, "/dev");
+	sys_remove(name);
 }
 static void
 post_mount(int fd)
 {
-	/* we want the mount point to be unmount() on session detach,
+	/* we want the mount point to be sys_unmount() on session detach,
 	 * so it must have a deterministic name: "#s/posixly.glenda.123"
 	 * is way better than "#|/data".
 	 */
@@ -1793,25 +1793,25 @@ post_mount(int fd)
 	char name[256], buf[32];
 
 	snprint(name, sizeof(name), "#s/posixly.%s.%d", user, sid);
-	f = create(name, OWRITE, 0600);
+	f = sys_create(name, OWRITE, 0600);
 	if(f < 0)
-		sysfatal("create(%s)", name);
+		sysfatal("sys_create(%s)", name);
 	sprint(buf, "%d", fd);
-	if(write(f, buf, strlen(buf)) != strlen(buf))
-		sysfatal("write(%s)", name);
-	close(f);
-	close(fd);
+	if(jehanne_write(f, buf, strlen(buf)) != strlen(buf))
+		sysfatal("jehanne_write(%s)", name);
+	sys_close(f);
+	sys_close(fd);
 
-	f = open(name, ORDWR);
+	f = sys_open(name, ORDWR);
 	if(f < 0)
-		sysfatal("open(%s)", name);
-	if(mount(f, -1, "/dev", MBEFORE, "", '9') == -1)
+		sysfatal("sys_open(%s)", name);
+	if(sys_mount(f, -1, "/dev", MBEFORE, "", '9') == -1)
 		sysfatal("mount: %r");
 }
 static void
 open_control_fd(void)
 {
-	while((*__libposix_devsignal = open("/dev/posix/control", OWRITE)) < 0)
+	while((*__libposix_devsignal = sys_open("/dev/posix/control", OWRITE)) < 0)
 		sleep(250);
 }
 void
@@ -1839,34 +1839,34 @@ main(int argc, char *argv[])
 	if(sid == 0 && argc < 1)
 		usage();
 
-	rfork(RFFDG);
+	sys_rfork(RFFDG);
 
 	controlpid = getpid();
 	__libposix_pid = &controlpid;
 	user = strdup(getuser());
 
 	if(sid == 0){
-		rfork(RFREND|RFNAMEG);
+		sys_rfork(RFREND|RFNAMEG);
 
 		if(access("/dev/tty", AWRITE|AREAD) == 0){
 			/* replace /dev/cons with /dev/tty */
 			tty_from_cons(0, OREAD);
 			tty_from_cons(1, OWRITE);
 			tty_from_cons(2, ORDWR);
-			if((i = open("/dev/consctl", OWRITE)) > 0){
-				write(i, "winchon", 7);
-				close(i);
+			if((i = sys_open("/dev/consctl", OWRITE)) > 0){
+				jehanne_write(i, "winchon", 7);
+				sys_close(i);
 			}
 		}
 
 		/* fork session leader */
-		switch(sid = rfork(RFPROC|RFNOTEG|RFFDG)){
+		switch(sid = sys_rfork(RFPROC|RFNOTEG|RFFDG)){
 		case -1:
 			sysfatal("rfork");
 		case 0:
-			while(rendezvous(main, (void*)0x1) == ((void*)~0))
+			while(sys_rendezvous(main, (void*)0x1) == ((void*)~0))
 				sleep(250);
-			close(debugging);
+			sys_close(debugging);
 			jehanne_pexec(strdup(argv[0]), argv);
 			exits("exec");
 		default:
@@ -1876,14 +1876,14 @@ main(int argc, char *argv[])
 
 	pipe(p);
 
-	switch(fspid = rfork(RFPROC|RFMEM|RFCENVG|RFNOTEG|RFNAMEG|RFNOMNT|RFFDG|RFREND)){
+	switch(fspid = sys_rfork(RFPROC|RFMEM|RFCENVG|RFNOTEG|RFNAMEG|RFNOMNT|RFFDG|RFREND)){
 	case -1:
 		sysfatal("rfork");
 	case 0:
-		close(0);
-		close(1);
-		close(2);
-		close(p[0]);
+		sys_close(0);
+		sys_close(1);
+		sys_close(2);
+		sys_close(p[0]);
 		fspid = getpid();
 		fs_serve(p[1]);
 		exits(nil);
@@ -1891,16 +1891,16 @@ main(int argc, char *argv[])
 		break;
 	}
 
-	close(0);
-	close(1);
-	close(2);
-	close(p[1]);
+	sys_close(0);
+	sys_close(1);
+	sys_close(2);
+	sys_close(p[1]);
 	post_mount(p[0]);
 
 	__libposix_devsignal = &devsignal;
 	open_control_fd();
 
-	rfork(RFCNAMEG);
+	sys_rfork(RFCNAMEG);
 
 	if(!atnotify(note_forward, 1)){
 		fprint(2, "atnotify: %r\n");
@@ -1909,7 +1909,7 @@ main(int argc, char *argv[])
 
 	if(!sidprovided){
 		/* let the session leader start */
-		while(rendezvous(main, (void*)0x2) == ((void*)~0))
+		while(sys_rendezvous(main, (void*)0x2) == ((void*)~0))
 			sleep(250);
 		/* if we created the session leader, we will wait for it */
 		leaderrun = 1;
@@ -1934,7 +1934,7 @@ main(int argc, char *argv[])
 			DEBUG("session leader exited\n");
 			sighup.si_signo = PosixSIGHUP;
 			__libposix_sighelper_signal(PHSignalForeground, 0, &sighup);
-			close(devsignal);
+			sys_close(devsignal);
 			unmount_dev();
 			leaderrun = 0;
 		}

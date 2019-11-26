@@ -78,7 +78,7 @@ delayednotes(Proc *p, void *v)
 			if(i==NFN){
 				_threaddebug(DBGNOTE, "Unhandled note %s, proc %p\n", n->s, p);
 				if(v != nil)
-					noted(NDFLT);
+					sys_noted(NDFLT);
 				else if(jehanne_strncmp(n->s, "sys:", 4)==0)
 					abort();
 				threadexitsall(n->s);
@@ -97,19 +97,19 @@ _threadnote(void *v, char *s)
 
 	_threaddebug(DBGNOTE, "Got note %s", s);
 	if(jehanne_strncmp(s, "sys:", 4) == 0)
-		noted(NDFLT);
+		sys_noted(NDFLT);
 
 	if(_threadexitsallstatus){
 		_threaddebug(DBGNOTE, "Threadexitsallstatus = '%s'\n", _threadexitsallstatus);
-		_exits(_threadexitsallstatus);
+		sys__exits(_threadexitsallstatus);
 	}
 
 	if(jehanne_strcmp(s, "threadint")==0)
-		noted(NCONT);
+		sys_noted(NCONT);
 
 	p = _threadgetproc();
 	if(p == nil)
-		noted(NDFLT);
+		sys_noted(NDFLT);
 
 	for(n=notes; n<enotes; n++)
 		if(jehanne_canlock(&n->inuse))
@@ -121,7 +121,7 @@ _threadnote(void *v, char *s)
 	p->pending = 1;
 	if(!p->splhi)
 		delayednotes(p, v);
-	noted(NCONT);
+	sys_noted(NCONT);
 }
 
 int

@@ -92,7 +92,7 @@ main(int argc, char **argv)
 	if(fd < 0)
 		sysfatal("dial %s: %r", argv[0]);
 
-	rfork(RFNOTEG);
+	sys_rfork(RFNOTEG);
 	switch(fork()){
 	case -1:
 		fprint(2, "%s: fork: %r\n", argv0);
@@ -114,8 +114,8 @@ xfer(int from, int to)
 	char buf[12*1024];
 	int n;
 
-	while((n = read(from, buf, sizeof buf)) > 0)
-		if(write(to, buf, n) < 0)
+	while((n = jehanne_read(from, buf, sizeof buf)) > 0)
+		if(jehanne_write(to, buf, n) < 0)
 			break;
 }
 
@@ -143,7 +143,7 @@ xfer9p(int from, int to)
 		}
 		if(readn(from, buf+4, n-4) != n-4)
 			break;
-		if(write(to, buf, n) != n){
+		if(jehanne_write(to, buf, n) != n){
 			sysfatal("oops: %r");
 			break;
 		}
@@ -160,9 +160,9 @@ getendpoint(char *dir, char *file, char **sysp, char **servp)
 	sys = serv = 0;
 
 	snprint(buf, sizeof buf, "%s/%s", dir, file);
-	fd = open(buf, OREAD);
+	fd = sys_open(buf, OREAD);
 	if(fd >= 0){
-		n = read(fd, buf, sizeof(buf)-1);
+		n = jehanne_read(fd, buf, sizeof(buf)-1);
 		if(n>0){
 			buf[n-1] = 0;
 			serv = strchr(buf, '!');
@@ -172,7 +172,7 @@ getendpoint(char *dir, char *file, char **sysp, char **servp)
 			}
 			sys = strdup(buf);
 		}
-		close(fd);
+		sys_close(fd);
 	}
 	if(serv == 0)
 		serv = strdup("unknown");

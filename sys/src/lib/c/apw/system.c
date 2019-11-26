@@ -26,7 +26,7 @@ system(const char *command)
 	char *s = nil;
 	if(command == nil)
 		return jehanne_access("/cmd/rc", AEXEC) == 0;
-	switch(pid = rfork(RFFDG|RFREND|RFPROC|RFENVG|RFNOTEG)){
+	switch(pid = sys_rfork(RFFDG|RFREND|RFPROC|RFENVG|RFNOTEG)){
 		case -1:
 			return -1;
 		case 0:

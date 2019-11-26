@@ -49,7 +49,7 @@ main(int argc, char **argv)
 
 	fd = 0;
 	if(argc == 1){
-		if((fd = open(*argv, OREAD)) < 0)
+		if((fd = sys_open(*argv, OREAD)) < 0)
 			sysfatal("open %s: %r", *argv);
 	}
 
@@ -59,7 +59,7 @@ main(int argc, char **argv)
 		buf = realloc(buf, tot+8192);
 		if(buf == nil)
 			sysfatal("realloc: %r");
-		if((n = read(fd, buf+tot, 8192)) < 0)
+		if((n = jehanne_read(fd, buf+tot, 8192)) < 0)
 			sysfatal("read: %r");
 		if(n == 0)
 			break;
@@ -76,6 +76,6 @@ main(int argc, char **argv)
 		key->secret);
 	if(s == nil)
 		sysfatal("smprint: %r");
-	write(1, s, strlen(s));
+	jehanne_write(1, s, strlen(s));
 	exits(0);
 }

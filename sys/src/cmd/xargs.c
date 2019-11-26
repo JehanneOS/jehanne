@@ -71,11 +71,11 @@ main(int argc, char **argv)
 		case -1:
 			sysfatal("fork: %r");
 		case 0:
-			exec(*nargv, nargv);
+			sys_exec(*nargv, nargv);
 			if(**nargv != '/' && strncmp(*nargv, "./", 2) != 0 &&
 					strncmp(*nargv, "../", 3) != 0){
 				*nargv = smprint("/cmd/%s", *nargv);
-				exec(*nargv, nargv);
+				sys_exec(*nargv, nargv);
 			}
 			sysfatal("exec: %r");
 		}

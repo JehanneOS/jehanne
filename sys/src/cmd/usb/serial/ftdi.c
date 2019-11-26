@@ -1280,7 +1280,7 @@ wait4write(Serialport *p, uint8_t *data, int count)
 
 	fd = p->epout->dfd;
 	qunlock(&ser->ql);
-	count = write(fd, b, count+off);
+	count = jehanne_write(fd, b, count+off);
 	qlock(&ser->ql);
 	free(b);
 	return count;
@@ -1356,7 +1356,7 @@ epreader(void *u)
 		if (pk == nil)
 			pk = emallocz(sizeof(Packser), 1);
 Eagain:
-		rcount = read(dfd, pk->b, sizeof pk->b);
+		rcount = jehanne_read(dfd, pk->b, sizeof pk->b);
 		if(serialdebug > 5)
 			dsprint(2, "%d %#ux%#ux ", rcount, p->data[0],
 				p->data[1]);

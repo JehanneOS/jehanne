@@ -38,13 +38,13 @@ main(void)
 	fmtinstall('V', eipfmt);
 	fmtinstall('M', eipfmt);
 
-	fd = open(binddir, OREAD);
+	fd = sys_open(binddir, OREAD);
 	if(fd < 0)
 		sysfatal("opening %s: %r", binddir);
 	nall = dirreadall(fd, &all);
 	if(nall < 0)
 		sysfatal("reading %s: %r", binddir);
-	close(fd);
+	sys_close(fd);
 
 	b.boundto = 0;
 	b.lease = b.offer = 0;

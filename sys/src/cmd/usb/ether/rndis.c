@@ -87,7 +87,7 @@ rndisreceive(Dev *ep)
 	int doff, dlen;
 
 	b = allocb(Maxpkt);
-	if((n = read(ep->dfd, b->rp, b->lim - b->base)) >= 0){
+	if((n = jehanne_read(ep->dfd, b->rp, b->lim - b->base)) >= 0){
 		if(n < 44)
 			werrstr("short packet: %d bytes", n);
 		else if(GET4(b->rp) != 1)
@@ -123,7 +123,7 @@ rndistransmit(Dev *ep, Block *b)
 	PUT4(b->rp+8, 44-8); /* data offset */
 	PUT4(b->rp+12, n);   /* data length */
 	memset(b->rp+16, 0, 7*4);
-	write(ep->dfd, b->rp, 44+n);
+	jehanne_write(ep->dfd, b->rp, 44+n);
 	freeb(b);
 }
 

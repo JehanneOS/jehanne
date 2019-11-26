@@ -144,7 +144,7 @@ fatal(int syserr, char *fmt, ...)
 	vseprint(buf, buf+sizeof(buf), fmt, arg);
 	va_end(arg);
 	if(syserr) {
-		errstr(sysbuf, sizeof sysbuf);
+		sys_errstr(sysbuf, sizeof sysbuf);
 		fprint(2, "routed: %s: %s\n", buf, sysbuf);
 	}
 	else
@@ -196,8 +196,8 @@ ding(void *u, char *msg)
 	USED(u);
 
 	if(strstr(msg, "alarm"))
-		noted(NCONT);
-	noted(NDFLT);
+		sys_noted(NCONT);
+	sys_noted(NDFLT);
 }
 
 void
@@ -260,7 +260,7 @@ main(int argc, char *argv[])
 
 	/* command returns */
 	if(!debug)
-		switch(rfork(RFNOTEG|RFPROC|RFFDG|RFNOWAIT)) {
+		switch(sys_rfork(RFNOTEG|RFPROC|RFFDG|RFNOWAIT)) {
 		case -1:
 			fatal(1, "fork");
 		case 0:
@@ -280,7 +280,7 @@ main(int argc, char *argv[])
 	readifcs();
 	readroutes();
 
-	notify(ding);
+	sys_notify(ding);
 
 	ripfd = openport();
 	for(;;) {
@@ -293,9 +293,9 @@ main(int argc, char *argv[])
 			btime = time(0) + 2*60;
 			diff = 2*60;
 		}
-		alarm(diff*1000);
-		n = read(ripfd, buf, sizeof(buf));
-		alarm(0);
+		sys_alarm(diff*1000);
+		n = jehanne_read(ripfd, buf, sizeof(buf));
+		sys_alarm(0);
 		if(n <= 0)
 			continue;
 
@@ -342,7 +342,7 @@ openport(void)
 		fatal(1, "can't set header mode");
 
 	sprint(data, "%s/data", devdir);
-	rip = open(data, ORDWR);
+	rip = sys_open(data, ORDWR);
 	if(rip < 0)
 		fatal(1, "open udp data");
 	return rip;
@@ -500,7 +500,7 @@ removeroute(Route *r)
 {
 	int fd;
 
-	fd = open(routefile, ORDWR);
+	fd = sys_open(routefile, ORDWR);
 	if(fd < 0){
 		fprint(2, "can't open oproute\n");
 		return;
@@ -509,7 +509,7 @@ removeroute(Route *r)
 		fprint(fd, "delete %V", r->dest);
 	if(debug)
 		fprint(2, "removeroute %V\n", r->dest);
-	close(fd);
+	sys_close(fd);
 }
 
 /*
@@ -530,7 +530,7 @@ installroute(Route *r)
 	if(equivip(r->gate, ralloc.def.dest))
 		return;
 
-	fd = open(routefile, ORDWR);
+	fd = sys_open(routefile, ORDWR);
 	if(fd < 0){
 		fprint(2, "can't open oproute\n");
 		return;
@@ -558,7 +558,7 @@ installroute(Route *r)
 				fprint(fd, "delete %V", r->dest);
 			if(debug)
 				fprint(2, "delete %V\n", r->dest);
-			close(fd);
+			sys_close(fd);
 			return;
 		}
 	}
@@ -566,7 +566,7 @@ installroute(Route *r)
 		fprint(fd, "add %V %V %V", r->dest, r->mask, r->gate);
 	if(debug)
 		fprint(2, "add %V & %V -> %V\n", r->dest, r->mask, r->gate);
-	close(fd);
+	sys_close(fd);
 }
 
 /*
@@ -670,14 +670,14 @@ sendto(Ifc *ip)
 					r->dest, r->mask, r->gate, r->metric);
 
 			if(++n == Maxroutes && !readonly){
-				write(ripfd, mbuf, Udphdrsize + 4 + n*20);
+				jehanne_write(ripfd, mbuf, Udphdrsize + 4 + n*20);
 				n = 0;
 			}
 		}
 	}
 
 	if(n && !readonly)
-		write(ripfd, mbuf, Udphdrsize+4+n*20);
+		jehanne_write(ripfd, mbuf, Udphdrsize+4+n*20);
 }
 void
 broadcast(void)

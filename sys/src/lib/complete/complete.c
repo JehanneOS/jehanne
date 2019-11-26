@@ -62,13 +62,13 @@ complete(char *dir, char *s)
 		return nil;
 	}
 
-	fd = open(dir, OREAD);
+	fd = sys_open(dir, OREAD);
 	if(fd < 0)
 		return nil;
 
 	n = dirreadall(fd, &dirp);
 	if(n <= 0){
-		close(fd);
+		sys_close(fd);
 		return nil;
 	}
 
@@ -148,6 +148,6 @@ complete(char *dir, char *s)
 	free(name);
 	free(mode);
 	free(dirp);
-	close(fd);
+	sys_close(fd);
 	return c;
 }

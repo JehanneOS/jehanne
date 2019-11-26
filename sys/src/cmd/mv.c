@@ -139,7 +139,7 @@ mv1(char *from, Dir *dirb, char *todir, char *toelem)
 			fromname, toname);
 		return -1;
 	}
-	fdf = open(fromname, OREAD);
+	fdf = sys_open(fromname, OREAD);
 	if(fdf < 0){
 		fprint(2, "mv: can't open %s: %r\n", fromname);
 		return -1;
@@ -147,29 +147,29 @@ mv1(char *from, Dir *dirb, char *todir, char *toelem)
 
 	dirt = dirstat(toname);
 	if(dirt != nil && (dirt->mode & DMAPPEND))
-		hardremove(toname);  /* because create() won't truncate file */
+		hardremove(toname);  /* because sys_create() won't truncate file */
 	free(dirt);
 
 	fdt = ocreate(toname, OWRITE, dirb->mode);
 	if(fdt < 0){
 		fprint(2, "mv: can't create %s: %r\n", toname);
-		close(fdf);
+		sys_close(fdf);
 		return -1;
 	}
 	stat = copy1(fdf, fdt, fromname, toname);
-	close(fdf);
+	sys_close(fdf);
 
 	if(stat >= 0){
 		nulldir(&null);
 		null.mtime = dirb->mtime;
 		null.mode = dirb->mode;
 		dirfwstat(fdt, &null);	/* ignore errors; e.g. user none always fails */
-		if(remove(fromname) < 0){
+		if(sys_remove(fromname) < 0){
 			fprint(2, "mv: can't remove %s: %r\n", fromname);
 			stat = -1;
 		}
 	}
-	close(fdt);
+	sys_close(fdt);
 	return stat;
 }
 
@@ -179,8 +179,8 @@ copy1(int fdf, int fdt, char *from, char *to)
 	char buf[8192];
 	int32_t n, n1;
 
-	while ((n = read(fdf, buf, sizeof buf)) > 0) {
-		n1 = write(fdt, buf, n);
+	while ((n = jehanne_read(fdf, buf, sizeof buf)) > 0) {
+		n1 = jehanne_write(fdt, buf, n);
 		if(n1 != n){
 			fprint(2, "mv: error writing %s: %r\n", to);
 			return -1;
@@ -236,10 +236,10 @@ samefile(char *a, char *b)
 void
 hardremove(char *a)
 {
-	if(remove(a) == -1){
+	if(sys_remove(a) == -1){
 		fprint(2, "mv: can't remove %s: %r\n", a);
 		exits("mv");
 	}
-	while(remove(a) != -1)
+	while(sys_remove(a) != -1)
 		;
 }

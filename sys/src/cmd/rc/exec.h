@@ -45,9 +45,9 @@ struct redir{
 /*
  * redir types
  */
-#define	ROPEN	1			/* dup2(from, to); close(from); */
+#define	ROPEN	1			/* dup2(from, to); sys_close(from); */
 #define	RDUP	2			/* dup2(from, to); */
-#define	RCLOSE	3			/* close(from); */
+#define	RCLOSE	3			/* sys_close(from); */
 struct thread{
 	union code *code;		/* code for this thread */
 	int pc;				/* code[pc] is the next instruction */

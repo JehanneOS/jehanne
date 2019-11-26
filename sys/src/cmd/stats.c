@@ -300,10 +300,10 @@ loadbuf(Machine *m, int *fd)
 
 	if(*fd < 0)
 		return 0;
-	seek(*fd, 0, 0);
-	n = read(*fd, m->buf, sizeof m->buf-1);
+	sys_seek(*fd, 0, 0);
+	n = jehanne_read(*fd, m->buf, sizeof m->buf-1);
 	if(n <= 0){
-		close(*fd);
+		sys_close(*fd);
 		*fd = -1;
 		return 0;
 	}
@@ -570,12 +570,12 @@ initmach(Machine *m, char *name)
 	}
 
 	snprint(buf, sizeof buf, "%s/dev/sysmem", mpt);
-	m->sysmemfd = open(buf, OREAD);
+	m->sysmemfd = sys_open(buf, OREAD);
 	if(loadbuf(m, &m->sysmemfd) && readsysmem(m, a))
 		memmove(m->devsysmem, a, sizeof m->devsysmem);
 
 	snprint(buf, sizeof buf, "%s/dev/sysstat", mpt);
-	m->statsfd = open(buf, OREAD);
+	m->statsfd = sys_open(buf, OREAD);
 	if(loadbuf(m, &m->statsfd)){
 		for(n=0; readnums(m, nelem(m->devsysstat), a, 0); n++)
 			;
@@ -585,12 +585,12 @@ initmach(Machine *m, char *name)
 	m->lgproc = ilog10(m->nproc);
 
 	snprint(buf, sizeof buf, "%s/net/ether0/stats", mpt);
-	m->etherfd = open(buf, OREAD);
+	m->etherfd = sys_open(buf, OREAD);
 	if(loadbuf(m, &m->etherfd) && readnums(m, nelem(m->netetherstats), a, 1))
 		memmove(m->netetherstats, a, sizeof m->netetherstats);
 
 	snprint(buf, sizeof buf, "%s/net/ether0/ifstats", mpt);
-	m->ifstatsfd = open(buf, OREAD);
+	m->ifstatsfd = sys_open(buf, OREAD);
 	if(loadbuf(m, &m->ifstatsfd)){
 		/* need to check that this is a wavelan interface */
 		if(strncmp(m->buf, "Signal: ", 8) == 0 && readnums(m, nelem(m->netetherifstats), a, 1))
@@ -598,19 +598,19 @@ initmach(Machine *m, char *name)
 	}
 
 	snprint(buf, sizeof buf, "%s/mnt/apm/battery", mpt);
-	m->batteryfd = open(buf, OREAD);
+	m->batteryfd = sys_open(buf, OREAD);
 	m->bitsybatfd = -1;
 	if(m->batteryfd >= 0){
 		if(loadbuf(m, &m->batteryfd) && readnums(m, nelem(m->batterystats), a, 0))
 			memmove(m->batterystats, a, sizeof(m->batterystats));
 	}else{
 		snprint(buf, sizeof buf, "%s/dev/battery", mpt);
-		m->bitsybatfd = open(buf, OREAD);
+		m->bitsybatfd = sys_open(buf, OREAD);
 		if(loadbuf(m, &m->bitsybatfd) && readnums(m, 1, a, 0))
 			memmove(m->batterystats, a, sizeof(m->batterystats));
 	}
 	snprint(buf, sizeof buf, "%s/dev/cputemp", mpt);
-	m->tempfd = open(buf, OREAD);
+	m->tempfd = sys_open(buf, OREAD);
 	if(loadbuf(m, &m->tempfd))
 		for(n=0; n < nelem(m->temp) && readnums(m, 2, a, 0); n++)
 			 m->temp[n] = a[0];
@@ -691,7 +691,7 @@ readmach(Machine *m, int init)
 	}
 	if(m->remote){
 		atnotify(alarmed, 1);
-		alarm(5000);
+		sys_alarm(5000);
 	}
 	if(needsysmem(init) && loadbuf(m, &m->sysmemfd) && readsysmem(m, a))
 		memmove(m->devsysmem, a, sizeof m->devsysmem);
@@ -717,7 +717,7 @@ readmach(Machine *m, int init)
 		for(n=0; n < nelem(m->temp) && readnums(m, 2, a, 0); n++)
 			 m->temp[n] = a[0];
 	if(m->remote){
-		alarm(0);
+		sys_alarm(0);
 		atnotify(alarmed, 0);
 	}
 }
@@ -1206,7 +1206,7 @@ startproc(void (*f)(void), int index)
 {
 	int pid;
 
-	switch(pid = rfork(RFPROC|RFMEM|RFNOWAIT)){
+	switch(pid = sys_rfork(RFPROC|RFMEM|RFNOWAIT)){
 	case -1:
 		fprint(2, "stats: fork failed: %r\n");
 		killall("fork failed");
@@ -1274,7 +1274,7 @@ main(int argc, char *argv[])
 		initmach(&mach[0], mysysname);
 		readmach(&mach[0], 1);
 	}else{
-		rfork(RFNAMEG);
+		sys_rfork(RFNAMEG);
 		for(i=j=0; i<argc; i++){
 			if (addmachine(argv[i]))
 				readmach(&mach[j++], 1);

@@ -74,7 +74,7 @@ main(int argc, char *argv[])
 		getraddr(argv[argc-1]);
 
 	argv0 = "guard";
-	notify(catchalarm);
+	sys_notify(catchalarm);
 
 	/*
 	 * read the host and client and get their keys
@@ -88,13 +88,13 @@ main(int argc, char *argv[])
 	chal = nfastrand(MAXNETCHAL);
 	sprint(buf, "challenge: %lud\nresponse: ", chal);
 	n = strlen(buf) + 1;
-	if(write(1, buf, n) != n){
+	if(jehanne_write(1, buf, n) != n){
 		if(debug)
 			syslog(0, AUTHLOG, "g-fail %s@%s: %r sending chal",
 				user, raddr);
 		exits("replying to server");
 	}
-	alarm(3*60*1000);
+	sys_alarm(3*60*1000);
 	werrstr("");
 	if(readarg(0, resp, sizeof resp) < 0){
 		if(debug)
@@ -102,14 +102,14 @@ main(int argc, char *argv[])
 				user, raddr);
 		fail(0);
 	}
-	alarm(0);
+	sys_alarm(0);
 
 	/* remove password login from guard.research.bell-labs.com, sucre, etc. */
 //	if(!findkey(KEYDB,    user, ukey) || !netcheck(ukey, chal, resp))
 	if(!finddeskey(NETKEYDB, user, ukey) || !netcheck(ukey, chal, resp))
 	if((err = secureidcheck(user, resp)) != nil){
 		print("NO %s", err);
-		write(1, "NO", 2);
+		jehanne_write(1, "NO", 2);
 		if(debug) {
 			char *r;
 
@@ -131,7 +131,7 @@ main(int argc, char *argv[])
 		}
 		fail(user);
 	}
-	write(1, "OK", 2);
+	jehanne_write(1, "OK", 2);
 	if(debug)
 		syslog(0, AUTHLOG, "g-ok %s@%s", user, raddr);
 	succeed(user);
@@ -154,11 +154,11 @@ getraddr(char *dir)
 	char file[128];
 
 	snprint(file, sizeof(file), "%s/remote", dir);
-	fd = open(file, OREAD);
+	fd = sys_open(file, OREAD);
 	if(fd < 0)
 		return;
-	n = read(fd, raddr, sizeof(raddr)-1);
-	close(fd);
+	n = jehanne_read(fd, raddr, sizeof(raddr)-1);
+	sys_close(fd);
 	if(n <= 0)
 		return;
 	raddr[n] = 0;

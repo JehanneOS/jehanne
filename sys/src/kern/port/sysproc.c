@@ -617,9 +617,9 @@ sysawait(char *p, int n)
 	Waitmsg w;
 
 	/*
-	 * int await(char* s, int n);
+	 * int sys_await(char* s, int n);
 	 * should really be
-	 * usize await(char* s, usize n);
+	 * usize sys_await(char* s, usize n);
 	 */
 	p = validaddr(p, n, 1);
 
@@ -682,7 +682,7 @@ sysnotify(void* a0)
 		validaddr(a0, sizeof(void*), 0);
 
 	/*
-	 * int notify(void (*f)(void*, char*));
+	 * int sys_notify(void (*f)(void*, char*));
 	 */
 	up->notify = (void (*)(void*, char*))a0;
 

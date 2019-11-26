@@ -38,9 +38,9 @@ jehanne_getenv(const char *name)
 	if(jehanne_strcmp(path+5, name) != 0)
 		goto BadName;
 
-	f = open(path, OREAD);
+	f = sys_open(path, OREAD);
 	if(f < 0){
-		/* try with #e, in case of a previous rfork(RFCNAMEG)
+		/* try with #e, in case of a previous sys_rfork(RFCNAMEG)
 		 *
 		 * NOTE: /env is bound to #ec by default, so we
 		 * cannot simply use always #e instead of /env. Also
@@ -48,20 +48,20 @@ jehanne_getenv(const char *name)
 		 * slow and not flexible enough.
 		 */
 		jehanne_snprint(path, sizeof path, "#e/%s", name);
-		f = open(path, OREAD);
+		f = sys_open(path, OREAD);
 		if(f < 0)
 			return nil;
 	}
-	l = seek(f, 0, 2);
+	l = sys_seek(f, 0, 2);
 	value = jehanne_malloc(l+1);
 	if(value == nil)
 		goto Done;
 	jehanne_setmalloctag(value, jehanne_getcallerpc());
-	seek(f, 0, 0);
-	if(read(f, value, l) >= 0)
+	sys_seek(f, 0, 0);
+	if(jehanne_read(f, value, l) >= 0)
 		value[l] = '\0';
 Done:
-	close(f);
+	sys_close(f);
 	return value;
 
 BadName:

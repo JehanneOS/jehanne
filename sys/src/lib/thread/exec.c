@@ -45,18 +45,18 @@ procexec(Channel *pidc, char *prog, char *args[])
 	 * then the proc doing the exec sends the errstr down the
 	 * pipe to us.
 	 */
-	if(bind("#|", PIPEMNT, MREPL) < 0)
+	if(sys_bind("#|", PIPEMNT, MREPL) < 0)
 		goto Bad;
-	if((p->exec.fd[0] = open(PIPEMNT "/data", OREAD)) < 0){
-		unmount(nil, PIPEMNT);
-		goto Bad;
-	}
-	if((p->exec.fd[1] = open(PIPEMNT "/data1", OWRITE|OCEXEC)) < 0){
-		close(p->exec.fd[0]);
-		unmount(nil, PIPEMNT);
+	if((p->exec.fd[0] = sys_open(PIPEMNT "/data", OREAD)) < 0){
+		sys_unmount(nil, PIPEMNT);
 		goto Bad;
 	}
-	unmount(nil, PIPEMNT);
+	if((p->exec.fd[1] = sys_open(PIPEMNT "/data1", OWRITE|OCEXEC)) < 0){
+		sys_close(p->exec.fd[0]);
+		sys_unmount(nil, PIPEMNT);
+		goto Bad;
+	}
+	sys_unmount(nil, PIPEMNT);
 
 	/* exec in parallel via the scheduler */
 	assert(p->needexec==0);
@@ -65,14 +65,14 @@ procexec(Channel *pidc, char *prog, char *args[])
 	p->needexec = 1;
 	_sched();
 
-	close(p->exec.fd[1]);
-	if((n = read(p->exec.fd[0], p->exitstr, ERRMAX-1)) > 0){	/* exec failed */
+	sys_close(p->exec.fd[1]);
+	if((n = jehanne_read(p->exec.fd[0], p->exitstr, ERRMAX-1)) > 0){	/* exec failed */
 		p->exitstr[n] = '\0';
-		errstr(p->exitstr, ERRMAX);
-		close(p->exec.fd[0]);
+		sys_errstr(p->exitstr, ERRMAX);
+		sys_close(p->exec.fd[0]);
 		goto Bad;
 	}
-	close(p->exec.fd[0]);
+	sys_close(p->exec.fd[0]);
 
 	if(pidc)
 		sendul(pidc, t->ret);

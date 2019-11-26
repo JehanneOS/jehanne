@@ -31,8 +31,8 @@ closemouse(Mousectl *mc)
 
 	do; while(nbrecv(mc->c, &mc->Mouse) > 0);
 
-	close(mc->mfd);
-	close(mc->cfd);
+	sys_close(mc->mfd);
+	sys_close(mc->cfd);
 	free(mc->file);
 	free(mc->c);
 	free(mc->resizec);
@@ -67,7 +67,7 @@ _ioproc(void *arg)
 	mc->pid = getpid();
 	nerr = 0;
 	for(;;){
-		n = read(mc->mfd, buf, sizeof buf);
+		n = jehanne_read(mc->mfd, buf, sizeof buf);
 		if(n != 1+4*12){
 			yield();	/* if error is due to exiting, we'll exit here */
 			fprint(2, "mouse: bad count %d not 49: %r\n", n);
@@ -107,10 +107,10 @@ initmouse(char *file, Image *i)
 	if(file == nil)
 		file = "/dev/mouse";
 	mc->file = strdup(file);
-	mc->mfd = open(file, ORDWR|OCEXEC);
+	mc->mfd = sys_open(file, ORDWR|OCEXEC);
 	if(mc->mfd<0 && strcmp(file, "/dev/mouse")==0){
-		bind("#m", "/dev", MAFTER);
-		mc->mfd = open(file, ORDWR|OCEXEC);
+		sys_bind("#m", "/dev", MAFTER);
+		mc->mfd = sys_open(file, ORDWR|OCEXEC);
 	}
 	if(mc->mfd < 0){
 		free(mc);
@@ -118,7 +118,7 @@ initmouse(char *file, Image *i)
 	}
 	t = malloc(strlen(file)+16);
 	if (t == nil) {
-		close(mc->mfd);
+		sys_close(mc->mfd);
 		free(mc);
 		return nil;
 	}
@@ -128,7 +128,7 @@ initmouse(char *file, Image *i)
 		strcpy(sl, "/cursor");
 	else
 		strcpy(t, "/dev/cursor");
-	mc->cfd = open(t, ORDWR|OCEXEC);
+	mc->cfd = sys_open(t, ORDWR|OCEXEC);
 	free(t);
 	mc->image = i;
 	mc->c = chancreate(sizeof(Mouse), 0);
@@ -143,11 +143,11 @@ setcursor(Mousectl *mc, Cursor *c)
 	char curs[2*4+2*2*16];
 
 	if(c == nil)
-		write(mc->cfd, curs, 0);
+		jehanne_write(mc->cfd, curs, 0);
 	else{
 		BPLONG(curs+0*4, c->offset.x);
 		BPLONG(curs+1*4, c->offset.y);
 		memmove(curs+2*4, c->clr, 2*2*16);
-		write(mc->cfd, curs, sizeof curs);
+		jehanne_write(mc->cfd, curs, sizeof curs);
 	}
 }

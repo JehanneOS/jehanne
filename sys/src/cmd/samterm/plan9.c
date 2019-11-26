@@ -65,11 +65,11 @@ screensize(int *w, int *h)
 	int fd, n;
 	char buf[5*12+1];
 
-	fd = open("/dev/screen", OREAD);
+	fd = sys_open("/dev/screen", OREAD);
 	if(fd < 0)
 		return 0;
-	n = read(fd, buf, sizeof(buf)-1);
-	close(fd);
+	n = jehanne_read(fd, buf, sizeof(buf)-1);
+	sys_close(fd);
 	if (n != sizeof(buf)-1)
 		return 0;
 	buf[n] = 0;
@@ -92,15 +92,15 @@ snarfswap(char *fromsam, int nc, char **tosam)
 	char *s1;
 	int f, n, ss;
 
-	f = open("/dev/snarf", 0);
+	f = sys_open("/dev/snarf", 0);
 	if(f < 0)
 		return -1;
 	ss = SNARFSIZE;
 	if(hversion < 2)
 		ss = 4096;
 	*tosam = s1 = alloc(ss);
-	n = read(f, s1, ss-1);
-	close(f);
+	n = jehanne_read(f, s1, ss-1);
+	sys_close(f);
 	if(n < 0)
 		n = 0;
 	if (n == 0) {
@@ -110,8 +110,8 @@ snarfswap(char *fromsam, int nc, char **tosam)
 		s1[n] = 0;
 	f = jehanne_ocreate("/dev/snarf", OWRITE, 0666);
 	if(f >= 0){
-		write(f, fromsam, nc);
-		close(f);
+		jehanne_write(f, fromsam, nc);
+		sys_close(f);
 	}
 	return n;
 }
@@ -126,7 +126,7 @@ dumperrmsg(int count, int type, int count0, int c)
 void
 removeextern(void)
 {
-	remove(exname);
+	sys_remove(exname);
 }
 
 Readbuf	hostbuf[2];
@@ -146,7 +146,7 @@ extproc(void *argv)
 	i = 0;
 	for(;;){
 		i = 1-i;	/* toggle */
-		n = read(*fdp, plumbbuf[i].data, sizeof plumbbuf[i].data);
+		n = jehanne_read(*fdp, plumbbuf[i].data, sizeof plumbbuf[i].data);
 		if(n <= 0){
 			jehanne_fprint(2, "samterm: extern read error: %r\n");
 			threadexits("extern");	/* not a fatal error */
@@ -171,14 +171,14 @@ extstart(void)
 	fd = jehanne_ocreate(exname, OWRITE, 0600);
 	if(fd < 0){	/* assume existing guy is more important */
     Err:
-		close(p[0]);
-		close(p[1]);
+		sys_close(p[0]);
+		sys_close(p[1]);
 		return;
 	}
 	jehanne_sprint(buf, "%d", p[0]);
-	if(write(fd, buf, jehanne_strlen(buf)) <= 0)
+	if(jehanne_write(fd, buf, jehanne_strlen(buf)) <= 0)
 		goto Err;
-	close(fd);
+	sys_close(fd);
 	/*
 	 * leave p[0] open so if the file is removed the event
 	 * library won't get an error
@@ -248,7 +248,7 @@ plumbproc(void *argv)
 	i = 0;
 	for(;;){
 		i = 1-i;	/* toggle */
-		n = read(*fdp, plumbbuf[i].data, READBUFSIZE);
+		n = jehanne_read(*fdp, plumbbuf[i].data, READBUFSIZE);
 		if(n <= 0){
 			jehanne_fprint(2, "samterm: plumb read error: %r\n");
 			threadexits("plumb");	/* not a fatal error */
@@ -273,7 +273,7 @@ plumbstart(void)
 		return -1;
 	plumbc = chancreate(sizeof(int), 0);
 	if(plumbc == nil){
-		close(fd);
+		sys_close(fd);
 		return -1;
 	}
 	arg[0] =plumbc;
@@ -293,7 +293,7 @@ hostproc(void *arg)
 	i = 0;
 	for(;;){
 		i = 1-i;	/* toggle */
-		n = read(0, hostbuf[i].data, sizeof hostbuf[i].data);
+		n = jehanne_read(0, hostbuf[i].data, sizeof hostbuf[i].data);
 		if(n <= 0){
 			if(n==0){
 				if(exiting)

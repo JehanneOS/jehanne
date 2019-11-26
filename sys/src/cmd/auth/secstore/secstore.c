@@ -91,7 +91,7 @@ getfile(SConn *conn, char *gf, uint8_t **buf, uint32_t *buflen, uint8_t *key, in
 				return -1;
 			}
 			if(buf == nil)
-				write(1, s, n);
+				jehanne_write(1, s, n);
 			else
 				memmove(*buf + i, s, n);
 		}
@@ -132,7 +132,7 @@ getfile(SConn *conn, char *gf, uint8_t **buf, uint32_t *buflen, uint8_t *key, in
 		n = ibw - ibr - CHK;
 		if(n > 0){
 			if(buf == nil){
-				nw = write(fd, ibr, n);
+				nw = jehanne_write(fd, ibr, n);
 				if(nw != n){
 					fprint(2, "secstore: write error on %s", gf);
 					return -1;
@@ -149,7 +149,7 @@ getfile(SConn *conn, char *gf, uint8_t **buf, uint32_t *buflen, uint8_t *key, in
 		ibr = ib;
 	}
 	if(buf == nil)
-		close(fd);
+		sys_close(fd);
 	n = ibw-ibr;
 	if(n != CHK || memcmp(ib, "XXXXXXXXXXXXXXXX", CHK) != 0){
 		fprint(2, "secstore: decrypted file failed to authenticate!\n");
@@ -183,12 +183,12 @@ putfile(SConn *conn, char *pf, uint8_t *buf, uint32_t len, uint8_t *key, int nke
 
 	if(buf == nil){
 		/* get file size */
-		if((fd = open(pf, OREAD)) < 0){
+		if((fd = sys_open(pf, OREAD)) < 0){
 			fprint(2, "secstore: can't open %s: %r\n", pf);
 			return -1;
 		}
-		len = seek(fd, 0, 2);
-		seek(fd, 0, 0);
+		len = sys_seek(fd, 0, 2);
+		sys_seek(fd, 0, 0);
 	} else
 		fd = -1;
 	if(len > MAXFILESIZE){
@@ -207,7 +207,7 @@ putfile(SConn *conn, char *pf, uint8_t *buf, uint32_t len, uint8_t *key, int nke
 	memcpy(b, IV, ivo);
 	for(done = 0; !done; ){
 		if(buf == nil){
-			n = read(fd, b+ivo, Maxmsg-ivo);
+			n = jehanne_read(fd, b+ivo, Maxmsg-ivo);
 			if(n < 0){
 				fprint(2, "secstore: read error on %s: %r\n",
 					pf);
@@ -237,7 +237,7 @@ putfile(SConn *conn, char *pf, uint8_t *buf, uint32_t len, uint8_t *key, int nke
 	}
 
 	if(buf == nil)
-		close(fd);
+		sys_close(fd);
 	fprint(2, "secstore: saved %ld bytes\n", len);
 
 	return 0;
@@ -278,11 +278,11 @@ cmd(AuthConn *c, char **gf, int *Gflag, char **pf, char **rf)
 			while(len>0){
 				memnext = (uint8_t*)strchr((char*)memcur, '\n');
 				if(memnext){
-					write(1, memcur, memnext-memcur+1);
+					jehanne_write(1, memcur, memnext-memcur+1);
 					len -= memnext-memcur+1;
 					memcur = memnext+1;
 				}else{
-					write(1, memcur, len);
+					jehanne_write(1, memcur, len);
 					break;
 				}
 			}

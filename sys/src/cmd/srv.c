@@ -43,9 +43,9 @@ ignore(void *a, char *c)
 	}
 	if(strstr(c, "write on closed pipe") == 0){
 		fprint(2, "write on closed pipe\n");
-		noted(NCONT);
+		sys_noted(NCONT);
 	}
-	noted(NDFLT);
+	sys_noted(NDFLT);
 }
 
 int
@@ -58,17 +58,17 @@ connectcmd(char *cmd)
 	switch(fork()){
 	case -1:
 		fprint(2, "fork failed: %r\n");
-		_exits("exec");
+		sys__exits("exec");
 	case 0:
-		rfork(RFNOTEG);
+		sys_rfork(RFNOTEG);
 		dup(p[0], 0);
 		dup(p[0], 1);
-		close(p[1]);
+		sys_close(p[1]);
 		execl("/cmd/rc", "rc", "-c", cmd, nil);
 		fprint(2, "exec failed: %r\n");
-		_exits("exec");
+		sys__exits("exec");
 	default:
-		close(p[0]);
+		sys_close(p[0]);
 		return p[1];
 	}
 }
@@ -83,7 +83,7 @@ main(int argc, char *argv[])
 	char *p, *p2;
 	int domount, reallymount, try, sleeptime;
 
-	notify(ignore);
+	sys_notify(ignore);
 
 	domount = 0;
 	reallymount = 0;
@@ -169,10 +169,10 @@ Again:
 
 	if(access(srv, AEXIST) == 0){
 		if(domount){
-			fd = open(srv, ORDWR);
+			fd = sys_open(srv, ORDWR);
 			if(fd >= 0)
 				goto Mount;
-			remove(srv);
+			sys_remove(srv);
 		}
 		else{
 			fprint(2, "srv: %s already exists\n", srv);
@@ -180,7 +180,7 @@ Again:
 		}
 	}
 
-	alarm(10000);
+	sys_alarm(10000);
 	if(doexec)
 		fd = connectcmd(dest);
 	else{
@@ -191,7 +191,7 @@ Again:
 		fprint(2, "srv: dial %s: %r\n", dest);
 		exits("dial");
 	}
-	alarm(0);
+	sys_alarm(0);
 
 	if(sleeptime){
 		fprint(2, "sleep...");
@@ -204,12 +204,12 @@ Mount:
 	if(domount == 0 || reallymount == 0)
 		exits(0);
 
-	if((!doauth && mount(fd, -1, mtpt, mountflag, "", '9') < 0)
+	if((!doauth && sys_mount(fd, -1, mtpt, mountflag, "", '9') < 0)
 	|| (doauth && amount(fd, mtpt, mountflag, "") < 0)){
 		err[0] = 0;
-		errstr(err, sizeof err);
+		sys_errstr(err, sizeof err);
 		if(strstr(err, "Hangup") || strstr(err, "hungup") || strstr(err, "timed out")){
-			remove(srv);
+			sys_remove(srv);
 			if(try == 1)
 				goto Again;
 		}
@@ -228,11 +228,11 @@ post(char *srv, int fd)
 	fprint(2, "post...\n");
 	f = ocreate(srv, OWRITE, 0666);
 	if(f < 0){
-		sprint(buf, "create(%s)", srv);
+		sprint(buf, "sys_create(%s)", srv);
 		error(buf);
 	}
 	sprint(buf, "%d", fd);
-	if(write(f, buf, strlen(buf)) != strlen(buf))
+	if(jehanne_write(f, buf, strlen(buf)) != strlen(buf))
 		error("write");
 }
 

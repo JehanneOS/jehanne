@@ -33,7 +33,7 @@ typedef struct {
 } NFrame;
 
 /*
- *   Return user to state before notify()
+ *   Return user to state before sys_notify()
  */
 static void
 noted(Ureg* cur, uintptr_t arg0)

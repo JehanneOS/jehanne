@@ -25,26 +25,26 @@ main(int argc, char *argv[])
 	int fd;
 	char buf[256], *cmd, **args;
 
-	rfork(RFNAMEG);
+	sys_rfork(RFNAMEG);
 	if(argc < 3){
 		fprint(2, "usage: ns/clone pid cmd [args...]\n");
 		exits("usage");
 	}
 
 	snprint(buf, sizeof(buf), "/proc/%s/ns", argv[1]);
-	fd = open(buf, OWRITE);
+	fd = sys_open(buf, OWRITE);
 	if(fd < 0){
 		print("cannot open %s\n", buf);
 		exits("invalid target pid");
 	}
-	write(fd, "clone", 6);
-	close(fd);
+	jehanne_write(fd, "clone", 6);
+	sys_close(fd);
 
 	cmd = strdup(argv[2]);
 	args = &argv[2];
 	if(cmd[0] == '/' 
 	||(cmd[0] == '.' && (cmd[1] == '/' || (cmd[1] == '.' && cmd[2] == '/')))){
-		exec(cmd, args);
+		sys_exec(cmd, args);
 		sysfatal("exec %s failed: %r", cmd);
 	}
 

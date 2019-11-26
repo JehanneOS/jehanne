@@ -26,15 +26,15 @@ newwindow(char *str)
 	wsys = getenv(ENV_WSYS);
 	if(wsys == nil)
 		return -1;
-	fd = open(wsys, ORDWR);
+	fd = sys_open(wsys, ORDWR);
 	free(wsys);
 	if(fd < 0)
 		return -1;
-	rfork(RFNAMEG);
+	sys_rfork(RFNAMEG);
 	if(str)
 		snprint(buf, sizeof buf, "new %s", str);
 	else
 		strcpy(buf, "new");
-	return mount(fd, -1, "/dev", MBEFORE, buf, '9');
+	return sys_mount(fd, -1, "/dev", MBEFORE, buf, '9');
 }
 

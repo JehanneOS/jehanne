@@ -269,7 +269,7 @@ main(int argc, char **argv)
 
 	/* detach from the current namespace */
 	if(debug)
-		rfork(RFNAMEG);
+		sys_rfork(RFNAMEG);
 
 	switch(type){
 	case Utc:
@@ -316,26 +316,26 @@ main(int argc, char **argv)
 	 */
 	switch(type){
 	case Fs:
-		fd = open(timeserver, ORDWR);
+		fd = sys_open(timeserver, ORDWR);
 		if(fd < 0)
 			sysfatal("opening %s: %r", timeserver);
 		if(amount(fd, "/n/boot", MREPL, "") < 0)
 			sysfatal("mounting %s: %r", timeserver);
-		close(fd);
+		sys_close(fd);
 		break;
 	case Rtc:
-		bind("#r", "/dev", MAFTER);
+		sys_bind("#r", "/dev", MAFTER);
 		if(access("/dev/rtc", AREAD) < 0)
 			sysfatal("accessing /dev/rtc: %r");
 		break;
 	case Utc:
-		fd = open(timeserver, OREAD);
+		fd = sys_open(timeserver, OREAD);
 		if(fd < 0)
 			sysfatal("opening %s: %r", timeserver);
 		utcfil = fd;
 		break;
 	case Gps:
-		fd = open(timeserver, OREAD);
+		fd = sys_open(timeserver, OREAD);
 		if(fd < 0)
 			sysfatal("opening %s: %r", timeserver);
 		gpsfil = fd;
@@ -346,12 +346,12 @@ main(int argc, char **argv)
 	 * start a local ntp server(s)
 	 */
 	for(i = 0; i < nservenet; i++)
-		switch(rfork(RFPROC|RFFDG|RFMEM|RFNOWAIT)){
+		switch(sys_rfork(RFPROC|RFFDG|RFMEM|RFNOWAIT)){
 		case -1:
 			sysfatal("forking: %r");
 		case 0:
 			ntpserver(servenet[i]);
-			_exits(0);
+			sys__exits(0);
 		}
 
 	/* get the last known frequency from the file */
@@ -623,23 +623,23 @@ inittime(void)
 
 	/* bind in clocks */
 	if(access("/dev/time", AEXIST) < 0)
-		bind("#c", "/dev", MAFTER);
+		sys_bind("#c", "/dev", MAFTER);
 	if(access("/dev/rtc", AEXIST) < 0)
-		bind("#r", "/dev", MAFTER);
+		sys_bind("#r", "/dev", MAFTER);
 
 	/* figure out what interface we have */
 	ifc = Ibintime;
-	bintimefd = open("/dev/bintime", mode);
+	bintimefd = sys_open("/dev/bintime", mode);
 	if(bintimefd >= 0)
 		return;
 	ifc = Insec;
-	nsecfd = open("/dev/nsec", mode);
+	nsecfd = sys_open("/dev/nsec", mode);
 	if(nsecfd < 0)
 		sysfatal("opening /dev/nsec");
-	fastclockfd = open("/dev/fastclock", mode);
+	fastclockfd = sys_open("/dev/fastclock", mode);
 	if(fastclockfd < 0)
 		sysfatal("opening /dev/fastclock");
-	timingfd = open("/dev/timing", OREAD);
+	timingfd = sys_open("/dev/timing", OREAD);
 	if(timingfd < 0)
 		return;
 	ifc = Itiming;
@@ -721,7 +721,7 @@ gettime(int64_t *nsec, uint64_t *ticks, uint64_t *hz)
 			n = 3*sizeof(int64_t);
 		if(ticks != nil)
 			n = 2*sizeof(int64_t);
-		i = read(bintimefd, ub, n);
+		i = jehanne_read(bintimefd, ub, n);
 		if(i != n)
 			break;
 		p = ub;
@@ -738,7 +738,7 @@ gettime(int64_t *nsec, uint64_t *ticks, uint64_t *hz)
 		n = sizeof(int64_t);
 		if(ticks != nil)
 			n = 2*sizeof(int64_t);
-		i = read(timingfd, ub, n);
+		i = jehanne_read(timingfd, ub, n);
 		if(i != n)
 			break;
 		p = ub;
@@ -748,8 +748,8 @@ gettime(int64_t *nsec, uint64_t *ticks, uint64_t *hz)
 		if(ticks != nil)
 			be2vlong((int64_t*)ticks, p);
 		if(hz != nil){
-			seek(fastclockfd, 0, 0);
-			n = read(fastclockfd, b, sizeof(b)-1);
+			sys_seek(fastclockfd, 0, 0);
+			n = jehanne_read(fastclockfd, b, sizeof(b)-1);
 			if(n <= 0)
 				break;
 			b[n] = 0;
@@ -758,24 +758,24 @@ gettime(int64_t *nsec, uint64_t *ticks, uint64_t *hz)
 		return 0;
 	case Insec:
 		if(nsec != nil){
-			seek(nsecfd, 0, 0);
-			n = read(nsecfd, b, sizeof(b)-1);
+			sys_seek(nsecfd, 0, 0);
+			n = jehanne_read(nsecfd, b, sizeof(b)-1);
 			if(n <= 0)
 				break;
 			b[n] = 0;
 			*nsec = strtoll(b, 0, 0);
 		}
 		if(ticks != nil){
-			seek(fastclockfd, 0, 0);
-			n = read(fastclockfd, b, sizeof(b)-1);
+			sys_seek(fastclockfd, 0, 0);
+			n = jehanne_read(fastclockfd, b, sizeof(b)-1);
 			if(n <= 0)
 				break;
 			b[n] = 0;
 			*ticks = strtoll(b, 0, 0);
 		}
 		if(hz != nil){
-			seek(fastclockfd, 0, 0);
-			n = read(fastclockfd, b, sizeof(b)-1);
+			sys_seek(fastclockfd, 0, 0);
+			n = jehanne_read(fastclockfd, b, sizeof(b)-1);
 			if(n <= 24)
 				break;
 			b[n] = 0;
@@ -802,7 +802,7 @@ settime(int64_t now, uint64_t hz, int64_t delta, int n)
 			p = b;
 			*p++ = 'n';
 			p = vlong2be(p, now);
-			if(write(bintimefd, b, p-b) < 0)
+			if(jehanne_write(bintimefd, b, p-b) < 0)
 				sysfatal("writing /dev/bintime: %r");
 		}
 		if(delta != 0){
@@ -810,26 +810,26 @@ settime(int64_t now, uint64_t hz, int64_t delta, int n)
 			*p++ = 'd';
 			p = vlong2be(p, delta);
 			p = long2be(p, n);
-			if(write(bintimefd, b, p-b) < 0)
+			if(jehanne_write(bintimefd, b, p-b) < 0)
 				sysfatal("writing /dev/bintime: %r");
 		}
 		if(hz != 0){
 			p = b;
 			*p++ = 'f';
 			p = vlong2be(p, hz);
-			if(write(bintimefd, b, p-b) < 0)
+			if(jehanne_write(bintimefd, b, p-b) < 0)
 				sysfatal("writing /dev/bintime: %r");
 		}
 		break;
 	case Itiming:
 	case Insec:
-		seek(nsecfd, 0, 0);
+		sys_seek(nsecfd, 0, 0);
 		if(now >= 0 || delta != 0){
 			if(fprint(nsecfd, "%lld %lld %d", now, delta, n) < 0)
 				sysfatal("writing /dev/nsec: %r");
 		}
 		if(hz > 0){
-			seek(fastclockfd, 0, 0);
+			sys_seek(fastclockfd, 0, 0);
 			if(fprint(fastclockfd, "%lld", hz) < 0)
 				sysfatal("writing /dev/fastclock: %r");
 		}
@@ -846,7 +846,7 @@ setpriority(void)
 	char buf[32];
 
 	sprint(buf, "/proc/%d/ctl", getpid());
-	fd = open(buf, ORDWR);
+	fd = sys_open(buf, ORDWR);
 	if(fd < 0){
 		fprint(2, "can't set priority\n");
 		return;
@@ -855,7 +855,7 @@ setpriority(void)
 		fprint(2, "can't set priority\n");
 	if(fprint(fd, "wired 2") < 0)
 		fprint(2, "can't wire process\n");
-	close(fd);
+	sys_close(fd);
 }
 
 /* convert to ntp timestamps */
@@ -931,11 +931,11 @@ setrootid(char *d)
 	char *p;
 
 	snprint(buf, sizeof buf, "%s/remote", d);
-	fd = open(buf, OREAD);
+	fd = sys_open(buf, OREAD);
 	if(fd < 0)
 		return;
-	n = read(fd, buf, sizeof buf);
-	close(fd);
+	n = jehanne_read(fd, buf, sizeof buf);
+	sys_close(fd);
 	if(n <= 0)
 		return;
 	p = strchr(buf, '!');
@@ -948,8 +948,8 @@ static void
 ding(void* _, char *s)
 {
 	if(strstr(s, "alarm") != nil)
-		noted(NCONT);
-	noted(NDFLT);
+		sys_noted(NCONT);
+	sys_noted(NDFLT);
 }
 
 static void
@@ -980,8 +980,8 @@ ntptimediff(NTPserver *ns)
 	char dir[64];
 	static int whined;
 
-	notify(ding);
-	alarm(30*1000);	/* don't wait forever if ns->name is unreachable */
+	sys_notify(ding);
+	sys_alarm(30*1000);	/* don't wait forever if ns->name is unreachable */
 	fd = dial(netmkaddr(ns->name, "udp", "ntp"), 0, dir, 0);
 	if(fd < 0){
 		if (!whined++)
@@ -994,20 +994,20 @@ ntptimediff(NTPserver *ns)
 	ntpout.mode = 3 | (3 << 3);
 
 	for(tries = 0; tries < 3; tries++){
-		alarm(2*1000);
+		sys_alarm(2*1000);
 
 		gettime(&x, 0, 0);
 		hnputts(ntpout.xmitts, x);
-		if(write(fd, &ntpout, NTPSIZE) < 0){
-			alarm(0);
+		if(jehanne_write(fd, &ntpout, NTPSIZE) < 0){
+			sys_alarm(0);
 			continue;
 		}
 
-		n = read(fd, &ntpin, sizeof ntpin);
-		alarm(0);
+		n = jehanne_read(fd, &ntpin, sizeof ntpin);
+		sys_alarm(0);
 		gettime(&destts, 0, 0);
 		if(n >= NTPSIZE){
-			close(fd);
+			sys_close(fd);
 
 			/* we got one, use it */
 			recvts = nhgetts(ntpin.recvts);
@@ -1032,7 +1032,7 @@ ntptimediff(NTPserver *ns)
 		/* try again */
 		sleep(250);
 	}
-	close(fd);
+	sys_close(fd);
 	return -1;
 }
 
@@ -1046,8 +1046,8 @@ gpssample(void)
 	d = -1000000000000000000LL;
 	for(i = 0; i < 5; i++){
 		sleep(1100);
-		seek(gpsfil, 0, 0);
-		n = read(gpsfil, buf, sizeof buf - 1);
+		sys_seek(gpsfil, 0, 0);
+		n = jehanne_read(gpsfil, buf, sizeof buf - 1);
 		if (n <= 0)
 			return 0;
 		buf[n] = 0;
@@ -1111,8 +1111,8 @@ utcsample(void)
 	char	*v[2], buf[128];
 
 	s = 0;
-	seek(utcfil, 0, 0);
-	n = read(utcfil, buf, sizeof buf - 1);
+	sys_seek(utcfil, 0, 0);
+	n = jehanne_read(utcfil, buf, sizeof buf - 1);
 	if (n <= 0)
 		return 0;
 	buf[n] = 0;
@@ -1144,7 +1144,7 @@ openlisten(char *net)
 		sysfatal("can't set header mode");
 
 	sprint(data, "%s/data", devdir);
-	fd = open(data, ORDWR);
+	fd = sys_open(data, ORDWR);
 	if(fd < 0)
 		sysfatal("open %s: %r", data);
 	return fd;
@@ -1182,7 +1182,7 @@ ntpserver(char *servenet)
 		memmove(rootid, Rootid, strlen(Rootid) > 4? 4: strlen(Rootid));
 
 	for(;;){
-		n = read(fd, buf, sizeof buf);
+		n = jehanne_read(fd, buf, sizeof buf);
 		gettime(&recvts, 0, 0);
 		if(n <= 0) {
 			/* don't croak on input error, but don't spin either */
@@ -1209,7 +1209,7 @@ ntpserver(char *servenet)
 		memmove(ntp->rootid, rootid, sizeof(ntp->rootid));
 		gettime(&x, 0, 0);
 		hnputts(ntp->xmitts, x);
-		write(fd, buf, NTPSIZE + Udphdrsize);
+		jehanne_write(fd, buf, NTPSIZE + Udphdrsize);
 	}
 }
 
@@ -1244,11 +1244,11 @@ rtctime(void)
 	memset(b, 0, sizeof(b));
 	for(retries = 0; retries < 100; retries++){
 		if(f < 0)
-			f = open("/dev/rtc", OREAD|OCEXEC);
+			f = sys_open("/dev/rtc", OREAD|OCEXEC);
 		if(f < 0)
 			break;
-		if(seek(f, 0, 0) < 0 || (i = read(f, b, sizeof b)) < 0){
-			close(f);
+		if(sys_seek(f, 0, 0) < 0 || (i = jehanne_read(f, b, sizeof b)) < 0){
+			sys_close(f);
 			f = -1;
 		} else
 			if(i != 0)
@@ -1263,11 +1263,11 @@ setrtctime(int32_t t)
 	static int f = -1;
 
 	if(f < 0)
-		f = open("/dev/rtc", OWRITE|OCEXEC);
+		f = sys_open("/dev/rtc", OWRITE|OCEXEC);
 	if(f < 0)
 		return;
-	if(seek(f, 0, 0) < 0 || fprint(f, "%ld", t-gmtdelta) < 0){
-		close(f);
+	if(sys_seek(f, 0, 0) < 0 || fprint(f, "%ld", t-gmtdelta) < 0){
+		sys_close(f);
 		f = -1;
 	}
 }
@@ -1320,7 +1320,7 @@ openfreqfile(void)
 		p = smprint("%s/ts.%s.%d", dir, sysid, type);
 		break;
 	}
-	fd = open(p, ORDWR);
+	fd = sys_open(p, ORDWR);
 	if(fd < 0)
 		fd = ocreate(p, ORDWR, 0666);
 	free(p);
@@ -1340,7 +1340,7 @@ readfreqfile(int fd, int64_t ohz, int64_t minhz, int64_t maxhz)
 	char buf[128];
 	int64_t hz;
 
-	n = read(fd, buf, sizeof buf-1);
+	n = jehanne_read(fd, buf, sizeof buf-1);
 	if(n <= 0)
 		return ohz;
 	buf[n] = 0;
@@ -1368,7 +1368,7 @@ writefreqfile(int fd, int64_t hz, int secs, int64_t diff)
 	if(now - last < 10*60)
 		return;
 	last = now;
-	if(seek(fd, 0, 0) < 0)
+	if(sys_seek(fd, 0, 0) < 0)
 		return;
 	fprint(fd, "%lld %d %d %lld\n", hz, secs, type, diff);
 }
@@ -1391,7 +1391,7 @@ background(void)
 		return;
 
 	if(!debug)
-		switch(rfork(RFPROC|RFFDG|RFNAMEG|RFNOTEG|RFNOWAIT)){
+		switch(sys_rfork(RFPROC|RFFDG|RFNAMEG|RFNOTEG|RFNOWAIT)){
 		case -1:
 			sysfatal("forking: %r");
 			break;

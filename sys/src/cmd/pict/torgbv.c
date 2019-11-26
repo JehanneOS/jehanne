@@ -22,7 +22,7 @@ _remaperror(char *fmt, ...)
 	vseprint(buf, buf+sizeof buf, fmt, arg);
 	va_end(arg);
 
-	errstr(buf, sizeof buf);
+	sys_errstr(buf, sizeof buf);
 	return nil;
 }
 
@@ -41,7 +41,7 @@ torgbv(Rawimage *i, int errdiff)
 	unsigned char *cmap, *cm, *in, *out, *inp, *outp, cmap1[3*256], map[256], *rpic, *bpic, *gpic;
 
 	err[0] = '\0';
-	errstr(err, sizeof err);	/* throw it away */
+	sys_errstr(err, sizeof err);	/* throw it away */
 	im = malloc(sizeof(Rawimage));
 	if(im == nil)
 		return nil;

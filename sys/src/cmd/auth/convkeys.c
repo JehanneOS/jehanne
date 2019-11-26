@@ -72,7 +72,7 @@ main(int argc, char *argv[])
 		getpass(&nkey, nil, 0, 1);
 	}
 
-	fd = open(file, ORDWR);
+	fd = sys_open(file, ORDWR);
 	if(fd < 0)
 		error("can't open %s: %r\n", file);
 	d = dirfstat(fd);
@@ -82,12 +82,12 @@ main(int argc, char *argv[])
 	p = malloc(len);
 	if(p == nil)
 		error("out of memory");
-	if(read(fd, p, len) != len)
+	if(jehanne_read(fd, p, len) != len)
 		error("can't read key file: %r\n");
 	len = convert(&p, len);
-	if(pwrite(fd, p, len, 0) != len)
+	if(sys_pwrite(fd, p, len, 0) != len)
 		error("can't write key file: %r\n");
-	close(fd);
+	sys_close(fd);
 	exits(nil);
 }
 

@@ -24,7 +24,7 @@ printmp(mpint *b, char *tag)
 
 	jehanne_print("%s (%d) ", tag, b->top);
 	p = mptoa(b, 10, nil, 0);
-	write(1, p, jehanne_strlen(p));
+	jehanne_write(1, p, jehanne_strlen(p));
 	jehanne_free(p);
 	jehanne_print("\n");
 }

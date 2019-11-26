@@ -431,7 +431,7 @@ rowdump(Row *row, char *file)
 		}
 	}
 	Bterm(b);
-	close(fd);
+	sys_close(fd);
 	free(b);
 	fbuffree(r);
 
@@ -682,7 +682,7 @@ rowload(Row *row, char *file, int initing)
 					free(r);
 					Bterm(bout);
 					free(bout);
-					close(fd);
+					sys_close(fd);
 					goto Rescue2;
 				}
 				Bputrune(bout, rune);
@@ -690,7 +690,7 @@ rowload(Row *row, char *file, int initing)
 			Bterm(bout);
 			free(bout);
 			textload(&w->body, 0, buf, 1);
-			close(fd);
+			sys_close(fd);
 			w->body.file->mod = TRUE;
 			for(n=0; n<w->body.file->ntext; n++)
 				w->body.file->text[n]->w->dirty = TRUE;

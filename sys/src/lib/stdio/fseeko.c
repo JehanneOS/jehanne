@@ -24,7 +24,7 @@ int fseeko(FILE *f, long long offs, int type){
 			offs-=f->wp-f->rp;
 		break;
 	}
-	if(f->flags&STRING || seek(f->fd, offs, type)==-1) return -1;
+	if(f->flags&STRING || sys_seek(f->fd, offs, type)==-1) return -1;
 	if(f->state==RD) f->rp=f->wp=f->buf;
 	if(f->state!=OPEN)
 		f->state=RDWR;

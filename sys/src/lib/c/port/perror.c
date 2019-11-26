@@ -16,7 +16,7 @@ jehanne_perror(const char *s)
 	char buf[ERRMAX];
 
 	buf[0] = '\0';
-	errstr(buf, sizeof buf);
+	sys_errstr(buf, sizeof buf);
 	if(s && *s)
 		jehanne_fprint(2, "%s: %s\n", s, buf);
 	else

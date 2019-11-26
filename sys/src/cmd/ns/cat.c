@@ -69,14 +69,14 @@ main(int argc, char **argv)
 	Binit(&stdout, 1, OWRITE);
 
 	sprint(buf, "/proc/%d/ns", pid);
-	fd = open(buf, OREAD);
+	fd = sys_open(buf, OREAD);
 	if(fd < 0) {
 		fprint(2, "ns: open %s: %r\n", buf);
 		exits("open ns");
 	}
 
 	for(line=1; ; line++) {
-		n = read(fd, buf, sizeof(buf));
+		n = jehanne_read(fd, buf, sizeof(buf));
 		if(n == sizeof(buf)) {
 			fprint(2, "ns: ns string too int32_t\n");
 			exits("read ns");
@@ -178,11 +178,11 @@ xlatemnt(Mount *m)
 	if(strcmp(t+1, "data") != 0)
 		goto Return;
 	snprint(buf, sizeof buf, "/net/%s/%s/remote", net, port);
-	fd = open(buf, OREAD);
+	fd = sys_open(buf, OREAD);
 	if(fd < 0)
 		goto Return;
-	n = read(fd, buf, sizeof buf);
-	close(fd);
+	n = jehanne_read(fd, buf, sizeof buf);
+	sys_close(fd);
 	if(n<=1 || n>sizeof buf)
 		goto Return;
 	if(buf[n-1] == '\n')

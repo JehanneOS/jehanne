@@ -25,7 +25,7 @@ writecolmap(Display *d, RGB *m)
 	uint32_t r, g, b;
 
 	sprint(buf, "/dev/draw/%d/colormap", d->dirno);
-	fd = open(buf, OWRITE);
+	fd = sys_open(buf, OWRITE);
 	if(fd < 0)
 		drawerror(d, "writecolmap: open colormap failed");
 	t = malloc(8192);
@@ -38,9 +38,9 @@ writecolmap(Display *d, RGB *m)
 		b = m[i].blue>>24;
 		n += sprint(t+n, "%d %lud %lud %lud\n", 255-i, r, g, b);
 	}
-	i = write(fd, t, n);
+	i = jehanne_write(fd, t, n);
 	free(t);
-	close(fd);
+	sys_close(fd);
 	if(i != n)
 		drawerror(d, "writecolmap: bad write");
 }

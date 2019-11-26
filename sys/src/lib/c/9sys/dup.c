@@ -27,12 +27,12 @@ jehanne_dup(int oldfd, int newfd)
 	in.fd[0] = oldfd;
 	in.fd[1] = newfd;
 
-	f = create("#d/new", -1, in.aslong);
+	f = sys_create("#d/new", -1, in.aslong);
 	if(f == -1)
 		return -1;
 	if(f >= 0){
 		/* this should never happen */
-		close(f);
+		sys_close(f);
 		return -1;
 	}
 	out.aslong = ~f;

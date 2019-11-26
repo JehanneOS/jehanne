@@ -41,7 +41,7 @@ main(int argc, char *argv[])
 	Binit(&bout, 1, OWRITE);
 	if(chdir("/proc")==-1)
 		error("/proc");
-	fd=open(".", OREAD);
+	fd=sys_open(".", OREAD);
 	if(fd<0)
 		error("/proc");
 	tot = dirreadall(fd, &dir);
@@ -72,11 +72,11 @@ ps(char *s)
 	char args[256], *argv[16], buf[64], pbuf[8], rbuf[20], rbuf1[20], status[4096];
 
 	sprint(buf, "%s/status", s);
-	fd = open(buf, OREAD);
+	fd = sys_open(buf, OREAD);
 	if(fd<0)
 		return;
-	n = read(fd, status, sizeof status-1);
-	close(fd);
+	n = jehanne_read(fd, status, sizeof status-1);
+	sys_close(fd);
 	if(n <= 0)
 		return;
 	status[n] = '\0';
@@ -133,11 +133,11 @@ ps(char *s)
 	}
 
 	sprint(buf, "%s/args", s);
-	fd = open(buf, OREAD);
+	fd = sys_open(buf, OREAD);
 	if(fd < 0)
 		goto Badargs;
-	n = read(fd, args, sizeof args-1);
-	close(fd);
+	n = jehanne_read(fd, args, sizeof args-1);
+	sys_close(fd);
 	if(n < 0)
 		goto Badargs;
 	if(n == 0)

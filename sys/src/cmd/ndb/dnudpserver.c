@@ -128,8 +128,8 @@ redistrib(uint8_t *buf, int len)
 		if (tp->fd > 0) {
 			memmove(uh->raddr, tp->addr, sizeof tp->addr);
 			hnputs(uh->rport, 53);		/* dns port */
-			if (write(tp->fd, buf, len) != len) {
-				close(tp->fd);
+			if (jehanne_write(tp->fd, buf, len) != len) {
+				sys_close(tp->fd);
 				tp->fd = -1;
 			}
 		} else if (tp->host && time(nil) - tp->lastdial > 60) {
@@ -159,7 +159,7 @@ dnudpserver(char *mntpt)
 	 * fork sharing text, data, and bss with parent.
 	 * stay in the same note group.
 	 */
-	switch(rfork(RFPROC|RFMEM|RFNOWAIT)){
+	switch(sys_rfork(RFPROC|RFMEM|RFNOWAIT)){
 	case -1:
 		break;
 	case 0:
@@ -172,7 +172,7 @@ dnudpserver(char *mntpt)
 restart:
 	procsetname("udp server announcing");
 	if(fd >= 0)
-		close(fd);
+		sys_close(fd);
 	while((fd = udpannounce(mntpt)) < 0)
 		sleep(5000);
 
@@ -191,9 +191,9 @@ restart:
 		memset(&repmsg, 0, sizeof repmsg);
 		memset(&reqmsg, 0, sizeof reqmsg);
 
-		alarm(60*1000);
-		len = read(fd, buf, sizeof buf);
-		alarm(0);
+		sys_alarm(60*1000);
+		len = jehanne_read(fd, buf, sizeof buf);
+		sys_alarm(0);
 		if(len <= Udphdrsize)
 			goto restart;
 
@@ -285,7 +285,7 @@ freereq:
 		freeanswers(&reqmsg);
 		if(req.isslave){
 			putactivity(0);
-			_exits(0);
+			sys__exits(0);
 		}
 	}
 }
@@ -310,24 +310,24 @@ udpannounce(char *mntpt)
 	}
 
 	/* turn on header style interface */
-	if(write(ctl, hmsg, strlen(hmsg)) != strlen(hmsg)){
-		close(ctl);
+	if(jehanne_write(ctl, hmsg, strlen(hmsg)) != strlen(hmsg)){
+		sys_close(ctl);
 		if(!whined++)
 			warning("can't enable headers on %s", datafile);
 		return -1;
 	}
 
 	snprint(datafile, sizeof(datafile), "%s/data", dir);
-	data = open(datafile, ORDWR);
+	data = sys_open(datafile, ORDWR);
 	if(data < 0){
-		close(ctl);
+		sys_close(ctl);
 		if(!whined++)
 			warning("can't open %s to announce on dns udp port",
 				datafile);
 		return -1;
 	}
 
-	close(ctl);
+	sys_close(ctl);
 	return data;
 }
 
@@ -346,6 +346,6 @@ reply(int fd, uint8_t *buf, DNSmsg *rep, Request *reqp)
 
 	len = convDNS2M(rep, &buf[Udphdrsize], Maxudp);
 	len += Udphdrsize;
-	if(write(fd, buf, len) != len)
+	if(jehanne_write(fd, buf, len) != len)
 		dnslog("error sending reply: %r");
 }

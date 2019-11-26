@@ -17,7 +17,7 @@ _asgetpakkey(int fd, Ticketreq *tr, Authkey *a)
 	}
 	tr->type = type;
 	authpak_new(&p, a, y, 1);
-	if(write(fd, y, PAKYLEN) != PAKYLEN
+	if(jehanne_write(fd, y, PAKYLEN) != PAKYLEN
 	|| _asrdresp(fd, (char*)y, PAKYLEN) != PAKYLEN){
 		memset(&p, 0, sizeof(p));
 		return -1;

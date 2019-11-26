@@ -58,17 +58,17 @@ popen(char *cmd, int mode)
 		return nil;
 	case 0:
 		/* myside and hisside reverse roles in child */
-		close(myside);
+		sys_close(myside);
 		dup(hisside, tst(0, 1));
 		for (i=NSYSFILE; i<FOPEN_MAX; i++)
-			close(i);
+			sys_close(i);
 		execl("/bin/rc", "rc", "-c", cmd, nil);
 		exits("exec failed");
 	default:
 		the_fork[ind].pid = pid;
 		the_fork[ind].fd = myside;
 		the_fork[ind].done = 0;
-		close(hisside);
+		sys_close(hisside);
 		return(Bfdopen(myside, mode));
 	}
 }

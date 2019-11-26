@@ -75,18 +75,18 @@ partitiongeometry(Disk *disk)
 
 	strcpy(rawname, disk->prefix);
 	strcat(rawname, "data");
-	rawfd = open(rawname, OREAD);
+	rawfd = sys_open(rawname, OREAD);
 	free(rawname);
 	if(rawfd >= 0
-	&& seek(rawfd, 0, 0) >= 0
+	&& sys_seek(rawfd, 0, 0) >= 0
 	&& readn(rawfd, buf, 512) == 512
 	&& t->magic[0] == Magic0
 	&& t->magic[1] == Magic1) {
-		close(rawfd);
+		sys_close(rawfd);
 	} else {
 		if(rawfd >= 0)
-			close(rawfd);
-		if(seek(disk->fd, 0, 0) < 0
+			sys_close(rawfd);
+		if(sys_seek(disk->fd, 0, 0) < 0
 		|| readn(disk->fd, buf, 512) != 512
 		|| t->magic[0] != Magic0
 		|| t->magic[1] != Magic1) {
@@ -212,11 +212,11 @@ static Disk*
 freedisk(Disk *d)
 {
 	if(d->fd >= 0)
-		close(d->fd);
+		sys_close(d->fd);
 	if(d->wfd >= 0)
-		close(d->wfd);
+		sys_close(d->wfd);
 	if(d->ctlfd >= 0)
-		close(d->ctlfd);
+		sys_close(d->ctlfd);
 	free(d);
 	return nil;
 }
@@ -299,7 +299,7 @@ opendisk(char *disk, int rdonly, int noctl)
 	d->fd = d->wfd = d->ctlfd = -1;
 	d->rdonly = rdonly;
 
-	d->fd = open(disk, OREAD);
+	d->fd = sys_open(disk, OREAD);
 	if(d->fd < 0) {
 		werrstr("cannot open disk file: %r");
 		return freedisk(d);
@@ -314,7 +314,7 @@ opendisk(char *disk, int rdonly, int noctl)
 	free(s);
 
 	if(rdonly == 0) {
-		d->wfd = open(disk, OWRITE);
+		d->wfd = sys_open(disk, OWRITE);
 		if(d->wfd < 0)
 			d->rdonly = 1;
 	}
@@ -332,7 +332,7 @@ opendisk(char *disk, int rdonly, int noctl)
 		q = p+strlen(p)-7;
 		if(q[0] == 'f' && q[1] == 'd' && isdigit(q[2]) && strcmp(q+3, "disk") == 0) {
 			strcpy(q+3, "ctl");
-			if((d->ctlfd = open(p, ORDWR)) >= 0) {
+			if((d->ctlfd = sys_open(p, ORDWR)) >= 0) {
 				*q = '\0';
 				d->prefix = p;
 				d->type = Tfloppy;
@@ -348,7 +348,7 @@ opendisk(char *disk, int rdonly, int noctl)
 		q = p;
 
 	strcpy(q, "ctl");
-	if((d->ctlfd = open(p, ORDWR)) >= 0) {
+	if((d->ctlfd = sys_open(p, ORDWR)) >= 0) {
 		*q = '\0';
 		d->prefix = p;
 		d->type = Tsd;

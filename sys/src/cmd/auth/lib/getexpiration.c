@@ -54,13 +54,13 @@ getexpiration(char *db, char *u)
 
 	/* read current expiration (if any) */
 	snprint(buf, sizeof buf, "%s/%s/expire", db, u);
-	fd = open(buf, OREAD);
+	fd = sys_open(buf, OREAD);
 	buf[0] = 0;
 	if(fd >= 0){
-		n = read(fd, buf, sizeof(buf)-1);
+		n = jehanne_read(fd, buf, sizeof(buf)-1);
 		if(n > 0)
 			buf[n-1] = 0;
-		close(fd);
+		sys_close(fd);
 	}
 
 	if(buf[0]){

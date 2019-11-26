@@ -28,8 +28,8 @@ closekeyboard(Keyboardctl *kc)
 		<-kc->c;
 #endif
 
-	close(kc->ctlfd);
-	close(kc->consfd);
+	sys_close(kc->ctlfd);
+	sys_close(kc->consfd);
 	free(kc->file);
 	free(kc->c);
 	free(kc);
@@ -55,7 +55,7 @@ _ioproc(void *arg)
 			memmove(buf, buf+m, n);
 			send(kc->c, &r);
 		}
-		m = read(kc->consfd, buf+n, sizeof buf-n);
+		m = jehanne_read(kc->consfd, buf+n, sizeof buf-n);
 		if(m <= 0){
 			yield();	/* if error is due to exiting, we'll exit here */
 			fprint(2, "keyboard read error: %r\n");
@@ -77,7 +77,7 @@ initkeyboard(char *file)
 	if(file == nil)
 		file = "/dev/cons";
 	kc->file = strdup(file);
-	kc->consfd = open(file, ORDWR|OCEXEC);
+	kc->consfd = sys_open(file, ORDWR|OCEXEC);
 	t = malloc(strlen(file)+16);
 	if(kc->consfd<0 || t==nil){
 Error1:
@@ -85,17 +85,17 @@ Error1:
 		return nil;
 	}
 	sprint(t, "%sctl", file);
-	kc->ctlfd = open(t, OWRITE|OCEXEC);
+	kc->ctlfd = sys_open(t, OWRITE|OCEXEC);
 	if(kc->ctlfd < 0){
 		fprint(2, "initkeyboard: can't open %s: %r\n", t);
 Error2:
-		close(kc->consfd);
+		sys_close(kc->consfd);
 		free(t);
 		goto Error1;
 	}
 	if(ctlkeyboard(kc, "rawon") < 0){
 		fprint(2, "initkeyboard: can't turn on raw mode on %s: %r\n", t);
-		close(kc->ctlfd);
+		sys_close(kc->ctlfd);
 		goto Error2;
 	}
 	free(t);
@@ -107,5 +107,5 @@ Error2:
 int
 ctlkeyboard(Keyboardctl *kc, char *m)
 {
-	return write(kc->ctlfd, m, strlen(m));
+	return jehanne_write(kc->ctlfd, m, strlen(m));
 }

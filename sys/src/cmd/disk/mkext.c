@@ -158,7 +158,7 @@ mkdirs(char *name, char *namep)
 			return;
 		*p = 0;
 		fd = ocreate(buf, OREAD, 0775|DMDIR);
-		close(fd);
+		sys_close(fd);
 		*p = '/';
 	}
 }
@@ -181,7 +181,7 @@ mkdir(char *name, uint32_t mode, uint32_t mtime, char *uid, char *gid)
 		}
 		free(d);
 	}
-	close(fd);
+	sys_close(fd);
 
 	d = &xd;
 	nulldir(d);

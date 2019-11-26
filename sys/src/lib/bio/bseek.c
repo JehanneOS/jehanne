@@ -52,14 +52,14 @@ Bseek(Biobufhdr *bp, int64_t offset, int base)
 		/*
 		 * reset the buffer
 		 */
-		n = seek(bp->fid, n, base);
+		n = sys_seek(bp->fid, n, base);
 		bp->icount = 0;
 		bp->gbuf = bp->ebuf;
 		break;
 
 	case Bwactive:
 		Bflush(bp);
-		n = seek(bp->fid, offset, base);
+		n = sys_seek(bp->fid, offset, base);
 		break;
 	}
 	bp->offset = n;

@@ -25,13 +25,13 @@ jehanne_segattach(int attr, const char *class, void *va, unsigned long len)
 	long tmp;
 	char msg[256];
 
-	fd = open("#0/segments", OWRITE);
+	fd = sys_open("#0/segments", OWRITE);
 	if(fd < 0)
 		return (void*)-1;
 
 	tmp = jehanne_snprint(msg, sizeof(msg), "attach 0x%ux %#p %ulld %s", attr, va, len, class);
-	tmp = write(fd, msg, tmp);
-	close(fd);
+	tmp = jehanne_write(fd, msg, tmp);
+	sys_close(fd);
 	return (void*)tmp;
 }
 
@@ -41,13 +41,13 @@ jehanne_segdetach(void *addr)
 	int fd, tmp;
 	char msg[256];
 
-	fd = open("#0/segments", OWRITE);
+	fd = sys_open("#0/segments", OWRITE);
 	if(fd < 0)
 		return -1;
 
 	tmp = jehanne_snprint(msg, sizeof(msg), "detach %#p", addr);
-	tmp = write(fd, msg, tmp);
-	close(fd);
+	tmp = jehanne_write(fd, msg, tmp);
+	sys_close(fd);
 	return tmp;
 }
 
@@ -57,12 +57,12 @@ jehanne_segfree(void *addr, unsigned long len)
 	int fd, tmp;
 	char msg[256];
 
-	fd = open("#0/segments", OWRITE);
+	fd = sys_open("#0/segments", OWRITE);
 	if(fd < 0)
 		return -1;
 
 	tmp = jehanne_snprint(msg, sizeof(msg), "free %#p %ulld", addr, len);
-	tmp = write(fd, msg, tmp);
-	close(fd);
+	tmp = jehanne_write(fd, msg, tmp);
+	sys_close(fd);
 	return tmp;
 }

@@ -244,7 +244,7 @@ bufload(Buffer *b, uint q0, int fd, int *nulls)
 	 * last pass, possibly representing a partial rune.
 	 */
 	while(n > 0){
-		n = read(fd, p+m, Maxblock);
+		n = jehanne_read(fd, p+m, Maxblock);
 		if(n < 0){
 			error(Ebufload);
 			break;

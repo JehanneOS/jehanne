@@ -91,7 +91,7 @@ wsetname(Window *w)
 	for(i='A'; i<='Z'; i++){
 		if(nameimage(w->i, w->name, 1) > 0)
 			return;
-		errstr(err, sizeof err);
+		sys_errstr(err, sizeof err);
 		if(strcmp(err, "image name in use") != 0)
 			break;
 		w->name[n] = i;
@@ -468,8 +468,8 @@ interruptproc(void *v)
 	int *notefd;
 
 	notefd = v;
-	write(*notefd, "interrupt", 9);
-	close(*notefd);
+	jehanne_write(*notefd, "interrupt", 9);
+	sys_close(*notefd);
 	free(notefd);
 }
 
@@ -1216,7 +1216,7 @@ wctlmesg(Window *w, int m, Rectangle r, void *p)
 	case Deleted:
 		wclunk(w);
 		if(w->notefd >= 0)
-			write(w->notefd, "hangup", 6);
+			jehanne_write(w->notefd, "hangup", 6);
 		if(w->i!=nil){
 			proccreate(deletetimeoutproc, estrdup(w->name), 4096);
 			wclosewin(w);
@@ -1226,7 +1226,7 @@ wctlmesg(Window *w, int m, Rectangle r, void *p)
 		wclosewin(w);
 		frclear(&w->frame, TRUE);
 		if(w->notefd >= 0)
-			close(w->notefd);
+			sys_close(w->notefd);
 		chanfree(w->mc.c);
 		chanfree(w->ck);
 		chanfree(w->cctl);
@@ -1439,10 +1439,10 @@ wsetpid(Window *w, int pid, int dolabel)
 			w->label = estrdup(buf);
 		}
 		snprint(buf, sizeof(buf), "/proc/%d/notepg", pid);
-		w->notefd = open(buf, OWRITE|OCEXEC);
+		w->notefd = sys_open(buf, OWRITE|OCEXEC);
 	}
 	if(ofd >= 0)
-		close(ofd);
+		sys_close(ofd);
 }
 
 void
@@ -1460,31 +1460,31 @@ winshell(void *args)
 	cmd = arg[2];
 	argv = arg[3];
 	dir = arg[4];
-	rfork(RFNAMEG|RFFDG|RFENVG);
+	sys_rfork(RFNAMEG|RFFDG|RFENVG);
 	if(filsysmount(filsys, w->id) < 0){
 		fprint(2, "mount failed: %r\n");
 		sendul(pidc, 0);
 		threadexits("mount failed");
 	}
-	close(0);
-	if(open("/dev/cons", OREAD) < 0){
+	sys_close(0);
+	if(sys_open("/dev/cons", OREAD) < 0){
 		fprint(2, "can't open /dev/cons: %r\n");
 		sendul(pidc, 0);
 		threadexits("/dev/cons");
 	}
-	close(1);
-	if(open("/dev/cons", OWRITE) < 0){
+	sys_close(1);
+	if(sys_open("/dev/cons", OWRITE) < 0){
 		fprint(2, "can't open /dev/cons: %r\n");
 		sendul(pidc, 0);
 		threadexits("open");	/* BUG? was terminate() */
 	}
 	if(wclose(w) == 0){	/* remove extra ref hanging from creation */
-		notify(nil);
+		sys_notify(nil);
 		dup(1, 2);
 		if(dir)
 			chdir(dir);
 		procexec(pidc, cmd, argv);
-		_exits("exec failed");
+		sys__exits("exec failed");
 	}
 }
 

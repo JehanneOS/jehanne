@@ -218,7 +218,7 @@ main(int argc, char **argv)
 	}
 
 	if(srvfdfile){
-		if((srvfd = open(srvfdfile, ORDWR)) < 0)
+		if((srvfd = sys_open(srvfdfile, ORDWR)) < 0)
 			sysfatal("open '%s': %r", srvfdfile);
 	}
 
@@ -237,7 +237,7 @@ main(int argc, char **argv)
 
 		dup(fd, 0);
 		dup(fd, 1);
-		close(fd);
+		sys_close(fd);
 	}
 
 	exclusions();
@@ -245,7 +245,7 @@ main(int argc, char **argv)
 	if(dbg) {
 		n = ocreate(dbfile, OWRITE|OTRUNC, 0666);
 		dup(n, DFD);
-		close(n);
+		sys_close(n);
 	}
 
 	if(srvfd >= 0 && srv){
@@ -255,7 +255,7 @@ main(int argc, char **argv)
 
 	DEBUG(DFD, "exportfs: started\n");
 
-	rfork(RFNOTEG);
+	sys_rfork(RFNOTEG);
 
 	if(messagesize == 0){
 		messagesize = iounit(netfd);
@@ -277,7 +277,7 @@ main(int argc, char **argv)
 	}
 	else if(srv) {
 		if(chdir(srv) < 0) {
-			errstr(ebuf, sizeof ebuf);
+			sys_errstr(ebuf, sizeof ebuf);
 			fprint(0, "chdir(\"%s\"): %s\n", srv, ebuf);
 			DEBUG(DFD, "chdir(\"%s\"): %s\n", srv, ebuf);
 			exits(ebuf);
@@ -288,16 +288,16 @@ main(int argc, char **argv)
 	else {
 		noteconn(netfd);
 		buf[0] = 0;
-		n = read(0, buf, sizeof(buf)-1);
+		n = jehanne_read(0, buf, sizeof(buf)-1);
 		if(n < 0) {
-			errstr(buf, sizeof buf);
+			sys_errstr(buf, sizeof buf);
 			fprint(0, "read(0): %s\n", buf);
 			DEBUG(DFD, "read(0): %s\n", buf);
 			exits(buf);
 		}
 		buf[n] = 0;
 		if(chdir(buf) < 0) {
-			errstr(ebuf, sizeof ebuf);
+			sys_errstr(ebuf, sizeof ebuf);
 			fprint(0, "chdir(%d:\"%s\"): %s\n", n, buf, ebuf);
 			DEBUG(DFD, "chdir(%d:\"%s\"): %s\n", n, buf, ebuf);
 			exits(ebuf);
@@ -309,7 +309,7 @@ main(int argc, char **argv)
 
 	DEBUG(DFD, "exportfs: %s\n", buf);
 
-	if(srv == nil && srvfd == -1 && write(0, "OK", 2) != 2)
+	if(srv == nil && srvfd == -1 && jehanne_write(0, "OK", 2) != 2)
 		fatal("open ack write");
 
 	if (readn(netfd, &initial, sizeof(uint32_t)) < sizeof(uint32_t))
@@ -323,7 +323,7 @@ main(int argc, char **argv)
 
 		p = buf;
 		while (p - buf < sizeof buf) {
-			if ((n = read(netfd, p, 1)) < 0)
+			if ((n = jehanne_read(netfd, p, 1)) < 0)
 				fatal("can't read impo arguments: %r\n");
 
 			if (n == 0)
@@ -373,7 +373,7 @@ main(int argc, char **argv)
 		if(readn(netfd, key, 4) != 4)
 			fatal("can't read key part; %r\n");
 
-		if(write(netfd, key+12, 4) != 4)
+		if(jehanne_write(netfd, key+12, 4) != 4)
 			fatal("can't write key part; %r\n");
 
 		/* scramble into two secrets */
@@ -483,7 +483,7 @@ reply(Fcall *r, Fcall *t, char *err)
 	if(data == nil)
 		fatal(Enomem);
 	n = convS2M(t, data, messagesize);
-	if(write(netfd, data, n)!=n){
+	if(jehanne_write(netfd, data, n)!=n){
 		syslog(0, "exportfs", "short write: %r");
 		fatal("mount write");
 	}
@@ -513,7 +513,7 @@ freefid(int nr)
 		if(f->nr == nr) {
 			if(f->mid) {
 				sprint(buf, "/mnt/exportfs/%d", f->mid);
-				unmount(0, buf);
+				sys_unmount(0, buf);
 				psmap[f->mid] = 0;
 			}
 			if(f->f) {
@@ -911,17 +911,17 @@ filter(int fd, char *cmd)
 
 	snprint(buf, sizeof(buf), "%s/local", devdir);
 	buf[sizeof buf - 1] = '\0';
-	if ((lfd = open(buf, OREAD)) < 0)
+	if ((lfd = sys_open(buf, OREAD)) < 0)
 		sysfatal("filter: cannot open %s: %r", buf);
-	if ((len = read(lfd, newport, sizeof newport - 1)) < 0)
+	if ((len = jehanne_read(lfd, newport, sizeof newport - 1)) < 0)
 		sysfatal("filter: cannot read %s: %r", buf);
-	close(lfd);
+	sys_close(lfd);
 	newport[len] = '\0';
 
 	if ((s = strchr(newport, '\n')) != nil)
 		*s = '\0';
 
-	if ((nb = write(fd, newport, len)) < 0)
+	if ((nb = jehanne_write(fd, newport, len)) < 0)
 		sysfatal("getport; cannot write port; %r");
 	assert(nb == len);
 
@@ -937,7 +937,7 @@ filter(int fd, char *cmd)
 	if(pipe(p) < 0)
 		fatal("pipe");
 
-	switch(rfork(RFNOWAIT|RFPROC|RFFDG)) {
+	switch(sys_rfork(RFNOWAIT|RFPROC|RFFDG)) {
 	case -1:
 		fatal("rfork record module");
 	case 0:
@@ -945,13 +945,13 @@ filter(int fd, char *cmd)
 			fatal("filter: cannot dup to 1; %r\n");
 		if (dup(p[0], 0) < 0)
 			fatal("filter: cannot dup to 0; %r\n");
-		close(p[0]);
-		close(p[1]);
-		exec(file, argv);
+		sys_close(p[0]);
+		sys_close(p[1]);
+		sys_exec(file, argv);
 		fatal("exec record module");
 	default:
-		close(fd);
-		close(p[0]);
+		sys_close(fd);
+		sys_close(p[0]);
 	}
 	return p[1];
 }

@@ -124,12 +124,12 @@ main(int argc, char *argv[])
 	}ARGEND;
 
 	if(yflag==0 && dflag==0 && colorspace==CYCbCr){	/* see if we should convert right to RGB */
-		fd = open("/dev/screen", OREAD);
+		fd = sys_open("/dev/screen", OREAD);
 		if(fd >= 0){
 			buf[12] = '\0';
-			if(read(fd, buf, 12)==12 && chantodepth(strtochan(buf))>8)
+			if(jehanne_read(fd, buf, 12)==12 && chantodepth(strtochan(buf))>8)
 				colorspace = CRGB;
-			close(fd);
+			sys_close(fd);
 		}
 	}
 
@@ -138,13 +138,13 @@ main(int argc, char *argv[])
 		err = show(0, "<stdin>", outchan);
 	else{
 		for(i=0; i<argc; i++){
-			fd = open(argv[i], OREAD);
+			fd = sys_open(argv[i], OREAD);
 			if(fd < 0){
 				fprint(2, "jpg: can't open %s: %r\n", argv[i]);
 				err = "open";
 			}else{
 				err = show(fd, argv[i], outchan);
-				close(fd);
+				sys_close(fd);
 			}
 			if((nineflag || cflag) && argc>1 && err==nil){
 				fprint(2, "jpg: exiting after one file\n");
@@ -332,7 +332,7 @@ rpt:	array = Breadjpg(&b, colorspace);
 		chantostr(buf, outchan);
 		print("%11s %11d %11d %11d %11d ", buf,
 			c->r.min.x, c->r.min.y, c->r.max.x, c->r.max.y);
-		if(write(1, c->chans[0], c->chanlen) != c->chanlen){
+		if(jehanne_write(1, c->chans[0], c->chanlen) != c->chanlen){
 			fprint(2, "jpg: %s: write error %r\n", name);
 			return "write";
 		}

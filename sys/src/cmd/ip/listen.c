@@ -77,9 +77,9 @@ procsetname(char *fmt, ...)
 	if (cmdname == nil)
 		return;
 	snprint(buf, sizeof buf, "#p/%d/args", getpid());
-	if((fd = open(buf, OWRITE)) >= 0){
-		write(fd, cmdname, strlen(cmdname)+1);
-		close(fd);
+	if((fd = sys_open(buf, OWRITE)) >= 0){
+		jehanne_write(fd, cmdname, strlen(cmdname)+1);
+		sys_close(fd);
 	}
 	free(cmdname);
 }
@@ -163,8 +163,8 @@ static void
 dingdong(void *v, char *msg)
 {
 	if(strstr(msg, "alarm") != nil)
-		noted(NCONT);
-	noted(NDFLT);
+		sys_noted(NCONT);
+	sys_noted(NDFLT);
 }
 
 void
@@ -183,7 +183,7 @@ listendir(char *protodir, char *srvdir, int trusted)
 	 * changing of console environment variables
 	 * erase privileged crypt state
 	 */
-	switch(rfork(RFNOTEG|RFPROC|RFFDG|RFNOWAIT|RFENVG|RFNAMEG)) {
+	switch(sys_rfork(RFNOTEG|RFPROC|RFFDG|RFNOWAIT|RFENVG|RFNAMEG)) {
 	case -1:
 		error("fork");
 	case 0:
@@ -196,7 +196,7 @@ listendir(char *protodir, char *srvdir, int trusted)
 	if (!trusted)
 		becomenone();
 
-	notify(dingdong);
+	sys_notify(dingdong);
 
 	pid = getpid();
 	scandir(proto, protodir, srvdir);
@@ -212,7 +212,7 @@ listendir(char *protodir, char *srvdir, int trusted)
 			sleep((pid*10)%200);
 
 			/* a process per service */
-			switch(pid = rfork(RFFDG|RFPROC)){
+			switch(pid = sys_rfork(RFFDG|RFPROC)){
 			case -1:
 				syslog(1, listenlog, "couldn't fork for %s", a->a);
 				break;
@@ -220,7 +220,7 @@ listendir(char *protodir, char *srvdir, int trusted)
 				for(;;){
 					ctl = announce(a->a, dir);
 					if(ctl < 0) {
-						errstr(err, sizeof err);
+						sys_errstr(err, sizeof err);
 						if (!a->whined)
 							syslog(1, listenlog,
 							   "giving up on %s: %r",
@@ -232,7 +232,7 @@ listendir(char *protodir, char *srvdir, int trusted)
 							exits("ctl");
 					}
 					dolisten(proto, dir, ctl, srvdir, a->a);
-					close(ctl);
+					sys_close(ctl);
 				}
 			default:
 				a->announced = pid;
@@ -253,7 +253,7 @@ listendir(char *protodir, char *srvdir, int trusted)
 		 */
 		start = time(0);
 		if(!immutable)
-			alarm(60*1000);
+			sys_alarm(60*1000);
 		while((wm = wait()) != nil) {
 			for(a = announcements; a; a = a->next)
 				if(a->announced == wm->pid) {
@@ -268,7 +268,7 @@ listendir(char *protodir, char *srvdir, int trusted)
 				break;
 		}
 		if(!immutable){
-			alarm(0);
+			sys_alarm(0);
 			scandir(proto, protodir, srvdir);
 		}
 		start = 60 - (time(0)-start);
@@ -349,7 +349,7 @@ scandir(char *proto, char *protodir, char *dname)
 	char ds[128];
 	Dir *db;
 
-	fd = open(dname, OREAD);
+	fd = sys_open(dname, OREAD);
 	if(fd < 0)
 		return;
 
@@ -370,7 +370,7 @@ scandir(char *proto, char *protodir, char *dname)
 		free(db);
 	}
 
-	close(fd);
+	sys_close(fd);
 }
 
 void
@@ -378,10 +378,10 @@ becomenone(void)
 {
 	int fd;
 
-	fd = open("#c/user", OWRITE);
-	if(fd < 0 || write(fd, "none", strlen("none")) < 0)
+	fd = sys_open("#c/user", OWRITE);
+	if(fd < 0 || jehanne_write(fd, "none", strlen("none")) < 0)
 		error("can't become none");
-	close(fd);
+	sys_close(fd);
 	if(newns("none", namespace) < 0)
 		error("can't build namespace");
 }
@@ -409,10 +409,10 @@ dolisten(char *proto, char *dir, int ctl, char *srvdir,
 		/*
 		 *  start a subprocess for the connection
 		 */
-		switch(rfork(RFFDG|RFPROC|RFNOWAIT|RFENVG|RFNAMEG|RFNOTEG)){
+		switch(sys_rfork(RFFDG|RFPROC|RFNOWAIT|RFENVG|RFNAMEG|RFNOTEG)){
 		case -1:
 			reject(nctl, ndir, "host overloaded");
-			close(nctl);
+			sys_close(nctl);
 			continue;
 		case 0:
 			/*
@@ -432,12 +432,12 @@ dolisten(char *proto, char *dir, int ctl, char *srvdir,
 				exits(0);
 			}
 			fprint(nctl, "keepalive");
-			close(ctl);
-			close(nctl);
+			sys_close(ctl);
+			sys_close(nctl);
 			newcall(data, proto, ndir, &s);
 			exits(0);
 		default:
-			close(nctl);
+			sys_close(nctl);
 			break;
 		}
 	}
@@ -505,11 +505,11 @@ remoteaddr(char *dir)
 	int n, fd;
 
 	snprint(buf, sizeof buf, "%s/remote", dir);
-	fd = open(buf, OREAD);
+	fd = sys_open(buf, OREAD);
 	if(fd < 0)
 		return strdup("");
-	n = read(fd, buf, sizeof(buf));
-	close(fd);
+	n = jehanne_read(fd, buf, sizeof(buf));
+	sys_close(fd);
 	if(n > 0){
 		buf[n] = 0;
 		p = strchr(buf, '!');
@@ -538,17 +538,17 @@ newcall(int fd, char *proto, char *dir, Service *s)
 	}
 
 	snprint(data, sizeof data, "%s/data", dir);
-	bind(data, "/dev/cons", MREPL);
+	sys_bind(data, "/dev/cons", MREPL);
 	dup(fd, 0);
 	dup(fd, 1);
 	dup(fd, 2);
-	close(fd);
+	sys_close(fd);
 
 	/*
 	 * close all the fds
 	 */
 	for(fd=3; fd<20; fd++)
-		close(fd);
+		sys_close(fd);
 	execl(s->prog, s->prog, s->serv, proto, dir, nil);
 	error(s->prog);
 }
@@ -570,17 +570,17 @@ readstr(char *dir, char *info, char *s, int len)
 	char buf[3*NAMELEN+4];
 
 	snprint(buf, sizeof buf, "%s/%s", dir, info);
-	fd = open(buf, OREAD);
+	fd = sys_open(buf, OREAD);
 	if(fd<0)
 		return 0;
 
-	n = read(fd, s, len-1);
+	n = jehanne_read(fd, s, len-1);
 	if(n<=0){
-		close(fd);
+		sys_close(fd);
 		return -1;
 	}
 	s[n] = 0;
-	close(fd);
+	sys_close(fd);
 
 	return n+1;
 }

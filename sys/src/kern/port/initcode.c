@@ -62,11 +62,11 @@ initboot(void)
 	if (jehanne_access(initrd, AREAD) < 0)
 		return -1;
 
-	switch(pid = rfork(RFFDG|RFREND|RFPROC)){
+	switch(pid = sys_rfork(RFFDG|RFREND|RFPROC)){
 	case -1:
 		return -1;
 	case 0:
-		exec(rofs, (const char**)args);
+		sys_exec(rofs, (const char**)args);
 		jehanne_exits("initcode: exec: rofs");
 	default:
 		/* wait for agent to really be there */
@@ -79,11 +79,11 @@ initboot(void)
 		}
 		break;
 	}
-	if((i = open(bootfs, ORDWR)) < 0)
+	if((i = sys_open(bootfs, ORDWR)) < 0)
 		return -1;
-	if(mount(i, -1, bootdir, MREPL, "", '9') < 0)
+	if(sys_mount(i, -1, bootdir, MREPL, "", '9') < 0)
 		return -1;
-	remove(bootfs);
+	sys_remove(bootfs);
 	return jehanne_access(boot, AEXEC);
 }
 
@@ -101,15 +101,15 @@ startboot(int argc, char **argv)
 	for(i = 0; i < sizeof buf; ++i)
 		buf[i] = '\0';
 
-	bind(self, dev, MREPL);
-	bind(c, dev, MAFTER);
-	bind(ec, env, MAFTER);
-	bind(e, env, MCREATE|MAFTER);
-	bind(s, srv, MREPL|MCREATE);
+	sys_bind(self, dev, MREPL);
+	sys_bind(c, dev, MAFTER);
+	sys_bind(ec, env, MAFTER);
+	sys_bind(e, env, MCREATE|MAFTER);
+	sys_bind(s, srv, MREPL|MCREATE);
 
 	if (initboot() == 0)
-		exec(boot, (const char**)args);
+		sys_exec(boot, (const char**)args);
 
-	errstr(buf, sizeof buf - 1);
-	_exits(buf);
+	sys_errstr(buf, sizeof buf - 1);
+	sys__exits(buf);
 }

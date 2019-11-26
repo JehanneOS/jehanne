@@ -410,7 +410,7 @@ attachdev(Port *p)
 	}
 
 	/* close control endpoint so driver can open it */
-	close(d->dfd);
+	sys_close(d->dfd);
 	d->dfd = -1;
 
 	/* assign stable name based on device descriptor */
@@ -448,7 +448,7 @@ checkidle(void)
 	if(busyfd < 0 || reqlast == nil || evlast == nil || evlast->prev > 0)
 		return;
 
-	close(busyfd);
+	sys_close(busyfd);
 	busyfd = -1;
 }
 
@@ -470,30 +470,30 @@ main(int argc, char **argv)
 	busyfd = ocreate("/env/usbbusy", ORCLOSE, 0600);
 	quotefmtinstall();
 	initevent();
-	rfork(RFNOTEG);
-	switch(rfork(RFPROC|RFMEM|RFNOWAIT)){
+	sys_rfork(RFNOTEG);
+	switch(sys_rfork(RFPROC|RFMEM|RFNOWAIT)){
 	case -1: sysfatal("rfork: %r");
 	case 0: work(); exits(nil);
 	}
 	if(argc == 0){
-		if((fd = open("/dev/usb", OREAD)) < 0){
-			rendezvous(work, nil);
+		if((fd = sys_open("/dev/usb", OREAD)) < 0){
+			sys_rendezvous(work, nil);
 			sysfatal("/dev/usb: %r");
 		}
 		nd = dirreadall(fd, &d);
-		close(fd);
+		sys_close(fd);
 		if(nd < 2){
-			rendezvous(work, nil);
+			sys_rendezvous(work, nil);
 			sysfatal("/dev/usb: no hubs");
 		}
 		for(i = 0; i < nd; i++)
 			if(strcmp(d[i].name, "ctl") != 0)
-				rendezvous(work, smprint("/dev/usb/%s", d[i].name));
+				sys_rendezvous(work, smprint("/dev/usb/%s", d[i].name));
 		free(d);
 	}else
 		for(i = 0; i < argc; i++)
-			rendezvous(work, estrdup9p(argv[i]));
-	rendezvous(work, nil);
+			sys_rendezvous(work, estrdup9p(argv[i]));
+	sys_rendezvous(work, nil);
 	postsharesrv(&usbdsrv, nil, "usb", "usbd");
 	exits(nil);
 }

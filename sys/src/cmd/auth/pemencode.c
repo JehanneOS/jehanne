@@ -50,7 +50,7 @@ main(int argc, char **argv)
 	else
 		file = "#d/0";
 
-	if((fd = open(file, OREAD)) < 0)
+	if((fd = sys_open(file, OREAD)) < 0)
 		sysfatal("open %s: %r", file);
 	buf = nil;
 	tot = 0;
@@ -58,7 +58,7 @@ main(int argc, char **argv)
 		buf = realloc(buf, tot+8192);
 		if(buf == nil)
 			sysfatal("realloc: %r");
-		if((n = read(fd, buf+tot, 8192)) < 0)
+		if((n = jehanne_read(fd, buf+tot, 8192)) < 0)
 			sysfatal("read: %r");
 		if(n == 0)
 			break;

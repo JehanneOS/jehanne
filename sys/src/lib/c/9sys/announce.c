@@ -40,7 +40,7 @@ jehanne_announce(const char *addr, char *dir)
 	/*
 	 * get a control channel
 	 */
-	ctl = open(netdir, ORDWR);
+	ctl = sys_open(netdir, ORDWR);
 	if(ctl<0){
 		jehanne_werrstr("announce opening %s: %r", netdir);
 		return -1;
@@ -48,7 +48,7 @@ jehanne_announce(const char *addr, char *dir)
 	cp = jehanne_strrchr(netdir, '/');
 	if(cp == nil){
 		jehanne_werrstr("announce arg format %s", netdir);
-		close(ctl);
+		sys_close(ctl);
 		return -1;
 	}
 	*cp = 0;
@@ -57,10 +57,10 @@ jehanne_announce(const char *addr, char *dir)
 	 *  find out which line we have
 	 */
 	n = jehanne_snprint(buf, sizeof(buf), "%s/", netdir);
-	m = read(ctl, &buf[n], sizeof(buf)-n-1);
+	m = jehanne_read(ctl, &buf[n], sizeof(buf)-n-1);
 	if(m <= 0){
 		jehanne_werrstr("announce reading %s: %r", netdir);
-		close(ctl);
+		sys_close(ctl);
 		return -1;
 	}
 	buf[n+m] = 0;
@@ -69,9 +69,9 @@ jehanne_announce(const char *addr, char *dir)
 	 *  make the call
 	 */
 	n = jehanne_snprint(buf2, sizeof(buf2), "announce %s", naddr);
-	if(write(ctl, buf2, n)!=n){
+	if(jehanne_write(ctl, buf2, n)!=n){
 		jehanne_werrstr("announce writing %s: %r", netdir);
-		close(ctl);
+		sys_close(ctl);
 		return -1;
 	}
 
@@ -99,7 +99,7 @@ jehanne_listen(const char *dir, char *newdir)
 	 *  open listen, wait for a call
 	 */
 	jehanne_snprint(buf, sizeof(buf), "%s/listen", dir);
-	ctl = open(buf, ORDWR);
+	ctl = sys_open(buf, ORDWR);
 	if(ctl < 0){
 		jehanne_werrstr("listen opening %s: %r", buf);
 		return -1;
@@ -112,15 +112,15 @@ jehanne_listen(const char *dir, char *newdir)
 	buf[sizeof(buf) - 1] = 0;
 	cp = jehanne_strrchr(buf, '/');
 	if(cp == nil){
-		close(ctl);
+		sys_close(ctl);
 		jehanne_werrstr("listen arg format %s", dir);
 		return -1;
 	}
 	*++cp = 0;
 	n = cp-buf;
-	m = read(ctl, cp, sizeof(buf) - n - 1);
+	m = jehanne_read(ctl, cp, sizeof(buf) - n - 1);
 	if(m <= 0){
-		close(ctl);
+		sys_close(ctl);
 		jehanne_werrstr("listen reading %s/listen: %r", dir);
 		return -1;
 	}
@@ -154,10 +154,10 @@ jehanne_accept(int ctl, const char *dir)
 		num++;
 
 	n = jehanne_snprint(buf, sizeof(buf), "accept %s", num);
-	write(ctl, buf, n); /* ignore return value, network might not need accepts */
+	jehanne_write(ctl, buf, n); /* ignore return value, network might not need accepts */
 
 	jehanne_snprint(buf, sizeof(buf), "%s/data", dir);
-	return open(buf, ORDWR);
+	return sys_open(buf, ORDWR);
 }
 
 /*
@@ -177,7 +177,7 @@ jehanne_reject(int ctl, const char *dir, const char *cause)
 		num++;
 	jehanne_snprint(buf, sizeof(buf), "reject %s %s", num, cause);
 	n = jehanne_strlen(buf);
-	if(write(ctl, buf, n) != n)
+	if(jehanne_write(ctl, buf, n) != n)
 		return -1;
 	return 0;
 }
@@ -248,16 +248,16 @@ nettrans(const char *addr, char *naddr, int na, char *file, int nf)
 	 *  ask the connection server
 	 */
 	jehanne_snprint(buf, sizeof(buf), "%s/cs", netdir);
-	fd = open(buf, ORDWR);
+	fd = sys_open(buf, ORDWR);
 	if(fd < 0)
 		return identtrans(netdir, addr, naddr, na, file, nf);
-	if(write(fd, addr, jehanne_strlen(addr)) < 0){
-		close(fd);
+	if(jehanne_write(fd, addr, jehanne_strlen(addr)) < 0){
+		sys_close(fd);
 		return -1;
 	}
-	seek(fd, 0, 0);
-	n = read(fd, buf, sizeof(buf)-1);
-	close(fd);
+	sys_seek(fd, 0, 0);
+	n = jehanne_read(fd, buf, sizeof(buf)-1);
+	sys_close(fd);
 	if(n <= 0)
 		return -1;
 	buf[n] = 0;

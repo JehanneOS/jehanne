@@ -34,10 +34,10 @@ mouseproc(void *arg)
 	Channel *mc;
 
 	mc = arg;
-	if((mfd = open("/dev/mouse", OREAD)) < 0)
+	if((mfd = sys_open("/dev/mouse", OREAD)) < 0)
 		jehanne_sysfatal("open /dev/mouse: %r");
 	for(;;){
-		if(read(mfd, m, sizeof m) != sizeof m)
+		if(jehanne_read(mfd, m, sizeof m) != sizeof m)
 			jehanne_sysfatal("eof");
 		if(jehanne_atoi(m+1+2*12)&4)
 			jehanne_sysfatal("button 3");

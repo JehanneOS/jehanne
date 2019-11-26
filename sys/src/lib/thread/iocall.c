@@ -51,7 +51,7 @@ iocall(Ioproc *io, int32_t (*op)(va_list*), ...)
 	va_end(io->arg);
 	ret = io->ret;
 	if(ret < 0)
-		errstr(io->err, sizeof io->err);
+		sys_errstr(io->err, sizeof io->err);
 	io->inuse = 0;
 
 	/* release resources */

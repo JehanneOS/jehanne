@@ -41,7 +41,7 @@ main(int argc, char **argv)
 	if(argc != 1)
 		usage();
 
-	if((afd = open("/mnt/factotum/rpc", ORDWR)) < 0)
+	if((afd = sys_open("/mnt/factotum/rpc", ORDWR)) < 0)
 		sysfatal("open /mnt/factotum/rpc: %r");
 
 	rpc = auth_allocrpc(afd);
@@ -53,14 +53,14 @@ main(int argc, char **argv)
 
 	print("challenge: %s\n", c->chal);
 	print("user:");
-	n = read(0, bufu, sizeof bufu);
+	n = jehanne_read(0, bufu, sizeof bufu);
 	if(n > 0){
 		bufu[n-1] = '\0';
 		c->user = bufu;
 	}
 
 	print("response: ");
-	n = read(0, buf, sizeof buf);
+	n = jehanne_read(0, buf, sizeof buf);
 	if(n < 0)
 		sysfatal("read: %r");
 	if(n == 0)

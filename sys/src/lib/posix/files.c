@@ -98,7 +98,7 @@ __libposix_close_on_exec(void)
 	int i = 0;
 	while(i < __libposix_coe_fds_size){
 		if(__libposix_coe_fds[i] != -1){
-			close(__libposix_coe_fds[i]);
+			sys_close(__libposix_coe_fds[i]);
 			__libposix_coe_fds[i] = -1;
 			--__libposix_coe_fds_used;
 		}
@@ -343,7 +343,7 @@ POSIX_open(int *errnop, const char *name, int flags, int mode)
 		omode &= ~DMDIR;
 	}
 	if(cperm == 0){
-		f = open(name, omode);
+		f = sys_open(name, omode);
 	} else {
 		f = ocreate(name, (unsigned int)omode, (unsigned int)cperm);
 	}
@@ -371,8 +371,8 @@ POSIX_read(int *errnop, int fd, char *buf, size_t len)
 	}
 OnIgnoredSignalInterrupt:
 	if(__libposix_should_not_block(fd))
-		wkp = awake(2);
-	r = pread(fd, buf, len, -1);
+		wkp = sys_awake(2);
+	r = sys_pread(fd, buf, len, -1);
 	if(r < 0){
 		if(wkp){
 			if(!awakened(wkp))
@@ -401,8 +401,8 @@ POSIX_write(int *errnop, int fd, const void *buf, size_t len)
 	}
 OnIgnoredSignalInterrupt:
 	if(__libposix_should_not_block(fd))
-		wkp = awake(2);
-	w = pwrite(fd, buf, len, -1);
+		wkp = sys_awake(2);
+	w = sys_pwrite(fd, buf, len, -1);
 	if(w < 0){
 		if(wkp){
 			if(!awakened(wkp))
@@ -435,7 +435,7 @@ POSIX_lseek(int *errnop, int fd, off_t pos, int whence)
 		*errnop = __libposix_get_errno(PosixEBADF);
 		return -1;
 	}
-	r = seek(fd, pos, stype);
+	r = sys_seek(fd, pos, stype);
 	if(r >= 0)
 		return r;
 	*errnop = __libposix_translate_errstr((uintptr_t)POSIX_lseek);
@@ -453,8 +453,8 @@ POSIX_pread(int *errnop, int fd, char *buf, size_t len, long offset)
 	}
 OnIgnoredSignalInterrupt:
 	if(__libposix_should_not_block(fd))
-		wkp = awake(2);
-	r = pread(fd, buf, len, offset);
+		wkp = sys_awake(2);
+	r = sys_pread(fd, buf, len, offset);
 	if(r < 0){
 		if(wkp){
 			if(!awakened(wkp))
@@ -483,8 +483,8 @@ POSIX_pwrite(int *errnop, int fd, const char *buf, size_t len, long offset)
 	}
 OnIgnoredSignalInterrupt:
 	if(__libposix_should_not_block(fd))
-		wkp = awake(2);
-	w = pwrite(fd, buf, len, offset);
+		wkp = sys_awake(2);
+	w = sys_pwrite(fd, buf, len, offset);
 	if(w < 0){
 		if(wkp){
 			if(!awakened(wkp))
@@ -507,7 +507,7 @@ POSIX_close(int *errno, int file)
 {
 	long ret;
 
-	ret = close(file);
+	ret = sys_close(file);
 	switch(ret){
 	case 0:
 		return 0;
@@ -529,7 +529,7 @@ POSIX_unlink(int *errnop, const char *name)
 		*errnop = __libposix_get_errno(PosixENOENT);
 		return -1;
 	}
-	ret = remove(name);
+	ret = sys_remove(name);
 	switch(ret){
 	case 0:
 		return 0;
@@ -552,7 +552,7 @@ POSIX_rmdir(int *errnop, const char *name)
 		*errnop = __libposix_get_errno(PosixENOENT);
 		return -1;
 	}
-	ret = remove(name);
+	ret = sys_remove(name);
 	switch(ret){
 	case 0:
 		return 0;
@@ -692,7 +692,7 @@ POSIX_fchmodat(int *errnop, int fd, const char *path, long mode, int flag)
 	} else {
 		e = __libposix_open_translation(0, mode, nil, &cperm);
 	}
-	if(e == 0 && fd2path(fd, fullpath, sizeof(fullpath)-2) != 0)
+	if(e == 0 && sys_fd2path(fd, fullpath, sizeof(fullpath)-2) != 0)
 		e = PosixEBADF;
 	if(e != 0)
 		goto FailWithError;
@@ -792,7 +792,7 @@ POSIX_fchdir(int *errnop, int fd)
 			if((d->mode & DMDIR) == 0)
 				e = PosixENOTDIR;
 			free(d);
-			if(fd2path(fd, buf, sizeof(buf)) != 0)
+			if(sys_fd2path(fd, buf, sizeof(buf)) != 0)
 				e = PosixENOENT;	/* just removed? */
 		}
 	}
@@ -835,7 +835,7 @@ POSIX_rename(int *errnop, const char *from, const char *to)
 		goto FailWithError;
 	}
 	if(access(to, AEXIST) == 0){
-		if(remove(to) < 0){
+		if(sys_remove(to) < 0){
 			e = PosixEACCES;
 			goto FailWithError;
 		}
@@ -850,21 +850,21 @@ POSIX_rename(int *errnop, const char *from, const char *to)
 			e = PosixEPERM;
 	} else {
 		/* different directories: with 9P2000 we have to copy */
-		if((ffd = open(from, OREAD)) < 0
-		|| (tfd = create(to, OWRITE, d->mode)) < 0){
+		if((ffd = sys_open(from, OREAD)) < 0
+		|| (tfd = sys_create(to, OWRITE, d->mode)) < 0){
 			e = PosixEPERM;
 		}
-		while(e == 0 && (n = read(ffd, buf, sizeof(buf))) > 0)
-			if(write(tfd, buf, n) != n)
+		while(e == 0 && (n = jehanne_read(ffd, buf, sizeof(buf))) > 0)
+			if(jehanne_write(tfd, buf, n) != n)
 				e = PosixEIO;
 		if(ffd >= 0)
-			close(ffd);
+			sys_close(ffd);
 		if(tfd >= 0)
-			close(tfd);
-		if(e == 0 && remove(from) < 0)
+			sys_close(tfd);
+		if(e == 0 && sys_remove(from) < 0)
 			e = PosixEIO;
 		if(e == PosixEIO && tfd >= 0)
-			remove(to);
+			sys_remove(to);
 	}
 	if(e != 0)
 		goto FailWithError;
@@ -894,9 +894,9 @@ POSIX_mkdir(int *errnop, const char *path, int mode)
 	if(e != 0)
 		goto FailWithError;
 
-	fd = create(path, OREAD, DMDIR | cperm);
+	fd = sys_create(path, OREAD, DMDIR | cperm);
 	if(fd >= 0){
-		close(fd);
+		sys_close(fd);
 		return 0;
 	}
 
@@ -938,7 +938,7 @@ libposix_getdents(int *errnop, int fd, char *buf, int buf_bytes)
 	if(r == 0)
 		goto FailWithENOTDIR;	/* not a directory */
 
-	r = read(fd, buf, buf_bytes);
+	r = jehanne_read(fd, buf, buf_bytes);
 	if(r == 0)
 		return 0;
 	if(r < 0)

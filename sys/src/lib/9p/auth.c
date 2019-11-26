@@ -25,7 +25,7 @@ auth9p(Req *r)
 	Afid *afid;
 	
 	afid = emalloc9p(sizeof(Afid));
-	afid->afd = open("/mnt/factotum/rpc", ORDWR);
+	afid->afd = sys_open("/mnt/factotum/rpc", ORDWR);
 	if(afid->afd < 0)
 		goto error;
 
@@ -61,7 +61,7 @@ error:
 	if(afid->aname)
 		free(afid->aname);
 	if(afid->afd >= 0)
-		close(afid->afd);
+		sys_close(afid->afd);
 	free(afid);
 	responderror(r);
 }
@@ -148,7 +148,7 @@ authdestroy(Fid *fid)
 	if((fid->qid.type & QTAUTH) && (afid = fid->aux) != nil){
 		if(afid->rpc)
 			auth_freerpc(afid->rpc);
-		close(afid->afd);
+		sys_close(afid->afd);
 		free(afid->uname);
 		free(afid->aname);
 		free(afid);

@@ -40,11 +40,11 @@ jehanne_times(int32_t *t)
 	jehanne_memset(b, 0, sizeof(b));
 	for(retries = 0; retries < 100; retries++){
 		if(f < 0)
-			f = open("/dev/cputime", OREAD|OCEXEC);
+			f = sys_open("/dev/cputime", OREAD|OCEXEC);
 		if(f < 0)
 			break;
-		if(seek(f, 0, 0) < 0 || (i = read(f, b, sizeof(b))) < 0){
-			close(f);
+		if(sys_seek(f, 0, 0) < 0 || (i = jehanne_read(f, b, sizeof(b))) < 0){
+			sys_close(f);
 			f = -1;
 		} else {
 			if(i != 0)

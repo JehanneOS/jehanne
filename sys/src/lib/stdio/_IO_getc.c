@@ -21,7 +21,7 @@ int _IO_getc(FILE *f){
 	case RDWR:
 	case RD:
 		if(f->flags&STRING) return EOF;
-		cnt=read(f->fd, f->buf, f->buf==f->unbuf?1:f->bufl);
+		cnt=jehanne_read(f->fd, f->buf, f->buf==f->unbuf?1:f->bufl);
 		switch(cnt){
 		case -1: f->state=ERR; return EOF;
 		case 0: f->state=END; return EOF;

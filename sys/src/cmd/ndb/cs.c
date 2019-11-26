@@ -230,9 +230,9 @@ procsetname(char *fmt, ...)
 	if (cmdname == nil)
 		return;
 	snprint(buf, sizeof buf, "#p/%d/args", getpid());
-	if((fd = open(buf, OWRITE)) >= 0){
-		write(fd, cmdname, strlen(cmdname)+1);
-		close(fd);
+	if((fd = sys_open(buf, OWRITE)) >= 0){
+		jehanne_write(fd, cmdname, strlen(cmdname)+1);
+		sys_close(fd);
 	}
 	free(cmdname);
 }
@@ -279,10 +279,10 @@ main(int argc, char *argv[])
 
 	if(!justsetname){
 		snprint(servefile, sizeof(servefile), "#s/cs%s", ext);
-		unmount(servefile, mntpt);
-		remove(servefile);
+		sys_unmount(servefile, mntpt);
+		sys_remove(servefile);
 
-		rfork(RFREND|RFNOTEG);
+		sys_rfork(RFREND|RFNOTEG);
 		csuser = estrdup(getuser());
 		mountinit(servefile, mntpt);
 		io();
@@ -328,12 +328,12 @@ mountinit(char *service, char *mntpt)
 	if(f < 0)
 		error(service);
 	snprint(buf, sizeof(buf), "%d", p[1]);
-	if(write(f, buf, strlen(buf)) != strlen(buf))
+	if(jehanne_write(f, buf, strlen(buf)) != strlen(buf))
 		error("write /srv/cs");
 
-	switch(rfork(RFFDG|RFPROC|RFNAMEG)){
+	switch(sys_rfork(RFFDG|RFPROC|RFNAMEG)){
 	case 0:
-		close(p[1]);
+		sys_close(p[1]);
 		procsetname("%s", mntpt);
 		break;
 	case -1:
@@ -342,10 +342,10 @@ mountinit(char *service, char *mntpt)
 		/*
 		 *  put ourselves into the file system
 		 */
-		close(p[0]);
-		if(mount(p[1], -1, mntpt, MAFTER, "", '9') < 0)
+		sys_close(p[0]);
+		if(sys_mount(p[1], -1, mntpt, MAFTER, "", '9') < 0)
 			error("mount failed\n");
-		_exits(0);
+		sys__exits(0);
 	}
 	mfd[0] = mfd[1] = p[0];
 }
@@ -531,7 +531,7 @@ io(void)
 			if(debug)
 				syslog(0, logfile, "slave death %d", getpid());
 			adec(&active);
-			_exits(0);
+			sys__exits(0);
 		}
 	}
 }
@@ -981,7 +981,7 @@ sendmsg(Job *job, char *err)
 	}
 	qlock(&joblock);
 	if(job->flushed == 0)
-		if(write(mfd[1], mdata, n)!=n)
+		if(jehanne_write(mfd[1], mdata, n)!=n)
 			error("mount write");
 	qunlock(&joblock);
 	if(debug)
@@ -992,7 +992,7 @@ void
 error(char *s)
 {
 	syslog(1, logfile, "%s: %r", s);
-	_exits(0);
+	sys__exits(0);
 }
 
 static int
@@ -1079,10 +1079,10 @@ ipid(void)
 			if(t == nil){
 				n = 0;
 				d = nil;
-				f = open(mntpt, OREAD);
+				f = sys_open(mntpt, OREAD);
 				if(f >= 0){
 					n = dirreadall(f, &d);
-					close(f);
+					sys_close(f);
 				}
 				for(f = 0; f < n; f++){
 					if((d[f].mode & DMDIR) == 0 || strncmp(d[f].name, "ether", 5) != 0)
@@ -1113,10 +1113,10 @@ ipid(void)
 
 		/* set /dev/sysname if we now know it */
 		if(mysysname){
-			f = open("/dev/sysname", OWRITE);
+			f = sys_open("/dev/sysname", OWRITE);
 			if(f >= 0){
-				write(f, mysysname, strlen(mysysname));
-				close(f);
+				jehanne_write(f, mysysname, strlen(mysysname));
+				sys_close(f);
 			}
 		}
 	}
@@ -1133,7 +1133,7 @@ netinit(int background)
 	Network *np;
 
 	if(background){
-		switch(rfork(RFPROC|RFNOTEG|RFMEM|RFNOWAIT)){
+		switch(sys_rfork(RFPROC|RFNOTEG|RFMEM|RFNOWAIT)){
 		case 0:
 			break;
 		default:
@@ -1170,7 +1170,7 @@ netinit(int background)
 
 	if(background){
 		qunlock(&netlock);
-		_exits(0);
+		sys__exits(0);
 	}
 }
 
@@ -1641,7 +1641,7 @@ slave(char *host)
 		adec(&active);
 		return;
 	}
-	switch(rfork(RFPROC|RFNOTEG|RFMEM|RFNOWAIT)){
+	switch(sys_rfork(RFPROC|RFNOTEG|RFMEM|RFNOWAIT)){
 	case -1:
 		adec(&active);
 		break;

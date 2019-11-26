@@ -35,7 +35,7 @@ auth_getuserpasswd(AuthGetkey *getkey, char *fmt, ...)
 	rpc = nil;
 	params = nil;
 
-	fd = open("/mnt/factotum/rpc", ORDWR);
+	fd = sys_open("/mnt/factotum/rpc", ORDWR);
 	if(fd < 0)
 		goto out;
 	rpc = auth_allocrpc(fd);
@@ -70,6 +70,6 @@ auth_getuserpasswd(AuthGetkey *getkey, char *fmt, ...)
 out:
 	free(params);
 	auth_freerpc(rpc);
-	close(fd);
+	sys_close(fd);
 	return up;
 }

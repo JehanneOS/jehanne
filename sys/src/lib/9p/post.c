@@ -54,18 +54,18 @@ _postmountsrv(Srv *s, char *name, char *mtpt, int flag)
 	 * safety net.
 	 */
 	if(!s->leavefdsopen){
-		rfork(RFFDG);
-		rendezvous(0, 0);
-		close(s->infd);
+		sys_rfork(RFFDG);
+		sys_rendezvous(0, 0);
+		sys_close(s->infd);
 		if(s->infd != s->outfd)
-			close(s->outfd);
+			sys_close(s->outfd);
 	}
 
 	if(mtpt){
 		if(amount(s->srvfd, mtpt, flag, "") == -1)
 			sysfatal("mount %s: %r", mtpt);
 	}else
-		close(s->srvfd);
+		sys_close(s->srvfd);
 }
 
 void
@@ -103,18 +103,18 @@ _postsharesrv(Srv *s, char *name, char *mtpt, char *desc)
 	 * safety net.
 	 */
 	if(!s->leavefdsopen){
-		rfork(RFFDG);
-		rendezvous(0, 0);
-		close(s->infd);
+		sys_rfork(RFFDG);
+		sys_rendezvous(0, 0);
+		sys_close(s->infd);
 		if(s->infd != s->outfd)
-			close(s->outfd);
+			sys_close(s->outfd);
 	}
 
 	if(mtpt){
 		if(sharefd(mtpt, desc, s->srvfd) < 0)
 			sysfatal("sharefd %s: %r", mtpt);
 	}else
-		close(s->srvfd);
+		sys_close(s->srvfd);
 }
 
 
@@ -125,9 +125,9 @@ postproc(void *v)
 
 	s = v;
 	if(!s->leavefdsopen){
-		rfork(RFNOTEG);
-		rendezvous(0, 0);
-		close(s->srvfd);
+		sys_rfork(RFNOTEG);
+		sys_rendezvous(0, 0);
+		sys_close(s->srvfd);
 	}
 	srv(s);
 }

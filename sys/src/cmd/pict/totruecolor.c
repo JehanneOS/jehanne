@@ -24,7 +24,7 @@ totruecolor(Rawimage *i, int chandesc)
 		return _remaperror("remap: can't convert to chandesc %d", chandesc);
 
 	err[0] = '\0';
-	errstr(err, sizeof err);	/* throw it away */
+	sys_errstr(err, sizeof err);	/* throw it away */
 	im = malloc(sizeof(Rawimage));
 	if(im == nil)
 		return nil;

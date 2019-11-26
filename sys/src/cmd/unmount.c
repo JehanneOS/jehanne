@@ -34,7 +34,7 @@ main(int argc, char *argv[])
 	}
 
 	/* unmount takes arguments in the same order as mount */
-	r = unmount(mnted, mtpt);
+	r = sys_unmount(mnted, mtpt);
 	if(r < 0)
 		sysfatal("%s: %r", mtpt);
 	exits(0);

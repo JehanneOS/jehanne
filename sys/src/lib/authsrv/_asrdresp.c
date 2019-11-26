@@ -10,7 +10,7 @@ _asrdresp(int fd, char *buf, int len)
 	int n;
 	char error[64];
 
-	if(read(fd, buf, 1) != 1){
+	if(jehanne_read(fd, buf, 1) != 1){
 		werrstr(pbmsg);
 		return -1;
 	}

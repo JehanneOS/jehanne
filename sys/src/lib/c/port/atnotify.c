@@ -22,10 +22,10 @@ notifier(void *v, char *s)
 
 	for(i=0; i<NFN; i++)
 		if(onnot[i] && ((*onnot[i])(v, s))){
-			noted(NCONT);
+			sys_noted(NCONT);
 			return;
 		}
-	noted(NDFLT);
+	sys_noted(NDFLT);
 }
 
 int
@@ -35,7 +35,7 @@ jehanne_atnotify(int (*f)(void*, char*), int in)
 	static int init;
 
 	if(!init){
-		notify(notifier);
+		sys_notify(notifier);
 		init = 1;		/* assign = */
 	}
 	ret = 0;
@@ -59,7 +59,7 @@ jehanne_atnotify(int (*f)(void*, char*), int in)
 			}
 		if(n == 0){
 			init = 0;
-			notify(0);
+			sys_notify(0);
 		}
 	}
 	jehanne_unlock(&onnotlock);

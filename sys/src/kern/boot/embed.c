@@ -46,11 +46,11 @@ connectembed(void)
 	jehanne_free(dir);
 
 	jehanne_print("paqfs...");
-	if(bind("#0", "/dev", MREPL) < 0)
+	if(sys_bind("#0", "/dev", MREPL) < 0)
 		fatal("bind #0");
-	if(bind("#c", "/dev", MAFTER) < 0)
+	if(sys_bind("#c", "/dev", MAFTER) < 0)
 		fatal("bind #c");
-	if(bind("#p", "/proc", MREPL) < 0)
+	if(sys_bind("#p", "/proc", MREPL) < 0)
 		fatal("bind #p");
 	if(jehanne_pipe(p)<0)
 		fatal("pipe");
@@ -71,15 +71,15 @@ connectembed(void)
 			fatal("jehanne_dup(p[0], 0)");
 		if(jehanne_dup(p[1], 1) != 1)
 			fatal("jehanne_dup(p[1], 1)");
-		close(p[0]);
-		close(p[1]);
-		exec("/boot/paqfs", (const char**)arg);
+		sys_close(p[0]);
+		sys_close(p[1]);
+		sys_exec("/boot/paqfs", (const char**)arg);
 		fatal("can't exec paqfs");
 	default:
 		break;
 	}
 	jehanne_waitpid();
 
-	close(p[1]);
+	sys_close(p[1]);
 	return p[0];
 }

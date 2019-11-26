@@ -103,7 +103,7 @@ dialimpl(const char *dest, const char *local, char *dir, int *cfdp)
 	if(rv >= 0)
 		return rv;
 	err[0] = '\0';
-	errstr(err, sizeof err);
+	sys_errstr(err, sizeof err);
 	if(jehanne_strstr(err, "refused") != 0){
 		jehanne_werrstr("%s", err);
 		return rv;
@@ -114,7 +114,7 @@ dialimpl(const char *dest, const char *local, char *dir, int *cfdp)
 		return rv;
 
 	alterr[0] = 0;
-	errstr(alterr, sizeof alterr);
+	sys_errstr(alterr, sizeof alterr);
 	if(jehanne_strstr(alterr, "translate") || jehanne_strstr(alterr, "does not exist"))
 		jehanne_werrstr("%s", err);
 	else
@@ -123,7 +123,7 @@ dialimpl(const char *dest, const char *local, char *dir, int *cfdp)
 }
 
 /*
- * the thread library can't cope with rfork(RFMEM|RFPROC),
+ * the thread library can't cope with sys_rfork(RFMEM|RFPROC),
  * so it must override this with a private version of dial.
  */
 int (*_dial)(const char *, const char *, char *, int *) = dialimpl;
@@ -163,14 +163,14 @@ freedest(Dest *dp)
 	jehanne_free(dp->conn);
 	jehanne_free(dp);
 	if (oalarm >= 0)
-		alarm(oalarm);
+		sys_alarm(oalarm);
 }
 
 static void
 closeopenfd(int *fdp)
 {
 	if (*fdp >= 0) {
-		close(*fdp);
+		sys_close(*fdp);
 		*fdp = -1;
 	}
 }
@@ -220,7 +220,7 @@ reap(Dest *dp)
 {
 	char exitsts[2*ERRMAX];
 
-	if (outstandingprocs(dp) && await(exitsts, sizeof exitsts) >= 0) {
+	if (outstandingprocs(dp) && sys_await(exitsts, sizeof exitsts) >= 0) {
 		notedeath(dp, exitsts);
 		return 0;
 	}
@@ -301,7 +301,7 @@ static void
 pickuperr(char *besterr, char *err)
 {
 	err[0] = '\0';
-	errstr(err, ERRMAX);
+	sys_errstr(err, ERRMAX);
 	if(jehanne_strstr(err, "does not exist") == 0)
 		jehanne_strcpy(besterr, err);
 }
@@ -329,7 +329,7 @@ dialmulti(DS *ds, Dest *dp)
 	while(dp->winner < 0 && *dp->nextaddr != '\0' &&
 	    parsecs(dp, &clone, &dest) >= 0) {
 		kidme = dp->nkid++;		/* make private copy on stack */
-		kid = rfork(RFPROC|RFMEM);	/* spin off a call attempt */
+		kid = sys_rfork(RFPROC|RFMEM);	/* spin off a call attempt */
 		if (kid < 0)
 			--dp->nkid;
 		else if (kid == 0) {
@@ -342,7 +342,7 @@ dialmulti(DS *ds, Dest *dp)
 			rv = call(clone, dest, ds, dp, &dp->conn[kidme]);
 			if(rv < 0)
 				pickuperr(besterr, err);
-			_exits(besterr);	/* avoid atexit callbacks */
+			sys__exits(besterr);	/* avoid atexit callbacks */
 		}
 	}
 	*besterr = '\0';
@@ -366,7 +366,7 @@ csdial(DS *ds)
 	if(dp == nil)
 		return -1;
 	dp->winner = -1;
-	dp->oalarm = alarm(0);
+	dp->oalarm = sys_alarm(0);
 	if (connsalloc(dp, 1) < 0) {		/* room for a single conn. */
 		freedest(dp);
 		return -1;
@@ -376,7 +376,7 @@ csdial(DS *ds)
 	 *  open connection server
 	 */
 	jehanne_snprint(buf, sizeof(buf), "%s/cs", ds->netdir);
-	fd = open(buf, ORDWR);
+	fd = sys_open(buf, ORDWR);
 	if(fd < 0){
 		/* no connection server, don't translate */
 		jehanne_snprint(clone, sizeof(clone), "%s/%s/clone", ds->netdir, ds->proto);
@@ -391,8 +391,8 @@ csdial(DS *ds)
 	 *  e.g., net!cs.bell-labs.com!smtp
 	 */
 	jehanne_snprint(buf, sizeof(buf), "%s!%s", ds->proto, ds->rem);
-	if(write(fd, buf, jehanne_strlen(buf)) < 0){
-		close(fd);
+	if(jehanne_write(fd, buf, jehanne_strlen(buf)) < 0){
+		sys_close(fd);
 		freedest(dp);
 		return -1;
 	}
@@ -404,11 +404,11 @@ csdial(DS *ds)
 	 *
 	 *  assumes that we'll get one record per read.
 	 */
-	seek(fd, 0, 0);
+	sys_seek(fd, 0, 0);
 	addrs = 0;
 	addrp = dp->nextaddr = dp->addrlist;
 	bleft = sizeof dp->addrlist - 2;	/* 2 is room for \n\0 */
-	while(bleft > 0 && (n = read(fd, addrp, bleft)) > 0) {
+	while(bleft > 0 && (n = jehanne_read(fd, addrp, bleft)) > 0) {
 		if (addrp[n-1] != '\n')
 			addrp[n++] = '\n';
 		addrs++;
@@ -422,9 +422,9 @@ csdial(DS *ds)
 	 * have been truncated and ignore it.  we really don't expect this
 	 * to happen.
 	 */
-	if (addrs > 0 && bleft <= 0 && read(fd, &c, 1) == 1)
+	if (addrs > 0 && bleft <= 0 && jehanne_read(fd, &c, 1) == 1)
 		addrs--;
-	close(fd);
+	sys_close(fd);
 
 	*besterr = 0;
 	rv = -1;				/* pessimistic default */
@@ -467,12 +467,12 @@ call(char *clone, char *dest, DS *ds, Dest *dp, Conn *conn)
 	jehanne_snprint(cname, sizeof cname, "%s/%s", ds->netdir, p);
 
 	conn->pid = jehanne_getpid();
-	conn->cfd = cfd = open(cname, ORDWR);
+	conn->cfd = cfd = sys_open(cname, ORDWR);
 	if(cfd < 0)
 		return -1;
 
 	/* get directory name */
-	n = read(cfd, name, sizeof(name)-1);
+	n = jehanne_read(cfd, name, sizeof(name)-1);
 	if(n < 0){
 		closeopenfd(&conn->cfd);
 		return -1;
@@ -490,29 +490,29 @@ call(char *clone, char *dest, DS *ds, Dest *dp, Conn *conn)
 	/* should be no alarm pending now; re-instate caller's alarm, if any */
 	calleralarm = dp->oalarm > 0;
 	if (calleralarm)
-		alarm(dp->oalarm);
+		sys_alarm(dp->oalarm);
 	else if (dp->naddrs > 1)	/* in a sub-process? */
-		alarm(Maxconnms);
+		sys_alarm(Maxconnms);
 
 	/* connect */
 	if(ds->local)
 		jehanne_snprint(name, sizeof(name), "connect %s %s", dest, ds->local);
 	else
 		jehanne_snprint(name, sizeof(name), "connect %s", dest);
-	if(write(cfd, name, jehanne_strlen(name)) < 0){
+	if(jehanne_write(cfd, name, jehanne_strlen(name)) < 0){
 		closeopenfd(&conn->cfd);
 		return -1;
 	}
 
-	oalarm = alarm(0);	/* don't let alarm interrupt critical section */
+	oalarm = sys_alarm(0);	/* don't let alarm interrupt critical section */
 	if (calleralarm)
 		dp->oalarm = oalarm;	/* time has passed, so update user's */
 
 	/* open data connection */
-	conn->dfd = fd = open(data, ORDWR);
+	conn->dfd = fd = sys_open(data, ORDWR);
 	if(fd < 0){
 		closeopenfd(&conn->cfd);
-		alarm(dp->oalarm);
+		sys_alarm(dp->oalarm);
 		return -1;
 	}
 	if(ds->cfdp == nil)
@@ -525,7 +525,7 @@ call(char *clone, char *dest, DS *ds, Dest *dp, Conn *conn)
 			dp->winner = n;
 		jehanne_qunlock(&dp->winlck);
 	}
-	alarm(calleralarm? dp->oalarm: 0);
+	sys_alarm(calleralarm? dp->oalarm: 0);
 	return fd;
 }
 

@@ -53,5 +53,5 @@ rmtmps(void)
 	int i;
 
 	for(i=0; i<ntmps; i++)
-		remove(tmpsmade[i]);
+		sys_remove(tmpsmade[i]);
 }

@@ -151,7 +151,7 @@ threadmain(int argc, char **argv)
 		break;
 	default: usage();
 	} ARGEND;
-	rfork(RFNOTEG);
+	sys_rfork(RFNOTEG);
 	bufinit(nbuf);
 	if(file == nil)
 		sysfatal("no default file");

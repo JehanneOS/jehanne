@@ -29,7 +29,7 @@ POSIX_isatty(int *errnop, int fd)
 		*errnop = __libposix_get_errno(PosixEBADF);
 		return 0;
 	}
-	if(fd2path(fd, buf, sizeof(buf)) < 0){
+	if(sys_fd2path(fd, buf, sizeof(buf)) < 0){
 		*errnop = __libposix_get_errno(PosixENOTTY);
 		return 0;
 	}
@@ -64,7 +64,7 @@ POSIX_usleep(int *errnop, unsigned int usec)
 int
 POSIX_pause(int *errnop)
 {
-	rendezvous((void*)~0, (void*)1);
+	sys_rendezvous((void*)~0, (void*)1);
 	*errnop = __libposix_get_errno(PosixEINTR);
 	return -1;
 }
@@ -89,11 +89,11 @@ POSIX_getlogin_r(int *errnop, char *name, int namesize)
 	int fd;
 	int n;
 
-	fd = open("/dev/user", OREAD);
+	fd = sys_open("/dev/user", OREAD);
 	if(fd < 0)
 		goto None;
-	n = read(fd, user, (sizeof user)-1);
-	close(fd);
+	n = jehanne_read(fd, user, (sizeof user)-1);
+	sys_close(fd);
 	if(n <= 0)
 		goto None;
 	if(namesize < n){
@@ -139,26 +139,26 @@ POSIX_getpass(int *errnop, const char *prompt)
 	char *p;
 	static char buf[256];
 
-	if(fd2path(0, buf, sizeof(buf)) == 0
+	if(sys_fd2path(0, buf, sizeof(buf)) == 0
 	&& (strcmp("/dev/cons", buf) == 0 || strcmp("/dev/tty", buf) == 0))
 		r = 0;
-	else if((r = open("/dev/cons", OREAD)) < 0)
+	else if((r = sys_open("/dev/cons", OREAD)) < 0)
 		goto ReturnENXIO;
 
-	if(fd2path(1, buf, sizeof(buf)) == 0
+	if(sys_fd2path(1, buf, sizeof(buf)) == 0
 	&& (strcmp("/dev/cons", buf) == 0 || strcmp("/dev/tty", buf) == 0))
 		w = 1;
-	else if((w = open("/dev/cons", OWRITE)) < 0)
+	else if((w = sys_open("/dev/cons", OWRITE)) < 0)
 		goto CloseRAndReturnENXIO;
 
-	if((ctl = open("/dev/consctl", OWRITE)) < 0)
+	if((ctl = sys_open("/dev/consctl", OWRITE)) < 0)
 		goto CloseRWAndReturnENXIO;
 
 	fprint(w, "%s", prompt);
 
-	write(ctl, "rawon", 5);
+	jehanne_write(ctl, "rawon", 5);
 	p = buf;
-	while(p < buf+sizeof(buf)-1 && read(r, p, 1) == 1){
+	while(p < buf+sizeof(buf)-1 && jehanne_read(r, p, 1) == 1){
 		if(*p == '\n')
 			break;
 		if(*p == ('u' & 037))
@@ -170,14 +170,14 @@ POSIX_getpass(int *errnop, const char *prompt)
 			++p;
 	}
 	*p = '\0';
-	write(ctl, "rawoff", 6);
+	jehanne_write(ctl, "rawoff", 6);
 
 	return buf;
 
 CloseRWAndReturnENXIO:
-	close(w);
+	sys_close(w);
 CloseRAndReturnENXIO:
-	close(r);
+	sys_close(r);
 ReturnENXIO:
 	*errnop = __libposix_get_errno(PosixENXIO);
 	return nil;

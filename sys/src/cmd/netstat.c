@@ -76,7 +76,7 @@ main(int argc, char *argv[])
 		for(i=0; i<nproto; i++)
 			nstat(proto[i], pip);
 	}else{
-		fd = open(netroot, OREAD);
+		fd = sys_open(netroot, OREAD);
 		if(fd < 0)
 			sysfatal("open %s: %r", netroot);
 
@@ -100,7 +100,7 @@ nstat(char *net, void (*f)(char*, Dir*))
 	char buf[256];
 
 	snprint(buf, sizeof buf, "%s/%s", netroot, net);
-	fdir = open(buf, OREAD);
+	fdir = sys_open(buf, OREAD);
 	if(fdir < 0)
 		return;
 
@@ -110,7 +110,7 @@ nstat(char *net, void (*f)(char*, Dir*))
 		Bflush(&out);
 	}
 	free(dir);
-	close(fdir);
+	sys_close(fdir);
 }
 
 char*
@@ -141,11 +141,11 @@ pip(char *net, Dir *db)
 		return;
 
 	snprint(buf, sizeof(buf) - 1, "%s/%s/%s/status", netroot, net, db->name);
-	fd = open(buf, OREAD);
+	fd = sys_open(buf, OREAD);
 	if(fd < 0)
 		return;
-	n = read(fd, buf, sizeof(buf) - 1);
-	close(fd);
+	n = jehanne_read(fd, buf, sizeof(buf) - 1);
+	sys_close(fd);
 	if(n < 0)
 		return;
 	buf[n] = 0;
@@ -159,13 +159,13 @@ pip(char *net, Dir *db)
 	Bprint(&out, "%-4s %-4s %-10s %-12s ", net, db->name, db->uid, buf);
 
 	snprint(buf, sizeof(buf) - 1, "%s/%s/%s/local", netroot, net, db->name);
-	fd = open(buf, OREAD);
+	fd = sys_open(buf, OREAD);
 	if(fd < 0) {
 		Bprint(&out, "\n");
 		return;
 	}
-	n = read(fd, buf, sizeof(buf) - 1);
-	close(fd);
+	n = jehanne_read(fd, buf, sizeof(buf) - 1);
+	sys_close(fd);
 	if(n < 0) {
 		Bprint(&out, "\n");
 		return;
@@ -180,13 +180,13 @@ pip(char *net, Dir *db)
 	Bprint(&out, "%-10s ", getport(net, p+1));
 
 	snprint(buf, sizeof(buf) - 1, "%s/%s/%s/remote", netroot, net, db->name);
-	fd = open(buf, OREAD);
+	fd = sys_open(buf, OREAD);
 	if(fd < 0) {
 		print("\n");
 		return;
 	}
-	n = read(fd, buf, sizeof(buf) - 1);
-	close(fd);
+	n = jehanne_read(fd, buf, sizeof(buf) - 1);
+	sys_close(fd);
 	if(n < 0) {
 		print("\n");
 		return;

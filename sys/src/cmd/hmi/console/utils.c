@@ -21,8 +21,8 @@
 
 #include "console.h"
 
-#define WAIT_FOR(v) while(rendezvous(&v, (void*)0x12345) == (void*)~0)
-#define PROVIDE(v) while(rendezvous(&v, (void*)0x11111) == (void*)~0)
+#define WAIT_FOR(v) while(sys_rendezvous(&v, (void*)0x12345) == (void*)~0)
+#define PROVIDE(v) while(sys_rendezvous(&v, (void*)0x11111) == (void*)~0)
 
 /* debugging */
 int debugging;
@@ -56,13 +56,13 @@ enabledebug(const char *file)
 	int fd;
 
 	if (!debugging) {
-		if((fd = open(file, OCEXEC|OTRUNC|OWRITE)) < 0){
+		if((fd = sys_open(file, OCEXEC|OTRUNC|OWRITE)) < 0){
 			debug("open: %r\n");
 			if((fd = ocreate(file, OCEXEC|OWRITE, 0666)) < 0)
 				sysfatal("create %r");
 		}
 		dup(fd, 2);
-		close(fd);
+		sys_close(fd);
 		__assert = traceassert;
 		if(!atnotify(debugnotes, 1)){
 			fprint(2, "atnotify: %r\n");
@@ -101,26 +101,26 @@ servecons(StreamFilter inputFilter, StreamFilter outputFilter, int *devmnt)
 
 	pid = getpid();
 
-	rfork(RFNAMEG);
+	sys_rfork(RFNAMEG);
 
 	debug("%s %d: started, linecontrol = %d, blind = %d\n", argv0, pid, linecontrol, blind);
 
 	fs = fsinit(&mnt, devmnt);
 
 	if(!debugging)
-		close(2);
+		sys_close(2);
 
 	/* start the file system */
-	switch(rfork(RFPROC|RFMEM|RFNOWAIT|RFCENVG|RFNOTEG|RFCNAMEG|RFFDG)){
+	switch(sys_rfork(RFPROC|RFMEM|RFNOWAIT|RFCENVG|RFNOTEG|RFCNAMEG|RFFDG)){
 		case -1:
 			sysfatal("rfork (file server)");
 			break;
 		case 0:
-			close(0);
-			close(1);
-			close(mnt);
+			sys_close(0);
+			sys_close(1);
+			sys_close(mnt);
 			PROVIDE(fs);
-			rfork(RFREND);
+			sys_rfork(RFREND);
 			fsserve(fs);
 			break;
 		default:
@@ -128,22 +128,22 @@ servecons(StreamFilter inputFilter, StreamFilter outputFilter, int *devmnt)
 	}
 
 	WAIT_FOR(fs);
-	close(fs);
+	sys_close(fs);
 
 	/* start output device writer */
 	debug("%s %d: starting output device writer\n", argv0, pid);
-	switch(rfork(RFPROC|RFMEM|RFNOWAIT|RFNOTEG|RFFDG|RFNAMEG)){
+	switch(sys_rfork(RFPROC|RFMEM|RFNOWAIT|RFNOTEG|RFFDG|RFNAMEG)){
 		case -1:
 			sysfatal("rfork (output writer): %r");
 			break;
 		case 0:
-			if(mount(mnt, -1, "/dev", MBEFORE, "", *devmnt) == -1)
+			if(sys_mount(mnt, -1, "/dev", MBEFORE, "", *devmnt) == -1)
 				sysfatal("mount (output writer): %r");
-			if((output = open("/dev/gconsout", OREAD)) == -1)
+			if((output = sys_open("/dev/gconsout", OREAD)) == -1)
 				sysfatal("open /dev/gconsout: %r");
-			close(0);
+			sys_close(0);
 			PROVIDE(output);
-			rfork(RFCENVG|RFCNAMEG|RFREND);
+			sys_rfork(RFCENVG|RFCNAMEG|RFREND);
 			outputFilter(output, 1);
 			break;
 		default:
@@ -152,18 +152,18 @@ servecons(StreamFilter inputFilter, StreamFilter outputFilter, int *devmnt)
 
 	/* start input device reader */
 	debug("%s %d: starting input device reader\n", argv0, pid);
-	switch(rfork(RFPROC|RFMEM|RFNOWAIT|RFNOTEG|RFFDG|RFNAMEG)){
+	switch(sys_rfork(RFPROC|RFMEM|RFNOWAIT|RFNOTEG|RFFDG|RFNAMEG)){
 		case -1:
 			sysfatal("rfork (input reader): %r");
 			break;
 		case 0:
-			if(mount(mnt, -1, "/dev", MBEFORE, "", *devmnt) == -1)
+			if(sys_mount(mnt, -1, "/dev", MBEFORE, "", *devmnt) == -1)
 				sysfatal("mount (input reader): %r");
-			if((input = open("/dev/gconsin", OWRITE)) == -1)
+			if((input = sys_open("/dev/gconsin", OWRITE)) == -1)
 				sysfatal("open /dev/gconsin: %r");
-			close(1);
+			sys_close(1);
 			PROVIDE(input);
-			rfork(RFCENVG|RFCNAMEG|RFREND);
+			sys_rfork(RFCENVG|RFCNAMEG|RFREND);
 			inputFilter(0, input);
 			break;
 		default:
@@ -172,8 +172,8 @@ servecons(StreamFilter inputFilter, StreamFilter outputFilter, int *devmnt)
 
 	WAIT_FOR(input);
 	WAIT_FOR(output);
-	close(0);
-	close(1);
+	sys_close(0);
+	sys_close(1);
 
 	return mnt;
 }
@@ -189,7 +189,7 @@ post(char *srv, int fd)
 	if(f < 0)
 		sysfatal("ocreate(%s)", srv);
 	sprint(buf, "%d", fd);
-	if(write(f, buf, strlen(buf)) != strlen(buf))
+	if(jehanne_write(f, buf, strlen(buf)) != strlen(buf))
 		sysfatal("write");
-	close(f);
+	sys_close(f);
 }

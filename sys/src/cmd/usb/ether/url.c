@@ -268,7 +268,7 @@ urlreceive(Dev *ep)
 	int n;
 
 	b = allocb(Maxpkt+4);
-	if((n = read(ep->dfd, b->wp, b->lim - b->base)) < 0){
+	if((n = jehanne_read(ep->dfd, b->wp, b->lim - b->base)) < 0){
 		freeb(b);
 		return -1;
 	}
@@ -296,7 +296,7 @@ urltransmit(Dev *ep, Block *b)
 		memset(b->wp, 0, Mfl-n);
 		b->wp += (Mfl-n);
 	}
-	write(ep->dfd, b->rp, BLEN(b));
+	jehanne_write(ep->dfd, b->rp, BLEN(b));
 	freeb(b);
 }
 

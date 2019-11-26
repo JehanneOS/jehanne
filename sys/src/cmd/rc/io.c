@@ -51,7 +51,7 @@ pfmt(io *f, char *fmt, ...)
 			pwrd(f, va_arg(ap, char *));
 			break;
 		case 'r':
-			errstr(err, sizeof err); pstr(f, err);
+			sys_errstr(err, sizeof err); pstr(f, err);
 			break;
 		case 's':
 			pstr(f, va_arg(ap, char *));
@@ -236,7 +236,7 @@ opencore(char *s, int len)
 	io *f = new(struct io);
 	uint8_t *buf = emalloc(len);
 
-	f->fd = -1 /*open("/dev/null", OREAD)*/;
+	f->fd = -1 /*sys_open("/dev/null", OREAD)*/;
 	f->bufp = f->strp = buf;
 	f->ebuf = buf+len;
 	memmove(buf, s, len);
@@ -258,7 +258,7 @@ void
 closeio(io *io)
 {
 	if(io->fd >= 0)
-		close(io->fd);
+		sys_close(io->fd);
 	if(io->strp)
 		free(io->strp);
 	free(io);

@@ -38,21 +38,21 @@ csgetvalue(char *netroot, char *attr, char *val, char *rattr,
 		snprint(line, sizeof(line), "%s/cs", netroot);
 	else
 		strcpy(line, "/net/cs");
-	fd = open(line, ORDWR);
+	fd = sys_open(line, ORDWR);
 	if(fd < 0)
 		return 0;
-	seek(fd, 0, 0);
+	sys_seek(fd, 0, 0);
 	snprint(line, sizeof(line), "!%s=%s %s=*", attr, val, rattr);
-	if(write(fd, line, strlen(line)) < 0){
-		close(fd);
+	if(jehanne_write(fd, line, strlen(line)) < 0){
+		sys_close(fd);
 		return 0;
 	}
-	seek(fd, 0, 0);
+	sys_seek(fd, 0, 0);
 
 	first = last = 0;
 	linefound = 0;
 	for(;;){
-		n = read(fd, line, sizeof(line)-2);
+		n = jehanne_read(fd, line, sizeof(line)-2);
 		if(n <= 0)
 			break;
 		line[n] = '\n';
@@ -79,7 +79,7 @@ csgetvalue(char *netroot, char *attr, char *val, char *rattr,
 			}
 		}
 	}
-	close(fd);
+	sys_close(fd);
 
 	if(oops){
 		werrstr("buffer too short");

@@ -108,10 +108,10 @@ lockopen(char *file)
 	int fd, tries;
 
 	for(tries = 0; tries < 5; tries++){
-		fd = open(file, ORDWR);
+		fd = sys_open(file, ORDWR);
 		if(fd >= 0)
 			return fd;
-		errstr(err, sizeof err);
+		sys_errstr(err, sizeof err);
 		if(strstr(err, "lock")){
 			/* wait for other process to let go of lock */
 			sleep(250);
@@ -165,7 +165,7 @@ writebinding(int fd, Binding *b)
 {
 	Dir *d;
 
-	seek(fd, 0, 0);
+	sys_seek(fd, 0, 0);
 	if(fprint(fd, "%ld\n%s\n", b->lease, b->boundto) < 0)
 		return -1;
 	d = dirfstat(fd);
@@ -200,7 +200,7 @@ syncbinding(Binding *b, int returnfd)
 	d = dirfstat(fd);
 	if(d != nil)	/* BUG? */
 	if(d->qid.type != b->q.type || d->qid.path != b->q.path || d->qid.vers != b->q.vers){
-		i = read(fd, buf, sizeof(buf)-1);
+		i = jehanne_read(fd, buf, sizeof(buf)-1);
 		if(i < 0)
 			i = 0;
 		buf[i] = 0;
@@ -215,7 +215,7 @@ syncbinding(Binding *b, int returnfd)
 	if(returnfd)
 		return fd;
 
-	close(fd);
+	sys_close(fd);
 	return 0;
 }
 
@@ -410,17 +410,17 @@ commitbinding(Binding *b)
 	if(fd < 0)
 		return -1;
 	if(b->lease > now && b->boundto && strcmp(b->boundto, b->offeredto) != 0){
-		close(fd);
+		sys_close(fd);
 		return -1;
 	}
 	setbinding(b, b->offeredto, now + b->offer);
 	b->lasttouched = now;
 
 	if(writebinding(fd, b) < 0){
-		close(fd);
+		sys_close(fd);
 		return -1;
 	}
-	close(fd);
+	sys_close(fd);
 	return 0;
 }
 
@@ -439,16 +439,16 @@ releasebinding(Binding *b, char *id)
 	if(fd < 0)
 		return -1;
 	if(b->lease > now && b->boundto && strcmp(b->boundto, id) != 0){
-		close(fd);
+		sys_close(fd);
 		return -1;
 	}
 	b->lease = 0;
 	b->expoffer = 0;
 
 	if(writebinding(fd, b) < 0){
-		close(fd);
+		sys_close(fd);
 		return -1;
 	}
-	close(fd);
+	sys_close(fd);
 	return 0;
 }

@@ -38,7 +38,7 @@ main(int argc, char **argv)
 	Mainarg *a;
 	Proc *p;
 
-	rfork(RFREND);
+	sys_rfork(RFREND);
 	mainp = &p;
 	if(jehanne_setjmp(_mainjmp))
 		_schedinit(p);
@@ -49,7 +49,7 @@ main(int argc, char **argv)
 	_sysfatal = _threadsysfatal;
 	_dial = _threaddial;
 	__assert = _threadassert;
-	notify(_threadnote);
+	sys_notify(_threadnote);
 	if(mainstacksize == 0)
 		mainstacksize = 8*1024;
 
@@ -78,15 +78,15 @@ efork(Execargs *e)
 	char buf[ERRMAX];
 
 	_threaddebug(DBGEXEC, "_schedexec %s", e->prog);
-	close(e->fd[0]);
-	exec(e->prog, e->args);
+	sys_close(e->fd[0]);
+	sys_exec(e->prog, e->args);
 	_threaddebug(DBGEXEC, "_schedexec failed: %r");
 	jehanne_rerrstr(buf, sizeof buf);
 	if(buf[0]=='\0')
 		jehanne_strcpy(buf, "exec failed");
-	write(e->fd[1], buf, jehanne_strlen(buf));
-	close(e->fd[1]);
-	_exits(buf);
+	jehanne_write(e->fd[1], buf, jehanne_strlen(buf));
+	sys_close(e->fd[1]);
+	sys__exits(buf);
 }
 
 int
@@ -94,7 +94,7 @@ _schedexec(Execargs *e)
 {
 	int pid;
 
-	switch(pid = rfork(RFREND|RFNOTEG|RFFDG|RFMEM|RFPROC)){
+	switch(pid = sys_rfork(RFREND|RFNOTEG|RFFDG|RFMEM|RFPROC)){
 	case 0:
 		efork(e);
 	default:
@@ -107,7 +107,7 @@ _schedfork(Proc *p)
 {
 	int pid;
 
-	switch(pid = rfork(RFPROC|RFMEM|RFNOWAIT|p->rforkflag)){
+	switch(pid = sys_rfork(RFPROC|RFMEM|RFNOWAIT|p->rforkflag)){
 	case 0:
 		*mainp = p;	/* write to stack, so local to proc */
 		jehanne_longjmp(_mainjmp, 1);
@@ -135,7 +135,7 @@ _schedexit(Proc *p)
 
 	jehanne_utfecpy(ex, ex+sizeof ex, p->exitstr);
 	jehanne_free(p);
-	_exits(ex);
+	sys__exits(ex);
 }
 
 void
@@ -152,7 +152,7 @@ _schedexecwait(void)
 	pid = t->ret;
 	_threaddebug(DBGEXEC, "_schedexecwait %d", t->ret);
 
-	rfork(RFCFDG);
+	sys_rfork(RFCFDG);
 	for(;;){
 		w = jehanne_wait();
 		if(w == nil)

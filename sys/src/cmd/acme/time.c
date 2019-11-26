@@ -52,7 +52,7 @@ timerproc(void*_)
 	uint32_t old, new;
 
 	threadsetname("timerproc");
-	rfork(RFFDG);
+	sys_rfork(RFFDG);
 	t = nil;
 	na = 0;
 	nt = 0;

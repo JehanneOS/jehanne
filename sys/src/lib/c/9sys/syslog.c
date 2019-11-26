@@ -29,9 +29,9 @@ _syslogopen(void)
 	char buf[1024];
 
 	if(sl.fd >= 0)
-		close(sl.fd);
+		sys_close(sl.fd);
 	jehanne_snprint(buf, sizeof(buf), "/sys/log/%s", sl.name);
-	sl.fd = open(buf, OWRITE|OCEXEC);
+	sl.fd = sys_open(buf, OWRITE|OCEXEC);
 }
 
 static int
@@ -59,7 +59,7 @@ jehanne_syslog(int cons, const char *logname, const char *fmt, ...)
 	char err[ERRMAX];
 
 	err[0] = '\0';
-	errstr(err, sizeof err);
+	sys_errstr(err, sizeof err);
 	jehanne_lock(&sl);
 
 	/*
@@ -89,7 +89,7 @@ jehanne_syslog(int cons, const char *logname, const char *fmt, ...)
 		if(sl.consfd < 0 || !eqdirdev(d, sl.consd)){
 			jehanne_free(sl.consd);
 			sl.consd = nil;
-			sl.consfd = open("#c/cons", OWRITE|OCEXEC);
+			sl.consfd = sys_open("#c/cons", OWRITE|OCEXEC);
 			if(sl.consfd >= 0)
 				sl.consd = jehanne_dirfstat(sl.consfd);
 		}
@@ -106,7 +106,7 @@ jehanne_syslog(int cons, const char *logname, const char *fmt, ...)
 	jehanne_strncpy(p, ctim+4, 15);
 	p += 15;
 	*p++ = ' ';
-	errstr(err, sizeof err);
+	sys_errstr(err, sizeof err);
 	va_start(arg, fmt);
 	p = jehanne_vseprint(p, buf+sizeof(buf)-1, fmt, arg);
 	va_end(arg);
@@ -114,12 +114,12 @@ jehanne_syslog(int cons, const char *logname, const char *fmt, ...)
 	n = p - buf;
 
 	if(sl.fd >= 0){
-		seek(sl.fd, 0, 2);
-		write(sl.fd, buf, n);
+		sys_seek(sl.fd, 0, 2);
+		jehanne_write(sl.fd, buf, n);
 	}
 
 	if(cons && sl.consfd >=0)
-		write(sl.consfd, buf, n);
+		jehanne_write(sl.consfd, buf, n);
 
 	jehanne_unlock(&sl);
 }

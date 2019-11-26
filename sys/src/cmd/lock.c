@@ -37,7 +37,7 @@ waitfor(int pid)
 	for (;;) {
 		w = jehanne_wait();
 		if (w == nil){
-			errstr(err, sizeof err);
+			sys_errstr(err, sizeof err);
 			if(jehanne_strcmp(err, "interrupted") == 0)
 				continue;
 			return nil;
@@ -66,10 +66,10 @@ openlock(char *lock)
 	jehanne_free(dir);
 
 	if (lockwait)
-		while ((lckfd = open(lock, ORDWR)) < 0)
+		while ((lckfd = sys_open(lock, ORDWR)) < 0)
 			jehanne_sleep(1000);
 	else
-		lckfd = open(lock, ORDWR);
+		lckfd = sys_open(lock, ORDWR);
 	if (lckfd < 0)
 		jehanne_sysfatal("can't open %s read/write: %r", lock);
 	return lckfd;
@@ -118,13 +118,13 @@ main(int argc, char *argv[])
 		/* keep lock alive until killed */
 		for (;;) {
 			jehanne_sleep(60*1000);
-			seek(lckfd, 0, 0);
+			sys_seek(lckfd, 0, 0);
 			jehanne_fprint(lckfd, "\n");
 		}
 	}
 
 	/* spawn argument command */
-	cmdpid = rfork(RFFDG|RFREND|RFPROC|RFENVG);
+	cmdpid = sys_rfork(RFFDG|RFREND|RFPROC|RFENVG);
 	switch(cmdpid){
 	case -1:
 		error("fork");
@@ -132,16 +132,16 @@ main(int argc, char *argv[])
 		fd = jehanne_ocreate("/env/prompt", OWRITE, 0666);
 		if (fd >= 0) {
 			jehanne_fprint(fd, "%s%% ", lock);
-			close(fd);
+			sys_close(fd);
 		}
-		exec(cmd, args);
+		sys_exec(cmd, args);
 		if(cmd[0] != '/' && jehanne_strncmp(cmd, "./", 2) != 0 &&
 		   jehanne_strncmp(cmd, "../", 3) != 0)
-			exec(jehanne_smprint("/cmd/%s", cmd), args);
+			sys_exec(jehanne_smprint("/cmd/%s", cmd), args);
 		error(cmd);
 	}
 
-	notify(notifyf);
+	sys_notify(notifyf);
 
 	w = waitfor(cmdpid);
 	if (w == nil)
@@ -174,6 +174,6 @@ notifyf(void *a, char *s)
 {
 	USED(a);
 	if(jehanne_strcmp(s, "interrupt") == 0)
-		noted(NCONT);
-	noted(NDFLT);
+		sys_noted(NCONT);
+	sys_noted(NDFLT);
 }

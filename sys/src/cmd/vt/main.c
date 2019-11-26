@@ -163,14 +163,14 @@ runcmd(void *args)
 	char **argv = args;
 	char *cmd;
 
-	rfork(RFNAMEG);
+	sys_rfork(RFNAMEG);
 	mountcons();
 
-	rfork(RFFDG);
-	close(0);
-	open("/dev/cons", OREAD);
-	close(1);
-	open("/dev/cons", OWRITE);
+	sys_rfork(RFFDG);
+	sys_close(0);
+	sys_open("/dev/cons", OREAD);
+	sys_close(1);
+	sys_open("/dev/cons", OWRITE);
 	dup(1, 2);
 
 	cmd = nil;
@@ -250,7 +250,7 @@ threadmain(int argc, char **argv)
 		break;
 	case 'l':
 		p = EARGF(usage());
-		logfd = create(p, OWRITE|OCEXEC, 0666);
+		logfd = sys_create(p, OWRITE|OCEXEC, 0666);
 		if(logfd < 0)
 			sysfatal("could not create log file: %s: %r", p);
 		break;
@@ -850,12 +850,12 @@ setdim(int ht, int wid)
 
 	exportsize();
 
-	fd = open("/dev/wctl", OWRITE);
+	fd = sys_open("/dev/wctl", OWRITE);
 	if(fd >= 0){
 		ht = (ymax+1) * ftsize.y + 2*INSET + 2*Borderwidth;
 		wid = (xmax+1) * ftsize.x + ftsize.x + 2*INSET + 2*Borderwidth;
 		fprint(fd, "resize -dx %d -dy %d\n", wid, ht);
-		close(fd);
+		sys_close(fd);
 	}
 }
 

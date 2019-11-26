@@ -230,7 +230,7 @@ readrune(int fd, int32_t *rp)
 			if (j != i)
 				memcpy(buf, buf+j, n-j);
 			i = n-j;
-			n = read(fd, &buf[i], sizeof(buf)-i);
+			n = jehanne_read(fd, &buf[i], sizeof(buf)-i);
 			if (n < 0)
 				sysfatal("read error: %r");
 			if (n == 0)
@@ -266,7 +266,7 @@ void
 wflush(int fd)
 {
 	if (wptr && wptr > wbuf)
-		if (write(fd, wbuf, wptr-wbuf) != wptr-wbuf)
+		if (jehanne_write(fd, wbuf, wptr-wbuf) != wptr-wbuf)
 			sysfatal("write error: %r");
 	wptr = wbuf;
 }

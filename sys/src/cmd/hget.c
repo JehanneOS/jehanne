@@ -182,7 +182,7 @@ main(int argc, char **argv)
 			if(out.fd < 0)
 				sysfatal("creating %s: %r", ofile);
 		} else {
-			out.fd = open(ofile, OWRITE);
+			out.fd = sys_open(ofile, OWRITE);
 			if(out.fd < 0)
 				sysfatal("can't open %s: %r", ofile);
 			r.start = d->length;
@@ -323,7 +323,7 @@ catch(void *v, char *c)
 	d.mtime = note.mtime;
 	if(dirfwstat(note.fd, &d) < 0)
 		sysfatal("catch: can't dirfwstat: %r");
-	noted(NDFLT);
+	sys_noted(NDFLT);
 }
 
 int
@@ -364,13 +364,13 @@ dohttp(URL *u, URL *px, Range *r, Out *out, int32_t mtime)
 			tfd = tlsClient(fd, &conn);
 			if(tfd < 0){
 				fprint(2, "tlsClient: %r\n");
-				close(fd);
+				sys_close(fd);
 				return Error;
 			}
 			/* BUG: check cert here? */
 			if(conn.cert)
 				free(conn.cert);
-			close(fd);
+			sys_close(fd);
 			fd = tfd;
 		}
 
@@ -414,15 +414,15 @@ dohttp(URL *u, URL *px, Range *r, Out *out, int32_t mtime)
 					tm->year+1900, tm->hour, tm->min, tm->sec);
 			}
 		}
-		if((cfd = open("/mnt/webcookies/http", ORDWR)) >= 0){
+		if((cfd = sys_open("/mnt/webcookies/http", ORDWR)) >= 0){
 			if(fprint(cfd, "http://%s%s", u->host, u->page) > 0){
-				while((n = read(cfd, buf, sizeof buf)) > 0){
+				while((n = jehanne_read(cfd, buf, sizeof buf)) > 0){
 					if(debug)
-						write(2, buf, n);
-					write(fd, buf, n);
+						jehanne_write(2, buf, n);
+					jehanne_write(fd, buf, n);
 				}
 			}else{
-				close(cfd);
+				sys_close(cfd);
 				cfd = -1;
 			}
 		}
@@ -438,8 +438,8 @@ dohttp(URL *u, URL *px, Range *r, Out *out, int32_t mtime)
 		switch(code){
 		case Error:	/* connection timed out */
 		case Eof:
-			close(fd);
-			close(cfd);
+			sys_close(fd);
+			sys_close(cfd);
 			return code;
 
 		case 200:	/* OK */
@@ -510,9 +510,9 @@ dohttp(URL *u, URL *px, Range *r, Out *out, int32_t mtime)
 		}
 
 		rv = httpheaders(fd, cfd, u, r);
-		close(cfd);
+		sys_close(cfd);
 		if(rv != 0){
-			close(fd);
+			sys_close(fd);
 			return rv;
 		}
 
@@ -531,7 +531,7 @@ dohttp(URL *u, URL *px, Range *r, Out *out, int32_t mtime)
 	if(ofile != nil && u->mtime != 0){
 		note.fd = out->fd;
 		note.mtime = u->mtime;
-		notify(catch);
+		sys_notify(catch);
 	}
 
 	tot = 0;
@@ -548,8 +548,8 @@ dohttp(URL *u, URL *px, Range *r, Out *out, int32_t mtime)
 			fprint(2, "%ld %ld\n", r->start+tot, r->end);
 		}
 	}
-	notify(nil);
-	close(fd);
+	sys_notify(nil);
+	sys_close(fd);
 
 	if(ofile != nil && u->mtime != 0){
 		Dir d;
@@ -559,7 +559,7 @@ dohttp(URL *u, URL *px, Range *r, Out *out, int32_t mtime)
 		d.mtime = u->mtime;
 		if(dirfwstat(out->fd, &d) < 0)
 			fprint(2, "couldn't set mtime: %r\n");
-		errstr(err, sizeof err);
+		sys_errstr(err, sizeof err);
 	}
 
 	return tot;
@@ -889,7 +889,7 @@ doftp(URL *u, URL *px, Range *r, Out *out, int32_t mtime)
 
 	/* if file is up to date and the right size, stop */
 	if(ftprestart(ctl, out, u, r, mtime) > 0){
-		close(ctl);
+		sys_close(ctl);
 		return Eof;
 	}
 
@@ -902,22 +902,22 @@ doftp(URL *u, URL *px, Range *r, Out *out, int32_t mtime)
 	}
 
 	/* fork */
-	switch(pid = rfork(RFPROC|RFFDG|RFMEM)){
+	switch(pid = sys_rfork(RFPROC|RFFDG|RFMEM)){
 	case -1:
-		close(data);
+		sys_close(data);
 		return terminateftp(ctl, Error);
 	case 0:
 		ftpxfer(data, out, r);
-		close(data);
-		_exits(0);
+		sys_close(data);
+		sys__exits(0);
 	default:
-		close(data);
+		sys_close(data);
 		break;
 	}
 
 	/* wait for reply message */
 	rv = ftprcode(ctl, msg, sizeof(msg));
-	close(ctl);
+	sys_close(ctl);
 
 	/* wait for process to terminate */
 	w = nil;
@@ -960,7 +960,7 @@ ftpcmd(int ctl, char *fmt, ...)
 		fprint(2, "%d -> %s\n", ctl, buf);
 	*s++ = '\r';
 	*s++ = '\n';
-	if(write(ctl, buf, s - buf) != s - buf)
+	if(jehanne_write(ctl, buf, s - buf) != s - buf)
 		return -1;
 	return 0;
 }
@@ -1173,7 +1173,7 @@ active(int ctl, URL *u)
 
 	/* get a local address/port of the annoucement */
 	if(getaddrport(dir, ipaddr, port) < 0){
-		close(afd);
+		sys_close(afd);
 		return Error;
 	}
 
@@ -1181,7 +1181,7 @@ active(int ctl, URL *u)
 	ftpcmd(ctl, "PORT %d,%d,%d,%d,%d,%d", ipaddr[0], ipaddr[1], ipaddr[2],
 		ipaddr[3], port[0], port[1]);
 	if(ftprcode(ctl, msg, sizeof(msg)) != Success){
-		close(afd);
+		sys_close(afd);
 		werrstr("active: %s", msg);
 		return Error;
 	}
@@ -1189,7 +1189,7 @@ active(int ctl, URL *u)
 	/* tell remote to send a file */
 	ftpcmd(ctl, "RETR %s", u->page);
 	if(ftprcode(ctl, msg, sizeof(msg)) != Extra){
-		close(afd);
+		sys_close(afd);
 		werrstr("RETR: %s", msg);
 		return Server;
 	}
@@ -1197,17 +1197,17 @@ active(int ctl, URL *u)
 	/* wait for a connection */
 	lcfd = listen(dir, ldir);
 	if(lcfd < 0){
-		close(afd);
+		sys_close(afd);
 		return Error;
 	}
 	dfd = accept(lcfd, ldir);
 	if(dfd < 0){
-		close(afd);
-		close(lcfd);
+		sys_close(afd);
+		sys_close(lcfd);
 		return Error;
 	}
-	close(afd);
-	close(lcfd);
+	sys_close(afd);
+	sys_close(lcfd);
 
 	return dfd;
 }
@@ -1221,7 +1221,7 @@ ftpxfer(int in, Out *out, Range *r)
 
 	vtime = 0;
 	for(n = 0;;n += i){
-		i = read(in, buf, sizeof(buf));
+		i = jehanne_read(in, buf, sizeof(buf));
 		if(i == 0)
 			break;
 		if(i < 0)
@@ -1240,7 +1240,7 @@ ftpxfer(int in, Out *out, Range *r)
 int
 terminateftp(int ctl, int rv)
 {
-	close(ctl);
+	sys_close(ctl);
 	return rv;
 }
 
@@ -1274,7 +1274,7 @@ readline(int fd, char *buf, int len)
 
 	for(p = buf;;){
 		if(b.rp >= b.wp){
-			n = read(fd, b.wp, sizeof(b.buf)/2);
+			n = jehanne_read(fd, b.wp, sizeof(b.buf)/2);
 			if(n < 0)
 				return -1;
 			if(n == 0){
@@ -1336,7 +1336,7 @@ readibuf(int fd, char *buf, int len)
 		b.rp += n;
 		return n;
 	}
-	return read(fd, buf, len);
+	return jehanne_read(fd, buf, len);
 }
 
 int
@@ -1361,11 +1361,11 @@ getaddrport(char *dir, uint8_t *ipaddr, uint8_t *port)
 	char *p;
 
 	snprint(buf, sizeof(buf), "%s/local", dir);
-	fd = open(buf, OREAD);
+	fd = sys_open(buf, OREAD);
 	if(fd < 0)
 		return -1;
-	i = read(fd, buf, sizeof(buf)-1);
-	close(fd);
+	i = jehanne_read(fd, buf, sizeof(buf)-1);
+	sys_close(fd);
 	if(i <= 0)
 		return -1;
 	buf[i] = 0;
@@ -1412,7 +1412,7 @@ setoffset(Out *out, int offset)
 	out->offset = offset;
 	out->written = offset;
 	if(ofile != nil)
-		if(seek(out->fd, offset, 0) != offset)
+		if(sys_seek(out->fd, offset, 0) != offset)
 			sysfatal("seek: %r");
 }
 
@@ -1454,7 +1454,7 @@ output(Out *out, char *buf, int nb)
 	}
 	if(n > 0){
 		out->hiwat = md5((uint8_t*)buf, n, nil, out->hiwat);
-		n = write(out->fd, buf, n);
+		n = jehanne_write(out->fd, buf, n);
 		if(n > 0){
 			out->offset += n;
 			out->written += n;

@@ -9,7 +9,7 @@ _asrequest(int fd, Ticketreq *tr)
 	int n;
 
 	n = convTR2M(tr, trbuf, sizeof(trbuf));
-	if(write(fd, trbuf, n) != n)
+	if(jehanne_write(fd, trbuf, n) != n)
 		return -1;
 
 	return 0;

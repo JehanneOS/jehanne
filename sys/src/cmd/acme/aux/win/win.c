@@ -20,8 +20,8 @@ newwindow(void)
 	Window *w;
 
 	w = emalloc(sizeof(Window));
-	w->ctl = open("/mnt/wsys/new/ctl", ORDWR|OCEXEC);
-	if(w->ctl<0 || read(w->ctl, buf, 12)!=12)
+	w->ctl = sys_open("/mnt/wsys/new/ctl", ORDWR|OCEXEC);
+	if(w->ctl<0 || jehanne_read(w->ctl, buf, 12)!=12)
 		error("can't open window ctl file: %r");
 	ctlprint(w->ctl, "noscroll\n");
 	w->id = atoi(buf);
@@ -64,7 +64,7 @@ winopenfile(Window *w, char *f)
 	int fd;
 
 	sprint(buf, "/mnt/wsys/%d/%s", w->id, f);
-	fd = open(buf, ORDWR|OCEXEC);
+	fd = sys_open(buf, ORDWR|OCEXEC);
 	if(fd < 0)
 		error("can't open window file %s: %r", f);
 	return fd;
@@ -76,9 +76,9 @@ wintagwrite(Window *w, char *s, int n)
 	int fd;
 
 	fd = winopenfile(w, "tag");
-	if(write(fd, s, n) != n)
-		error("tag write: %r");
-	close(fd);
+	if(jehanne_write(fd, s, n) != n)
+		error("tag jehanne_write: %r");
+	sys_close(fd);
 }
 
 void
@@ -91,7 +91,7 @@ int
 wingetec(Window *w)
 {
 	if(w->nbuf == 0){
-		w->nbuf = read(w->event, w->buf, sizeof w->buf);
+		w->nbuf = jehanne_read(w->event, w->buf, sizeof w->buf);
 		if(w->nbuf <= 0){
 			/* probably because window has exited, and only called by wineventproc, so just shut down */
 			threadexits(nil);
@@ -189,9 +189,9 @@ winread(Window *w, uint32_t q0, uint32_t q1, char *data)
 	nb = 0;
 	while(m < q1){
 		n = sprint(buf, "#%d", m);
-		if(write(w->addr, buf, n) != n)
+		if(jehanne_write(w->addr, buf, n) != n)
 			error("error writing addr: %r");
-		n = read(w->data, buf, sizeof buf);
+		n = jehanne_read(w->data, buf, sizeof buf);
 		if(n < 0)
 			error("reading data: %r");
 		nr = nrunes(buf, n);
@@ -214,15 +214,15 @@ void
 windormant(Window *w)
 {
 	if(w->addr >= 0){
-		close(w->addr);
+		sys_close(w->addr);
 		w->addr = -1;
 	}
 	if(w->body >= 0){
-		close(w->body);
+		sys_close(w->body);
 		w->body = -1;
 	}
 	if(w->data >= 0){
-		close(w->data);
+		sys_close(w->data);
 		w->data = -1;
 	}
 }
@@ -231,14 +231,14 @@ int
 windel(Window *w, int sure)
 {
 	if(sure)
-		write(w->ctl, "delete\n", 7);
-	else if(write(w->ctl, "del\n", 4) != 4)
+		jehanne_write(w->ctl, "delete\n", 7);
+	else if(jehanne_write(w->ctl, "del\n", 4) != 4)
 		return 0;
 	/* event proc will die due to read error from event file */
 	windormant(w);
-	close(w->ctl);
+	sys_close(w->ctl);
 	w->ctl = -1;
-	close(w->event);
+	sys_close(w->event);
 	w->event = -1;
 	return 1;
 }
@@ -254,7 +254,7 @@ winsetaddr(Window *w, char *addr, int errok)
 {
 	if(w->addr < 0)
 		w->addr = winopenfile(w, "addr");
-	if(write(w->addr, addr, strlen(addr)) < 0){
+	if(jehanne_write(w->addr, addr, strlen(addr)) < 0){
 		if(!errok)
 			error("error writing addr(%s): %r", addr);
 		return 0;

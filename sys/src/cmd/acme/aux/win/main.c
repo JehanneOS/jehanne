@@ -43,7 +43,7 @@ threadmain(int argc, char *argv[])
 	char buf[1024], **av;
 
 	quotefmtinstall();
-	rfork(RFNAMEG);
+	sys_rfork(RFNAMEG);
 	ARGBEGIN{
 	case 'd':
 		debug = 1;
@@ -117,7 +117,7 @@ command(Window *w, char *s)
 	while(*s==' ' || *s=='\t' || *s=='\n')
 		s++;
 	if(strcmp(s, "Delete")==0 || strcmp(s, "Del")==0){
-		write(notepg, "hangup", 6);
+		jehanne_write(notepg, "hangup", 6);
 		windel(w, 1);
 		threadexitsall(nil);
 		return 1;
@@ -247,7 +247,7 @@ _sendinput(Window *w, uint32_t q0, uint32_t *q1)
 	/* erase q0 to q0+n */
 	sprint(buf, "#%lud,#%lud", q0, q0+n);
 	winsetaddr(w, buf, 0);
-	write(w->data, buf, 0);
+	jehanne_write(w->data, buf, 0);
 	*q1 -= n;
 	return 0;
 }
@@ -309,20 +309,20 @@ sendit(char *s)
 {
 //	char tmp[32];
 
-	write(win->body, s, strlen(s));
+	jehanne_write(win->body, s, strlen(s));
 /*
  * RSC: The problem here is that other procs can call sendit,
  * so we lose our single-threadedness if we call sendinput.
  * In fact, we don't even have the right queue memory,
- * I think that we'll get a write event from the body write above,
+ * I think that we'll get a jehanne_write event from the body jehanne_write above,
  * and we can do the sendinput then, from our single thread.
  *
  * I still need to figure out how to test this assertion for
  * programs that use /srv/win*
  *
 	winselect(win, "$", 0);
-	seek(win->addr, 0UL, 0);
-	if(read(win->addr, tmp, 2*12) == 2*12)
+	sys_seek(win->addr, 0UL, 0);
+	if(jehanne_read(win->addr, tmp, 2*12) == 2*12)
 		hostpt += sendinput(win, hostpt, atol(tmp), );
  */
 }
@@ -446,11 +446,11 @@ mainctl(void *v)
 		case 'S':	/* output to stdout */
 			sprint(tmp, "#%lud", hostpt);
 			winsetaddr(w, tmp, 0);
-			write(w->data, e->b, e->nb);
+			jehanne_write(w->data, e->b, e->nb);
 			pendingS += e->nr;
 			break;
 
-		case 'E':	/* write to tag or body; body happens due to sendit */
+		case 'E':	/* jehanne_write to tag or body; body happens due to sendit */
 			delta = e->q1-e->q0;
 			if(e->c2=='I'){
 				endpt += delta;
@@ -509,7 +509,7 @@ mainctl(void *v)
 				if(e->q0 < hostpt)
 					hostpt += delta;
 				if(e->nr>0 && e->r[e->nr-1]==0x7F){
-					write(notepg, "interrupt", 9);
+					jehanne_write(notepg, "interrupt", 9);
 					hostpt = endpt;
 					break;
 				}
@@ -617,12 +617,12 @@ execproc(void *v)
 	Channel *cpid;
 
 	e = v;
-	rfork(RFCFDG|RFNOTEG);
+	sys_rfork(RFCFDG|RFNOTEG);
 	av = e->argv;
-	close(0);
-	open("/dev/cons", OREAD);
-	close(1);
-	open("/dev/cons", OWRITE);
+	sys_close(0);
+	sys_open("/dev/cons", OREAD);
+	sys_close(1);
+	sys_open("/dev/cons", OWRITE);
 	dup(1, 2);
 	cpid = e->cpid;
 	free(e);
@@ -647,11 +647,11 @@ startcmd(char *argv[], int *notepg)
 	cpid = chancreate(sizeof(uint32_t), 0);
 	e->cpid = cpid;
 	sprint(buf, "/mnt/wsys/%d", win->id);
-	bind(buf, "/dev/acme", MREPL);
+	sys_bind(buf, "/dev/acme", MREPL);
 	proccreate(execproc, e, EXECSTACK);
 	do
 		pid = recvul(cpid);
 	while(pid == -1);
 	sprint(buf, "/proc/%d/notepg", pid);
-	*notepg = open(buf, OWRITE);
+	*notepg = sys_open(buf, OWRITE);
 }

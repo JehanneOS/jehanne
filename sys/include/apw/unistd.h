@@ -15,10 +15,12 @@
  * You should have received a copy of the GNU General Public License
  * along with Jehanne.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef _UNISTD_H
-#define _UNISTD_H
+#ifndef _APW_UNISTD_H
+#define _APW_UNISTD_H
+#ifndef HIDE_JEHANNE_APW
 #include "libc.wrapper.h"
 extern int execv(const char*, char* const[]);
 extern int execve(const char*, char* const[], char* const[]);
 extern int execvp(const char*, char* const[]);
+#endif
 #endif

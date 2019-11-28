@@ -27,41 +27,41 @@ main(void)
 	char buf[256];
 	int fd, r;
 
-	fd = open("/fd/0ctl", OREAD|OCEXEC);
+	fd = sys_open("/fd/0ctl", OREAD|OCEXEC);
 	if(fd < 0)
 		goto Fail;
-	r = read(fd, buf, sizeof(buf));
+	r = jehanne_read(fd, buf, sizeof(buf));
 	if(r < 0)
 		goto Fail;
-	close(fd);
+	sys_close(fd);
 	print("Got 0ctl: %s\n", buf);
 
-	fd = open("/fd/1ctl", OREAD|OCEXEC);
+	fd = sys_open("/fd/1ctl", OREAD|OCEXEC);
 	if(fd < 0)
 		goto Fail;
-	r = read(fd, buf, sizeof(buf));
+	r = jehanne_read(fd, buf, sizeof(buf));
 	if(r < 0)
 		goto Fail;
-	close(fd);
+	sys_close(fd);
 	print("Got 1ctl: %s\n", buf);
 
-	fd = open("/fd/2ctl", OREAD|OCEXEC);
+	fd = sys_open("/fd/2ctl", OREAD|OCEXEC);
 	if(fd < 0)
 		goto Fail;
-	r = read(fd, buf, sizeof(buf));
+	r = jehanne_read(fd, buf, sizeof(buf));
 	if(r < 0)
 		goto Fail;
 	print("Got 2ctl: %s\n", buf);
 
 	snprint(buf, sizeof(buf), "/fd/%dctl", fd);
-	fd = open(buf, OREAD);
+	fd = sys_open(buf, OREAD);
 	if(fd < 0)
 		goto Fail;
-	r = read(fd, buf, sizeof(buf));
+	r = jehanne_read(fd, buf, sizeof(buf));
 	if(r < 0)
 		goto Fail;
 	print("Got: %s\n", buf);
-	close(fd);
+	sys_close(fd);
 	exits(nil);
 
 Fail:

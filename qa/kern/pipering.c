@@ -14,7 +14,7 @@ handler(void *v, char *s)
 {
 	print("%d: %d iterations\n", id, i);
 	if (intr++ < 16)
-		noted(NCONT);
+		sys_noted(NCONT);
 	exits("too many interrupts");
 }
 
@@ -23,8 +23,8 @@ main(int argc, char *argv[])
 {
 	int pid;
 
-	if (notify(handler)){
-		sysfatal("notify: %r");
+	if (sys_notify(handler)){
+		sysfatal("sys_notify: %r");
 	}
 
 	if (argc > 1)
@@ -57,11 +57,11 @@ main(int argc, char *argv[])
 	for(i = 0; debug && i < nring; i++ ) fprint(2, "pfd[%d,%d]\n", pfd[i*2],pfd[i*2+1]);
 	for(i = 0; i < niter; i++) {
 		if (debug) fprint(2, "%d: write %d\n", id, pfd[(id%nring)*2+1]);
-		int amt = write(pfd[(id%nring)*2+1], data, sizeof(data));
+		int amt = jehanne_write(pfd[(id%nring)*2+1], data, sizeof(data));
 		if (amt < sizeof(data))
 			sysfatal(smprint("%d: write only got %d of %d: %r", id, amt, sizeof(data)));
 		if (debug) print("%d: read %d\n", id, pfd[(id%nring)*2]);
-		amt = read(pfd[(id%nring)*2], data, sizeof(data));
+		amt = jehanne_read(pfd[(id%nring)*2], data, sizeof(data));
 		if (amt < sizeof(data))
 			sysfatal(smprint("%d: read only got %d of %d: %r", id, amt, sizeof(data)));
 	}

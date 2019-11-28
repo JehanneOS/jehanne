@@ -45,7 +45,7 @@ stopAllAfter(int seconds)
 {
 	int pid;
 
-	switch((pid = rfork(RFMEM|RFPROC|RFNOWAIT)))
+	switch((pid = sys_rfork(RFMEM|RFPROC|RFNOWAIT)))
 	{
 		case 0:
 			if(verbose)
@@ -57,7 +57,7 @@ stopAllAfter(int seconds)
 			exits("FAIL");
 		case -1:
 			fprint(2, "%r\n");
-			exits("rfork fails");
+			exits("sys_rfork fails");
 		default:
 			killerProc = pid;
 			atexit(killKiller);
@@ -134,7 +134,7 @@ spawnsleeper(int index)
 	int pid;
 	char * res;
 
-	switch((pid = rfork(RFMEM|RFPROC|RFNOWAIT)))
+	switch((pid = sys_rfork(RFMEM|RFPROC|RFNOWAIT)))
 	{
 		case 0:
 			res = sleeper(index);
@@ -142,7 +142,7 @@ spawnsleeper(int index)
 			break;
 		case -1:
 			print("spawnsleeper: %r\n");
-			exits("rfork fails");
+			exits("sys_rfork fails");
 			break;
 		default:
 			if(verbose)
@@ -160,7 +160,7 @@ main(int argc, char* argv[])
 	ARGBEGIN{
 	}ARGEND;
 
-	rfork(RFNOTEG|RFREND);
+	sys_rfork(RFNOTEG|RFREND);
 	rStart.l = &rl;
 	rCompleted.l = &rl;
 

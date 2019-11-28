@@ -48,16 +48,16 @@ main() {
 
 		printf("Child going to loop...\n");
 		write(p[1], "", 1);
-		close(p[1]);
-		close(p[0]);
+		sys_close(p[1]);
+		sys_close(p[0]);
 		for(;;); /* loop for ever */
 	}
 	else /* parent */
 	{
 		signal(SIGCHLD,sigchld);
 		read(p[0], &dummy, 1);
-		close(p[1]);
-		close(p[0]);
+		sys_close(p[1]);
+		sys_close(p[0]);
 		printf("PARENT: sending SIGHUP\n");
 		kill(pid,SIGHUP);
 		sleep(3); /* pause for 3 secs */

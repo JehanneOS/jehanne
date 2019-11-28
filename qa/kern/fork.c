@@ -15,9 +15,9 @@ main(void)
 {
 	static int c;
 	int pid;
-	pid = rfork(RFMEM|RFPROC);
+	pid = sys_rfork(RFMEM|RFPROC);
 	if (pid < 0) {
-		print("FAIL: rfork\n");
+		print("FAIL: sys_rfork\n");
 		exits("FAIL");
 	}
 	if (pid > 0) {

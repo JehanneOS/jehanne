@@ -32,20 +32,20 @@ main(void)
 		print("FAIL: open: %r\n");
 		exits("FAIL");
 	}
-	if(write(fd, r, sizeof(r)) < 0){
+	if(jehanne_write(fd, r, sizeof(r)) < 0){
 		print("FAIL: fprint: %r\n");
 		exits("FAIL");
 	}
-	close(fd);
-	if((fd = open("/tmp/runetest.txt", OREAD)) < 0) {
+	sys_close(fd);
+	if((fd = sys_open("/tmp/runetest.txt", OREAD)) < 0) {
 		print("FAIL: open: %r\n");
 		exits("FAIL");
 	}
-	if(read(fd, (char*)buf, sizeof(buf)) < 0){
+	if(jehanne_read(fd, (char*)buf, sizeof(buf)) < 0){
 		print("FAIL: read: %r\n");
 		exits("FAIL");
 	}
-	close(fd);
+	sys_close(fd);
 	if (runestrcmp(r, buf) != 0){
 		print("FAIL: got '%S' instead of '%S'.\n", buf, r);
 		exits("FAIL");

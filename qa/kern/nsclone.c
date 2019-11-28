@@ -24,20 +24,20 @@ void
 setup_ns(void)
 {
 	int fd;
-	if(bind("#|", "/", MREPL) < 0){
-		print("FAIL: rfork\n");
-		write(sync[0], "FAIL", 5);
+	if(sys_bind("#|", "/", MREPL) < 0){
+		print("FAIL: sys_rfork\n");
+		jehanne_write(sync[0], "FAIL", 5);
 		return;
 	}
-	fd = open("/data", OWRITE);
+	fd = sys_open("/data", OWRITE);
 	if(fd < 0){
-		print("FAIL: open(/data)\n");
-		write(sync[0], "FAIL", 5);
+		print("FAIL: sys_open(/data)\n");
+		jehanne_write(sync[0], "FAIL", 5);
 		return;
 	}
-	write(fd, "hi!", 4);
-	close(fd);
-	write(sync[0], "DONE", 5);
+	jehanne_write(fd, "hi!", 4);
+	sys_close(fd);
+	jehanne_write(sync[0], "DONE", 5);
 	sleep(10);
 }
 
@@ -47,12 +47,12 @@ main(void)
 	int child, fd;
 	char buf[64];
 
-	rfork(RFNOTEG|RFNAMEG);
+	sys_rfork(RFNOTEG|RFNAMEG);
 
 	pipe(sync);
-	switch(child = rfork(RFPROC|RFCNAMEG|RFNOWAIT)){
+	switch(child = sys_rfork(RFPROC|RFCNAMEG|RFNOWAIT)){
 	case -1:
-		print("FAIL: rfork\n");
+		print("FAIL: sys_rfork\n");
 		exits("FAIL");
 	case 0:
 		setup_ns();
@@ -61,27 +61,27 @@ main(void)
 		break;
 	}
 
-	read(sync[1], buf, sizeof(buf));
+	jehanne_read(sync[1], buf, sizeof(buf));
 	if(strcmp("DONE", buf) != 0)
 		exits("FAIL");
 
 	snprint(buf, sizeof(buf), "/proc/%d/ns", child);
-	fd = open(buf, OWRITE);
+	fd = sys_open(buf, OWRITE);
 	if(fd < 0){
-		print("FAIL: open(%s)\n", buf);
+		print("FAIL: sys_open(%s)\n", buf);
 		exits("FAIL");
 	}
-	write(fd, "clone", 6);
-	close(fd);
+	jehanne_write(fd, "clone", 6);
+	sys_close(fd);
 
 	memset(buf, 0, sizeof(buf));
-	fd = open("/data1", OREAD);
+	fd = sys_open("/data1", OREAD);
 	if(fd < 0){
-		print("FAIL: open(/data1)\n");
+		print("FAIL: sys_open(/data1)\n");
 		exits("FAIL");
 	}
-	read(fd, buf, sizeof(buf));
-	close(fd);
+	jehanne_read(fd, buf, sizeof(buf));
+	sys_close(fd);
 
 	if(strcmp("hi!", buf) == 0){
 		print("PASS: read '%s' from /data1\n", buf);

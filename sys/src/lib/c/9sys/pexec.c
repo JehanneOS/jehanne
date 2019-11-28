@@ -32,7 +32,7 @@ jehanne_pexec(const char *f, char *args[])
 	n = jehanne_getfields(epath, entries, nelem(entries), 1, ":");
 	for(i = 0; i < n; ++i){
 		path = jehanne_smprint("%s/%s", entries[i], f);
-		sys_exec(path, args);
+		sys_exec(path, (const char**)args);
 		jehanne_free(path);
 	}
 

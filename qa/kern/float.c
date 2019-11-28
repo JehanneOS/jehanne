@@ -17,7 +17,7 @@ catcher(void *u, char *s)
 		err = s;
 		notejmp(u, errj, 0);
 	}
-	noted(NDFLT);
+	sys_noted(NDFLT);
 }
 
 void
@@ -56,7 +56,7 @@ main(void)
 	q = d2l.l;
 
 	err = 0;
-	notify(catcher);
+	sys_notify(catcher);
 	setjmp(errj);
 	if(err){
 		fprint(2, "FAIL: %s\n", err);

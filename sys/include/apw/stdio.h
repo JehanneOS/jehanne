@@ -15,8 +15,9 @@
  * You should have received a copy of the GNU General Public License
  * along with Jehanne.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef _STDIO_H
-#define _STDIO_H
+#ifndef _APW_STDIO_H
+#define _APW_STDIO_H
+#ifndef HIDE_JEHANNE_APW
 
 /* Simple trick to avoid name clash between native and standard headers:
  *
@@ -40,4 +41,4 @@ extern "C" {
 }
 #endif
 #endif
-
+#endif

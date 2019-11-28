@@ -20,40 +20,40 @@ fdfork(int fd, int post)
 		if(pfd == -1)
 			sysfatal("fdfork: create: %r");
 		snprint(buf, sizeof buf, "%d", ch[0]);
-		if(write(pfd, buf, strlen(buf)) != strlen(buf)){
-			remove(path);
+		if(jehanne_write(pfd, buf, strlen(buf)) != strlen(buf)){
+			sys_remove(path);
 			sysfatal("fdfork: post '%s': %r", buf);
 		}
-		close(ch[0]);
+		sys_close(ch[0]);
 
-		if(write(fd, path, len) != len){
-			remove(path);
+		if(jehanne_write(fd, path, len) != len){
+			sys_remove(path);
 			sysfatal("fdfork: write to peer: %r");
 		}
-		len = read(fd, buf, sizeof buf-1);
+		len = jehanne_read(fd, buf, sizeof buf-1);
 		if(len <= 0){
-			remove(path);
+			sys_remove(path);
 			sysfatal("fdfork: read ack: %s from peer: %r", len == -1 ? "error" : "eof");
 		}
 		buf[len] = '\0';
 		if(strcmp(path, buf)){
-			remove(path);
+			sys_remove(path);
 			print("ack from wrong peer: got '%s' want '%s'\n", buf, path);
 			sysfatal("ack from wrong peer");
 		}
-		close(pfd);
-		//remove(path);
+		sys_close(pfd);
+		//sys_remove(path);
 
 		return ch[1];
 	} else {
-		len = read(fd, path, sizeof path-1);
+		len = jehanne_read(fd, path, sizeof path-1);
 		if(len <= 0)
 			sysfatal("fdfork: read path: %s from peer: %r", len == -1 ? "error" : "eof");
 		path[len] = '\0';
-		pfd = open(path, OWRITE);
+		pfd = sys_open(path, OWRITE);
 		if(pfd == -1)
 			sysfatal("fdfork: open: %r");
-		if(write(fd, path, len) != len)
+		if(jehanne_write(fd, path, len) != len)
 			sysfatal("fdfork: write ack to peer: %r");
 
 		return pfd;
@@ -61,7 +61,7 @@ fdfork(int fd, int post)
 }
 
 int
-hyperfork(int *fd, int id, int dim)
+hypesys_rfork(int *fd, int id, int dim)
 {
 	int chfd[dim];
 	int ch[2];
@@ -72,20 +72,20 @@ hyperfork(int *fd, int id, int dim)
 	pipe(ch);
 	switch(fork()){
 	case -1:
-		sysfatal("rfork");
+		sysfatal("sys_rfork");
 	case 0:
 		for(i = 0; i < dim; i++){
-			close(fd[i]);
+			sys_close(fd[i]);
 			fd[i] = chfd[i];
 		}
 		id |= 1 << dim;
-		close(ch[0]);
+		sys_close(ch[0]);
 		fd[dim] = ch[1];
 		break;
 	default:
 		for(i = 0; i < dim; i++)
-			close(chfd[i]);
-		close(ch[1]);
+			sys_close(chfd[i]);
+		sys_close(ch[1]);
 		fd[dim] = ch[0];
 		break;
 	}
@@ -106,13 +106,13 @@ main(int argc, char *argv[])
 	id = 0;
 	chdir("/srv");
 	for(i = 0; i < dim; i++)
-		id = hyperfork(fd, id, i);
+		id = hypesys_rfork(fd, id, i);
 
 	for(i = 0; i < dim; i++){
 		int tlen, rlen;
 		tlen = snprint(buf, sizeof buf, "hello %d\n", id);
-		write(fd[i], buf, tlen);
-		rlen = read(fd[i], buf, sizeof buf-1);
+		jehanne_write(fd[i], buf, tlen);
+		rlen = jehanne_read(fd[i], buf, sizeof buf-1);
 		buf[rlen] = '\0';
 		snprint(buf2, sizeof buf2, "%d: %s", id, buf);
 	}

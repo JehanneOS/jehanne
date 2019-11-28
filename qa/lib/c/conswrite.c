@@ -29,7 +29,7 @@ main(void)
 
 	memset(msg, '1', BUFSZ);
 
-	if((w = write(2, msg, BUFSZ)) < BUFSZ){
+	if((w = jehanne_write(2, msg, BUFSZ)) < BUFSZ){
 		print("\nFAIL, written %d instead of %d\n", w, BUFSZ);
 		exits("FAIL");
 	}

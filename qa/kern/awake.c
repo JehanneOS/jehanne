@@ -40,7 +40,7 @@ writeTillBlock(int fd)
 	memset(buf, 1, sizeof(buf));
 	while(i < 300)	/* pipes should block after at most 256kb */
 	{
-		if(write(fd, buf, sizeof(buf)) < 0){
+		if(jehanne_write(fd, buf, sizeof(buf)) < 0){
 			break;
 		}
 		++i;
@@ -56,21 +56,21 @@ main(void)
 	int fds[2];
 	char buf[1];
 
-	semacquire(&sem, 0);
+	sys_semacquire(&sem, 0);
 
-	alarm(40000);	/* global timeout, FAIL if reached */
+	sys_alarm(40000);	/* global timeout, FAIL if reached */
 	if (!atnotify(failOnTimeout, 1)){
 		fprint(2, "%r\n");
 		exits("atnotify fails");
 	}
 
-	awake(100000);	/* this will be handled by the kernel, see pexit */
+	sys_awake(100000);	/* this will be handled by the kernel, see pexit */
 
 	/* verify that rendezvous are interrupted */
 	fprint(2, "verify that rendezvous are interrupted\n", elapsed);
-	wkup = awake(1000);
+	wkup = sys_awake(1000);
 	start = nsec();
-	res = (int64_t)rendezvous(&elapsed, (void*)0x12345);
+	res = (int64_t)sys_rendezvous(&elapsed, (void*)0x12345);
 	elapsed = (nsec() - start) / (1000 * 1000);
 	if(verbose)
 		fprint(2, "rendezvous interrupted, returned %#p, elapsed = %d ms\n", res, elapsed);
@@ -82,7 +82,7 @@ main(void)
 
 	/* verify that sleeps are NOT interrupted */
 	fprint(2, "verify that sleeps are NOT interrupted\n", elapsed);
-	wkup = awake(700);
+	wkup = sys_awake(700);
 	start = nsec();
 	sleep(1500);
 	elapsed = (nsec() - start) / (1000 * 1000);
@@ -97,11 +97,11 @@ main(void)
 	/* verify that semacquires are interrupted */
 	fprint(2, "verify that semacquires are interrupted\n", elapsed);
 	pipe(fds);
-	wkup = awake(1000);
+	wkup = sys_awake(1000);
 	start = nsec();
 	if(verbose)
 		print("semacquire(&sem, 1)...\n");
-	res = semacquire(&sem, 1);
+	res = sys_semacquire(&sem, 1);
 	elapsed = (nsec() - start) / (1000 * 1000);
 	if(verbose)
 		print("semacquire(&sem, 1): returned %lld, elapsed = %d ms\n", res, elapsed);
@@ -114,7 +114,7 @@ main(void)
 	/* verify that tsemacquire are NOT interrupted */
 	fprint(2, "verify that tsemacquire are NOT interrupted\n", elapsed);
 	start = nsec();
-	wkup = awake(500);
+	wkup = sys_awake(500);
 	res = tsemacquire(&sem, 1500);
 	elapsed = (nsec() - start) / (1000 * 1000);
 	if(verbose)
@@ -131,9 +131,9 @@ main(void)
 		print("FAIL: pipe\n");
 		exits("FAIL");
 	}
-	wkup = awake(1000);
+	wkup = sys_awake(1000);
 	start = nsec();
-	res = read(fds[0], buf, 1);
+	res = jehanne_read(fds[0], buf, 1);
 	elapsed = (nsec() - start) / (1000 * 1000);
 	if(verbose)
 		fprint(2, "read(fds[0], buf, 1) returned %lld, elapsed = %d ms\n", res, elapsed);
@@ -149,7 +149,7 @@ main(void)
 		print("FAIL: pipe\n");
 		exits("FAIL");
 	}
-	wkup = awake(1000);
+	wkup = sys_awake(1000);
 	start = nsec();
 	res = writeTillBlock(fds[0]);
 	elapsed = (nsec() - start) / (1000 * 1000);

@@ -27,10 +27,10 @@ int spin;
 void
 main(void)
 {
-	rfork(RFNOTEG);
-	switch(rfork(RFPROC|RFMEM)){
+	sys_rfork(RFNOTEG);
+	switch(sys_rfork(RFPROC|RFMEM)){
 	case -1:
-		exits("rfork");
+		exits("sys_rfork");
 	case 0:
 		spin = 1;
 		while(spin)
@@ -40,9 +40,9 @@ main(void)
 		while(spin == 0)
 			;
 	}
-	switch(rfork(RFPROC|RFMEM)){
+	switch(sys_rfork(RFPROC|RFMEM)){
 	case -1:
-		exits("rfork");
+		exits("sys_rfork");
 	case 0:
 		spin = 2;
 		while(spin)

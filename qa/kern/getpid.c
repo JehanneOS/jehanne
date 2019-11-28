@@ -23,21 +23,21 @@ main(void)
 {
 	int pid;
 
-	rfork(RFNAMEG);
+	sys_rfork(RFNAMEG);
 	pid = getmainpid(); // this comes from exec() syscall
 
 	if(getpid() != pid){
 		print("FAIL: getpid() != getmainpid()\n");
 		exits("FAIL");
 	}
-	rfork(RFNOMNT);
+	sys_rfork(RFNOMNT);
 	if(getpid() != pid){
-		print("FAIL: rfork(RFNOMNT); getpid() != getmainpid()\n");
+		print("FAIL: sys_rfork(RFNOMNT); getpid() != getmainpid()\n");
 		exits("FAIL");
 	}
-	rfork(RFNOMNT|RFCNAMEG);
+	sys_rfork(RFNOMNT|RFCNAMEG);
 	if(getpid() != pid){
-		print("FAIL: rfork(RFNOMNT|RFCNAMEG)); getpid() != getmainpid()\n");
+		print("FAIL: sys_rfork(RFNOMNT|RFCNAMEG)); getpid() != getmainpid()\n");
 		exits("FAIL");
 	}
 

@@ -27,10 +27,10 @@ main(void)
 	test = (char **)privalloc();
 	*test = smprint("Hello from %d (at %p)\n", getpid(), test);
 	
-	rfork(RFNOTEG);
-	switch(rfork(RFPROC|RFMEM)){
+	sys_rfork(RFNOTEG);
+	switch(sys_rfork(RFPROC|RFMEM)){
 		case -1:
-			exits("rfork");
+			exits("sys_rfork");
 		case 0:
 			*test = smprint("Hello from %d (at %p)\n", getpid(), test);
 			spin = 1;
@@ -43,9 +43,9 @@ main(void)
 			while(spin == 0)
 				;
 	}
-	switch(rfork(RFPROC|RFMEM)){
+	switch(sys_rfork(RFPROC|RFMEM)){
 		case -1:
-			exits("rfork");
+			exits("sys_rfork");
 		case 0:
 			*test = smprint("Hello from %d (at %p)\n", getpid(), test);
 			spin = 2;

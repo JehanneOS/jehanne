@@ -189,7 +189,7 @@ POSIX_execve(int *errnop, const char *name, char * const*argv, char * const*env)
 	__libposix_close_on_exec();
 	__libposix_sighelper_cmd(PHCallingExec, 0);
 
-	sys_exec(name, argv);
+	sys_exec(name, (const char**)argv);
 	*errnop = __libposix_translate_errstr((uintptr_t)POSIX_execve);
 	return -1;
 }

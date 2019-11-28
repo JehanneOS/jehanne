@@ -57,16 +57,16 @@ main(void)
 		exits("atnotify fails");
 	}
 
-	alarm(5000);
+	sys_alarm(5000);
 	a2000 = nsec();
-	alarm(500);
+	sys_alarm(500);
 	a500 = nsec();
 	tStart = nsec();
 	sleep(1000);
 	tEnd = nsec();
 
 	if(verbose)
-		fprint(2, "%d: set alarm(2000)@%lld then alarm(500)@%lld; elapsed in sleep() %lld nanosecond\n", getpid(), a2000, a500, tEnd-tStart);
+		fprint(2, "%d: set sys_alarm(2000)@%lld then sys_alarm(500)@%lld; elapsed in sleep() %lld nanosecond\n", getpid(), a2000, a500, tEnd-tStart);
 
 	if((tEnd-tStart)/(1000 * 1000) > 500+2000+400 /* 400ms = acceptable error */){
 		print("FAIL: should sleep less\n");

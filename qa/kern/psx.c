@@ -27,7 +27,7 @@ main(int argc, char *argv[])
 		}
 		if (pid == 0) {
 			char *args[] = {"ps", nil};
-			exec("/arch/amd64/cmd/ps", args);
+			sys_exec("/arch/amd64/cmd/ps", (const char **)args);
 			fprint(2,"Exec fails: %r\n");
 			print("FAIL\n");
 			exits("FAIL");

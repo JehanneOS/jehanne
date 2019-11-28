@@ -24,22 +24,22 @@ main(void)
 	int ppid;
 	Waitmsg *w;
 
-	rfork(RFNAMEG);
-	if(rfork(RFPROC) == 0){
+	sys_rfork(RFNAMEG);
+	if(sys_rfork(RFPROC) == 0){
 		ppid = getmainpid(); // this comes from exec() syscall
 
 		if(getppid() != ppid){
 			print("FAIL: getppid() != getmainpid()\n");
 			exits("FAIL");
 		}
-		rfork(RFNOMNT);
+		sys_rfork(RFNOMNT);
 		if(getppid() != ppid){
-			print("FAIL: rfork(RFNOMNT); getppid() != getmainpid()\n");
+			print("FAIL: sys_rfork(RFNOMNT); getppid() != getmainpid()\n");
 			exits("FAIL");
 		}
-		rfork(RFNOMNT|RFCNAMEG);
+		sys_rfork(RFNOMNT|RFCNAMEG);
 		if(getppid() != ppid){
-			print("FAIL: rfork(RFNOMNT|RFCNAMEG)); getppid() != getmainpid()\n");
+			print("FAIL: sys_rfork(RFNOMNT|RFCNAMEG)); getppid() != getmainpid()\n");
 			exits("FAIL");
 		}
 		exits(nil);

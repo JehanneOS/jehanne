@@ -45,8 +45,12 @@ __jehanne_libc_init(int argc, char *argv[])
 static void
 call_main(int argc, char *argv[])
 {
-	extern void main(int argc, char *argv[]);
+	extern void main(int argc, char *argv[]) __attribute__((weak));
 
-	main(argc, argv);
-	jehanne_exits("main");
+	if(main != nil){
+		main(argc, argv);
+		jehanne_exits("main");
+	} else {
+		jehanne_exits("missing main");
+	}
 }

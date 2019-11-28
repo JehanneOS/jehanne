@@ -16,9 +16,9 @@ void
 callinsn(char *name, char *buf)
 {
 	void (*f)(void);
-	if (notify(handler)){
+	if (sys_notify(handler)){
 		fprint(2, "%r\n");
-		exits("notify fails");
+		exits("sys_notify fails");
 	}
 
 
@@ -31,9 +31,9 @@ callinsn(char *name, char *buf)
 void
 writeptr(char *name, void *ptr)
 {
-	if (notify(handler)){
+	if (sys_notify(handler)){
 		fprint(2, "%r\n");
-		exits("notify fails");
+		exits("sys_notify fails");
 	}
 
 	*(uintptr_t*)ptr = 0xdeadbeef;
@@ -48,9 +48,9 @@ main(void)
 	char stk[128];
 	char *mem;
 
-	switch(rfork(RFMEM|RFPROC)){
+	switch(sys_rfork(RFMEM|RFPROC)){
 	case -1:
-		sysfatal("rfork");
+		sysfatal("sys_rfork");
 	case 0:
 		stk[0] = RET;
 		callinsn("exec stack", stk);
@@ -59,9 +59,9 @@ main(void)
 		waitpid();
 	}
 
-	switch(rfork(RFMEM|RFPROC)){
+	switch(sys_rfork(RFMEM|RFPROC)){
 	case -1:
-		sysfatal("rfork");
+		sysfatal("sys_rfork");
 	case 0:
 		mem = malloc(128);
 		mem[0] = RET;
@@ -71,9 +71,9 @@ main(void)
 		waitpid();
 	}
 
-	switch(rfork(RFMEM|RFPROC)){
+	switch(sys_rfork(RFMEM|RFPROC)){
 	case -1:
-		sysfatal("rfork");
+		sysfatal("sys_rfork");
 	case 0:
 		writeptr("write code", (void*)&main);
 	default:
@@ -81,9 +81,9 @@ main(void)
 		waitpid();
 	}
 
-	switch(rfork(RFMEM|RFPROC)){
+	switch(sys_rfork(RFMEM|RFPROC)){
 	case -1:
-		sysfatal("rfork");
+		sysfatal("sys_rfork");
 	case 0:
 		writeptr("write rodata", (void*)str);
 	default:

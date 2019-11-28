@@ -11,14 +11,14 @@ main(void)
 
 	fail = 0;
 	for(i = 0; i < 10000; i++){
-		fd = open("/proc/1/status", OREAD);
-		n = read(fd, buf, sizeof buf);
+		fd = sys_open("/proc/1/status", OREAD);
+		n = jehanne_read(fd, buf, sizeof buf);
 		if(i != 0 && n != oldn){
 			fprint(2, "read %d, want %d\n", n, oldn);
 			fail++;
 		}
 		oldn = n;
-		close(fd);
+		sys_close(fd);
 	}
 	print("PASS\n");
 	exits("PASS");

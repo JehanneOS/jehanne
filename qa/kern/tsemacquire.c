@@ -17,7 +17,7 @@ tsemloop(void)
 				sleep(10);
 			incr++;
 			i++;
-			semrelease(&x, 1);
+			sys_semrelease(&x, 1);
 		} else {
 			//print("pid %d timeout\n", getpid());
 		}
@@ -31,10 +31,10 @@ semloop(void)
 	int i;
 	i = 0;
 	while(i < nloops){
-		if(semacquire(&x, 1)){
+		if(sys_semacquire(&x, 1)){
 			incr++;
 			i++;
-			semrelease(&x, 1);
+			sys_semrelease(&x, 1);
 		} else {
 			sysfatal("semacquire failed");
 		}
@@ -49,9 +49,9 @@ main(void)
 
 	incr = 0;
 	for(i = 0; i < nprocs; i++){
-		switch(rfork(RFMEM|RFPROC)){
+		switch(sys_rfork(RFMEM|RFPROC)){
 		case -1:
-			sysfatal("rfork");
+			sysfatal("sys_rfork");
 		case 0:
 			tsemloop();
 			exits("PASS");
@@ -69,9 +69,9 @@ main(void)
 
 	incr = 0;
 	for(i = 0; i < nprocs; i++){
-		switch(rfork(RFMEM|RFPROC)){
+		switch(sys_rfork(RFMEM|RFPROC)){
 		case -1:
-			sysfatal("rfork");
+			sysfatal("sys_rfork");
 		case 0:
 			semloop();
 			exits("PASS");
@@ -89,9 +89,9 @@ main(void)
 
 	incr = 0;
 	for(i = 0; i < nprocs; i++){
-		switch(rfork(RFMEM|RFPROC)){
+		switch(sys_rfork(RFMEM|RFPROC)){
 		case -1:
-			sysfatal("rfork");
+			sysfatal("sys_rfork");
 		case 0:
 			if((i&1) == 0)
 				semloop();

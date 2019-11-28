@@ -22,8 +22,8 @@ void
 handler(void *v, char *s)
 {
 	int64_t wakeup;
-	wakeup = awake(1000);
-	while(rendezvous(&wakeup, (void*)1) == (void*)~0)
+	wakeup = sys_awake(1000);
+	while(sys_rendezvous(&wakeup, (void*)1) == (void*)~0)
 		if(jehanne_awakened(wakeup)){
 			print("PASS\n");
 			exits(nil);
@@ -40,12 +40,12 @@ main(int argc, char**argv)
 	if(argc > 1){
 		fd = ocreate(argv[1], OWRITE, 0666);
 		dup(fd, 1);
-		close(fd);
+		sys_close(fd);
 	}
 
-	if (notify(handler)){
+	if (sys_notify(handler)){
 		fprint(2, "%r\n");
-		exits("notify fails");
+		exits("sys_notify fails");
 	}
 
 	print("%s %d: waiting for note", argv[0], getpid());

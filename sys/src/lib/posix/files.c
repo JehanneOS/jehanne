@@ -503,7 +503,7 @@ OnIgnoredSignalInterrupt:
 }
 
 int
-POSIX_close(int *errno, int file)
+POSIX_close(int *errnop, int file)
 {
 	long ret;
 
@@ -512,10 +512,10 @@ POSIX_close(int *errno, int file)
 	case 0:
 		return 0;
 	case ~0:
-		*errno = __libposix_translate_errstr((uintptr_t)POSIX_close);
+		*errnop = __libposix_translate_errstr((uintptr_t)POSIX_close);
 		break;
 	default:
-		*errno = ret;
+		*errnop = ret;
 		break;
 	}
 	return -1;

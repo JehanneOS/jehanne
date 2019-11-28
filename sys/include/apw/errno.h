@@ -108,11 +108,16 @@ typedef enum PosixError
 
 #endif
 
-#ifndef _ERRNO_H
-#define _ERRNO_H
+#ifndef _APW_ERRNO_H
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-extern int __errno();
-#define errno __errno()
+#define _APW_ERRNO_H
+#ifndef HIDE_JEHANNE_APW
+
+extern int *__errno (void);
+#define errno (*__errno())
 
 /* See The Open Group Base Specifications Issue 7
  * IEEE Std 1003.1-2008, 2016 Edition got from
@@ -212,4 +217,9 @@ extern int __errno();
 #define	EWOULDBLOCK	PosixEWOULDBLOCK
 #define	EXDEV		PosixEXDEV
 
+#endif /* HIDE_JEHANNE_APW */
+
+#ifdef __cplusplus
+}
 #endif
+#endif /* _APW_ERRNO_H */

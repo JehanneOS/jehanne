@@ -68,12 +68,12 @@ main(void)
 		exits("atnotify fails");
 	}
 
-	alarm(2000);
+	sys_alarm(2000);
 	a2000 = nsec();
-	alarm(500);
+	sys_alarm(500);
 	a500 = nsec();
 
-	rendezvous(&a500, (void*)0x123);
+	sys_rendezvous(&a500, (void*)0x123);
 
 	if(verbose)
 		fprint(2, "%d: set alarm(2000)@%lld then alarm(500)@%lld; received after %lld nanosecond\n", getpid(), a2000, a500, alarmReceived-a500);

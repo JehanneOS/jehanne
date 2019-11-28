@@ -25,17 +25,17 @@ main(int argc, char**argv)
 	char *path;
 	
 	path = smprint("/proc/%d/ctl", getpid());
-	fd = open(path, OWRITE);
+	fd = sys_open(path, OWRITE);
 	if(fd < 0){
 		print("FAIL: open");
 		exits("FAIL");
 	}
-	n = write(fd, "stop", 4);
+	n = jehanne_write(fd, "stop", 4);
 	if(n < 0){
 		print("FAIL: write");
 		exits("FAIL");
 	}
-	close(fd);
+	sys_close(fd);
 	print("PASS\n");
 	exits("PASS");
 }

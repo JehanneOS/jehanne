@@ -59,8 +59,8 @@ main() {
 		
 		printf("\nChild going to loop...\n\n");
 		write(p[1], "", 1);
-		close(p[1]);
-		close(p[0]);
+		sys_close(p[1]);
+		sys_close(p[0]);
 		for(;;); /* loop for ever */
 	}
 	else /* parent */
@@ -70,8 +70,8 @@ main() {
 			printf("sync read");
 			exit(EXIT_FAILURE);
 		}
-		close(p[1]);
-		close(p[0]);
+		sys_close(p[1]);
+		sys_close(p[0]);
 		printf("\nPARENT: sending SIGHUP\n\n");
 		kill(pid,SIGHUP);
 		sleep(3); /* pause for 3 secs */

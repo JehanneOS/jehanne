@@ -1,7 +1,6 @@
 {
 	"buildflags": {
 		"Cflags": [
-			"--sysroot=$JEHANNE",
 			"-fno-builtin",
 			"-fno-omit-frame-pointer",
 			"-fplan9-extensions",

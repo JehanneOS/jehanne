@@ -25,7 +25,7 @@ POSIX_sigqueue(int *errnop, int pid, int signo, const union sigval value)
 {
 	PosixError perror;
 	PosixSignalInfo siginfo;
-	int errno;
+	int throwaway_errno;
 
 	if(signo < 1 || signo > PosixNumberOfSignals){
 		*errnop = __libposix_get_errno(PosixEINVAL);
@@ -35,7 +35,7 @@ POSIX_sigqueue(int *errnop, int pid, int signo, const union sigval value)
 	siginfo.si_signo = signo;
 	siginfo.si_pid = *__libposix_pid;
 	siginfo.si_code = PosixSIQueue;
-	siginfo.si_uid = POSIX_getuid(&errno);
+	siginfo.si_uid = POSIX_getuid(&throwaway_errno);
 	siginfo.si_value._sival_raw = value._sival_raw;
 	if(pid == siginfo.si_pid)
 		perror = __libposix_receive_signal(&siginfo);

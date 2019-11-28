@@ -15,7 +15,9 @@
  * You should have received a copy of the GNU General Public License
  * along with Jehanne.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef _STRING_H
-#define _STRING_H
+#ifndef _APW_STRING_H
+#define _APW_STRING_H
+#ifndef HIDE_JEHANNE_APW
 #include "libc.wrapper.h"
+#endif
 #endif

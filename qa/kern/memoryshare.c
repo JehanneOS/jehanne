@@ -48,9 +48,9 @@ main(void)
 	pipe(p);
 	memset(buf, 0, sizeof buf);
 	
-	switch((pid = rfork(RFPROC|RFMEM))){
+	switch((pid = sys_rfork(RFPROC|RFMEM))){
 		case -1:
-			fprint(2, "FAIL: rfork: %r\n");
+			fprint(2, "FAIL: sys_rfork: %r\n");
 			exits("FAIL");
 			break;
 		case 0:
@@ -60,7 +60,7 @@ main(void)
 				fprint(2, "address %p, msg %s\n", msg, msg);
 				fprint(2, "sending %s\n", buf);
 			}
-			if(write(p[0], buf, i) < 0){
+			if(jehanne_write(p[0], buf, i) < 0){
 				fprint(2, "FAIL: write: %r\n");
 				exits("FAIL");
 			}
@@ -69,7 +69,7 @@ main(void)
 		default:
 			buf[0] = '0';
 			buf[1] = 'x';
-			if((i = read(p[1], buf+2, (sizeof buf) - 2)) <= 0){
+			if((i = jehanne_read(p[1], buf+2, (sizeof buf) - 2)) <= 0){
 				fprint(2, "FAIL: read: %r\n");
 				exits("FAIL");
 			}

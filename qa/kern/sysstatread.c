@@ -13,7 +13,7 @@ main(void)
 	int fd, n;
 	char buf[1];
 
-	fd = open("/dev/sysstat", OREAD);
+	fd = sys_open("/dev/sysstat", OREAD);
 	if(fd < 0){
 		print("FAIL: couldn't open /dev/sysstat: %r\n");
 		exits("FAIL");
@@ -21,13 +21,13 @@ main(void)
 
 	ret = 0;
 	for(;;){
-		n = read(fd, buf, sizeof(buf));
+		n = jehanne_read(fd, buf, sizeof(buf));
 		if(n <= 0)
 			break;
 		if(n > sizeof(buf))
 			ret = 1;
 	}
-	close(fd);
+	sys_close(fd);
 
 	if(ret){
 		print("FAIL: %d bytes read from /dev/sysstat\n", n);

@@ -13,9 +13,9 @@ void
 main(void)
 {
 	void (*f)(void) = nil;
-	if (notify(handler)){
+	if (sys_notify(handler)){
 		fprint(2, "%r\n");
-		exits("notify fails");
+		exits("sys_notify fails");
 	}
 
 	f();

@@ -43,7 +43,7 @@ spawnWaiter(Lock *l)
 	int pid;
 	int64_t start;
 
-	switch((pid = rfork(RFMEM|RFPROC|RFNOWAIT)))
+	switch((pid = sys_rfork(RFMEM|RFPROC|RFNOWAIT)))
 	{
 		case 0:
 			/* wait for the alwaysLocked to be locked by the main process */
@@ -64,7 +64,7 @@ spawnWaiter(Lock *l)
 			break;
 		case -1:
 			print("spawnWaiter: %r\n");
-			exits("rfork fails");
+			exits("sys_rfork fails");
 			break;
 		default:
 			if(verbose)
@@ -79,7 +79,7 @@ main(void)
 	int64_t start, elapsed, res;
 	static Lock l;
 
-	rfork(RFNOTEG|RFREND);
+	sys_rfork(RFNOTEG|RFREND);
 	rStart.l = &rl;
 	rCompleted.l = &rl;
 	resInWaiter = 0xff;
@@ -87,7 +87,7 @@ main(void)
 	spawnWaiter(&l);
 	jehanne_lock(&l);
 
-	alarm(20000);	/* global timeout, FAIL if reached */
+	sys_alarm(20000);	/* global timeout, FAIL if reached */
 	if (!atnotify(failOnTimeout, 1)){
 		fprint(2, "%r\n");
 		exits("atnotify fails");

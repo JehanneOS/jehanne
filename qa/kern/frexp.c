@@ -18,7 +18,7 @@ catcher(void *u, char *s)
 		err = s;
 		notejmp(u, errj, 0);
 	}
-	noted(NDFLT);
+	sys_noted(NDFLT);
 }
 
 void
@@ -51,7 +51,7 @@ main(void)
 	int exp;
 
 	err = 0;
-	notify(catcher);
+	sys_notify(catcher);
 	setjmp(errj);
 	if(err){
 		print("FAIL: %s\n", err);

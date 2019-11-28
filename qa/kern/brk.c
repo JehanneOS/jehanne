@@ -23,7 +23,7 @@ main(void)
 {
 	long b, b1;
 
-	b = create("#0/brk/set", -1, 16*1024*1024);
+	b = sys_create("#0/brk/set", -1, 16*1024*1024);
 	if(b >= 0){
 		print("FAIL: create returned fd %d.\n", b);
 		exits("FAIL");

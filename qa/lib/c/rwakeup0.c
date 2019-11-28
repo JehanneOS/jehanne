@@ -51,7 +51,7 @@ stopAllAfter(int seconds)
 {
 	int pid;
 
-	switch((pid = rfork(RFMEM|RFPROC|RFNOWAIT)))
+	switch((pid = sys_rfork(RFMEM|RFPROC|RFNOWAIT)))
 	{
 		case 0:
 			if(verbose)
@@ -63,7 +63,7 @@ stopAllAfter(int seconds)
 			exits("FAIL");
 		case -1:
 			fprint(2, "%r\n");
-			exits("rfork fails");
+			exits("sys_rfork fails");
 		default:
 			killerProc = pid;
 			atexit(killKiller);
@@ -78,7 +78,7 @@ main(int argc, char* argv[])
 	ARGBEGIN{
 	}ARGEND;
 
-	rfork(RFNOTEG|RFREND);
+	sys_rfork(RFNOTEG|RFREND);
 	if (!atnotify(handletimeout, 1)){
 		fprint(2, "%r\n");
 		exits("atnotify fails");
@@ -88,7 +88,7 @@ main(int argc, char* argv[])
 
 	stopAllAfter(30);
 	/* one process to sleep */
-	switch((s = rfork(RFMEM|RFPROC|RFNOWAIT)))
+	switch((s = sys_rfork(RFMEM|RFPROC|RFNOWAIT)))
 	{
 		case 0:
 			qlock(&l);
@@ -98,8 +98,8 @@ main(int argc, char* argv[])
 			exits(nil);
 			break;
 		case -1:
-			print("rfork: %r\n");
-			exits("rfork fails");
+			print("sys_rfork: %r\n");
+			exits("sys_rfork fails");
 			break;
 		default:
 			while(ready == 0)
@@ -107,7 +107,7 @@ main(int argc, char* argv[])
 			break;
 	}
 	/* one process to wakeup */
-	switch((w = rfork(RFMEM|RFPROC|RFNOWAIT)))
+	switch((w = sys_rfork(RFMEM|RFPROC|RFNOWAIT)))
 	{
 		case 0:
 			qlock(&l);
@@ -117,8 +117,8 @@ main(int argc, char* argv[])
 			exits(nil);
 			break;
 		case -1:
-			print("rfork: %r\n");
-			exits("rfork fails");
+			print("sys_rfork: %r\n");
+			exits("sys_rfork fails");
 			break;
 		default:
 			while(ready == 1)
@@ -132,13 +132,13 @@ main(int argc, char* argv[])
 		print("PASS\n");
 		exits("PASS");
 	}
-	if((s = open(smprint("/proc/%d/ctl", s), OWRITE)) >= 0){
-		write(s, "kill", 5);
-		close(s);
+	if((s = sys_open(smprint("/proc/%d/ctl", s), OWRITE)) >= 0){
+		jehanne_write(s, "kill", 5);
+		sys_close(s);
 	}
-	if((w = open(smprint("/proc/%d/ctl", w), OWRITE)) >= 0){
-		write(s, "kill", 5);
-		close(s);
+	if((w = sys_open(smprint("/proc/%d/ctl", w), OWRITE)) >= 0){
+		jehanne_write(s, "kill", 5);
+		sys_close(s);
 	}
 	print("FAIL\n");
 	exits("FAIL");

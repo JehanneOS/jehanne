@@ -24,8 +24,8 @@ void childloop(void)
 	signal(SIGSTOP,sigstop); /* set function calls */
 	printf("Child %d going to loop...\n", getpid());
 	write(p[1], "", 1);
-	close(p[1]);
-	close(p[0]);
+	sys_close(p[1]);
+	sys_close(p[0]);
 	for(;;){
 		/* loop for ever */
 		printf(".");
@@ -56,8 +56,8 @@ main() {
 	else /* parent */
 	{
 		read(p[0], &dummy, 1);
-		close(p[1]);
-		close(p[0]);
+		sys_close(p[1]);
+		sys_close(p[0]);
 		sleep(2);
 		printf("PARENT: sending SIGSTOP\n");
 		kill(pid,SIGSTOP);
@@ -76,4 +76,3 @@ main() {
 		}
 	}
 }
-

@@ -91,7 +91,7 @@ typedef enum PosixRUsages
 } PosixRUsages;
 
 /* errno values */
-#define _ERRNO_H	// skip the Posix part, we just need the enum
+#define _APW_ERRNO_H	// skip the Posix part, we just need the enum
 #include <apw/errno.h>
 
 /* signals */
@@ -312,7 +312,7 @@ extern int POSIX_waitpid(int *errnop, int pid, int *status, int options);
 extern long POSIX_write(int *errnop, int fd, const void *buf, size_t len);
 extern int POSIX_gettimeofday(int *errnop, void *timeval, void *timezone);
 extern char* POSIX_getenv(int *errnop, const char *name);
-extern int POSIX_setenv(int *errno, const char *name, const char *value, int overwrite);
+extern int POSIX_setenv(int *errnop, const char *name, const char *value, int overwrite);
 extern int POSIX_unsetenv(int *errnop, const char *name);
 extern void *POSIX_sbrk(int *errnop, ptrdiff_t incr);
 extern void * POSIX_malloc(int *errnop, size_t size);

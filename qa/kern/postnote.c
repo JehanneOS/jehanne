@@ -73,19 +73,19 @@ main(void)
 		exits("atnotify fails");
 	}
 	
-	rfork(RFNOTEG|RFNAMEG);
+	sys_rfork(RFNOTEG|RFNAMEG);
 
-	if(rfork(RFPROC) == 0){
+	if(sys_rfork(RFPROC) == 0){
 		ppid = getppid(); // this comes from exec() syscall
 
 		postnote(PNPROC, ppid, "proc");
 		postnote(PNGROUP, getpid(), "group");
 		
-		rfork(RFNOMNT);
+		sys_rfork(RFNOMNT);
 		postnote(PNPROC, ppid, "proc");
 		postnote(PNGROUP, getpid(), "group");
 		
-		rfork(RFNOMNT|RFCNAMEG);
+		sys_rfork(RFNOMNT|RFCNAMEG);
 		if(postnote(PNPROC, ppid, "proc") != -1 || 
 			postnote(PNGROUP, getpid(), "group") != -1){
 			exits("FAIL");

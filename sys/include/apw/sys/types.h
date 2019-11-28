@@ -15,7 +15,9 @@
  * You should have received a copy of the GNU General Public License
  * along with Jehanne.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef _SYS_TYPES_H
-#define _SYS_TYPES_H
+#ifndef _APW_SYS_TYPES_H
+#define _APW_SYS_TYPES_H
+#ifndef HIDE_JEHANNE_APW
 #include "libc.wrapper.h"
+#endif
 #endif

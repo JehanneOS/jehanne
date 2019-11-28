@@ -37,7 +37,7 @@ handler(void *v, char *s)
 		print("wait after %s terminated\n", s);
 		waited++;
 	}
-	noted(NCONT);
+	sys_noted(NCONT);
 }
 
 void
@@ -47,12 +47,12 @@ main(int argc, char**argv)
 	if(argc > 1){
 		fd = ocreate(argv[1], OWRITE, 0666);
 		dup(fd, 1);
-		close(fd);
+		sys_close(fd);
 	}
 
-	if (notify(handler)){
+	if (sys_notify(handler)){
 		fprint(2, "%r\n");
-		exits("notify fails");
+		exits("sys_notify fails");
 	}
 
 	print("note handler installed\n");

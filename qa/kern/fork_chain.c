@@ -21,8 +21,8 @@
 int r1;
 int r2;
 
-#define CHILD_READY(pid) ((long)rendezvous(&r1, (void*)(~(pid))))
-//#define C2P_READY(pid) ((long)rendezvous(&r2, (void*)(~(pid))))
+#define CHILD_READY(pid) ((long)sys_rendezvous(&r1, (void*)(~(pid))))
+//#define C2P_READY(pid) ((long)sys_rendezvous(&r2, (void*)(~(pid))))
 
 int *__target_pid;
 
@@ -30,7 +30,7 @@ static void
 forwarding_note_handler(void *ureg, char *note)
 {
 	postnote(PNPROC, *__target_pid, note);
-	noted(NDFLT);
+	sys_noted(NDFLT);
 }
 
 static void
@@ -49,24 +49,24 @@ crazy_fork(void)
 	int p2c;
 	long c2p = -1, child = -1;
 
-	switch(p2c = rfork(RFPROC|RFMEM)){
+	switch(p2c = sys_rfork(RFPROC|RFMEM)){
 	case -1:
 		return -1;
 	case 0:
-		switch(c2p = rfork(RFPROC|RFMEM)){
+		switch(c2p = sys_rfork(RFPROC|RFMEM)){
 		case -1:
-			exits("rfork (c2p)");
+			exits("sys_rfork (c2p)");
 		case 0:
 			switch(child = fork()){
 			case -1:
-				exits("rfork (child)");
+				exits("sys_rfork (child)");
 			case 0:
 				return 0;
 			default:
 				while(CHILD_READY(child) == -1)
 					;
 				*__target_pid = father;
-				notify(forwarding_note_handler);
+				sys_notify(forwarding_note_handler);
 				donothing();
 			}
 		default:
@@ -74,7 +74,7 @@ crazy_fork(void)
 				;
 			child = ~child;
 			*__target_pid = child;
-			notify(forwarding_note_handler);
+			sys_notify(forwarding_note_handler);
 			donothing();
 		}
 	default:
@@ -113,13 +113,13 @@ main(void)
 	case 0:
 		print("child is %d; child's parent is %d\n", getpid(), getppid());
 		*__target_pid = getppid();
-		notify(forwarding_note_handler);
+		sys_notify(forwarding_note_handler);
 		/* wait to be killed */
 		donothing();
 		break;
 	default:
 		print("father is %d; forked child is %d\n", getpid(), c);
-		sleep(1000); /* give children time to notify() */
+		sleep(1000); /* give children time to sys_notify() */
 		print("starting note chain\n");
 		postnote(PNPROC, c, "die");
 		/* wait to be killed by the chain */

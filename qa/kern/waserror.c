@@ -11,13 +11,13 @@ main(void)
 	char buf[1];
 	int i;
 	// Just to be sure.
-	if (close(3) >= 0) {
-		print("waserror: close of 3 did not get an error\n");
+	if (sys_close(3) >= 0) {
+		print("waserror: sys_close of 3 did not get an error\n");
 		exits("FAIL");
 	}
 
 	for(i = 0; i < 100000; i++) {
-		if (read(3, buf, 1) >= 0){
+		if (jehanne_read(3, buf, 1) >= 0){
 			print("waserror: read of 3 did not get an error\n");
 			exits("FAIL");
 		}

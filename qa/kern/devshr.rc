@@ -1,8 +1,8 @@
 #!/cmd/rc
 
-rfork
+sys_rfork
 
-@{rfork n; mkdir '#σc'/testshr; ramfs -S testshr; echo 3 > '#σc'/testshr/ramfs <>[3]/srv/testshr; echo PASS > '#σ'/testshr/file }
+@{sys_rfork n; mkdir '#σc'/testshr; ramfs -S testshr; echo 3 > '#σc'/testshr/ramfs <>[3]/srv/testshr; echo PASS > '#σ'/testshr/file }
 
 bind '#σ' /shr
 

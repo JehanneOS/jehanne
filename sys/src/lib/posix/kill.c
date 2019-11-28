@@ -27,7 +27,7 @@ POSIX_kill(int *errnop, int pid, int signo)
 {
 	PosixError perror;
 	PosixSignalInfo siginfo;
-	int errno;
+	int throwaway_errno;
 
 	if(signo < 1 || signo > PosixNumberOfSignals){
 		*errnop = __libposix_get_errno(PosixEINVAL);
@@ -37,7 +37,7 @@ POSIX_kill(int *errnop, int pid, int signo)
 	siginfo.si_signo = signo;
 	siginfo.si_pid = *__libposix_pid;
 	siginfo.si_code = PosixSIUser;
-	siginfo.si_uid = POSIX_getuid(&errno);
+	siginfo.si_uid = POSIX_getuid(&throwaway_errno);
 	if(pid == siginfo.si_pid)
 		perror = __libposix_receive_signal(&siginfo);
 	else

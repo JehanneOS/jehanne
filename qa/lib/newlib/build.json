@@ -6,10 +6,10 @@
 		"Cflags": [
 			"-fstack-check",
 			"-fstack-protector-all",
-			"/arch/$ARCH/lib/newlib/libc.a",
-			"/arch/$ARCH/lib/newlib/libm.a",
-			"/arch/$ARCH/lib/newlib/libg.a",
-			"-I", "/sys/posix/newlib",
+			"/pkgs/newlib/x86_64-jehanne/lib/libc.a",
+			"/pkgs/newlib/x86_64-jehanne/lib/libm.a",
+			"/pkgs/newlib/x86_64-jehanne/lib/libg.a",
+			"-I", "/posix/include",
 			"-O2",
 			"-std=gnu11"
 		],
@@ -73,10 +73,10 @@
 		"Cflags": [
 			"-fstack-check",
 			"-fstack-protector-all",
-			"/arch/$ARCH/lib/newlib/libc.a",
-			"/arch/$ARCH/lib/newlib/libm.a",
-			"/arch/$ARCH/lib/newlib/libg.a",
-			"-I", "/sys/posix/newlib",
+			"/pkgs/newlib/x86_64-jehanne/lib/libc.a",
+			"/pkgs/newlib/x86_64-jehanne/lib/libm.a",
+			"/pkgs/newlib/x86_64-jehanne/lib/libg.a",
+			"-I", "/posix/include",
 			"-O2",
 			"-DWITH_SIGCHLD",
 			"-std=gnu11"

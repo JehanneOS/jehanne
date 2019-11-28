@@ -52,7 +52,7 @@ main(void)
 	}
 
 	int fd;
-	fd = open("#|", ORDWR);
+	fd = sys_open("#|", ORDWR);
 	sys_mount(fd, -1, "/tmp", MREPL, "", 'M');
 
 	print("PASS\n");

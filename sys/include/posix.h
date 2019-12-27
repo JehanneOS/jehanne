@@ -1,7 +1,7 @@
 /*
  * This file is part of Jehanne.
  *
- * Copyright (C) 2017-2019 Giacomo Tesio <giacomo@tesio.it>
+ * Copyright (C) 2017-2020 Giacomo Tesio <giacomo@tesio.it>
  *
  * This is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -91,8 +91,9 @@ typedef enum PosixRUsages
 } PosixRUsages;
 
 /* errno values */
-#define _APW_ERRNO_H	// skip the Posix part, we just need the enum
+#define _APW_ERRNO_H	// skip the POSIX part, we just need the enum
 #include <apw/errno.h>
+#undef _APW_ERRNO_H
 
 /* signals */
 typedef unsigned long PosixSignalMask;

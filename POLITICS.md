@@ -5,7 +5,7 @@ turning them to hackers.
 
 To this aim I want to build the simplest possible distributed
 operating system that can provide all the services people expect
-from a modern operating system and much more. This way, people
+from a modern operating system and much more. This way, everybody
 will be able to read and understand its internals and to code
 their own tools for it.
 

@@ -92,7 +92,7 @@
 				"comconsole": "/arch/$ARCH/cmd/hmi/comconsole",
 				"srv": "/arch/$ARCH/cmd/srv"
 			},
-			"Systab": "/sys/src/lib/c/9syscall/sys.h"
+			"Systab": "/sys/src/lib/jehanne/9syscall/sys.h"
 		},
 		"Post": [
 			"OBJCOPY=objcopy; $TOOLPREFIX$OBJCOPY -I elf64-x86-64 -O elf32-i386 workhorse $JEHANNE/hacking/bin/workhorse.32bit",

@@ -15,7 +15,7 @@
 			"-mcmodel=small"
 		],
 		"Libs": [
-			"/arch/$ARCH/lib/libc.a"
+			"/arch/$ARCH/lib/libjehanne.a"
 		],
 		"Post": [
 			"export TOOL=strip && $TOOLPREFIX$TOOL init",

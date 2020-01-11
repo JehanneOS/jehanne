@@ -11,7 +11,7 @@
 		"Library": "klibc.a",
 		"Pre": [
 			"usyscalls header $JEHANNE/sys/src/sysconf.json > $JEHANNE/arch/amd64/include/syscalls.h",
-			"usyscalls code $JEHANNE/sys/src/sysconf.json > $JEHANNE/sys/src/lib/c/amd64/syscalls.c"
+			"usyscalls code $JEHANNE/sys/src/sysconf.json > $JEHANNE/sys/src/lib/jehanne/amd64/syscalls.c"
 		],
 		"SourceFiles": [
 			"9sys/convD2M.c",

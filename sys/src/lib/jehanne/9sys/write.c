@@ -18,8 +18,8 @@
 #include <u.h>
 #include <libc.h>
 
-int
-jehanne_read(int fd, void* buf, int nbytes)
+long
+jehanne_write(int fd, const void* buf, int nbytes)
 {
-	return sys_pread(fd, buf, nbytes, ~0LL);
+	return sys_pwrite(fd, buf, nbytes, ~0LL);
 }

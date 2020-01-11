@@ -73,7 +73,7 @@
 			"Ramfiles": {
 				"rofs": "/arch/$ARCH/cmd/disk/rofs"
 			},
-			"Systab": "/sys/src/lib/c/9syscall/sys.h"
+			"Systab": "/sys/src/lib/jehanne/9syscall/sys.h"
 		},
 		"Post": [
 			"#strip $JEHANNE/arch/$ARCH/kern/jehanne"

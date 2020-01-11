@@ -1,7 +1,7 @@
 {
 	"klibs": {
 		"Projects": [
-			"/sys/src/lib/c/klibc.json",
+			"/sys/src/lib/jehanne/klibc.json",
 			"/sys/src/lib/9p2000/klib9p2000.json",
 			"/sys/src/lib/ip/klibip.json",
 			"/sys/src/lib/draw/klibdraw.json",

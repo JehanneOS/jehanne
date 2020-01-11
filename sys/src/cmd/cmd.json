@@ -34,7 +34,7 @@
 			"-lthread",
 			"-lbio",
 			"-l9p2000",
-			"-lc"
+			"-ljehanne"
 		],
 		"Post": [
 			"rm -f *.o"

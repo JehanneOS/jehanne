@@ -19,7 +19,7 @@
 			"/arch/$ARCH/lib/libauth.a",
 			"/arch/$ARCH/lib/libbio.a",
 			"/arch/$ARCH/lib/libip.a",
-			"/arch/$ARCH/lib/libc.a"
+			"/arch/$ARCH/lib/libjehanne.a"
 		],
 		"Oflags": [
 			"-static"

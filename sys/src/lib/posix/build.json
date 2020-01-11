@@ -42,7 +42,7 @@
 			"-static",
 			"-lposix",
 			"-l9p2000",
-			"-lc"
+			"-ljehanne"
 		],
 		"SourceFilesCmd": [
 			"posixly.c"

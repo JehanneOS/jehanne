@@ -12,7 +12,7 @@
 		],
 		"Program": "fdisk",
 		"SourceFiles": [
-			"/sys/src/lib/c/lib9.c",
+			"/sys/src/lib/jehanne/lib9.c",
 			"fdisk.c",
 			"edit.c",
 			"y.tab.c"

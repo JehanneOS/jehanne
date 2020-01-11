@@ -7,7 +7,7 @@
 		"Oflags": [
 			"-static",
 			"-l9p2000",
-			"-lc"
+			"-ljehanne"
 		],
 		"Program": "comconsole",
 		"SourceFiles": [

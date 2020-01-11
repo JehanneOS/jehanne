@@ -19,8 +19,8 @@
 #include <u.h>
 #include <libc.h>
 
-/* osys_create works like the Plan 9 create(2) syscall, but with different races.
- * In Plan 9 tjere os a race due to the different behaviour between the
+/* ocreate works like the Plan 9 create(2) syscall, but with different races.
+ * In Plan 9 there is a race due to the different behaviour between the
  * create syscall and the Tcreate message in 9P2000 when the file already exists:
  * see https://github.com/brho/plan9/blob/master/sys/src/9/port/chan.c#L1564-L1603
  * for details.

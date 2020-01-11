@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2017 Giacomo Tesio <giacomo@tesio.it>
+ * Copyright (C) 2015-2020 Giacomo Tesio <giacomo@tesio.it>
  *
  * This file is part of the UCB release of Plan 9. It is subject to the license
  * terms in the LICENSE file found in the top-level directory of this
@@ -9,8 +9,8 @@
  * in the LICENSE file.
  */
 
-#pragma	lib	"libc.a"
-#pragma	src	"/sys/src/lib/c"
+#pragma	lib	"libjehanne.a"
+#pragma	src	"/sys/src/lib/jehanne"
 
 #define JEHANNE_LIBC	/* only for native code */
 
@@ -614,8 +614,8 @@ extern	Waitmsg*	jehanne_wait(void);
 extern	int	jehanne_waitpid(void);
 extern	int	jehanne_wstat(const char*, uint8_t*, int);
 
-extern	int32_t	jehanne_read(int, void*, int32_t);
-extern	int32_t	jehanne_write(int, const void*, int32_t);
+extern	long	jehanne_read(int, void*, int32_t);
+extern	long	jehanne_write(int, const void*, int32_t);
 
 extern	Dir*	jehanne_dirstat(const char*);
 extern	Dir*	jehanne_dirfstat(int);

@@ -8,7 +8,7 @@
 			"-DKERNDATE=1433623937",
 			"-c",
 			"-I.",
-			"-I$JEHANNE/sys/src/lib/c",
+			"-I$JEHANNE/sys/src/lib/jehanne",
 			"-mcmodel=kernel",
 			"-O0",
 			"-static",

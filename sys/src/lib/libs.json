@@ -1,7 +1,7 @@
 {
 	"libs.json": {
 		"Projects": [
-			"/sys/src/lib/c/",
+			"/sys/src/lib/jehanne/",
 			"/sys/src/lib/9p2000",
 			"/sys/src/lib/ip/",
 			"/sys/src/lib/draw/",

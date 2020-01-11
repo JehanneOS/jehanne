@@ -83,7 +83,7 @@
 		"Install": "/arch/$ARCH/cmd/",
 		"Program": "mpc",
 		"SourceFiles": [
-			"/sys/src/lib/c/lib9.c",
+			"/sys/src/lib/jehanne/lib9.c",
 			"mpc.c"
 		]
 	},

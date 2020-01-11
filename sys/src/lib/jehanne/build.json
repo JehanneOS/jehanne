@@ -15,7 +15,7 @@
 			"$ARCH/crtn.s"
 		]
 	},
-	"Libc": {
+	"LibJehanne": {
 		"Cflags": [
 			"-fasm"
 		],
@@ -23,10 +23,10 @@
 			"../lib.json"
 		],
 		"Install": "/arch/$ARCH/lib/",
-		"Library": "libc.a",
+		"Library": "libjehanne.a",
 		"Pre": [
 			"usyscalls header $JEHANNE/sys/src/sysconf.json > $JEHANNE/arch/amd64/include/syscalls.h",
-			"usyscalls code $JEHANNE/sys/src/sysconf.json > $JEHANNE/sys/src/lib/c/amd64/syscalls.c"
+			"usyscalls code $JEHANNE/sys/src/sysconf.json > $JEHANNE/sys/src/lib/jehanne/amd64/syscalls.c"
 		],
 		"Post": [
 			"TOOL=ar; $TOOLPREFIX$TOOL rcs $JEHANNE/arch/$ARCH/lib/libssp.a",

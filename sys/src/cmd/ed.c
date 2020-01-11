@@ -133,9 +133,6 @@ void	substitute(int);
 static Rune la;
 static Rune lr;
 
-#undef read
-extern int jehanne_read(int, void*, int);
-
 void
 main(int argc, char *argv[])
 {

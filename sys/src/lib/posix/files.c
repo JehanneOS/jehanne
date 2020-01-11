@@ -344,6 +344,9 @@ POSIX_open(int *errnop, const char *name, int flags, int mode)
 	}
 	if(cperm == 0){
 		f = sys_open(name, omode);
+	} else if ((cperm&DMEXCL) != 0) {
+		cperm &= ~DMEXCL;
+		f = sys_create(name, (unsigned int)omode, (unsigned int)cperm);
 	} else {
 		f = ocreate(name, (unsigned int)omode, (unsigned int)cperm);
 	}

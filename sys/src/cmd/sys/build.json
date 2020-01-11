@@ -6,7 +6,7 @@
 		"Install": "/arch/$ARCH/cmd/sys/",
 		"Oflags": [
 			"-static",
-			"-lc"
+			"-ljehanne"
 		],
 		"Projects": [
 			"call/"

@@ -256,7 +256,6 @@ struct Mach
 	int		pfault;
 	int		cs;
 	int		syscall;
-	int		load;
 	int		intr;
 	int		mmuflush;	/* make current proc flush it's mmu state */
 	int		ilockdepth;
@@ -323,6 +322,8 @@ struct Sys
 	unsigned int	ialloc;		/* max interrupt time allocation in bytes */
 	unsigned int	pipeqsize;	/* size in bytes of pipe queues */
 	int		nuart;		/* number of uart devices */
+
+	int		load;
 
 	char*		architecture;
 	uint64_t	ticks;

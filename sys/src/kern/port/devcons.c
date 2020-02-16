@@ -964,7 +964,7 @@ consread(Chan *c, void *buf, long n, int64_t off)
 			bp += NUMSIZE;
 			readnum(0, bp, NUMSIZE, mp->tlbpurge, NUMSIZE);
 			bp += NUMSIZE;
-			readnum(0, bp, NUMSIZE, mp->load, NUMSIZE);
+			readnum(0, bp, NUMSIZE, sys->load, NUMSIZE);
 			bp += NUMSIZE;
 			readnum(0, bp, NUMSIZE,
 				(mp->perf.avg_inidle*100)/mp->perf.period,

@@ -291,7 +291,7 @@ reprioritize(Proc *p)
 {
 	int fairshare, n, load, ratio;
 
-	load = sys->machptr[0]->load;
+	load = sys->load;
 	if(load == 0)
 		return p->basepri;
 
@@ -1780,5 +1780,5 @@ accounttime(void)
 	n = nrun;
 	nrun = 0;
 	n = (nrdy+n)*1000;
-	m->load = (m->load*(HZ-1)+n)/HZ;
+	sys->load = (sys->load*(HZ-1)+n)/HZ;
 }

@@ -208,7 +208,7 @@ main(int argc, char* argv[])
 	}
 	average = average / NPROC / (1000 * 1000);
 
-	if(average < 1000) /* we asked for 1ms... we are dumb, after all */
+	if(average < 3000) /* we asked for 1ms... we are dumb, after all */
 	{
 		print("PASS\n");
 		exits("PASS");

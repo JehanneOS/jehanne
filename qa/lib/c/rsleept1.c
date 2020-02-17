@@ -197,7 +197,7 @@ main(int argc, char* argv[])
 	qunlock(&rl);
 
 	/* wait for ~1 sec */
-	do { sleep(100); } while(nsec() < end);
+	do { sleep(1000); } while(nsec() < end);
 
 	qlock(&l);
 	awakened = rwakeupall(&afterAWhile);

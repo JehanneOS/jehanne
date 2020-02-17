@@ -111,7 +111,7 @@ waiter(int index)
 		if(verbose)
 			print("waiter %d: got the qlock in %lld ms\n", getpid(), (end - start) / (1000*1000));
 		qunlock(&afterAWhile);
-		if((end - start) / (1000*1000) > 1500)
+		if((end - start) / (1000*1000) > 3000)
 			postnote(PNGROUP, getpid(), smprint("fail: waiter %d got the qlock after %lld ms", getpid(),  (end - start) / (1000*1000)));
 	} else {
 		if(verbose)

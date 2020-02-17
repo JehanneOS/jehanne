@@ -32,18 +32,18 @@ main(int argc, char *argv[])
 
 		pipe(sync);
 		outfd = dup(1);
-		nullfd = sys_open("/dev/null", O_WRONLY);
+		nullfd = open("/dev/null", O_WRONLY);
 		tmp = fcntl(sync[0], F_DUPFD_CLOEXEC, 1);
-		sys_close(sync[0]);
+		close(sync[0]);
 		sync[0] = tmp;
 		tmp = fcntl(sync[1], F_DUPFD_CLOEXEC, 1);
-		sys_close(sync[1]);
+		close(sync[1]);
 		sync[1] = tmp;
 		tmp = fcntl(outfd, F_DUPFD_CLOEXEC, 1);
-		sys_close(outfd);
+		close(outfd);
 		outfd = tmp;
 		tmp = fcntl(nullfd, F_DUPFD_CLOEXEC, 1);
-		sys_close(nullfd);
+		close(nullfd);
 		nullfd = tmp;
 
 		eargv[0] = argv[0];

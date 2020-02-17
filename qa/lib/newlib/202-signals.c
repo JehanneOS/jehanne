@@ -29,8 +29,8 @@ main() {
 		signal(SIGCONT,sigcont); /* set function calls */
 		printf("Child going to loop...\n");
 		write(p[1], "", 1);
-		sys_close(p[1]);
-		sys_close(p[0]);
+		close(p[1]);
+		close(p[0]);
 		for(;;){
 			/* loop for ever */
 			printf(".");
@@ -40,8 +40,8 @@ main() {
 	else /* parent */
 	{
 		read(p[0], &dummy, 1);
-		sys_close(p[1]);
-		sys_close(p[0]);
+		close(p[1]);
+		close(p[0]);
 		printf("PARENT: sending SIGCONT\n\n");
 		kill(pid,SIGCONT);
 		child = wait(&cstatus);

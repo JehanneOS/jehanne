@@ -1178,7 +1178,7 @@ qhinterrupt(Ctlr * _, Ep *ep, Qio *io, Td *td, int __)
 			td->ctrl &= ~(Tdccmask << Tdccshift);
 			break;
 		}
-		/* else fall; it's an error */
+		/* Else falls through */ /* it's an error */
 	case Tdcrc:
 	case Tdbitstuff:
 	case Tdbadtog:

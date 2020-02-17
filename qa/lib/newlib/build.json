@@ -4,6 +4,7 @@
 			"/arch/$ARCH/include/cflags.json"
 		],
 		"Cflags": [
+			"-isystem", "/posix/lib/gcc/x86_64-jehanne/9.2.0/include",
 			"-fstack-check",
 			"-fstack-protector-all",
 			"/pkgs/newlib/x86_64-jehanne/lib/libc.a",
@@ -15,8 +16,7 @@
 		],
 		"Oflags": [
 			"-static",
-			"-lposix",
-			"-lc"
+			"-lposix"
 		],
 		"Install": "/arch/$ARCH/qa/lib/newlib",
 		"Post": [
@@ -71,6 +71,7 @@
 			"/arch/$ARCH/include/cflags.json"
 		],
 		"Cflags": [
+			"-isystem", "/posix/lib/gcc/x86_64-jehanne/9.2.0/include",
 			"-fstack-check",
 			"-fstack-protector-all",
 			"/pkgs/newlib/x86_64-jehanne/lib/libc.a",
@@ -83,8 +84,7 @@
 		],
 		"Oflags": [
 			"-static",
-			"-lposix",
-			"-lc"
+			"-lposix"
 		],
 		"Install": "/arch/$ARCH/qa/lib/newlib/sigchld",
 		"Post": [

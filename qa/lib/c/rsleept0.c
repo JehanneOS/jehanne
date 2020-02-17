@@ -209,7 +209,7 @@ main(int argc, char* argv[])
 	}
 	average = average / NPROC / (1000 * 1000);
 
-	if(average > 900 && average < 1300) /* 30% error on timeout is acceptable */
+	if(average > 900 && average < 3000)
 	{
 		print("PASS\n");
 		exits("PASS");

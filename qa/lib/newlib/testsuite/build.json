@@ -4,6 +4,7 @@
 			"/arch/$ARCH/include/cflags.json"
 		],
 		"Cflags": [
+			"-isystem", "/posix/lib/gcc/x86_64-jehanne/9.2.0/include",
 			"-iquote", "/hacking/cross/pkgs/newlib/src/newlib/testsuite/include/",
 			"-fstack-check",
 			"-Wno-unused-variable",
@@ -18,8 +19,7 @@
 		],
 		"Oflags": [
 			"-static",
-			"-lposix",
-			"-lc"
+			"-lposix"
 		],
 		"Post": [
 			"mkdir -p $JEHANNE/arch/$ARCH/qa/lib/newlib/testsuite",

@@ -17,7 +17,7 @@ void parent_read(int p[])
 	char buf[MSGSIZE];
  
 	// write link
-	sys_close(p[1]);
+	close(p[1]);
  
 	while (1) {
  
@@ -45,7 +45,7 @@ void parent_read(int p[])
 			printf("End of conversation\n");
  
 			// read link
-			sys_close(p[0]);
+			close(p[0]);
  
 			exit(0);
 		default:
@@ -62,7 +62,7 @@ void child_write(int p[])
 	int i;
  
 	// read link
-	sys_close(p[0]);
+	close(p[0]);
  
 	// write 3 times "hello" in 3 second interval
 	for (i = 0; i < 3; i++) {
@@ -74,7 +74,7 @@ void child_write(int p[])
 	write(p[1], msg2, MSGSIZE);
  
 	// here after write all bytes then write end
-	// doesn't sys_close so read end block but
+	// doesn't close so read end block but
 	// because of fcntl block doesn't happen..
 	exit(0);
 }

@@ -112,7 +112,7 @@ waiter(int index)
 		if(verbose)
 			print("writer %d: got the wlock in %lld ms\n", getpid(), (end - start) / (1000*1000));
 		wunlock(&afterAWhile);
-		if((end - start) / (1000*1000) > 1300)
+		if((end - start) / (1000*1000) > 5000)
 			postnote(PNGROUP, getpid(), smprint("fail: writer %d got the wlock after %lld ms", getpid(),  (end - start) / (1000*1000)));
 	} else {
 		if(verbose)
@@ -127,7 +127,7 @@ waiter(int index)
 	rwakeup(&rCompleted);
 	qunlock(&rl);
 
-	return (end - start) / (1000*1000) < 1300 ? nil : "FAIL";
+	return (end - start) / (1000*1000) < 5000 ? nil : "FAIL";
 }
 
 void

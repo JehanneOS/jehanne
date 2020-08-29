@@ -450,6 +450,11 @@ translate_jehanne_kernel_note(const char *note, PosixSignalInfo *siginfo)
 		siginfo->si_signo = PosixSIGSEGV;
 		note += 26;
 		siginfo->si_value._sival_raw = atoll(note);
+	} else if(strncmp("trap: general protection violation", note, 34) == 0){
+		// trap: general protection violation pc=0x41cc54
+		siginfo->si_signo = PosixSIGSEGV;
+		note += 38;
+		siginfo->si_value._sival_raw = atoll(note);
 	}
 	// TODO: implement
 

@@ -6,6 +6,7 @@
 		"Cflags": [
 			"-DKERNEL",
 			"-DKERNDATE=1433623937",
+			"-9",
 			"-c",
 			"-I.",
 			"-I$JEHANNE/sys/src/lib/jehanne",

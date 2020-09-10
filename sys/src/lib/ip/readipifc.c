@@ -9,7 +9,7 @@
 
 #include <u.h>
 #include <lib9.h>
-#include <ctype.h>
+#include <jehanne/ctype.h>
 #include <ip.h>
 
 static Ipifc**

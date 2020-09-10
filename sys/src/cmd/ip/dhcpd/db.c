@@ -18,7 +18,7 @@
 #include <ip.h>
 #include <bio.h>
 #include <ndb.h>
-#include <ctype.h>
+#include <jehanne/ctype.h>
 #include "dat.h"
 
 /*

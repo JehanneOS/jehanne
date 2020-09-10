@@ -7,10 +7,10 @@
  * in the LICENSE file.
  */
 
-#include	<u.h>
-#include	<lib9.h>
-#include	<ctype.h>
-#include	<bio.h>
+#include <u.h>
+#include <lib9.h>
+#include <jehanne/ctype.h>
+#include <bio.h>
 
 /*
  * tail command, posix plus v10 option -r.

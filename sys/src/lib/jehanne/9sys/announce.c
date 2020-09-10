@@ -9,7 +9,7 @@
 
 #include <u.h>
 #include <libc.h>
-#include <ctype.h>
+#include <jehanne/ctype.h>
 
 static int	nettrans(const char*, char*, int na, char*, int);
 

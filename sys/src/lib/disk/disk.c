@@ -1,7 +1,7 @@
 #include <u.h>
 #include <lib9.h>
 #include <bio.h>
-#include <ctype.h>
+#include <jehanne/ctype.h>
 #include <disk.h>
 
 static Disk*

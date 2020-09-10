@@ -38,6 +38,9 @@
 		]
 	},
 	"B.Exec": {
+		"Cflags": [
+			"-9"
+		],
 		"Include": [
 			"/arch/$ARCH/include/cflags.json"
 		],

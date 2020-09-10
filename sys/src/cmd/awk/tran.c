@@ -25,7 +25,7 @@ THIS SOFTWARE.
 #include <u.h>
 #include <lib9.h>
 #include <envvars.h>
-#include <ctype.h>
+#include <jehanne/ctype.h>
 #include <bio.h>
 #include "awk.h"
 #include "y.tab.h"

@@ -1,7 +1,7 @@
 #include "os.h"
 #include <mp.h>
 #include <libsec.h>
-#include <ctype.h>
+#include <jehanne/ctype.h>
 
 extern void jacobian_affine(mpint *p,
 	mpint *X, mpint *Y, mpint *Z);

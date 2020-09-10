@@ -14,7 +14,7 @@
 #include <lib9.h>
 #include <libsec.h>
 #include <authsrv.h>
-#include <ctype.h>
+#include <jehanne/ctype.h>
 #include <bio.h>
 #include "authcmdlib.h"
 

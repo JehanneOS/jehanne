@@ -144,7 +144,7 @@ arglist:  /* nothing */ 	{ $$ = 0; }
 %%
 	/* end of grammar */
 #include <bio.h>
-#include <ctype.h>
+#include <jehanne/ctype.h>
 char	*progname;
 int	lineno = 1;
 jmp_buf	begin;

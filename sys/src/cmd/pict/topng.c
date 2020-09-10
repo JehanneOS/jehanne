@@ -2,7 +2,7 @@
 #include <lib9.h>
 #include <draw.h>
 #include <memdraw.h>
-#include <ctype.h>
+#include <jehanne/ctype.h>
 #include <bio.h>
 #include <flate.h>
 #include "imagefile.h"

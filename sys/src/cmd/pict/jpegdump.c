@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
-#include <ctype.h>
+#include <jehanne/ctype.h>
 
 /* subroutines done by macros */
 #define min(A,B)	((A)<(B) ? (A) : (B))

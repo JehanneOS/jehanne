@@ -1,5 +1,8 @@
 {
 	"rc": {
+		"Cflags": [
+			"-9"
+		],
 		"Include": [
 			"../kernel.json"
 		],

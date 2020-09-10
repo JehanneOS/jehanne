@@ -39,7 +39,7 @@
 
 #include "cons.h"
 
-#include <ctype.h>
+#include <jehanne/ctype.h>
 
 int	wraparound = 1;
 int	originrelative = 0;

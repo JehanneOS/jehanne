@@ -4,6 +4,7 @@
 			"/arch/$ARCH/include/cflags.json"
 		],
 		"Cflags": [
+			"-9",
 			"-fstack-check",
 			"-fstack-protector-all"
 		],

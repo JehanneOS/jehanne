@@ -4,6 +4,9 @@
 			"/arch/$ARCH/include/cflags.json"
 		],
 		"Install": "/arch/$ARCH/cmd/hmi",
+		"Cflags": [
+			"-9"
+		],
 		"Oflags": [
 			"-static",
 			"-l9p2000",

@@ -4,7 +4,6 @@
 			"/arch/$ARCH/include/cflags.json"
 		],
 		"Cflags": [
-			"--posixly",
 			"-fstack-check",
 			"-fstack-protector-all",
 			"-O2",
@@ -66,7 +65,6 @@
 			"/arch/$ARCH/include/cflags.json"
 		],
 		"Cflags": [
-			"--posixly",
 			"-fstack-check",
 			"-fstack-protector-all",
 			"-O2",

@@ -25,7 +25,7 @@
 #include <plumb.h>
 #include "dat.h"
 #include "fns.h"
-#include <ctype.h>
+#include <jehanne/ctype.h>
 
 char	Ebadwr[]		= "bad rectangle in wctl request";
 char	Ewalloc[]		= "window allocation failed in wctl request";

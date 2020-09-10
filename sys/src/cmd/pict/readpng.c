@@ -1,6 +1,6 @@
 #include <u.h>
 #include <lib9.h>
-#include <ctype.h>
+#include <jehanne/ctype.h>
 #include <bio.h>
 #include <flate.h>
 #include <draw.h>

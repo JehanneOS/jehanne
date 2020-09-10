@@ -1,6 +1,7 @@
 {
 	"inith": {
 		"Cflags": [
+			"-9",
 			"-g",
 			"-Wall",
 			"-Wno-missing-braces",

@@ -1,7 +1,6 @@
 {
 	"buildflags": {
 		"Cflags": [
-			"-fno-builtin",
 			"-fno-omit-frame-pointer",
 			"-fplan9-extensions",
 			"-fvar-tracking",

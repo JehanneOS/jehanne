@@ -11,7 +11,7 @@
  * pANS stdio -- vfscanf
  */
 #include "iolib.h"
-#include <ctype.h>
+#include <jehanne/ctype.h>
 static int icvt_f(FILE *f, va_list *args, int store, int width, int type);
 static int icvt_x(FILE *f, va_list *args, int store, int width, int type);
 static int icvt_sq(FILE *f, va_list *args, int store, int width, int type);

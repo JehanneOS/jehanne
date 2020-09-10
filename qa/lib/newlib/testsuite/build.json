@@ -4,7 +4,6 @@
 			"/arch/$ARCH/include/cflags.json"
 		],
 		"Cflags": [
-			"--posixly",
 			"-iquote", "/hacking/cross/pkgs/newlib/src/newlib/testsuite/include/",
 			"-fstack-check",
 			"-Wno-unused-variable",

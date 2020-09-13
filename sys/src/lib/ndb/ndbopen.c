@@ -11,7 +11,7 @@
 #include <lib9.h>
 #include <envvars.h>
 #include <bio.h>
-#include <jehanne/ctype.h>
+#include <chartypes.h>
 #include <ndb.h>
 #include "ndbhf.h"
 

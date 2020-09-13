@@ -7,7 +7,7 @@
  * in the LICENSE file.
  */
 
-#include <jehanne/ctype.h>
+#include <chartypes.h>
 
 int
 jehanne_toupper(int c)

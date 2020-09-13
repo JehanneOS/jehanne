@@ -1,16 +1,20 @@
 {
 	"SimplePOSIXTests": {
-		"Include": [
-			"/arch/$ARCH/include/cflags.json"
-		],
 		"Cflags": [
+			"-g",
+			"-gdwarf-2",
+			"-ggdb",
+			"-mcmodel=small",
+			"-O0",
+			"-Wall",
+			"-Wno-main",
+			"-Wno-missing-braces",
+			"-Wno-parentheses",
+			"-Wno-unknown-pragmas",
 			"-fstack-check",
 			"-fstack-protector-all",
 			"-O2",
 			"-std=gnu11"
-		],
-		"Oflags": [
-			"-static"
 		],
 		"Install": "/arch/$ARCH/qa/lib/newlib",
 		"Post": [
@@ -61,18 +65,22 @@
 		]
 	},
 	"SIGCHLDTests": {
-		"Include": [
-			"/arch/$ARCH/include/cflags.json"
-		],
 		"Cflags": [
+			"-g",
+			"-gdwarf-2",
+			"-ggdb",
+			"-mcmodel=small",
+			"-O0",
+			"-Wall",
+			"-Wno-main",
+			"-Wno-missing-braces",
+			"-Wno-parentheses",
+			"-Wno-unknown-pragmas",
 			"-fstack-check",
 			"-fstack-protector-all",
 			"-O2",
 			"-DWITH_SIGCHLD",
 			"-std=gnu11"
-		],
-		"Oflags": [
-			"-static"
 		],
 		"Install": "/arch/$ARCH/qa/lib/newlib/sigchld",
 		"Post": [

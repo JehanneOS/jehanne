@@ -1,9 +1,16 @@
 {
 	"NewlibTestsuite": {
-		"Include": [
-			"/arch/$ARCH/include/cflags.json"
-		],
 		"Cflags": [
+			"-g",
+			"-gdwarf-2",
+			"-ggdb",
+			"-mcmodel=small",
+			"-O0",
+			"-Wall",
+			"-Wno-main",
+			"-Wno-missing-braces",
+			"-Wno-parentheses",
+			"-Wno-unknown-pragmas",
 			"-iquote", "/hacking/cross/pkgs/newlib/src/newlib/testsuite/include/",
 			"-fstack-check",
 			"-Wno-unused-variable",

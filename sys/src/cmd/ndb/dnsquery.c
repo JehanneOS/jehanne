@@ -13,7 +13,7 @@
 #include <u.h>
 #include <lib9.h>
 #include <bio.h>
-#include <jehanne/ctype.h>
+#include <chartypes.h>
 #include <ndb.h>
 #include "dns.h"
 #include "ip.h"

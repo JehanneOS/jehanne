@@ -36,7 +36,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#include "../stdio.h"
+#include "9stdio.h"
 #ifdef __cplusplus
 }
 #endif

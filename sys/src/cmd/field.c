@@ -16,7 +16,7 @@
 #include <u.h>
 #include <lib9.h>
 #include <bio.h>
-#include <jehanne/ctype.h>
+#include <chartypes.h>
 #include <regexp.h>
 
 typedef struct Range Range;

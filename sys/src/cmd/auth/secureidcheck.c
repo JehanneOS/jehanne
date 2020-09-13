@@ -29,7 +29,7 @@
 #include <u.h>
 #include <lib9.h>
 #include <ip.h>
-#include <jehanne/ctype.h>
+#include <chartypes.h>
 #include <mp.h>
 #include <libsec.h>
 #include <bio.h>

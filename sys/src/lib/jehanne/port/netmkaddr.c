@@ -9,7 +9,7 @@
 
 #include <u.h>
 #include <libc.h>
-#include <jehanne/ctype.h>
+#include <chartypes.h>
 
 /*
  *  make an address, add the defaults

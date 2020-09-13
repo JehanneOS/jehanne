@@ -25,7 +25,7 @@
 
 #include <u.h>
 #include <lib9.h>
-#include <jehanne/ctype.h>
+#include <chartypes.h>
 #include <thread.h>
 #include <9P2000.h>
 #include <9p.h>

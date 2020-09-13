@@ -8,7 +8,7 @@
  */
 
 #include <u.h>
-#include <jehanne/ctype.h>
+#include <chartypes.h>
 
 /*
  *  return ndb attribute type of an ip name

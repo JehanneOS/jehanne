@@ -19,7 +19,7 @@
 #include <auth.h>
 #include <9P2000.h>
 #include <bio.h>
-#include <jehanne/ctype.h>
+#include <chartypes.h>
 #include <ndb.h>
 #include <ip.h>
 #include <String.h>

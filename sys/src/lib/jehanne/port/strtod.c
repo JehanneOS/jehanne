@@ -9,7 +9,7 @@
 
 #include <u.h>
 #include <libc.h>
-#include <jehanne/ctype.h>
+#include <chartypes.h>
 
 /*
  * This routine will convert to arbitrary precision

@@ -9,7 +9,7 @@
 
 #include <u.h>
 #include <libc.h>
-#include <jehanne/ctype.h>
+#include <chartypes.h>
 
 int
 jehanne_encodefmt(Fmt *f)

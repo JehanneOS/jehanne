@@ -13,7 +13,7 @@
 
 #include <u.h>
 #include <libc.h>
-#include <jehanne/ctype.h>
+#include <chartypes.h>
 
 static int debug;
 static int lockwait;

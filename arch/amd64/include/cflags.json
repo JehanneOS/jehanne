@@ -1,16 +1,12 @@
 {
 	"buildflags": {
 		"Cflags": [
-			"-fno-omit-frame-pointer",
-			"-fplan9-extensions",
-			"-fvar-tracking",
-			"-fvar-tracking-assignments",
+			"-9",
 			"-g",
 			"-gdwarf-2",
 			"-ggdb",
 			"-mcmodel=small",
 			"-O0",
-			"-static",
 			"-Wall",
 			"-Wno-main",
 			"-Wno-missing-braces",

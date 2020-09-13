@@ -1,7 +1,7 @@
 #include <u.h>
 #include <lib9.h>
 #include <envvars.h>
-#include <jehanne/ctype.h>
+#include <chartypes.h>
 #include <draw.h>
 #include <event.h>
 #include <keyboard.h>

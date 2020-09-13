@@ -1,13 +1,12 @@
 #include <u.h>
 #include <lib9.h>
-#include <stdio.h>
 
 void
 main(){
 	char *correct="0.987650\n";
 	static char result[128];
 
-	sprintf(result, "%f\n", 0.98765f);
+	sprint(result, "%f\n", 0.98765f);
 
 	if(!strcmp(result, correct)){
 		print("PASS\n");

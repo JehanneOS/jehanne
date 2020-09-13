@@ -15,7 +15,7 @@
  */
 #include <u.h>
 #include <lib9.h>
-#include <jehanne/ctype.h>
+#include <chartypes.h>
 #include <authsrv.h>
 #include <9P2000.h>
 #include <bio.h>

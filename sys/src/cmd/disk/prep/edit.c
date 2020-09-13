@@ -19,7 +19,7 @@
 #include <u.h>
 #include <lib9.h>
 #include <bio.h>
-#include <jehanne/ctype.h>
+#include <chartypes.h>
 #include <disk.h>
 #include "edit.h"
 

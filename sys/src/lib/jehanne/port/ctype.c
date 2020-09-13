@@ -9,7 +9,7 @@
 
 #include <u.h>
 #include <libc.h>
-#include <jehanne/ctype.h>
+#include <chartypes.h>
 
 uint8_t	_ctype[256] =
 {

@@ -2,7 +2,7 @@
 #include <lib9.h>
 #include <bio.h>
 #include <draw.h>
-#include <jehanne/ctype.h>
+#include <chartypes.h>
 #include "imagefile.h"
 
 Rawimage *readppm(Biobuf*, Rawimage*);

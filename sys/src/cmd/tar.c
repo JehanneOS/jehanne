@@ -21,7 +21,7 @@
 
 #include <u.h>
 #include <lib9.h>
-#include <jehanne/ctype.h>
+#include <chartypes.h>
 #include <9P2000.h>		/* for %M */
 #include <String.h>
 

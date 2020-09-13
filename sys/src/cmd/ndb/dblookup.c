@@ -19,7 +19,7 @@
 #include <bio.h>
 #include <ndb.h>
 #include <ip.h>
-#include <jehanne/ctype.h>
+#include <chartypes.h>
 #include "dns.h"
 
 enum {

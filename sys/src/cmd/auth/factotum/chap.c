@@ -26,7 +26,7 @@
  *	write response: Chapreply or MSchapreply structure
  */
 
-#include <jehanne/ctype.h>
+#include <chartypes.h>
 #include "dat.h"
 
 enum {

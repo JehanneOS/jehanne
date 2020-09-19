@@ -50,9 +50,9 @@ The running system also includes supplemental folders like `/lib`,
 
 To build Jehanne and play with it, you need to have git, golang, qemu,
 gcc, binutils and bison installed.
-For example on Debian GNU/Linux you should be able to get going with
+For example on Debian GNU/Linux 10 you should be able to get going with
 
-	sudo aptitude install git golang build-essential flex bison qemu-system autoconf
+	sudo apt-get install git golang build-essential flex bison qemu-system autoconf autoconf-archive curl automake-1.15
 
 After the repository clone, you can give a look with
 

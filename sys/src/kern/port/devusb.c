@@ -1079,7 +1079,7 @@ usbread(Chan *c, void *a, long n, int64_t offset)
 			n = nr;
 			break;
 		}
-		/* else fall */
+		/* else fall through */
 	default:
 		ddeprint("\nusbread q %#x fid %d cnt %ld off %lld\n",q,c->fid,n,offset);
 		n = ep->hp->epread(ep, a, n);
@@ -1445,7 +1445,7 @@ usbwrite(Chan *c, void *a, long n, int64_t off)
 			n = nr;
 			break;
 		}
-		/* else fall */
+		/* else fall through */
 	default:
 		ddeprint("\nusbwrite q %#x fid %d cnt %ld off %lld\n",q, c->fid, n, off);
 		ep->hp->epwrite(ep, a, n);

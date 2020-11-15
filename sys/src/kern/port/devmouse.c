@@ -213,7 +213,7 @@ mouseopen(Chan *c, unsigned long omode)
 		mouse.lastcounter = mouse.counter;
 		mouse.resize = 0;
 		mousetime = seconds();
-		/* wet floor */
+		/* fall through */
 	case Qcursor:
 		incref(&mouse);
 	}
@@ -237,7 +237,7 @@ mouseclose(Chan *c)
 	case Qmouse:
 		mouse.open = 0;
 		mouseblankscreen(0);
-		/* wet floor */
+		/* fall through */
 	case Qcursor:
 		if(decref(&mouse) != 0)
 			return;
@@ -427,7 +427,7 @@ mousewrite(Chan *c, void *va, long n, int64_t _)
 
 		case CMblanktime:
 			blanktime = strtoul(cb->f[1], 0, 0);
-			/* wet floor */
+			/* fall through */
 		case CMtwitch:
 			mousetime = seconds();
 			mouseblankscreen(0);

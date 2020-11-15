@@ -331,7 +331,7 @@ Execute(word *args, word *path)
 			file[nc++] = '/';
 		}
 		memmove(file+nc, argv[1], mc);
-		sys_exec(file, argv+1);
+		sys_exec(file, (const char**)(argv+1));
 	}
 	rerrstr(file, sizeof file);
 	setstatus(file);

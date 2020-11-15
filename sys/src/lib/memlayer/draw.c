@@ -13,6 +13,8 @@
 #include <memdraw.h>
 #include <memlayer.h>
 
+#define DBG if(drawdebug)
+
 struct Draw
 {
 	Point	deltas;
@@ -66,14 +68,13 @@ memdraw(Memimage *dst, Rectangle r, Memimage *src, Point p0, Memimage *mask, Poi
 	Rectangle srcr, tr, mr;
 	Memlayer *dl, *sl;
 
-	if(drawdebug)
-		iprint("memdraw %p %R %p %P %p %P\n", dst, r, src, p0, mask, p1);
+	DBG iprint("memdraw %p %R %p %P %p %P\n", dst, r, src, p0, mask, p1);
 
 	if(mask == nil)
 		mask = memopaque;
 
 	if(mask->layer){
-if(drawdebug)	iprint("mask->layer != nil\n");
+		DBG iprint("mask->layer != nil\n");
 		return;	/* too hard, at least for now */
 	}
 
@@ -84,7 +85,7 @@ if(drawdebug)	iprint("mask->layer != nil\n");
 	}
 
 	if(drawclip(dst, &r, src, &p0, mask, &p1, &srcr, &mr) == 0){
-if(drawdebug)	iprint("drawclip dstcr %R srccr %R maskcr %R\n", dst->clipr, src->clipr, mask->clipr);
+		DBG iprint("drawclip dstcr %R srccr %R maskcr %R\n", dst->clipr, src->clipr, mask->clipr);
 		return;
 	}
 

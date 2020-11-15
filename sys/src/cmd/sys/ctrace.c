@@ -236,9 +236,9 @@ ParseArguments:
 			sysfatal("fork failed: %r");
 		if(pid == 0) {
 			jehanne_write(sys_open(smprint("/proc/%d/ctl", getpid()), OWRITE|OCEXEC), "hang", 4);
-			sys_exec(cmd, args);
+			sys_exec(cmd, (const char**)args);
 			if(cmd[0] != '/')
-				sys_exec(smprint("/cmd/%s", cmd), args);
+				sys_exec(smprint("/cmd/%s", cmd), (const char**)args);
 			sysfatal("exec %s failed: %r", cmd);
 		}
 	} else {

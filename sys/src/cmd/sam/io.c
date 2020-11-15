@@ -195,7 +195,7 @@ bootterm(char *machine, char **argv)
 		sys_close(remotefd0);
 		sys_close(remotefd1);
 		argv[0] = "samterm";
-		sys_exec(samterm, argv);
+		sys_exec(samterm, (const char**)argv);
 		fprint(2, "can't exec: ");
 		perror(samterm);
 		sys__exits("damn");
@@ -211,7 +211,7 @@ bootterm(char *machine, char **argv)
 		sys_close(pt2h[0]);
 		sys_close(pt2h[1]);
 		argv[0] = "samterm";
-		sys_exec(samterm, argv);
+		sys_exec(samterm, (const char**)argv);
 		fprint(2, "can't exec: ");
 		perror(samterm);
 		sys__exits("damn");
@@ -263,7 +263,7 @@ connectto(char *machine, char **argv)
 		sys_close(p1[1]);
 		sys_close(p2[0]);
 		sys_close(p2[1]);
-		sys_exec(RXPATH, av);
+		sys_exec(RXPATH, (const char**)av);
 		dprint("can't exec %s\n", RXPATH);
 		exits("exec");
 

@@ -60,11 +60,11 @@ main(int argc, char **argv)
 			nargv[i] = argv[i];
 		}
 	}
-	sys_exec(*nargv, nargv);
+	sys_exec(*nargv, (const char **)nargv);
 	if(**nargv != '/' && strncmp(*nargv, "./", 2) != 0 &&
 			strncmp(*nargv, "../", 3) != 0){
 		*nargv = smprint("/cmd/%s", *nargv);
-		sys_exec(*nargv, nargv);
+		sys_exec(*nargv, (const char **)nargv);
 	}
 	sysfatal("exec: %r");
 }

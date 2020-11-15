@@ -66,7 +66,7 @@ main(int argc, char **argv)
 		dup(pipefd[0], 1);
 		sys_close(pipefd[0]);
 		sys_close(pipefd[1]);
-		sys_exec(ename, arglist);
+		sys_exec(ename, (const char**)arglist);
 		fprint(2, "can't exec exportfs: %r\n");
 		exits("exec");
 	default:

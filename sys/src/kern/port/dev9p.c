@@ -824,6 +824,8 @@ mountio(Mnt *mnt, Mntrpc *r)
 		if(strcmp(up->errstr, Eintr) != 0 || waserror()){
 			r = mntflushfree(mnt, r);
 			switch(r->request.type){
+			default:
+				break;
 			case Tremove:
 			case Tclunk:
 				/* botch, abandon fid */

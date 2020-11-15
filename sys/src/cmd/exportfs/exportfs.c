@@ -947,7 +947,7 @@ filter(int fd, char *cmd)
 			fatal("filter: cannot dup to 0; %r\n");
 		sys_close(p[0]);
 		sys_close(p[1]);
-		sys_exec(file, argv);
+		sys_exec(file, (const char **)argv);
 		fatal("exec record module");
 	default:
 		sys_close(fd);

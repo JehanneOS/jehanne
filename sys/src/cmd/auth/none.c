@@ -55,12 +55,12 @@ main(int argc, char *argv[])
 
 	if (argc > 0) {
 		strecpy(cmd, cmd+sizeof cmd, argv[0]);
-		sys_exec(cmd, &argv[0]);
+		sys_exec(cmd, (const char **)(&argv[0]));
 		if (strncmp(cmd, "/", 1) != 0
 		&& strncmp(cmd, "./", 2) != 0
 		&& strncmp(cmd, "../", 3) != 0) {
 			snprint(cmd, sizeof cmd, "/bin/%s", argv[0]);
-			sys_exec(cmd, &argv[0]);
+			sys_exec(cmd, (const char **)(&argv[0]));
 		}
 	} else {
 		strcpy(cmd, "/bin/rc");

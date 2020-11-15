@@ -17,6 +17,7 @@
 #define	nelem(x)	(sizeof(x)/sizeof((x)[0]))
 #define	offsetof(s, m)	(uintptr_t)(&(((s*)0)->m))
 #define	assert(x)	if(x){}else jehanne__assert(#x)
+#define jehanne_getcallerpc()	((uintptr_t)__builtin_return_address(0))
 
 extern void (*_abort)(void);
 #define abort() if(_abort){_abort();}else{while(*(int*)0);}
@@ -324,7 +325,7 @@ extern	int	jehanne_enc16(char*, int, const uint8_t*, int);
 extern	int	jehanne_encodefmt(Fmt*);
 extern	void	jehanne_exits(const char*) __attribute__ ((noreturn));
 extern	double	jehanne_frexp(double, int*);
-extern	uintptr_t	jehanne_getcallerpc(void);
+//extern	uintptr_t	jehanne_getcallerpc(void);
 extern	int	jehanne_getfields(char*, char**, int, int, const char*);
 extern	int	jehanne_gettokens(char *, char **, int, const char *);
 extern	char*	jehanne_getuser(void);

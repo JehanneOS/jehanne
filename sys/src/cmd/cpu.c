@@ -275,7 +275,7 @@ main(int argc, char **argv)
 		av[ac++] = patternfile;
 	}
 	av[ac] = nil;
-	sys_exec(exportfs, av);
+	sys_exec(exportfs, (const char **)av);
 	fatal(1, "starting exportfs");
 }
 

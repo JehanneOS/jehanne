@@ -2068,7 +2068,7 @@ epopen(Ep *ep)
 		break;
 	case Tbulk:
 		ep->pollival = 1;	/* assume this; doesn't really matter */
-		/* and fall... */
+		/* fall through */
 	case Tintr:
 		io = ep->aux = smalloc(sizeof(Qio)*3);
 		io[OREAD].debug = io[OWRITE].debug = ep->debug;

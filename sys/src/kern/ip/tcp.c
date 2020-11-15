@@ -2255,6 +2255,7 @@ reset:
 			}
 			update(s, &seg);
 			tcpsetstate(s, Established);
+			/* fall through */
 		case Established:
 		case Close_wait:
 			update(s, &seg);
@@ -2291,6 +2292,7 @@ reset:
 				localclose(s, nil);
 				goto raise;
 			}
+			/* fall through */
 		case Time_wait:
 			tcb->flags |= FORCE;
 			if(tcb->timer.state != TcptimerON)

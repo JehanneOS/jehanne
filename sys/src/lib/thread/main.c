@@ -79,7 +79,7 @@ efork(Execargs *e)
 
 	_threaddebug(DBGEXEC, "_schedexec %s", e->prog);
 	sys_close(e->fd[0]);
-	sys_exec(e->prog, e->args);
+	sys_exec(e->prog, (const char **)e->args);
 	_threaddebug(DBGEXEC, "_schedexec failed: %r");
 	jehanne_rerrstr(buf, sizeof buf);
 	if(buf[0]=='\0')

@@ -202,7 +202,7 @@ addkbdq(Queue *q, int i)
 		kbdq = qopen(4*1024, 0, 0, 0);
 		if(kbdq == nil)
 			panic("no kbdq");
-		/* fall */
+		/* fall through */
 	default:
 		kickkbdq();
 	}
@@ -870,6 +870,7 @@ consread(Chan *c, void *buf, long n, int64_t off)
 				case '\n':
 				case 0x04:	/* ^D */
 					send = 1;
+					/* fall through */
 				default:
 					if(ch != 0x04)
 						kbd.line[kbd.x++] = ch;

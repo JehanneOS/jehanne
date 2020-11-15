@@ -1355,7 +1355,7 @@ drawwrite(Chan *c, void *a, long n, int64_t _)
 uint8_t*
 drawcoord(uint8_t *p, uint8_t *maxp, int oldx, int *newx)
 {
-	int b, x;
+	uint32_t b, x;
 
 	if(p >= maxp)
 		error(Eshortdraw);
@@ -1367,13 +1367,13 @@ drawcoord(uint8_t *p, uint8_t *maxp, int oldx, int *newx)
 		x |= *p++ << 7;
 		x |= *p++ << 15;
 		if(x & (1<<22))
-			x |= ~0<<23;
+			x |= ~0U<<23;
 	}else{
 		if(b & 0x40)
-			x |= ~0<<7;
+			x |= ~0U<<7;
 		x += oldx;
 	}
-	*newx = x;
+	*newx = (int)x;
 	return p;
 }
 

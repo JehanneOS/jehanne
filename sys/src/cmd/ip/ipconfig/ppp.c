@@ -45,8 +45,8 @@ pppbinddev(void)
 			av[ac++] = conf.baud;
 		}
 		av[ac] = nil;
-		sys_exec("/bin/ip/ppp", av);
-		sys_exec("/ppp", av);
+		sys_exec("/bin/ip/ppp", (const char**)av);
+		sys_exec("/ppp", (const char**)av);
 		sysfatal("execing /ppp: %r");
 	}
 

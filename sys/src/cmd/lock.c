@@ -134,10 +134,10 @@ main(int argc, char *argv[])
 			jehanne_fprint(fd, "%s%% ", lock);
 			sys_close(fd);
 		}
-		sys_exec(cmd, args);
+		sys_exec(cmd, (const char**)args);
 		if(cmd[0] != '/' && jehanne_strncmp(cmd, "./", 2) != 0 &&
 		   jehanne_strncmp(cmd, "../", 3) != 0)
-			sys_exec(jehanne_smprint("/cmd/%s", cmd), args);
+			sys_exec(jehanne_smprint("/cmd/%s", cmd), (const char**)args);
 		error(cmd);
 	}
 

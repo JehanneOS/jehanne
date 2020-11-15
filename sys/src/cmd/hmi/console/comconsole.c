@@ -88,7 +88,7 @@ main(int argc, char *argv[])
 		fd = sys_open("/dev/cons", OWRITE);
 		if(dup(fd, 2) != 2)
 			sysfatal("bad FDs: %r");
-		sys_exec(argv[1], argv+1);
+		sys_exec(argv[1], (const char**)(argv+1));
 		sysfatal("exec %s: %r", argv[1]);
 	}
 }

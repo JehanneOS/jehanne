@@ -1486,7 +1486,7 @@ procctl(Proc *p)
 	case Proc_traceme:
 		if(p->nnote == 0)
 			return;
-		/* No break */
+		/* fall through */
 
 	case Proc_stopme:
 		p->procctl = 0;

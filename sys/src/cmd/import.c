@@ -249,7 +249,7 @@ main(int argc, char **argv)
 	sys_alarm(0);
 
 	if(backwards && argc > 1){
-		sys_exec(argv[1], &argv[1]);
+		sys_exec(argv[1], (const char **)&argv[1]);
 		sysfatal("exec: %r");
 	}
 	exits(0);
@@ -429,7 +429,7 @@ filter(int fd, char *cmd, char *host)
 		dup(p[0], 0);
 		sys_close(p[0]);
 		sys_close(p[1]);
-		sys_exec(file, argv);
+		sys_exec(file, (const char**)argv);
 		sysfatal("exec record module: %r");
 	default:
 		sys_close(fd);

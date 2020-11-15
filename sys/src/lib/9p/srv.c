@@ -101,8 +101,8 @@ getreq(Srv *s)
 		r->type = 0;
 		r->srv = s;
 		r->pool = nil;
-if(chatty9p)
-	fprint(2, "<-%d- %F: dup tag\n", s->infd, &f);
+		if(chatty9p)
+			fprint(2, "<-%d- %F: dup tag\n", s->infd, &f);
 		return r;
 	}
 
@@ -113,11 +113,11 @@ if(chatty9p)
 	memset(&r->ofcall, 0, sizeof r->ofcall);
 	r->type = r->ifcall.type;
 
-if(chatty9p)
-	if(r->error)
-		fprint(2, "<-%d- %F: %s\n", s->infd, &r->ifcall, r->error);
-	else
-		fprint(2, "<-%d- %F\n", s->infd, &r->ifcall);
+	if(chatty9p)
+		if(r->error)
+			fprint(2, "<-%d- %F: %s\n", s->infd, &r->ifcall, r->error);
+		else
+			fprint(2, "<-%d- %F\n", s->infd, &r->ifcall);
 
 	return r;
 }
@@ -879,18 +879,45 @@ respond(Req *r, char *error)
 		if(rflush(r, error)<0)
 			return;
 		break;
-	case Tversion:	rversion(r, error);	break;
-	case Tauth:	rauth(r, error);	break;
-	case Tattach:	rattach(r, error);	break;
-	case Twalk:	rwalk(r, error);	break;
-	case Topen:	ropen(r, error);	break;
-	case Tcreate:	rcreate(r, error);	break;
-	case Tread:	rread(r, error);	break;
-	case Twrite:	rwrite(r, error);	break;
-	case Tclunk:	rclunk(r, error);	break;
-	case Tremove:	rremove(r, error, errbuf);	break;
-	case Tstat:	rstat(r, error);	break;
-	case Twstat:	rwstat(r, error);	break;
+	case Tversion:
+		rversion(r, error);
+		break;
+	case Tauth:
+		rauth(r, error);
+		break;
+	case Tattach:
+		rattach(r, error);
+		break;
+	case Twalk:
+		rwalk(r, error);
+		break;
+	case Topen:
+		ropen(r, error);
+		break;
+	case Tcreate:
+		rcreate(r, error);
+		break;
+	case Tread:
+		rread(r, error);
+		break;
+	case Twrite:
+		rwrite(r, error);
+		break;
+	case Tclunk:
+		rclunk(r, error);
+		break;
+	case Tremove:
+		rremove(r, error, errbuf);
+		break;
+	case Tstat:
+		rstat(r, error);
+		break;
+	case Twstat:
+		rwstat(r, error);
+		break;
+	default:
+		/* nothing to do */
+		break;
 	}
 
 	r->ofcall.tag = r->ifcall.tag;
@@ -898,8 +925,8 @@ respond(Req *r, char *error)
 	if(r->error)
 		setfcallerror(&r->ofcall, r->error);
 
-if(chatty9p)
-	fprint(2, "-%d-> %F\n", srv->outfd, &r->ofcall);
+	if(chatty9p)
+		fprint(2, "-%d-> %F\n", srv->outfd, &r->ofcall);
 
 	qlock(&srv->wlock);
 	n = convS2M(&r->ofcall, srv->wbuf, srv->msize);

@@ -444,7 +444,7 @@ segment_release(ProcSegment** s)
 			if(segment->image > 1
 			||(up->parentpid == 1 && up->text[0] != '*'))
 				image_release(segment->image/NLOAD);
-			/* wet floor */
+			/* fall through */
 		case SgBSS:
 		case SgShared:
 		case SgStack:

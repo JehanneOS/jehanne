@@ -1043,7 +1043,7 @@ putline(void)
 }
 
 void
-blkio(int b, uint8_t *buf, int32_t (*iofcn)(int, void *, int32_t))
+blkio(int b, uint8_t *buf, long (*iofcn)(int, void *, int32_t))
 {
 	sys_seek(tfile, b*BLKSIZE, 0);
 	if((*iofcn)(tfile, buf, BLKSIZE) != BLKSIZE) {
@@ -1051,7 +1051,7 @@ blkio(int b, uint8_t *buf, int32_t (*iofcn)(int, void *, int32_t))
 	}
 }
 
-static int32_t
+static long
 writewrap(int a, void *b, int32_t c)
 {
 	return jehanne_write(a, (const void *)b, c);

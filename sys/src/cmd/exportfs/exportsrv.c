@@ -464,6 +464,8 @@ slave(Fsrpc *f)
 
 	if(readonly){
 		switch(f->work.type){
+		default:
+			break;
 		case Twrite:
 			reply(&f->work, &rhdr, Ereadonly);
 			f->busy = 0;
@@ -606,7 +608,7 @@ openmount(int sfd)
 	sys_close(1);
 	dup(p[0], 0);
 	dup(p[0], 1);
-	sys_exec("/cmd/exportfs", arg);
+	sys_exec("/cmd/exportfs", (const char**)arg);
 	sys__exits("whoops: exec failed");
 	return -1;
 }

@@ -124,9 +124,9 @@ main(int argc, char **argv)
 			dup(fd, 1);
 			dup(fd, 2);
 			sys_close(fd);
-			sys_exec(argv[1], argv+1);
+			sys_exec(argv[1], (const char **)(argv+1));
 			if(argv[1][0] != '/')
-				sys_exec(smprint("/cmd/%s", argv[1]), argv+1);
+				sys_exec(smprint("/cmd/%s", argv[1]), (const char**)(argv+1));
 			fprint(2, "%s: exec: %r\n", argv0);
 			exits(nil);
 		default:

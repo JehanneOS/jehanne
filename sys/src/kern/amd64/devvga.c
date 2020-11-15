@@ -387,7 +387,7 @@ vgactl(Cmdbuf *cb)
 		deletescreenimage();
 		if(screensize(x, y, z, chan))
 			error(Egreg);
-		/* no break */
+		/* fall through */
 	case CMdrawinit:
 		if(scr->gscreen == nil)
 			error("drawinit: no gscreen");

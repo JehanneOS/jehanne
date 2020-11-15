@@ -44,7 +44,7 @@ main(int argc, char *argv[])
 	args = &argv[2];
 	if(cmd[0] == '/' 
 	||(cmd[0] == '.' && (cmd[1] == '/' || (cmd[1] == '.' && cmd[2] == '/')))){
-		sys_exec(cmd, args);
+		sys_exec(cmd, (const char**)args);
 		sysfatal("exec %s failed: %r", cmd);
 	}
 

@@ -33,11 +33,11 @@ main(int argc, char *argv[])
 	case -1:
 		error("fork");
 	case 0:
-		sys_exec(argv[1], &argv[1]);
+		sys_exec(argv[1], (const char**)&argv[1]);
 		if(argv[1][0] != '/' && jehanne_strncmp(argv[1], "./", 2) &&
 		   jehanne_strncmp(argv[1], "../", 3)){
 			jehanne_sprint(output, "/cmd/%s", argv[1]);
-			sys_exec(output, &argv[1]);
+			sys_exec(output, (const char**)&argv[1]);
 		}
 		error(argv[1]);
 	}

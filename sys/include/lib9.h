@@ -242,13 +242,11 @@
 #define lockt jehanne_lockt
 #define unlock jehanne_unlock
 #define canlock jehanne_canlock
-#define lock; jehanne_lock;
 #define qlock jehanne_qlock
 #define qlockt jehanne_qlockt
 #define qunlock jehanne_qunlock
 #define canqlock jehanne_canqlock
 #define _qlockinit jehanne__qlockinit
-#define lock; jehanne_lock;
 #define rlock jehanne_rlock
 #define rlockt jehanne_rlockt
 #define runlock jehanne_runlock
